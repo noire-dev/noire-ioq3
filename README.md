@@ -1,17 +1,17 @@
 
-                       _                 _              _____ 
-                      (_)               (_)            |____ |
-           _ __   ___  _ _ __ ___ ______ _  ___   __ _     / /
-          | '_ \ / _ \| | '__/ _ \______| |/ _ \ / _` |    \ \
-          | | | | (_) | | | |  __/      | | (_) | (_| |.___/ /
-          |_| |_|\___/|_|_|  \___|      |_|\___/ \__, |\____/ 
-                                                    | |       
-                                                    |_|       
+                                 _                 _              _____ 
+                                (_)               (_)            |____ |
+                     _ __   ___  _ _ __ ___ ______ _  ___   __ _     / /
+                    | '_ \ / _ \| | '__/ _ \______| |/ _ \ / _` |    \ \
+                    | | | | (_) | | | |  __/      | | (_) | (_| |.___/ /
+                    |_| |_|\___/|_|_|  \___|      |_|\___/ \__, |\____/ 
+                                                              | |       
+                                                              |_|       
 
 # The engine for the game Noire's Mod is based on ioquake3.
 
 # Noire-ioq3 key features:
-  * bullet physics
+  * Bullet physics
 
 # Compilation and installation
 **Note that for all of these platforms, if you want to play _Quake 3: Arena_ or 
