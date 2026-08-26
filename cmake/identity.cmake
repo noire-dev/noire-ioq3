@@ -1,8 +1,8 @@
 set(PROJECT_NAME noire-ioq3)
 set(PROJECT_VERSION 0.1)
 
-set(SERVER_NAME noiremod)
-set(CLIENT_NAME noiremod.ded)
+set(SERVER_NAME noiremod.ded)
+set(CLIENT_NAME noiremod)
 
 set(BASEGAME game)
 

@@ -440,6 +440,7 @@ void JS_Restart(void) {
 static void Cmd_JSRestart_f(void) { JS_Restart(); }
 
 void JS_Init(void) {
+	Com_Printf("#5ffAttemping to create JavaScript context...\n");
 	if(!js_ctx) {
 		Com_Printf("#5ffCreating JavaScript context...\n");
 		js_ctx = duk_create_heap_default();
