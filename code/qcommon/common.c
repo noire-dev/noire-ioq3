@@ -2743,6 +2743,8 @@ void Com_Init( char *commandLine ) {
 	// allocate the stack based hunk allocator
 	Com_InitHunkMemory();
 
+	JS_Init(); // Initialize JavaScript
+
 	// if any archived cvars are modified after this, we will trigger a writing
 	// of the config file
 	cvar_modifiedFlags &= ~CVAR_ARCHIVE;

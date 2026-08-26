@@ -720,6 +720,7 @@ The ui module is making a system call
 ====================
 */
 intptr_t CL_UISystemCalls( intptr_t *args ) {
+	int qvmIndex = VM_UI;
 	switch( args[0] ) {
 	case UI_ERROR:
 		Com_Error( ERR_DROP, "%s", (const char*)VMA(1) );
@@ -1071,6 +1072,8 @@ intptr_t CL_UISystemCalls( intptr_t *args ) {
 
 	case UI_VERIFY_CDKEY:
 		return CL_CDKeyValidate(VMA(1), VMA(2));
+
+#include "../q_sharedsyscalls.inc"
 		
 	default:
 		Com_Error( ERR_DROP, "Bad UI system trap: %ld", (long int) args[0] );
