@@ -7,6 +7,7 @@ foreach(LINE ${LIB_VERSIONS_CONTENT})
     endif()
 endforeach()
 
+include(libraries/bullet3)
 include(libraries/curl)
 include(libraries/freetype)
 include(libraries/jpeg)
