@@ -1,97 +1,17 @@
-![Build](https://github.com/ioquake/ioq3/workflows/Build/badge.svg)
 
-                   ,---------------------------------------.
-                   |   _                     _       ____  |
-                   |  (_)___  __ _ _  _ __ _| |_____|__ /  |
-                   |  | / _ \/ _` | || / _` | / / -_)|_ \  |
-                   |  |_\___/\__, |\_,_\__,_|_\_\___|___/  |
-                   |            |_|                        |
-                   |                                       |
-                   `--------- https://ioquake3.org --------'
+                       _                 _              _____ 
+                      (_)               (_)            |____ |
+           _ __   ___  _ _ __ ___ ______ _  ___   __ _     / /
+          | '_ \ / _ \| | '__/ _ \______| |/ _ \ / _` |    \ \
+          | | | | (_) | | | |  __/      | | (_) | (_| |.___/ /
+          |_| |_|\___/|_|_|  \___|      |_|\___/ \__, |\____/ 
+                                                    | |       
+                                                    |_|       
 
-The intent of this project is to provide a baseline engine which may be used
-for further development and to play _Quake 3: Arena,_ _Team Arena,_ and mods.
+# The engine for the game Noire's Mod is based on ioquake3.
 
-Our source code is at https://github.com/ioquake/ioq3 
-If you aren't there, then this isn't ioquake3, it's someone else's project.
-
-Some of the major features currently implemented are:
-
-  * CMake meta-build system
-  * SDL 2 backend
-  * OpenAL sound API support (multiple speaker support and better sound
-    quality)
-  * Full x86_64 support on Linux
-  * VoIP support, both in-game and external support through Mumble.
-  * MinGW compilation support on Windows
-  * AVI video capture of demos
-  * Much improved console autocompletion
-  * Persistent console history
-  * Colorized terminal output
-  * Optional Ogg Vorbis support
-  * Much improved QVM tools
-  * Support for various esoteric operating systems
-  * cl_guid support
-  * Web server download redirection
-  * Multiuser support on Windows systems (user specific game data
-    is stored in "%APPDATA%\Quake3")
-  * PNG support
-  * Web support via Emscripten
-  * console scaling with con_scale
-  * Many, many bug fixes
-
-The map editor and associated compiling tools are not included. We suggest you
-use a modern copy from http://icculus.org/gtkradiant/.
-
-The original id software readme that accompanied the Q3 source release has been
-renamed to id-readme.txt so as to prevent confusion. Please refer to the
-website for updated status.
-
-## Just want to play ioquake3?
-Check out our Player's Guide here:
-https://ioquake3.org/help/players-guide/
-
-## Want to run a server?
-Our SysAdmin guide is here:
-https://ioquake3.org/help/sys-admin-guide/
-
-## Visit our forums
-If you've got issues that you aren't sure are worth filing as bugs, or just
-want to chat:
-https://discourse.ioquake.org
-
-## I'm going to fork ioquake3 and do my own thing!
-Please update your fork's README.md to credit the ioquake3 project and inform users
-what project they're looking at so you get credit for your work. 
-
-Feel free to make a thread on our forums to let people know about
-your project. We're looking forward to hearing about it.
-
-
-# Thank You:
-
-<p>
-  <a href="https://www.digitalocean.com/">Digital Ocean<br/>
-    <img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/PoweredByDO/DO_Powered_by_Badge_blue.svg" width="201px">
-  </a>
-</p>
----
-<p>
-<a href="https://www.discourse.org/">Discourse<br/>
-<img src=
-"https://user-images.githubusercontent.com/1681963/52239617-e2683480-289c-11e9-922b-5da55472e5b4.png"
- width="300px"></a>
-</p>
----
-<p>
-<a href="https://icculus.org/">icculus dot org<br/>
-<img src="http://icculus.org/icculus-org-now.png" width="300px"></a>
-</p>
----
-<p>
-<a href="https://nuclearmonster.com/">Nuclear Monster<br/>
-<img src="https://user-images.githubusercontent.com/903791/152968830-dd08737b-55c6-4ac6-9610-31121ea0e8c6.png" width="300px"></a>
-</p>
+# Noire-ioq3 key features:
+  * bullet physics
 
 # Compilation and installation
 **Note that for all of these platforms, if you want to play _Quake 3: Arena_ or 
@@ -490,130 +410,11 @@ typedef int intptr_t;
 Note if you simply wish to run mods on a 64bit platform you do not need to
 recompile anything since by default Q3 uses a virtual machine system.
 
-## Creating mods compatible with Q3 1.32b
-
-If you're using this package to create mods for the last official release of
-Q3, it is necessary to pass the commandline option '-vq3' to your invocation
-of q3asm. This is because by default q3asm outputs an updated qvm format that
-is necessary to fix a bug involving the optimizing pass of the x86 vm JIT
-compiler.
-
-## Creating standalone games
-
-Have you finished the daunting task of removing all dependencies on the Q3
-game data? You probably now want to give your users the opportunity to play
-the game without owning a copy of Q3, which consequently means removing cd-key
-and authentication server checks. In addition to being a straightforward Q3
-client, _ioquake3_ also purports to be a reliable and stable code base on which
-to base your game project.
-
-However, before you start compiling your own version of _ioquake3_, you have to
-ask yourself: Have we changed or will we need to change anything of importance
-in the engine?
-
-If your answer to this question is "no", it probably makes no sense to build
-your own binaries. Instead, you can just use the pre-built binaries on the
-website. Just make sure the game is called with:
-
-    +set com_basegame <yournewbase>
-
-in any links/scripts you install for your users to start the game. The
-binary must not detect any original quake3 game pak files. If this
-condition is met, the game will set com_standalone to 1 and is then running
-in stand alone mode.
-
-If you want the engine to use a different directory in your homepaths than
-"Quake3" then set a new name at startup by adding
-
-    +set com_homepath <homedirname>
-
-to the command line. You can also control which game name to use when talking
-to the master server:
-
-    +set com_gamename <gamename>
-
-So clients requesting a server list will only receive servers that have a
-matching game name.
-
-Example line:
-
-    +set com_basegame basefoo +set com_homepath foo
-    +set com_gamename foo
-
-If you really changed parts that would make vanilla ioquake3 incompatible with
-your mod, we have included another way to conveniently build a stand-alone
-binary. Edit /cmake/identity.cmake and run cmake with the option BUILD_STANDALONE=1.
-Don't forget to edit the PRODUCT_NAME and subsequent #defines in qcommon/q_shared.h with
-information appropriate for your project.
-
-## Standalone game licensing
-
-While a lot of work has been put into _ioquake3_ that you can benefit from free
-of charge, it does not mean that you have no obligations to fulfill. Please be
-aware that as soon as you start distributing your game with an engine based on
-our sources we expect you to fully comply with the requirements as stated in
-the GPL. That includes making sources and modifications you made to the
-ioquake3 engine as well as the game-code used to compile the .qvm files for
-the game logic freely available to everyone. Furthermore, note that the "QIIIA
-Game Source License" prohibits distribution of mods that are intended to
-operate on a version of Q3 not sanctioned by id software:
-
-    "with this Agreement, ID grants to you the non-exclusive and limited right
-    to distribute copies of the Software ... for operation only with the full
-    version of the software game QUAKE III ARENA"
-
-This means that if you're creating a standalone game, you cannot use said
-license on any portion of the product. As the only other license this code has
-been released under is the GPL, this is the only option.
-
-This does NOT mean that you cannot market this game commercially. The GPL does
-not prohibit commercial exploitation and all assets (e.g. textures, sounds,
-maps) created by yourself are your property and can be sold like every other
-game you find in stores.
-
-
-## PNG support
-
-ioquake3 supports the use of PNG (Portable Network Graphic) images as
-textures. It should be noted that the use of such images in a map will
-result in missing placeholder textures where the map is used with the id
-Quake 3 client or earlier versions of ioquake3.
-
-Recent versions of GtkRadiant and q3map2 support PNG images without
-modification. However GtkRadiant is not aware that PNG textures are supported
-by ioquake3. To change this behaviour open the file 'q3.game' in the 'games'
-directory of the GtkRadiant base directory with an editor and change the
-line:
-
-    texturetypes="tga jpg"
-
-to
-
-    texturetypes="tga jpg png"
-
-Restart GtkRadiant and PNG textures are now available.
-
-## Building with MinGW for pre Windows XP
-
-IPv6 support requires a header named "wspiapi.h" to abstract away from
-differences in earlier versions of Windows' IPv6 stack. There is no MinGW
-equivalent of this header and the Microsoft version is obviously not
-redistributable, so in its absence we're forced to require Windows XP.
-However if this header is acquired separately and placed in the qcommon/
-directory, this restriction is lifted.
-
-
-# Contributing
-
-Please submit patches through GitHub pull requests.
-
-The focus for ioq3 is to develop a stable base suitable for further development
-and provide players with the same Quake 3 experience they've had for years.
-
-We do have graphical improvements with the new renderer, but they are off by default.
-See opengl2-readme.md for more information.
-
 # Credits
+
+Noire-ioq3 Maintainers
+
+  * noire.dev <opennoire@gmail.com>
 
 Maintainers
 
@@ -638,5 +439,3 @@ Significant contributions from
   * optical <alex@rigbo.se>
   * Aaron Gyes <floam@aaron.gy>
   * surrealchemist
-
-
