@@ -8,7 +8,7 @@
                                                                   | |       
                                                                   |_|       
 
-# The engine for the game Noire's Mod is based on ioquake3.
+# The engine for Noire's Mod is based on ioquake3.
 
 # Noire-ioq3 key features:
   * Bullet physics
