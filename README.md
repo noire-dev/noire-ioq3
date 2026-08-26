@@ -12,6 +12,7 @@
 
 # Noire-ioq3 key features:
   * Bullet physics
+  * JavaScript (duktape)
 
 # Compilation and installation
 **Note that for all of these platforms, if you want to play _Quake 3: Arena_ or 
