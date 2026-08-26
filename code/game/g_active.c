@@ -787,21 +787,6 @@ void ClientThink_real( gentity_t *ent ) {
 		msec = 200;
 	}
 
-	if ( pmove_msec.integer < 8 ) {
-		trap_Cvar_Set("pmove_msec", "8");
-		trap_Cvar_Update(&pmove_msec);
-	}
-	else if (pmove_msec.integer > 33) {
-		trap_Cvar_Set("pmove_msec", "33");
-		trap_Cvar_Update(&pmove_msec);
-	}
-
-	if ( pmove_fixed.integer || client->pers.pmoveFixed ) {
-		ucmd->serverTime = ((ucmd->serverTime + pmove_msec.integer-1) / pmove_msec.integer) * pmove_msec.integer;
-		//if (ucmd->serverTime - client->ps.commandTime <= 0)
-		//	return;
-	}
-
 	//
 	// check for exiting intermission
 	//
@@ -917,9 +902,6 @@ void ClientThink_real( gentity_t *ent ) {
 	pm.pointcontents = trap_PointContents;
 	pm.debugLevel = g_debugMove.integer;
 	pm.noFootsteps = ( g_dmflags.integer & DF_NO_FOOTSTEPS ) > 0;
-
-	pm.pmove_fixed = pmove_fixed.integer | client->pers.pmoveFixed;
-	pm.pmove_msec = pmove_msec.integer;
 
 	VectorCopy( client->ps.origin, client->oldOrigin );
 

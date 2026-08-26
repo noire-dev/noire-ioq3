@@ -189,10 +189,6 @@ typedef struct {
 
 	float		xyspeed;
 
-	// for fixed msec Pmove
-	int			pmove_fixed;
-	int			pmove_msec;
-
 	// callbacks to test the world
 	// these will be different functions during game and cgame
 	void		(*trace)( trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentMask );

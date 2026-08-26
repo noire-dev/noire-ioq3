@@ -165,10 +165,6 @@ vmCvar_t	cg_noVoiceText;
 vmCvar_t	cg_hudFiles;
 vmCvar_t 	cg_scorePlum;
 vmCvar_t 	cg_smoothClients;
-vmCvar_t	pmove_fixed;
-//vmCvar_t	cg_pmove_fixed;
-vmCvar_t	pmove_msec;
-vmCvar_t	cg_pmove_msec;
 vmCvar_t	cg_cameraMode;
 vmCvar_t	cg_cameraOrbit;
 vmCvar_t	cg_cameraOrbitDelay;
@@ -309,8 +305,6 @@ static cvarTable_t cvarTable[] = {
 	{ &cg_smoothClients, "cg_smoothClients", "0", CVAR_USERINFO | CVAR_ARCHIVE},
 	{ &cg_cameraMode, "com_cameraMode", "0", CVAR_CHEAT},
 
-	{ &pmove_fixed, "pmove_fixed", "0", CVAR_SYSTEMINFO},
-	{ &pmove_msec, "pmove_msec", "8", CVAR_SYSTEMINFO},
 #ifdef MISSIONPACK
 	{ &cg_smallFont, "ui_smallFont", "0.25", CVAR_ARCHIVE},
 	{ &cg_bigFont, "ui_bigFont", "0.4", CVAR_ARCHIVE},
@@ -321,7 +315,6 @@ static cvarTable_t cvarTable[] = {
 	{ &cg_oldRocket, "cg_oldRocket", "1", CVAR_ARCHIVE},
 	{ &cg_oldPlasma, "cg_oldPlasma", "1", CVAR_ARCHIVE},
 	{ &cg_trueLightning, "cg_trueLightning", "0.0", CVAR_ARCHIVE}
-//	{ &cg_pmove_fixed, "cg_pmove_fixed", "0", CVAR_USERINFO | CVAR_ARCHIVE }
 };
 
 static int  cvarTableSize = ARRAY_LEN( cvarTable );

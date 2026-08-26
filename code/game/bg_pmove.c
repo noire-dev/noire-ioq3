@@ -2039,25 +2039,20 @@ void Pmove (pmove_t *pmove) {
 
 	// chop the move up if it is too long, to prevent framerate
 	// dependent behavior
-	while ( pmove->ps->commandTime != finalTime ) {
-		int		msec;
+	while(pmove->ps->commandTime != finalTime) {
+		int msec;
 
 		msec = finalTime - pmove->ps->commandTime;
 
-		if ( pmove->pmove_fixed ) {
-			if ( msec > pmove->pmove_msec ) {
-				msec = pmove->pmove_msec;
-			}
-		}
-		else {
-			if ( msec > 66 ) {
-				msec = 66;
-			}
+		if(msec < 1) {
+			msec = 1;  // ниже - нахер, баги, говно и обосрание
+		} else if(msec > 33) {
+			msec = 33;  // выше - значит просадка ниже 30 FPS, режем на 33, чтобы игрок не творил хуйню
 		}
 		pmove->cmd.serverTime = pmove->ps->commandTime + msec;
-		PmoveSingle( pmove );
+		PmoveSingle(pmove);
 
-		if ( pmove->ps->pm_flags & PMF_JUMP_HELD ) {
+		if(pmove->ps->pm_flags & PMF_JUMP_HELD) {
 			pmove->cmd.upmove = 20;
 		}
 	}

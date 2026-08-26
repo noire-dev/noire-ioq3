@@ -487,27 +487,11 @@ void CG_PredictPlayerState( void ) {
 		cg.physicsTime = cg.snap->serverTime;
 	}
 
-	if ( pmove_msec.integer < 8 ) {
-		trap_Cvar_Set("pmove_msec", "8");
-		trap_Cvar_Update(&pmove_msec);
-	}
-	else if (pmove_msec.integer > 33) {
-		trap_Cvar_Set("pmove_msec", "33");
-		trap_Cvar_Update(&pmove_msec);
-	}
-
-	cg_pmove.pmove_fixed = pmove_fixed.integer;// | cg_pmove_fixed.integer;
-	cg_pmove.pmove_msec = pmove_msec.integer;
-
 	// run cmds
 	moved = qfalse;
 	for ( cmdNum = current - CMD_BACKUP + 1 ; cmdNum <= current ; cmdNum++ ) {
 		// get the command
 		trap_GetUserCmd( cmdNum, &cg_pmove.cmd );
-
-		if ( cg_pmove.pmove_fixed ) {
-			PM_UpdateViewAngles( cg_pmove.ps, &cg_pmove.cmd );
-		}
 
 		// don't do anything if the time is before the snapshot player time
 		if ( cg_pmove.cmd.serverTime <= cg.predictedPlayerState.commandTime ) {
@@ -576,10 +560,6 @@ void CG_PredictPlayerState( void ) {
 		// don't predict gauntlet firing, which is only supposed to happen
 		// when it actually inflicts damage
 		cg_pmove.gauntletHit = qfalse;
-
-		if ( cg_pmove.pmove_fixed ) {
-			cg_pmove.cmd.serverTime = ((cg_pmove.cmd.serverTime + pmove_msec.integer-1) / pmove_msec.integer) * pmove_msec.integer;
-		}
 
 		Pmove (&cg_pmove);
 
