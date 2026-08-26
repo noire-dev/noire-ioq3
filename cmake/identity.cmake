@@ -1,21 +1,21 @@
-set(PROJECT_NAME ioq3)
-set(PROJECT_VERSION 1.36)
+set(PROJECT_NAME noire-ioq3)
+set(PROJECT_VERSION 0.1)
 
-set(SERVER_NAME ioq3ded)
-set(CLIENT_NAME ioquake3)
+set(SERVER_NAME noiremod)
+set(CLIENT_NAME noiremod.ded)
 
-set(BASEGAME baseq3)
+set(BASEGAME game)
 
 set(CGAME_MODULE cgame)
-set(GAME_MODULE qagame)
+set(GAME_MODULE game)
 set(UI_MODULE ui)
 
-set(WINDOWS_ICON_PATH ${CMAKE_SOURCE_DIR}/misc/windows/quake3.ico)
+set(WINDOWS_ICON_PATH ${CMAKE_SOURCE_DIR}/misc/windows/noiremod.ico)
 
-set(MACOS_ICON_PATH ${CMAKE_SOURCE_DIR}/misc/macos/quake3_flat.icns)
-set(MACOS_BUNDLE_ID org.ioquake.${CLIENT_NAME})
+set(MACOS_ICON_PATH ${CMAKE_SOURCE_DIR}/misc/macos/noiremod_flat.icns)
+set(MACOS_BUNDLE_ID org.noiredev.${CLIENT_NAME})
 
-set(COPYRIGHT "QUAKE III ARENA Copyright © 1999-2000 id Software, Inc. All rights reserved.")
+set(COPYRIGHT "// Copyright (C) 2023-2026 Noire's Mod [noire.dev] — GPLv2")
 
-set(CONTACT_EMAIL "info@ioquake.org")
+set(CONTACT_EMAIL "opennoire@gmail.com")
 set(PROTOCOL_HANDLER_SCHEME quake3)

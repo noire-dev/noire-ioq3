@@ -27,18 +27,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // A user mod should never modify this file
 
 #ifdef STANDALONE
-  #define PRODUCT_NAME				"iofoo3"
-  #define BASEGAME					"foobar"
-  #define CLIENT_WINDOW_TITLE		"changeme"
-  #define CLIENT_WINDOW_MIN_TITLE	"changeme2"
-  #define HOMEPATH_NAME_UNIX_LEGACY	".foo"
-  #define HOMEPATH_NAME				"FooBar"
-  #define GAMENAME_FOR_MASTER		"foobar"	// must NOT contain whitespace
-  #define CINEMATICS_LOGO		"foologo.roq"
+  #define PRODUCT_NAME				"noire-ioq3"
+  #define BASEGAME					"game"
+  #define CLIENT_WINDOW_TITLE		"Noire's Mod"
+  #define CLIENT_WINDOW_MIN_TITLE	"nmod"
+  #define HOMEPATH_NAME_UNIX_LEGACY	".noiremod"
+  #define HOMEPATH_NAME				"noiremod"
+  #define GAMENAME_FOR_MASTER		"noiremod"	// must NOT contain whitespace
+  #define CINEMATICS_LOGO		"noiremodlogo.roq"
   #define CINEMATICS_INTRO		"intro.roq"
-//  #define LEGACY_PROTOCOL	// You probably don't need this for your standalone game
-//  #define PROTOCOL_HANDLER		"foobar"
-  #define CONFIG_PREFIX			"fooconfig"
+  #define CONFIG_PREFIX			"noiremod"
 #else
   #define PRODUCT_NAME				"ioq3"
   #define BASEGAME					"baseq3"
@@ -65,7 +63,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define BASETA				"missionpack"
 
 #ifndef PRODUCT_VERSION
-  #define PRODUCT_VERSION "1.36"
+  #define PRODUCT_VERSION "0.1b"
 #endif
 
 #ifndef PRODUCT_DATE
