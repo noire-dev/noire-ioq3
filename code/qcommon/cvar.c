@@ -28,7 +28,6 @@ cvar_t		*cvar_vars = NULL;
 cvar_t		*cvar_cheats;
 int			cvar_modifiedFlags;
 
-#define	MAX_CVARS	65536
 cvar_t		cvar_indexes[MAX_CVARS];
 int			cvar_numIndexes;
 
@@ -147,15 +146,17 @@ char *Cvar_VariableString( const char *var_name ) {
 Cvar_VariableStringBuffer
 ============
 */
-void Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize ) {
+int Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize ) {
 	cvar_t *var;
 	
 	var = Cvar_FindVar (var_name);
 	if (!var) {
 		*buffer = 0;
+		return -1;
 	}
 	else {
 		Q_strncpyz( buffer, var->string, bufsize );
+		return var - cvar_indexes;
 	}
 }
 

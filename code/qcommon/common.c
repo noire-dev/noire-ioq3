@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "q_shared.h"
 #include "qcommon.h"
 #include <setjmp.h>
+#include <stdlib.h>
 #ifndef _WIN32
 #include <netinet/in.h>
 #include <sys/stat.h> // umask
@@ -270,8 +271,11 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 	int			currentTime;
 	qboolean	restartClient;
 
-	if(com_errorEntered)
+	if(com_errorEntered && strlen(com_errorMessage)) {
 		Sys_Error("recursive error after: %s", com_errorMessage);
+	} else if (com_errorEntered) {
+		abort();
+	}
 
 	com_errorEntered = qtrue;
 

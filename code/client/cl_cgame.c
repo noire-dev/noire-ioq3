@@ -410,50 +410,6 @@ The cgame module is making a system call
 intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	int qvmIndex = VM_CGAME;
 	switch( args[0] ) {
-	case CG_PRINT:
-		Com_Printf( "%s", (const char*)VMA(1) );
-		return 0;
-	case CG_ERROR:
-		Com_Error( ERR_DROP, "%s", (const char*)VMA(1) );
-		return 0;
-	case CG_MILLISECONDS:
-		return Sys_Milliseconds();
-	case CG_CVAR_REGISTER:
-		Cvar_Register( VMA(1), VMA(2), VMA(3), args[4] ); 
-		return 0;
-	case CG_CVAR_UPDATE:
-		Cvar_Update( VMA(1) );
-		return 0;
-	case CG_CVAR_SET:
-		Cvar_SetSafe( VMA(1), VMA(2) );
-		return 0;
-	case CG_CVAR_VARIABLESTRINGBUFFER:
-		Cvar_VariableStringBuffer( VMA(1), VMA(2), args[3] );
-		return 0;
-	case CG_ARGC:
-		return Cmd_Argc();
-	case CG_ARGV:
-		Cmd_ArgvBuffer( args[1], VMA(2), args[3] );
-		return 0;
-	case CG_ARGS:
-		Cmd_ArgsBuffer( VMA(1), args[2] );
-		return 0;
-	case CG_FS_FOPENFILE:
-		return FS_FOpenFileByMode( VMA(1), VMA(2), args[3] );
-	case CG_FS_READ:
-		FS_Read( VMA(1), args[2], args[3] );
-		return 0;
-	case CG_FS_WRITE:
-		FS_Write( VMA(1), args[2], args[3] );
-		return 0;
-	case CG_FS_FCLOSEFILE:
-		FS_FCloseFile( args[1] );
-		return 0;
-	case CG_FS_SEEK:
-		return FS_Seek( args[1], args[2], args[3] );
-	case CG_SENDCONSOLECOMMAND:
-		Cbuf_AddText( VMA(1) );
-		return 0;
 	case CG_ADDCOMMAND:
 		CL_AddCgameCommand( VMA(1) );
 		return 0;
@@ -651,8 +607,6 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 		S_StopBackgroundTrack();
 		return 0;
 
-	case CG_REAL_TIME:
-		return Com_RealTime( VMA(1) );
 	case CG_SNAPVECTOR:
 		Q_SnapVector(VMA(1));
 		return 0;

@@ -41,77 +41,6 @@ int PASSFLOAT( float x ) {
 	return fi.i;
 }
 
-void	trap_Print( const char *text ) {
-	syscall( G_PRINT, text );
-}
-
-void trap_Error( const char *text )
-{
-	syscall( G_ERROR, text );
-	// shut up GCC warning about returning functions, because we know better
-	exit(1);
-}
-
-int		trap_Milliseconds( void ) {
-	return syscall( G_MILLISECONDS ); 
-}
-int		trap_Argc( void ) {
-	return syscall( G_ARGC );
-}
-
-void	trap_Argv( int n, char *buffer, int bufferLength ) {
-	syscall( G_ARGV, n, buffer, bufferLength );
-}
-
-int		trap_FS_FOpenFile( const char *qpath, fileHandle_t *f, fsMode_t mode ) {
-	return syscall( G_FS_FOPEN_FILE, qpath, f, mode );
-}
-
-void	trap_FS_Read( void *buffer, int len, fileHandle_t f ) {
-	syscall( G_FS_READ, buffer, len, f );
-}
-
-void	trap_FS_Write( const void *buffer, int len, fileHandle_t f ) {
-	syscall( G_FS_WRITE, buffer, len, f );
-}
-
-void	trap_FS_FCloseFile( fileHandle_t f ) {
-	syscall( G_FS_FCLOSE_FILE, f );
-}
-
-int trap_FS_GetFileList(  const char *path, const char *extension, char *listbuf, int bufsize ) {
-	return syscall( G_FS_GETFILELIST, path, extension, listbuf, bufsize );
-}
-
-int trap_FS_Seek( fileHandle_t f, long offset, int origin ) {
-	return syscall( G_FS_SEEK, f, offset, origin );
-}
-
-void	trap_SendConsoleCommand( int exec_when, const char *text ) {
-	syscall( G_SEND_CONSOLE_COMMAND, exec_when, text );
-}
-
-void	trap_Cvar_Register( vmCvar_t *cvar, const char *var_name, const char *value, int flags ) {
-	syscall( G_CVAR_REGISTER, cvar, var_name, value, flags );
-}
-
-void	trap_Cvar_Update( vmCvar_t *cvar ) {
-	syscall( G_CVAR_UPDATE, cvar );
-}
-
-void trap_Cvar_Set( const char *var_name, const char *value ) {
-	syscall( G_CVAR_SET, var_name, value );
-}
-
-int trap_Cvar_VariableIntegerValue( const char *var_name ) {
-	return syscall( G_CVAR_VARIABLE_INTEGER_VALUE, var_name );
-}
-
-void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize ) {
-	syscall( G_CVAR_VARIABLE_STRING_BUFFER, var_name, buffer, bufsize );
-}
-
-
 void trap_LocateGameData( gentity_t *gEnts, int numGEntities, int sizeofGEntity_t,
 						 playerState_t *clients, int sizeofGClient ) {
 	syscall( G_LOCATE_GAME_DATA, gEnts, numGEntities, sizeofGEntity_t, clients, sizeofGClient );
@@ -220,10 +149,6 @@ int trap_DebugPolygonCreate(int color, int numPoints, vec3_t *points) {
 
 void trap_DebugPolygonDelete(int id) {
 	syscall( G_DEBUG_POLYGON_DELETE, id );
-}
-
-int trap_RealTime( qtime_t *qtime ) {
-	return syscall( G_REAL_TIME, qtime );
 }
 
 void trap_SnapVector( float *v ) {
@@ -790,3 +715,5 @@ int trap_PC_ReadToken( int handle, pc_token_t *pc_token ) {
 int trap_PC_SourceFileAndLine( int handle, char *filename, int *line ) {
 	return syscall( BOTLIB_PC_SOURCE_FILE_AND_LINE, handle, filename, line );
 }
+
+#include "../qcommon/vm_sharedsyscalls.inc"

@@ -72,47 +72,13 @@ set(GAME_BINARY_SOURCES ${SOURCE_DIR}/game/g_syscalls.c)
 set(GAME_QVM_SOURCES ${SOURCE_DIR}/game/g_syscalls.asm)
 
 set(UI_SOURCES
-    ${SOURCE_DIR}/q3_ui/ui_main.c
+    ${SOURCE_DIR}/ui/ui_main.c
     ${SOURCE_DIR}/game/bg_misc.c
     ${SOURCE_DIR}/game/bg_lib.c
-    ${SOURCE_DIR}/q3_ui/ui_addbots.c
-    ${SOURCE_DIR}/q3_ui/ui_atoms.c
-    ${SOURCE_DIR}/q3_ui/ui_cdkey.c
-    ${SOURCE_DIR}/q3_ui/ui_cinematics.c
-    ${SOURCE_DIR}/q3_ui/ui_confirm.c
-    ${SOURCE_DIR}/q3_ui/ui_connect.c
-    ${SOURCE_DIR}/q3_ui/ui_controls2.c
-    ${SOURCE_DIR}/q3_ui/ui_credits.c
-    ${SOURCE_DIR}/q3_ui/ui_demo2.c
-    ${SOURCE_DIR}/q3_ui/ui_display.c
-    ${SOURCE_DIR}/q3_ui/ui_gameinfo.c
-    ${SOURCE_DIR}/q3_ui/ui_ingame.c
-    ${SOURCE_DIR}/q3_ui/ui_loadconfig.c
-    ${SOURCE_DIR}/q3_ui/ui_menu.c
-    ${SOURCE_DIR}/q3_ui/ui_mfield.c
-    ${SOURCE_DIR}/q3_ui/ui_mods.c
-    ${SOURCE_DIR}/q3_ui/ui_network.c
-    ${SOURCE_DIR}/q3_ui/ui_options.c
-    ${SOURCE_DIR}/q3_ui/ui_playermodel.c
-    ${SOURCE_DIR}/q3_ui/ui_players.c
-    ${SOURCE_DIR}/q3_ui/ui_playersettings.c
-    ${SOURCE_DIR}/q3_ui/ui_preferences.c
-    ${SOURCE_DIR}/q3_ui/ui_qmenu.c
-    ${SOURCE_DIR}/q3_ui/ui_removebots.c
-    ${SOURCE_DIR}/q3_ui/ui_saveconfig.c
-    ${SOURCE_DIR}/q3_ui/ui_serverinfo.c
-    ${SOURCE_DIR}/q3_ui/ui_servers2.c
-    ${SOURCE_DIR}/q3_ui/ui_setup.c
-    ${SOURCE_DIR}/q3_ui/ui_sound.c
-    ${SOURCE_DIR}/q3_ui/ui_sparena.c
-    ${SOURCE_DIR}/q3_ui/ui_specifyserver.c
-    ${SOURCE_DIR}/q3_ui/ui_splevel.c
-    ${SOURCE_DIR}/q3_ui/ui_sppostgame.c
-    ${SOURCE_DIR}/q3_ui/ui_spskill.c
-    ${SOURCE_DIR}/q3_ui/ui_startserver.c
-    ${SOURCE_DIR}/q3_ui/ui_team.c
-    ${SOURCE_DIR}/q3_ui/ui_teamorders.c
-    ${SOURCE_DIR}/q3_ui/ui_video.c
+    ${SOURCE_DIR}/qcommon/vm_javascript.c
+    ${SOURCE_DIR}/qcommon/vm_javascript_core.c
+    ${SOURCE_DIR}/qcommon/vm_javascript_func.c
+    ${SOURCE_DIR}/qcommon/vm_javascript_draw.c
 )
 
 set(UI_BINARY_SOURCES ${SOURCE_DIR}/ui/ui_syscalls.c)

@@ -922,6 +922,27 @@ Only in One Flag CTF games
 
 int		bg_numItems = ARRAY_LEN( bg_itemlist ) - 1;
 
+char* gametypes_names[] = {
+	"Free for All",
+	"Tournament",
+	"Single Player",
+	"Team Deathmatch",
+	"Capture the Flag",
+	"One Flag Capture",
+	"Overload",
+	"Harvester",
+};
+
+char* gametypes_mapnames[] = {
+	"ffa",
+	"tourney",
+	"single",
+	"team",
+	"ctf",
+	"oneflag",
+	"overload",
+	"harvester",
+};
 
 /*
 ==============

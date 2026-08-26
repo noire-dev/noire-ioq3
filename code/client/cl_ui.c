@@ -722,92 +722,6 @@ The ui module is making a system call
 intptr_t CL_UISystemCalls( intptr_t *args ) {
 	int qvmIndex = VM_UI;
 	switch( args[0] ) {
-	case UI_ERROR:
-		Com_Error( ERR_DROP, "%s", (const char*)VMA(1) );
-		return 0;
-
-	case UI_PRINT:
-		Com_Printf( "%s", (const char*)VMA(1) );
-		return 0;
-
-	case UI_MILLISECONDS:
-		return Sys_Milliseconds();
-
-	case UI_CVAR_REGISTER:
-		Cvar_Register( VMA(1), VMA(2), VMA(3), args[4] ); 
-		return 0;
-
-	case UI_CVAR_UPDATE:
-		Cvar_Update( VMA(1) );
-		return 0;
-
-	case UI_CVAR_SET:
-		Cvar_SetSafe( VMA(1), VMA(2) );
-		return 0;
-
-	case UI_CVAR_VARIABLEVALUE:
-		return FloatAsInt( Cvar_VariableValue( VMA(1) ) );
-
-	case UI_CVAR_VARIABLESTRINGBUFFER:
-		Cvar_VariableStringBuffer( VMA(1), VMA(2), args[3] );
-		return 0;
-
-	case UI_CVAR_SETVALUE:
-		Cvar_SetValueSafe( VMA(1), VMF(2) );
-		return 0;
-
-	case UI_CVAR_RESET:
-		Cvar_Reset( VMA(1) );
-		return 0;
-
-	case UI_CVAR_CREATE:
-		Cvar_Register( NULL, VMA(1), VMA(2), args[3] );
-		return 0;
-
-	case UI_CVAR_INFOSTRINGBUFFER:
-		Cvar_InfoStringBuffer( args[1], VMA(2), args[3] );
-		return 0;
-
-	case UI_ARGC:
-		return Cmd_Argc();
-
-	case UI_ARGV:
-		Cmd_ArgvBuffer( args[1], VMA(2), args[3] );
-		return 0;
-
-	case UI_CMD_EXECUTETEXT:
-		if(args[1] == EXEC_NOW
-		&& (!strncmp(VMA(2), "snd_restart", 11)
-		|| !strncmp(VMA(2), "vid_restart", 11)
-		|| !strncmp(VMA(2), "quit", 5)))
-		{
-			Com_Printf (S_COLOR_YELLOW "turning EXEC_NOW '%.11s' into EXEC_INSERT\n", (const char*)VMA(2));
-			args[1] = EXEC_INSERT;
-		}
-		Cbuf_ExecuteText( args[1], VMA(2) );
-		return 0;
-
-	case UI_FS_FOPENFILE:
-		return FS_FOpenFileByMode( VMA(1), VMA(2), args[3] );
-
-	case UI_FS_READ:
-		FS_Read( VMA(1), args[2], args[3] );
-		return 0;
-
-	case UI_FS_WRITE:
-		FS_Write( VMA(1), args[2], args[3] );
-		return 0;
-
-	case UI_FS_FCLOSEFILE:
-		FS_FCloseFile( args[1] );
-		return 0;
-
-	case UI_FS_GETFILELIST:
-		return FS_GetFileList( VMA(1), VMA(2), VMA(3), args[4] );
-
-	case UI_FS_SEEK:
-		return FS_Seek( args[1], args[2], args[3] );
-	
 	case UI_R_REGISTERMODEL:
 		return re.RegisterModel( VMA(1) );
 
@@ -1044,9 +958,6 @@ intptr_t CL_UISystemCalls( intptr_t *args ) {
 	case UI_S_STARTBACKGROUNDTRACK:
 		S_StartBackgroundTrack( VMA(1), VMA(2));
 		return 0;
-
-	case UI_REAL_TIME:
-		return Com_RealTime( VMA(1) );
 
 	case UI_CIN_PLAYCINEMATIC:
 	  Com_DPrintf("UI_CIN_PlayCinematic\n");

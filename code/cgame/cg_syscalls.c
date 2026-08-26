@@ -42,73 +42,6 @@ int PASSFLOAT( float x ) {
 	return fi.i;
 }
 
-void	trap_Print( const char *fmt ) {
-	syscall( CG_PRINT, fmt );
-}
-
-void trap_Error(const char *fmt)
-{
-	syscall(CG_ERROR, fmt);
-	// shut up GCC warning about returning functions, because we know better
-	exit(1);
-}
-
-int		trap_Milliseconds( void ) {
-	return syscall( CG_MILLISECONDS ); 
-}
-
-void	trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags ) {
-	syscall( CG_CVAR_REGISTER, vmCvar, varName, defaultValue, flags );
-}
-
-void	trap_Cvar_Update( vmCvar_t *vmCvar ) {
-	syscall( CG_CVAR_UPDATE, vmCvar );
-}
-
-void	trap_Cvar_Set( const char *var_name, const char *value ) {
-	syscall( CG_CVAR_SET, var_name, value );
-}
-
-void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize ) {
-	syscall( CG_CVAR_VARIABLESTRINGBUFFER, var_name, buffer, bufsize );
-}
-
-int		trap_Argc( void ) {
-	return syscall( CG_ARGC );
-}
-
-void	trap_Argv( int n, char *buffer, int bufferLength ) {
-	syscall( CG_ARGV, n, buffer, bufferLength );
-}
-
-void	trap_Args( char *buffer, int bufferLength ) {
-	syscall( CG_ARGS, buffer, bufferLength );
-}
-
-int		trap_FS_FOpenFile( const char *qpath, fileHandle_t *f, fsMode_t mode ) {
-	return syscall( CG_FS_FOPENFILE, qpath, f, mode );
-}
-
-void	trap_FS_Read( void *buffer, int len, fileHandle_t f ) {
-	syscall( CG_FS_READ, buffer, len, f );
-}
-
-void	trap_FS_Write( const void *buffer, int len, fileHandle_t f ) {
-	syscall( CG_FS_WRITE, buffer, len, f );
-}
-
-void	trap_FS_FCloseFile( fileHandle_t f ) {
-	syscall( CG_FS_FCLOSEFILE, f );
-}
-
-int trap_FS_Seek( fileHandle_t f, long offset, int origin ) {
-	return syscall( CG_FS_SEEK, f, offset, origin );
-}
-
-void	trap_SendConsoleCommand( const char *text ) {
-	syscall( CG_SENDCONSOLECOMMAND, text );
-}
-
 void	trap_AddCommand( const char *cmdName ) {
 	syscall( CG_ADDCOMMAND, cmdName );
 }
@@ -388,10 +321,6 @@ void	trap_S_StopBackgroundTrack( void ) {
 	syscall( CG_S_STOPBACKGROUNDTRACK );
 }
 
-int trap_RealTime(qtime_t *qtime) {
-	return syscall( CG_REAL_TIME, qtime );
-}
-
 void trap_SnapVector( float *v ) {
 	syscall( CG_SNAPVECTOR, v );
 }
@@ -446,3 +375,5 @@ qboolean trap_GetEntityToken( char *buffer, int bufferSize ) {
 qboolean trap_R_inPVS( const vec3_t p1, const vec3_t p2 ) {
 	return syscall( CG_R_INPVS, p1, p2 );
 }
+
+#include "../qcommon/vm_sharedsyscalls.inc"

@@ -257,10 +257,10 @@ static duk_ret_t jsexport_vmcall(duk_context* ctx) {
 	}
 #endif
 
-	if(qvm_id == VM_GAME) VM_Call(gvm, 0, GETVMCONTEXT);
+	if(qvm_id == VM_GAME) VM_Call(gvm, GETVMCONTEXT);
 #ifndef DEDICATED
-	if(qvm_id == VM_CGAME) VM_Call(cgvm, 0, GETVMCONTEXT);
-	if(qvm_id == VM_UI) VM_Call(uivm, 0, GETVMCONTEXT);
+	if(qvm_id == VM_CGAME) VM_Call(cgvm, GETVMCONTEXT);
+	if(qvm_id == VM_UI) VM_Call(uivm, GETVMCONTEXT);
 #endif
 
 	for(int i = 0; i < nargs - 2 && i < MAX_JS_ARGS; i++) {
@@ -283,10 +283,10 @@ static duk_ret_t jsexport_vmcall(duk_context* ctx) {
 		}
 	}
 
-	if(qvm_id == VM_GAME) VM_Call(gvm, 1, VMCALL, func_id);
+	if(qvm_id == VM_GAME) VM_Call(gvm, VMCALL, func_id);
 #ifndef DEDICATED
-	if(qvm_id == VM_CGAME) VM_Call(cgvm, 1, VMCALL, func_id);
-	if(qvm_id == VM_UI) VM_Call(uivm, 1, VMCALL, func_id);
+	if(qvm_id == VM_CGAME) VM_Call(cgvm, VMCALL, func_id);
+	if(qvm_id == VM_UI) VM_Call(uivm, VMCALL, func_id);
 #endif
 
 	switch(vmresult->t) {

@@ -5,16 +5,6 @@
 #define MAX_JS_ARGS 16
 #define MAX_JS_STRINGSIZE 256
 
-typedef enum {
-	VM_BAD = -1,
-	VM_GAME = 0,
-#ifndef USE_DEDICATED
-	VM_CGAME,
-	VM_UI,
-#endif
-	VM_COUNT
-} vmIndex_t;
-
 typedef enum { JS_TYPE_NONE, JS_TYPE_INT, JS_TYPE_FLOAT, JS_TYPE_STRING } js_type_t;
 
 typedef struct {

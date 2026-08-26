@@ -105,42 +105,6 @@ typedef struct {
 // system traps provided by the main engine
 //
 typedef enum {
-	//============== general Quake services ==================
-
-	G_PRINT,		// ( const char *string );
-	// print message on the local console
-
-	G_ERROR,		// ( const char *string );
-	// abort the game
-
-	G_MILLISECONDS,	// ( void );
-	// get current time for profiling reasons
-	// this should NOT be used for any game related tasks,
-	// because it is not journaled
-
-	// console variable interaction
-	G_CVAR_REGISTER,	// ( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags );
-	G_CVAR_UPDATE,	// ( vmCvar_t *vmCvar );
-	G_CVAR_SET,		// ( const char *var_name, const char *value );
-	G_CVAR_VARIABLE_INTEGER_VALUE,	// ( const char *var_name );
-
-	G_CVAR_VARIABLE_STRING_BUFFER,	// ( const char *var_name, char *buffer, int bufsize );
-
-	G_ARGC,			// ( void );
-	// ClientCommand and ServerCommand parameter access
-
-	G_ARGV,			// ( int n, char *buffer, int bufferLength );
-
-	G_FS_FOPEN_FILE,	// ( const char *qpath, fileHandle_t *file, fsMode_t mode );
-	G_FS_READ,		// ( void *buffer, int len, fileHandle_t f );
-	G_FS_WRITE,		// ( const void *buffer, int len, fileHandle_t f );
-	G_FS_FCLOSE_FILE,		// ( fileHandle_t f );
-
-	G_SEND_CONSOLE_COMMAND,	// ( const char *text );
-	// add commands to the console as if they were typed in
-	// for map changing, etc
-
-
 	//=========== server specific functionality =============
 
 	G_LOCATE_GAME_DATA,		// ( gentity_t *gEnts, int numGEntities, int sizeofGEntity_t,
@@ -221,7 +185,6 @@ typedef enum {
 	G_FS_GETFILELIST,
 	G_DEBUG_POLYGON_CREATE,
 	G_DEBUG_POLYGON_DELETE,
-	G_REAL_TIME,
 	G_SNAPVECTOR,
 
 	G_TRACECAPSULE,	// ( trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask );

@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 //
 #include "../qcommon/q_shared.h"
+#include "../qcommon/vm_sharedsyscalls.h"
 #include "../renderercommon/tr_types.h"
 #include "../game/bg_public.h"
 #include "cg_public.h"
@@ -1476,41 +1477,6 @@ void CG_CheckChangedPredictableEvents( playerState_t *ps );
 // These functions are how the cgame communicates with the main game system
 //
 
-// print message on the local console
-void		trap_Print( const char *fmt );
-
-// abort the game
-void		trap_Error(const char *fmt) Q_NO_RETURN;
-
-// milliseconds should only be used for performance tuning, never
-// for anything game related.  Get time from the CG_DrawActiveFrame parameter
-int			trap_Milliseconds( void );
-
-// console variable interaction
-void		trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags );
-void		trap_Cvar_Update( vmCvar_t *vmCvar );
-void		trap_Cvar_Set( const char *var_name, const char *value );
-void		trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize );
-
-// ServerCommand and ConsoleCommand parameter access
-int			trap_Argc( void );
-void		trap_Argv( int n, char *buffer, int bufferLength );
-void		trap_Args( char *buffer, int bufferLength );
-
-// filesystem access
-// returns length of file
-int			trap_FS_FOpenFile( const char *qpath, fileHandle_t *f, fsMode_t mode );
-void		trap_FS_Read( void *buffer, int len, fileHandle_t f );
-void		trap_FS_Write( const void *buffer, int len, fileHandle_t f );
-void		trap_FS_FCloseFile( fileHandle_t f );
-int			trap_FS_Seek( fileHandle_t f, long offset, int origin ); // fsOrigin_t
-
-// add commands to the local console as if they were typed in
-// for map changing, etc.  The command is not executed immediately,
-// but will be executed in order the next time console commands
-// are processed
-void		trap_SendConsoleCommand( const char *text );
-
 // register a command name so the console can perform command completion.
 // FIXME: replace this with a normal console command "defineCommand"?
 void		trap_AddCommand( const char *cmdName );
@@ -1661,7 +1627,6 @@ e_status trap_CIN_RunCinematic (int handle);
 void trap_CIN_DrawCinematic (int handle);
 void trap_CIN_SetExtents (int handle, int x, int y, int w, int h);
 
-int			trap_RealTime(qtime_t *qtime);
 void		trap_SnapVector( float *v );
 
 qboolean	trap_loadCamera(const char *name);

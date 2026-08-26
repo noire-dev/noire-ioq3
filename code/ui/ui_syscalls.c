@@ -40,95 +40,6 @@ int PASSFLOAT( float x ) {
 	return fi.i;
 }
 
-void trap_Print( const char *string ) {
-	syscall( UI_PRINT, string );
-}
-
-void trap_Error(const char *string)
-{
-	syscall(UI_ERROR, string);
-	// shut up GCC warning about returning functions, because we know better
-	exit(1);
-}
-
-int trap_Milliseconds( void ) {
-	return syscall( UI_MILLISECONDS ); 
-}
-
-void trap_Cvar_Register( vmCvar_t *cvar, const char *var_name, const char *value, int flags ) {
-	syscall( UI_CVAR_REGISTER, cvar, var_name, value, flags );
-}
-
-void trap_Cvar_Update( vmCvar_t *cvar ) {
-	syscall( UI_CVAR_UPDATE, cvar );
-}
-
-void trap_Cvar_Set( const char *var_name, const char *value ) {
-	syscall( UI_CVAR_SET, var_name, value );
-}
-
-float trap_Cvar_VariableValue( const char *var_name ) {
-	floatint_t fi;
-	fi.i = syscall( UI_CVAR_VARIABLEVALUE, var_name );
-	return fi.f;
-}
-
-void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize ) {
-	syscall( UI_CVAR_VARIABLESTRINGBUFFER, var_name, buffer, bufsize );
-}
-
-void trap_Cvar_SetValue( const char *var_name, float value ) {
-	syscall( UI_CVAR_SETVALUE, var_name, PASSFLOAT( value ) );
-}
-
-void trap_Cvar_Reset( const char *name ) {
-	syscall( UI_CVAR_RESET, name ); 
-}
-
-void trap_Cvar_Create( const char *var_name, const char *var_value, int flags ) {
-	syscall( UI_CVAR_CREATE, var_name, var_value, flags );
-}
-
-void trap_Cvar_InfoStringBuffer( int bit, char *buffer, int bufsize ) {
-	syscall( UI_CVAR_INFOSTRINGBUFFER, bit, buffer, bufsize );
-}
-
-int trap_Argc( void ) {
-	return syscall( UI_ARGC );
-}
-
-void trap_Argv( int n, char *buffer, int bufferLength ) {
-	syscall( UI_ARGV, n, buffer, bufferLength );
-}
-
-void trap_Cmd_ExecuteText( int exec_when, const char *text ) {
-	syscall( UI_CMD_EXECUTETEXT, exec_when, text );
-}
-
-int trap_FS_FOpenFile( const char *qpath, fileHandle_t *f, fsMode_t mode ) {
-	return syscall( UI_FS_FOPENFILE, qpath, f, mode );
-}
-
-void trap_FS_Read( void *buffer, int len, fileHandle_t f ) {
-	syscall( UI_FS_READ, buffer, len, f );
-}
-
-void trap_FS_Write( const void *buffer, int len, fileHandle_t f ) {
-	syscall( UI_FS_WRITE, buffer, len, f );
-}
-
-void trap_FS_FCloseFile( fileHandle_t f ) {
-	syscall( UI_FS_FCLOSEFILE, f );
-}
-
-int trap_FS_GetFileList(  const char *path, const char *extension, char *listbuf, int bufsize ) {
-	return syscall( UI_FS_GETFILELIST, path, extension, listbuf, bufsize );
-}
-
-int trap_FS_Seek( fileHandle_t f, long offset, int origin ) {
-	return syscall( UI_FS_SEEK, f, offset, origin );
-}
-
 qhandle_t trap_R_RegisterModel( const char *name ) {
 	return syscall( UI_R_REGISTERMODEL, name );
 }
@@ -357,10 +268,6 @@ void trap_S_StartBackgroundTrack( const char *intro, const char *loop) {
 	syscall( UI_S_STARTBACKGROUNDTRACK, intro, loop );
 }
 
-int trap_RealTime(qtime_t *qtime) {
-	return syscall( UI_REAL_TIME, qtime );
-}
-
 // this returns a handle.  arg0 is the name in the format "idlogo.roq", set arg1 to NULL, alteredstates to qfalse (do not alter gamestate)
 int trap_CIN_PlayCinematic( const char *arg0, int xpos, int ypos, int width, int height, int bits) {
   return syscall(UI_CIN_PLAYCINEMATIC, arg0, xpos, ypos, width, height, bits);
@@ -402,3 +309,5 @@ qboolean trap_VerifyCDKey( const char *key, const char *chksum) {
 void trap_SetPbClStatus( int status ) {
 	syscall( UI_SET_PBCLSTATUS, status );
 }
+
+#include "../qcommon/vm_sharedsyscalls.inc"

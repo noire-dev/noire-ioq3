@@ -292,53 +292,6 @@ The module is making a system call
 intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	int qvmIndex = VM_GAME;
 	switch( args[0] ) {
-	case G_PRINT:
-		Com_Printf( "%s", (const char*)VMA(1) );
-		return 0;
-	case G_ERROR:
-		Com_Error( ERR_DROP, "%s", (const char*)VMA(1) );
-		return 0;
-	case G_MILLISECONDS:
-		return Sys_Milliseconds();
-	case G_CVAR_REGISTER:
-		Cvar_Register( VMA(1), VMA(2), VMA(3), args[4] ); 
-		return 0;
-	case G_CVAR_UPDATE:
-		Cvar_Update( VMA(1) );
-		return 0;
-	case G_CVAR_SET:
-		Cvar_SetSafe( (const char *)VMA(1), (const char *)VMA(2) );
-		return 0;
-	case G_CVAR_VARIABLE_INTEGER_VALUE:
-		return Cvar_VariableIntegerValue( (const char *)VMA(1) );
-	case G_CVAR_VARIABLE_STRING_BUFFER:
-		Cvar_VariableStringBuffer( VMA(1), VMA(2), args[3] );
-		return 0;
-	case G_ARGC:
-		return Cmd_Argc();
-	case G_ARGV:
-		Cmd_ArgvBuffer( args[1], VMA(2), args[3] );
-		return 0;
-	case G_SEND_CONSOLE_COMMAND:
-		Cbuf_ExecuteText( args[1], VMA(2) );
-		return 0;
-
-	case G_FS_FOPEN_FILE:
-		return FS_FOpenFileByMode( VMA(1), VMA(2), args[3] );
-	case G_FS_READ:
-		FS_Read( VMA(1), args[2], args[3] );
-		return 0;
-	case G_FS_WRITE:
-		FS_Write( VMA(1), args[2], args[3] );
-		return 0;
-	case G_FS_FCLOSE_FILE:
-		FS_FCloseFile( args[1] );
-		return 0;
-	case G_FS_GETFILELIST:
-		return FS_GetFileList( VMA(1), VMA(2), VMA(3), args[4] );
-	case G_FS_SEEK:
-		return FS_Seek( args[1], args[2], args[3] );
-
 	case G_LOCATE_GAME_DATA:
 		SV_LocateGameData( VMA(1), args[2], args[3], VMA(4), args[5] );
 		return 0;
@@ -424,8 +377,6 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	case G_DEBUG_POLYGON_DELETE:
 		BotImport_DebugPolygonDelete( args[1] );
 		return 0;
-	case G_REAL_TIME:
-		return Com_RealTime( VMA(1) );
 	case G_SNAPVECTOR:
 		Q_SnapVector(VMA(1));
 		return 0;

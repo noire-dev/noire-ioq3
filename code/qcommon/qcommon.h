@@ -334,30 +334,6 @@ typedef enum {
 	VMI_COMPILED
 } vmInterpret_t;
 
-typedef enum {
-	TRAP_JS_CONTEXT = 10000,
-	TRAP_JS_OPENFILE,
-	TRAP_JS_LOADSCRIPTS,
-	TRAP_JS_EVAL,
-	TRAP_JS_CALL,
-	
-	TRAP_MEMSET = 20000,
-	TRAP_MEMCPY,
-	TRAP_STRNCPY,
-	TRAP_SIN,
-	TRAP_COS,
-	TRAP_ATAN2,
-	TRAP_SQRT,
-	TRAP_MATRIXMULTIPLY,
-	TRAP_ANGLEVECTORS,
-	TRAP_PERPENDICULARVECTOR,
-	TRAP_FLOOR,
-	TRAP_CEIL,
-
-	TRAP_TESTPRINTINT,
-	TRAP_TESTPRINTFLOAT
-} sharedTraps_t;
-
 typedef intptr_t (QDECL *vmMainProc)(int callNum, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
 
 void	VM_Init( void );
@@ -538,7 +514,7 @@ int		Cvar_VariableIntegerValue( const char *var_name );
 // returns 0 if not defined or non numeric
 
 char	*Cvar_VariableString( const char *var_name );
-void	Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize );
+int		Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize );
 // returns an empty string if not defined
 
 int	Cvar_Flags(const char *var_name);

@@ -101,21 +101,21 @@ void CG_CheckOrderPending(void) {
 		if (cg_currentSelectedPlayer.integer == numSortedTeamPlayers) {
 			if (p2) {
 				// to everyone
-				trap_SendConsoleCommand(va("cmd vsay_team %s\n", p2));
+				trap_SendConsoleCommand(EXEC_INSERT, va("cmd vsay_team %s\n", p2));
 			}
 		} else {
 			// for the player self
 			if (sortedTeamPlayers[cg_currentSelectedPlayer.integer] == cg.snap->ps.clientNum && p1) {
-				trap_SendConsoleCommand(va("teamtask %i\n", cgs.currentOrder));
-				//trap_SendConsoleCommand(va("cmd say_team %s\n", p2));
-				trap_SendConsoleCommand(va("cmd vsay_team %s\n", p1));
+				trap_SendConsoleCommand(EXEC_INSERT, va("teamtask %i\n", cgs.currentOrder));
+				//trap_SendConsoleCommand(EXEC_INSERT, va("cmd say_team %s\n", p2));
+				trap_SendConsoleCommand(EXEC_INSERT, va("cmd vsay_team %s\n", p1));
 			} else if (p2) {
-				//trap_SendConsoleCommand(va("cmd say_team %s, %s\n", ci->name,p));
-				trap_SendConsoleCommand(va("cmd vtell %d %s\n", sortedTeamPlayers[cg_currentSelectedPlayer.integer], p2));
+				//trap_SendConsoleCommand(EXEC_INSERT, va("cmd say_team %s, %s\n", ci->name,p));
+				trap_SendConsoleCommand(EXEC_INSERT, va("cmd vtell %d %s\n", sortedTeamPlayers[cg_currentSelectedPlayer.integer], p2));
 			}
 		}
 		if (b) {
-			trap_SendConsoleCommand(b);
+			trap_SendConsoleCommand(EXEC_INSERT, b);
 		}
 		cgs.orderPending = qfalse;
 	}

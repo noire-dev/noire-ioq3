@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // g_local.h -- local definitions for game module
 
 #include "../qcommon/q_shared.h"
+#include "../qcommon/vm_sharedsyscalls.h"
 #include "bg_public.h"
 #include "g_public.h"
 
@@ -744,26 +745,6 @@ extern	vmCvar_t	g_singlePlayer;
 extern	vmCvar_t	g_proxMineTimeout;
 extern	vmCvar_t	g_localTeamPref;
 
-void	trap_Print( const char *text );
-void	trap_Error( const char *text ) Q_NO_RETURN;
-int		trap_Milliseconds( void );
-int	trap_RealTime( qtime_t *qtime );
-int		trap_Argc( void );
-void	trap_Argv( int n, char *buffer, int bufferLength );
-void	trap_Args( char *buffer, int bufferLength );
-int		trap_FS_FOpenFile( const char *qpath, fileHandle_t *f, fsMode_t mode );
-void	trap_FS_Read( void *buffer, int len, fileHandle_t f );
-void	trap_FS_Write( const void *buffer, int len, fileHandle_t f );
-void	trap_FS_FCloseFile( fileHandle_t f );
-int		trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, int bufsize );
-int		trap_FS_Seek( fileHandle_t f, long offset, int origin ); // fsOrigin_t
-void	trap_SendConsoleCommand( int exec_when, const char *text );
-void	trap_Cvar_Register( vmCvar_t *cvar, const char *var_name, const char *value, int flags );
-void	trap_Cvar_Update( vmCvar_t *cvar );
-void	trap_Cvar_Set( const char *var_name, const char *value );
-int		trap_Cvar_VariableIntegerValue( const char *var_name );
-float	trap_Cvar_VariableValue( const char *var_name );
-void	trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize );
 void	trap_LocateGameData( gentity_t *gEnts, int numGEntities, int sizeofGEntity_t, playerState_t *gameClients, int sizeofGameClient );
 void	trap_DropClient( int clientNum, const char *reason );
 void	trap_SendServerCommand( int clientNum, const char *text );
