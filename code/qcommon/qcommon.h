@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define _QCOMMON_H_
 
 #include "../qcommon/cm_public.h"
+#include "js_local.h"
 
 //#define	PRE_RELEASE_DEMO
 
@@ -324,6 +325,9 @@ VIRTUAL MACHINE
 
 typedef struct vm_s vm_t;
 
+#define GETVMCONTEXT 1000
+#define VMCALL 1001
+
 typedef enum {
 	VMI_NATIVE,
 	VMI_BYTECODE,
@@ -522,6 +526,7 @@ void	Cvar_SetValue( const char *var_name, float value );
 void	Cvar_SetValueSafe( const char *var_name, float value );
 // expands value to a string and calls Cvar_Set/Cvar_SetSafe
 
+cvar_t *Cvar_FindVar( const char *var_name );
 float	Cvar_VariableValue( const char *var_name );
 int		Cvar_VariableIntegerValue( const char *var_name );
 // returns 0 if not defined or non numeric

@@ -12,6 +12,7 @@ set(COMMON_SOURCES
     ${SOURCE_DIR}/qcommon/cmd.c
     ${SOURCE_DIR}/qcommon/common.c
     ${SOURCE_DIR}/qcommon/cvar.c
+    ${SOURCE_DIR}/qcommon/duktape.c
     ${SOURCE_DIR}/qcommon/files.c
     ${SOURCE_DIR}/qcommon/md4.c
     ${SOURCE_DIR}/qcommon/md5.c
@@ -23,6 +24,7 @@ set(COMMON_SOURCES
     ${SOURCE_DIR}/qcommon/q_shared.c
     ${SOURCE_DIR}/qcommon/unzip.c
     ${SOURCE_DIR}/qcommon/ioapi.c
+    ${SOURCE_DIR}/qcommon/js_main.c  
     ${SOURCE_DIR}/qcommon/vm.c
     ${SOURCE_DIR}/qcommon/vm_armv7l.c
     ${SOURCE_DIR}/qcommon/vm_interpreted.c
