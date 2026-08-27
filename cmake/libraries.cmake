@@ -60,12 +60,26 @@ if(USE_OPENAL AND BUILD_CLIENT)
 endif()
 
 if(USE_CODEC_OPUS AND BUILD_CLIENT)
-    find_package(Opus CONFIG REQUIRED)
-    find_package(OpusFile CONFIG REQUIRED)
-    list(APPEND CLIENT_LIBRARIES
-        Opus::opus
-        OpusFile::opusfile
-    )
+    find_package(Opus CONFIG QUIET)
+    find_package(OpusFile CONFIG QUIET)
+
+    if(Opus_FOUND AND OpusFile_FOUND)
+        list(APPEND CLIENT_LIBRARIES
+            Opus::opus
+            OpusFile::opusfile
+        )
+    else()
+        find_package(PkgConfig REQUIRED)
+
+        pkg_check_modules(OPUS REQUIRED IMPORTED_TARGET opus)
+        pkg_check_modules(OPUSFILE REQUIRED IMPORTED_TARGET opusfile)
+
+        list(APPEND CLIENT_LIBRARIES
+            PkgConfig::OPUS
+            PkgConfig::OPUSFILE
+        )
+    endif()
+
     list(APPEND CLIENT_DEFINITIONS USE_CODEC_OPUS)
 endif()
 
@@ -86,11 +100,29 @@ if(BUILD_CLIENT)
 endif()
 
 if(USE_CODEC_VORBIS AND BUILD_CLIENT)
-    find_package(Vorbis CONFIG REQUIRED)
-    list(APPEND CLIENT_LIBRARIES
-        Vorbis::vorbis
-        Vorbis::vorbisfile
-    )
+    find_package(Ogg CONFIG QUIET)
+    find_package(Vorbis CONFIG QUIET)
+
+    if(Ogg_FOUND AND Vorbis_FOUND)
+        list(APPEND CLIENT_LIBRARIES
+            Ogg::ogg
+            Vorbis::vorbis
+            Vorbis::vorbisfile
+        )
+    else()
+        find_package(PkgConfig REQUIRED)
+
+        pkg_check_modules(OGG REQUIRED IMPORTED_TARGET ogg)
+        pkg_check_modules(VORBIS REQUIRED IMPORTED_TARGET vorbis)
+        pkg_check_modules(VORBISFILE REQUIRED IMPORTED_TARGET vorbisfile)
+
+        list(APPEND CLIENT_LIBRARIES
+            PkgConfig::OGG
+            PkgConfig::VORBIS
+            PkgConfig::VORBISFILE
+        )
+    endif()
+
     list(APPEND CLIENT_DEFINITIONS USE_CODEC_VORBIS)
 endif()
 
