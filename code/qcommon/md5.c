@@ -308,3 +308,25 @@ char *Com_MD5File( const char *fn, int length, const char *prefix, int prefix_le
 	}
 	return final;
 }
+
+unsigned Com_BlockChecksum( const void *buffer, int length )
+{
+	MD5_CTX md5;
+	unsigned char digest[16];
+	uint32_t words[4];
+	unsigned val;
+
+	MD5Init( &md5 );
+
+	if ( buffer && length > 0 ) {
+		MD5Update( &md5, (const unsigned char *)buffer, (unsigned)length );
+	}
+
+	MD5Final( &md5, digest );
+
+	memcpy( words, digest, sizeof( words ) );
+
+	val = words[0] ^ words[1] ^ words[2] ^ words[3];
+
+	return val;
+}
