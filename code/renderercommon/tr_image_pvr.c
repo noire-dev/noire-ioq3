@@ -36,13 +36,9 @@ typedef struct pvr {
 } pvr_t;
 
 typedef unsigned int (*pvr_pixel_func_t)(unsigned short color);
-typedef byte *(*pvr_image_func_t)(pvr_t *pvr, int offset, qboolean detwiddle, pvr_pixel_func_t pixel_func);
+typedef byte* (*pvr_image_func_t)(pvr_t* pvr, int offset, qboolean detwiddle, pvr_pixel_func_t pixel_func);
 
-enum {
-	PVR_PIXEL_TYPE_ARGB1555 = 0,
-	PVR_PIXEL_TYPE_RGB565 = 1,
-	PVR_PIXEL_TYPE_ARGB4444 = 2
-};
+enum { PVR_PIXEL_TYPE_ARGB1555 = 0, PVR_PIXEL_TYPE_RGB565 = 1, PVR_PIXEL_TYPE_ARGB4444 = 2 };
 
 enum {
 	PVR_IMAGE_TYPE_TWIDDLED = 1,
@@ -53,10 +49,8 @@ enum {
 	PVR_IMAGE_TYPE_RECTANGULAR_MM = 10
 };
 
-static int log2approx(int x)
-{
-	switch (x)
-	{
+static int log2approx(int x) {
+	switch(x) {
 		case 8: return 3;
 		case 16: return 4;
 		case 32: return 5;
@@ -69,34 +63,24 @@ static int log2approx(int x)
 	}
 }
 
-static int pvr_detwiddle(int x, int y, int w, int h)
-{
+static int pvr_detwiddle(int x, int y, int w, int h) {
 	int wmax, hmax;
 	int i, idx = 0;
 
 	wmax = log2approx(w);
 	hmax = log2approx(h);
 
-	if (wmax < 0 || hmax < 0)
-		return -1;
+	if(wmax < 0 || hmax < 0) return -1;
 
-	for (i = 0; i < 10; i++)
-	{
-		if (i < wmax && i < hmax)
-		{
+	for(i = 0; i < 10; i++) {
+		if(i < wmax && i < hmax) {
 			idx |= ((y >> i) & 1) << (i * 2 + 0);
 			idx |= ((x >> i) & 1) << (i * 2 + 1);
-		}
-		else if (i < wmax)
-		{
+		} else if(i < wmax) {
 			idx |= ((x >> i) & 1) << (i + hmax);
-		}
-		else if (i < hmax)
-		{
+		} else if(i < hmax) {
 			idx |= ((y >> i) & 1) << (i + wmax);
-		}
-		else
-		{
+		} else {
 			break;
 		}
 	}
@@ -104,8 +88,7 @@ static int pvr_detwiddle(int x, int y, int w, int h)
 	return idx;
 }
 
-static unsigned int argb1555_to_rgba8888(unsigned short color)
-{
+static unsigned int argb1555_to_rgba8888(unsigned short color) {
 	unsigned char r, g, b, a;
 	r = ((color >> 10) & 31) << 4;
 	g = ((color >> 5) & 31) << 4;
@@ -114,8 +97,7 @@ static unsigned int argb1555_to_rgba8888(unsigned short color)
 	return (a << 24) | (b << 16) | (g << 8) | r;
 }
 
-static unsigned int rgb565_to_rgba8888(unsigned short color)
-{
+static unsigned int rgb565_to_rgba8888(unsigned short color) {
 	unsigned char r, g, b, a;
 	r = ((color >> 11) & 31) << 3;
 	g = ((color >> 5) & 63) << 2;
@@ -124,8 +106,7 @@ static unsigned int rgb565_to_rgba8888(unsigned short color)
 	return (a << 24) | (b << 16) | (g << 8) | r;
 }
 
-static unsigned int argb4444_to_rgba8888(unsigned short color)
-{
+static unsigned int argb4444_to_rgba8888(unsigned short color) {
 	unsigned char r, g, b, a;
 	r = ((color >> 8) & 15) << 4;
 	g = ((color >> 4) & 15) << 4;
@@ -134,10 +115,8 @@ static unsigned int argb4444_to_rgba8888(unsigned short color)
 	return (a << 24) | (b << 16) | (g << 8) | r;
 }
 
-static int mm_offset(int w)
-{
-	switch (w)
-	{
+static int mm_offset(int w) {
+	switch(w) {
 		case 1: return 0x00006;
 		case 2: return 0x00008;
 		case 4: return 0x00010;
@@ -153,10 +132,8 @@ static int mm_offset(int w)
 	}
 }
 
-static int mm_offset_vq(int w)
-{
-	switch (w)
-	{
+static int mm_offset_vq(int w) {
+	switch(w) {
 		case 1: return 0x00000;
 		case 2: return 0x00001;
 		case 4: return 0x00002;
@@ -172,39 +149,34 @@ static int mm_offset_vq(int w)
 	}
 }
 
-static byte *decode_mm(pvr_t *pvr, pvr_image_func_t image_func, pvr_pixel_func_t pixel_func, qboolean vq, qboolean detwiddle)
-{
+static byte* decode_mm(pvr_t* pvr, pvr_image_func_t image_func, pvr_pixel_func_t pixel_func, qboolean vq, qboolean detwiddle) {
 	int offset = vq ? mm_offset_vq(pvr->width) : mm_offset(pvr->width);
 	return image_func(pvr, offset, detwiddle, pixel_func);
 }
 
-static byte *decode(pvr_t *pvr, int offset, qboolean detwiddle, pvr_pixel_func_t pixel_func)
-{
+static byte* decode(pvr_t* pvr, int offset, qboolean detwiddle, pvr_pixel_func_t pixel_func) {
 	int x, y;
-	unsigned int *rgba32;
-	byte *ret;
+	unsigned int* rgba32;
+	byte* ret;
 
-	ret = (byte *)ri.Malloc(pvr->width * pvr->height * sizeof(unsigned int));
-	rgba32 = (unsigned int *)ret;
+	ret = (byte*)ri.Malloc(pvr->width * pvr->height * sizeof(unsigned int));
+	rgba32 = (unsigned int*)ret;
 
-	for (y = 0; y < pvr->height; y++)
-	{
-		for (x = 0; x < pvr->width; x++)
-		{
+	for(y = 0; y < pvr->height; y++) {
+		for(x = 0; x < pvr->width; x++) {
 			unsigned short color;
 			int ofs;
-			if (detwiddle)
+			if(detwiddle)
 				ofs = offset + pvr_detwiddle(x, y, pvr->width, pvr->height) * 2;
 			else
 				ofs = offset + (y * pvr->width + x) * 2;
 
-			if (ofs < 0)
-			{
+			if(ofs < 0) {
 				ri.Free(ret);
 				return NULL;
 			}
 
-			color = *(unsigned short *)(((byte *)(pvr + 1)) + ofs);
+			color = *(unsigned short*)(((byte*)(pvr + 1)) + ofs);
 
 			rgba32[y * pvr->width + x] = pixel_func(color);
 		}
@@ -213,34 +185,30 @@ static byte *decode(pvr_t *pvr, int offset, qboolean detwiddle, pvr_pixel_func_t
 	return ret;
 }
 
-static byte *decode_vq(pvr_t *pvr, int offset, qboolean detwiddle, pvr_pixel_func_t pixel_func)
-{
+static byte* decode_vq(pvr_t* pvr, int offset, qboolean detwiddle, pvr_pixel_func_t pixel_func) {
 	int x, y;
-	unsigned int *rgba32;
-	unsigned short *codebook;
-	unsigned char *indices;
-	byte *ret;
+	unsigned int* rgba32;
+	unsigned short* codebook;
+	unsigned char* indices;
+	byte* ret;
 
-	ret = (byte *)ri.Malloc(pvr->width * pvr->height * (pixel_func ? sizeof(unsigned int) : sizeof(unsigned short)));
-	rgba32 = (unsigned int *)ret;
+	ret = (byte*)ri.Malloc(pvr->width * pvr->height * (pixel_func ? sizeof(unsigned int) : sizeof(unsigned short)));
+	rgba32 = (unsigned int*)ret;
 
-	codebook = (unsigned short *)(pvr + 1);
-	indices = ((unsigned char *)(codebook + 1024)) + offset;
+	codebook = (unsigned short*)(pvr + 1);
+	indices = ((unsigned char*)(codebook + 1024)) + offset;
 
-	for (y = 0; y < pvr->height / 2; y++)
-	{
-		for (x = 0; x < pvr->width / 2; x++)
-		{
-			unsigned short *colors;
+	for(y = 0; y < pvr->height / 2; y++) {
+		for(x = 0; x < pvr->width / 2; x++) {
+			unsigned short* colors;
 			int a, b, c, d;
 			int idx;
-			if (detwiddle)
+			if(detwiddle)
 				idx = pvr_detwiddle(x, y, pvr->width, pvr->height);
 			else
 				idx = y * (pvr->width / 2) + x;
 
-			if (idx < 0)
-			{
+			if(idx < 0) {
 				ri.Free(ret);
 				return NULL;
 			}
@@ -262,42 +230,36 @@ static byte *decode_vq(pvr_t *pvr, int offset, qboolean detwiddle, pvr_pixel_fun
 	return ret;
 }
 
-void R_LoadPVR(const char *name, byte **pic, int *width, int *height)
-{
+void R_LoadPVR(const char* name, byte** pic, int* width, int* height) {
 	unsigned int length;
-	void *buffer;
-	byte *ptr;
-	pvr_t *pvr;
+	void* buffer;
+	byte* ptr;
+	pvr_t* pvr;
 	int pixel_type, image_type;
 	pvr_pixel_func_t pixel_func;
-	byte *ret = NULL;
+	byte* ret = NULL;
 
 	*pic = NULL;
-	if (width)
-		*width = 0;
-	if (height)
-		*height = 0;
+	if(width) *width = 0;
+	if(height) *height = 0;
 
 	// load the file
-	length = ri.FS_ReadFile((char *)name, &buffer);
-	if (!buffer || length < 0)
-		return;
+	length = ri.FS_ReadFile((char*)name, &buffer);
+	if(!buffer || length < 0) return;
 
-	ptr = (byte *)buffer;
+	ptr = (byte*)buffer;
 
 	// skip global index
-	if (memcmp(ptr, "GBIX", 4) == 0)
-	{
-		gbix_t *gbix = (gbix_t *)ptr;
+	if(memcmp(ptr, "GBIX", 4) == 0) {
+		gbix_t* gbix = (gbix_t*)ptr;
 		ptr += sizeof(gbix_t) + LittleLong(gbix->len);
 	}
 
 	// check magic identifier
-	if (memcmp(ptr, "PVRT", 4) != 0)
-		ri.Error(ERR_DROP, "LoadPVR: magic identifier does not match expected (%s)", name);
+	if(memcmp(ptr, "PVRT", 4) != 0) ri.Error(ERR_DROP, "LoadPVR: magic identifier does not match expected (%s)", name);
 
 	// fix up header
-	pvr = (pvr_t *)ptr;
+	pvr = (pvr_t*)ptr;
 	pvr->len_file = LittleLong(pvr->len_file);
 	pvr->type = LittleLong(pvr->type);
 	pvr->width = LittleShort(pvr->width);
@@ -308,65 +270,52 @@ void R_LoadPVR(const char *name, byte **pic, int *width, int *height)
 	image_type = (pvr->type & 0xFF00) >> 8;
 
 	// get pixel function
-	switch (pixel_type)
-	{
-		case PVR_PIXEL_TYPE_ARGB1555:
-		{
+	switch(pixel_type) {
+		case PVR_PIXEL_TYPE_ARGB1555: {
 			pixel_func = argb1555_to_rgba8888;
 			break;
 		}
-		case PVR_PIXEL_TYPE_RGB565:
-		{
+		case PVR_PIXEL_TYPE_RGB565: {
 			pixel_func = rgb565_to_rgba8888;
 			break;
 		}
-		case PVR_PIXEL_TYPE_ARGB4444:
-		{
+		case PVR_PIXEL_TYPE_ARGB4444: {
 			pixel_func = argb4444_to_rgba8888;
 			break;
 		}
-		default:
-		{
+		default: {
 			ri.Error(ERR_DROP, "LoadPVR: unsupported pixel type 0x%02x (%s)", pixel_type, name);
 			break;
 		}
 	}
 
 	// decompress image
-	switch (image_type)
-	{
-		case PVR_IMAGE_TYPE_TWIDDLED:
-		{
+	switch(image_type) {
+		case PVR_IMAGE_TYPE_TWIDDLED: {
 			ret = decode(pvr, 0, qtrue, pixel_func);
 			break;
 		}
-		case PVR_IMAGE_TYPE_TWIDDLED_MM:
-		{
+		case PVR_IMAGE_TYPE_TWIDDLED_MM: {
 			ret = decode_mm(pvr, decode, pixel_func, qfalse, qtrue);
 			break;
 		}
-		case PVR_IMAGE_TYPE_VQ:
-		{
+		case PVR_IMAGE_TYPE_VQ: {
 			ret = decode_vq(pvr, 0, qtrue, pixel_func);
 			break;
 		}
-		case PVR_IMAGE_TYPE_VQ_MM:
-		{
+		case PVR_IMAGE_TYPE_VQ_MM: {
 			ret = decode_mm(pvr, decode_vq, pixel_func, qtrue, qtrue);
 			break;
 		}
-		case PVR_IMAGE_TYPE_RECTANGULAR:
-		{
+		case PVR_IMAGE_TYPE_RECTANGULAR: {
 			ret = decode(pvr, 0, qfalse, pixel_func);
 			break;
 		}
-		case PVR_IMAGE_TYPE_RECTANGULAR_MM:
-		{
+		case PVR_IMAGE_TYPE_RECTANGULAR_MM: {
 			ret = decode_mm(pvr, decode, pixel_func, qfalse, qfalse);
 			break;
 		}
-		default:
-		{
+		default: {
 			ri.Error(ERR_DROP, "LoadPVR: unsupported image type 0x%02x (%s)", image_type, name);
 			break;
 		}
@@ -376,13 +325,10 @@ void R_LoadPVR(const char *name, byte **pic, int *width, int *height)
 	ri.FS_FreeFile(buffer);
 
 	// something failed
-	if (!ret)
-		return;
+	if(!ret) return;
 
 	// return stuff
 	*pic = ret;
-	if (width)
-		*width = pvr->width;
-	if (height)
-		*height = pvr->height;
+	if(width) *width = pvr->width;
+	if(height) *height = pvr->height;
 }

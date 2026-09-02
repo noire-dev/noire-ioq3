@@ -25,76 +25,64 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "client.h"
 
 #ifdef USE_INTERNAL_CURL_HEADERS
-  #include "curl/curl.h"
+#include "curl/curl.h"
 #else
-  #include <curl/curl.h>
+#include <curl/curl.h>
 #endif
 
 #ifdef __APPLE__
-  #define DEFAULT_CURL_LIB "libcurl.dylib"
+#define DEFAULT_CURL_LIB "libcurl.dylib"
 #else
-  #define DEFAULT_CURL_LIB "libcurl.so.4"
-  #define ALTERNATE_CURL_LIB "libcurl.so.3"
+#define DEFAULT_CURL_LIB "libcurl.so.4"
+#define ALTERNATE_CURL_LIB "libcurl.so.3"
 #endif
 
 #include "../sys/sys_loadlib.h"
 
-cvar_t *cl_cURLLib;
+cvar_t* cl_cURLLib;
 
 char* (*qcurl_version)(void);
 
 CURL* (*qcurl_easy_init)(void);
-CURLcode (*qcurl_easy_setopt)(CURL *curl, CURLoption option, ...);
-CURLcode (*qcurl_easy_perform)(CURL *curl);
-void (*qcurl_easy_cleanup)(CURL *curl);
-CURLcode (*qcurl_easy_getinfo)(CURL *curl, CURLINFO info, ...);
-CURL* (*qcurl_easy_duphandle)(CURL *curl);
-void (*qcurl_easy_reset)(CURL *curl);
-const char *(*qcurl_easy_strerror)(CURLcode);
+CURLcode (*qcurl_easy_setopt)(CURL* curl, CURLoption option, ...);
+CURLcode (*qcurl_easy_perform)(CURL* curl);
+void (*qcurl_easy_cleanup)(CURL* curl);
+CURLcode (*qcurl_easy_getinfo)(CURL* curl, CURLINFO info, ...);
+CURL* (*qcurl_easy_duphandle)(CURL* curl);
+void (*qcurl_easy_reset)(CURL* curl);
+const char* (*qcurl_easy_strerror)(CURLcode);
 
 CURLM* (*qcurl_multi_init)(void);
-CURLMcode (*qcurl_multi_add_handle)(CURLM *multi_handle,
-                                                CURL *curl_handle);
-CURLMcode (*qcurl_multi_remove_handle)(CURLM *multi_handle,
-                                                CURL *curl_handle);
-CURLMcode (*qcurl_multi_fdset)(CURLM *multi_handle,
-                                                fd_set *read_fd_set,
-                                                fd_set *write_fd_set,
-                                                fd_set *exc_fd_set,
-                                                int *max_fd);
-CURLMcode (*qcurl_multi_perform)(CURLM *multi_handle,
-                                                int *running_handles);
-CURLMcode (*qcurl_multi_cleanup)(CURLM *multi_handle);
-CURLMsg *(*qcurl_multi_info_read)(CURLM *multi_handle,
-                                                int *msgs_in_queue);
-const char *(*qcurl_multi_strerror)(CURLMcode);
+CURLMcode (*qcurl_multi_add_handle)(CURLM* multi_handle, CURL* curl_handle);
+CURLMcode (*qcurl_multi_remove_handle)(CURLM* multi_handle, CURL* curl_handle);
+CURLMcode (*qcurl_multi_fdset)(CURLM* multi_handle, fd_set* read_fd_set, fd_set* write_fd_set, fd_set* exc_fd_set, int* max_fd);
+CURLMcode (*qcurl_multi_perform)(CURLM* multi_handle, int* running_handles);
+CURLMcode (*qcurl_multi_cleanup)(CURLM* multi_handle);
+CURLMsg* (*qcurl_multi_info_read)(CURLM* multi_handle, int* msgs_in_queue);
+const char* (*qcurl_multi_strerror)(CURLMcode);
 
-static void *cURLLib = NULL;
+static void* cURLLib = NULL;
 static qboolean cURLSymbolLoadFailed = qfalse;
 
-static CURL *downloadCURL = NULL;
-static CURLM *downloadCURLM = NULL;
+static CURL* downloadCURL = NULL;
+static CURLM* downloadCURLM = NULL;
 
 /*
 =================
 GPA
 =================
 */
-static void *GPA(char *str)
-{
-	void *rv;
+static void* GPA(char* str) {
+	void* rv;
 
 	rv = Sys_LoadFunction(cURLLib, str);
-	if(!rv)
-	{
+	if(!rv) {
 		Com_Printf("Can't load symbol %s\n", str);
 		cURLSymbolLoadFailed = qtrue;
 		return NULL;
-	}
-	else
-	{
+	} else {
 		Com_DPrintf("Loaded symbol %s (0x%p)\n", str, rv);
-        return rv;
+		return rv;
 	}
 }
 
@@ -103,16 +91,13 @@ static void *GPA(char *str)
 CL_HTTP_Init
 =================
 */
-qboolean CL_HTTP_Init(void)
-{
-	if(cURLLib)
-		return qtrue;
+qboolean CL_HTTP_Init(void) {
+	if(cURLLib) return qtrue;
 
 	cl_cURLLib = Cvar_Get("cl_cURLLib", DEFAULT_CURL_LIB, CVAR_ARCHIVE | CVAR_PROTECTED);
 
 	Com_Printf("Loading \"%s\"...", cl_cURLLib->string);
-	if(!(cURLLib = Sys_LoadDll(cl_cURLLib->string, qtrue)))
-	{
+	if(!(cURLLib = Sys_LoadDll(cl_cURLLib->string, qtrue))) {
 #ifdef ALTERNATE_CURL_LIB
 		// On some linux distributions there is no libcurl.so.3, but only libcurl.so.4. That one works too.
 		if(!(cURLLib = Sys_LoadDll(ALTERNATE_CURL_LIB, qtrue)))
@@ -132,7 +117,7 @@ qboolean CL_HTTP_Init(void)
 	qcurl_easy_duphandle = GPA("curl_easy_duphandle");
 	qcurl_easy_reset = GPA("curl_easy_reset");
 	qcurl_easy_strerror = GPA("curl_easy_strerror");
-	
+
 	qcurl_multi_init = GPA("curl_multi_init");
 	qcurl_multi_add_handle = GPA("curl_multi_add_handle");
 	qcurl_multi_remove_handle = GPA("curl_multi_remove_handle");
@@ -142,8 +127,7 @@ qboolean CL_HTTP_Init(void)
 	qcurl_multi_info_read = GPA("curl_multi_info_read");
 	qcurl_multi_strerror = GPA("curl_multi_strerror");
 
-	if(cURLSymbolLoadFailed)
-	{
+	if(cURLSymbolLoadFailed) {
 		CL_HTTP_Shutdown();
 		Com_Printf("FAIL One or more symbols not found\n");
 		return qfalse;
@@ -158,19 +142,14 @@ qboolean CL_HTTP_Init(void)
 CL_HTTP_Available
 =================
 */
-qboolean CL_HTTP_Available(void)
-{
-	return cURLLib != NULL;
-}
+qboolean CL_HTTP_Available(void) { return cURLLib != NULL; }
 
-static void CL_cURL_Cleanup(void)
-{
+static void CL_cURL_Cleanup(void) {
 	if(downloadCURLM) {
 		CURLMcode result;
 
 		if(downloadCURL) {
-			result = qcurl_multi_remove_handle(downloadCURLM,
-				downloadCURL);
+			result = qcurl_multi_remove_handle(downloadCURLM, downloadCURL);
 			if(result != CURLM_OK) {
 				Com_DPrintf("qcurl_multi_remove_handle failed: %s\n", qcurl_multi_strerror(result));
 			}
@@ -182,8 +161,7 @@ static void CL_cURL_Cleanup(void)
 		}
 		downloadCURLM = NULL;
 		downloadCURL = NULL;
-	}
-	else if(downloadCURL) {
+	} else if(downloadCURL) {
 		qcurl_easy_cleanup(downloadCURL);
 		downloadCURL = NULL;
 	}
@@ -194,12 +172,10 @@ static void CL_cURL_Cleanup(void)
 CL_HTTP_Shutdown
 =================
 */
-void CL_HTTP_Shutdown( void )
-{
+void CL_HTTP_Shutdown(void) {
 	CL_cURL_Cleanup();
 
-	if(cURLLib)
-	{
+	if(cURLLib) {
 		Sys_UnloadLibrary(cURLLib);
 		cURLLib = NULL;
 	}
@@ -221,25 +197,20 @@ void CL_HTTP_Shutdown( void )
 	qcurl_multi_strerror = NULL;
 }
 
-static int CL_cURL_CallbackProgress(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
-    curl_off_t ultotal, curl_off_t ulnow)
-{
+static int CL_cURL_CallbackProgress(void* clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
 	clc.downloadSize = (int)dltotal;
-	Cvar_SetValue( "cl_downloadSize", clc.downloadSize );
+	Cvar_SetValue("cl_downloadSize", clc.downloadSize);
 	clc.downloadCount = (int)dlnow;
-	Cvar_SetValue( "cl_downloadCount", clc.downloadCount );
+	Cvar_SetValue("cl_downloadCount", clc.downloadCount);
 	return 0;
 }
 
-static size_t CL_cURL_CallbackWrite(void *buffer, size_t size, size_t nmemb,
-	void *stream)
-{
-	FS_Write( buffer, size*nmemb, ((fileHandle_t*)stream)[0] );
-	return size*nmemb;
+static size_t CL_cURL_CallbackWrite(void* buffer, size_t size, size_t nmemb, void* stream) {
+	FS_Write(buffer, size * nmemb, ((fileHandle_t*)stream)[0]);
+	return size * nmemb;
 }
 
-CURLcode qcurl_easy_setopt_warn(CURL *curl, CURLoption option, ...)
-{
+CURLcode qcurl_easy_setopt_warn(CURL* curl, CURLoption option, ...) {
 	CURLcode result;
 
 	va_list argp;
@@ -249,7 +220,7 @@ CURLcode qcurl_easy_setopt_warn(CURL *curl, CURLoption option, ...)
 		long longValue = va_arg(argp, long);
 		result = qcurl_easy_setopt(curl, option, longValue);
 	} else if(option < CURLOPTTYPE_OFF_T) {
-		void *pointerValue = va_arg(argp, void *);
+		void* pointerValue = va_arg(argp, void*);
 		result = qcurl_easy_setopt(curl, option, pointerValue);
 	} else {
 		curl_off_t offsetValue = va_arg(argp, curl_off_t);
@@ -264,38 +235,33 @@ CURLcode qcurl_easy_setopt_warn(CURL *curl, CURLoption option, ...)
 	return result;
 }
 
-void CL_HTTP_BeginDownload( const char *remoteURL )
-{
+void CL_HTTP_BeginDownload(const char* remoteURL) {
 	CURLMcode result;
 
 	CL_cURL_Cleanup();
 
 	downloadCURL = qcurl_easy_init();
 	if(!downloadCURL) {
-		Com_Error(ERR_DROP, "CL_HTTP_BeginDownload: qcurl_easy_init() "
-			"failed");
+		Com_Error(ERR_DROP,
+		          "CL_HTTP_BeginDownload: qcurl_easy_init() "
+		          "failed");
 		return;
 	}
 
-	if(com_developer->integer)
-		qcurl_easy_setopt_warn(downloadCURL, CURLOPT_VERBOSE, 1);
+	if(com_developer->integer) qcurl_easy_setopt_warn(downloadCURL, CURLOPT_VERBOSE, 1);
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_URL, remoteURL);
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_TRANSFERTEXT, 0);
-	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_REFERER, va("ioQ3://%s",
-		NET_AdrToString(clc.serverAddress)));
-	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_USERAGENT, va("%s %s",
-		Q3_VERSION, qcurl_version()));
-	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_WRITEFUNCTION,
-		CL_cURL_CallbackWrite);
+	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_REFERER, va("ioQ3://%s", NET_AdrToString(clc.serverAddress)));
+	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_USERAGENT, va("%s %s", Q3_VERSION, qcurl_version()));
+	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_WRITEFUNCTION, CL_cURL_CallbackWrite);
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_WRITEDATA, &clc.download);
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_NOPROGRESS, 0);
-	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_XFERINFOFUNCTION,
-		CL_cURL_CallbackProgress);
+	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_XFERINFOFUNCTION, CL_cURL_CallbackProgress);
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_PROGRESSDATA, NULL);
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_FAILONERROR, 1);
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_FOLLOWLOCATION, 1);
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_MAXREDIRS, 5);
-#if CURL_AT_LEAST_VERSION(7,85,0)
+#if CURL_AT_LEAST_VERSION(7, 85, 0)
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_PROTOCOLS_STR, "http,https");
 #else
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
@@ -305,23 +271,23 @@ void CL_HTTP_BeginDownload( const char *remoteURL )
 	if(!downloadCURLM) {
 		qcurl_easy_cleanup(downloadCURL);
 		downloadCURL = NULL;
-		Com_Error(ERR_DROP, "CL_HTTP_BeginDownload: qcurl_multi_init() "
-			"failed");
+		Com_Error(ERR_DROP,
+		          "CL_HTTP_BeginDownload: qcurl_multi_init() "
+		          "failed");
 		return;
 	}
 	result = qcurl_multi_add_handle(downloadCURLM, downloadCURL);
 	if(result != CURLM_OK) {
 		qcurl_easy_cleanup(downloadCURL);
 		downloadCURL = NULL;
-		Com_Error(ERR_DROP,"CL_HTTP_BeginDownload: qcurl_multi_add_handle() failed: %s", qcurl_multi_strerror(result));
+		Com_Error(ERR_DROP, "CL_HTTP_BeginDownload: qcurl_multi_add_handle() failed: %s", qcurl_multi_strerror(result));
 		return;
 	}
 }
 
-qboolean CL_HTTP_PerformDownload(void)
-{
+qboolean CL_HTTP_PerformDownload(void) {
 	CURLMcode res;
-	CURLMsg *msg;
+	CURLMsg* msg;
 	int c;
 	int i = 0;
 
@@ -330,8 +296,7 @@ qboolean CL_HTTP_PerformDownload(void)
 		res = qcurl_multi_perform(downloadCURLM, &c);
 		i++;
 	}
-	if(res == CURLM_CALL_MULTI_PERFORM)
-		return qfalse;
+	if(res == CURLM_CALL_MULTI_PERFORM) return qfalse;
 	msg = qcurl_multi_info_read(downloadCURLM, &c);
 	if(msg == NULL) {
 		return qfalse;
@@ -339,11 +304,8 @@ qboolean CL_HTTP_PerformDownload(void)
 	if(msg->msg != CURLMSG_DONE || msg->data.result != CURLE_OK) {
 		long code;
 
-		qcurl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE,
-			&code);	
-		Com_Error(ERR_DROP, "Download Error: %s Code: %ld URL: %s",
-			qcurl_easy_strerror(msg->data.result),
-			code, clc.downloadURL);
+		qcurl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &code);
+		Com_Error(ERR_DROP, "Download Error: %s Code: %ld URL: %s", qcurl_easy_strerror(msg->data.result), code, clc.downloadURL);
 	}
 
 	return qtrue;
