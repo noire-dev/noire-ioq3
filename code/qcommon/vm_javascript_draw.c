@@ -13,7 +13,8 @@ hud_s hud;
 
 static void getScreenProperties(void) {
 	trap_GetGlconfig(&glconfig);
-	cgui.scale = (glconfig.vidWidth * (1.0 / 640.0) < glconfig.vidHeight * (1.0 / 480.0)) ? glconfig.vidWidth * (1.0 / 640.0) : glconfig.vidHeight * (1.0 / 480.0);
+	cgui.scale =
+	    (glconfig.vidWidth * (1.0 / 640.0) < glconfig.vidHeight * (1.0 / 480.0)) ? glconfig.vidWidth * (1.0 / 640.0) : glconfig.vidHeight * (1.0 / 480.0);
 
 	if(glconfig.vidWidth * 480 > glconfig.vidHeight * 640)
 		cgui.bias = 0.5 * (glconfig.vidWidth - (glconfig.vidHeight * (640.0 / 480.0)));
@@ -115,7 +116,9 @@ void drawColoredShaderAdjusted(float x, float y, float w, float h, const char* f
 	drawColoredShader(x, y, w, h, file, color);
 }
 
-static void drawSymbol(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t fontIndex) { trap_R_DrawStretchPic(x, y, w, h, s1, t1, s2, t2, fontIndex); }
+static void drawSymbol(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t fontIndex) {
+	trap_R_DrawStretchPic(x, y, w, h, s1, t1, s2, t2, fontIndex);
+}
 
 static int getFontRes(float fontScale) {
 	if(fontScale * FONT_SIZE > 128) return 4;  // 4096
@@ -332,7 +335,16 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 
 			if(codepoint < 1280) {
 				trap_R_SetColor(shadowColor);
-				if(style & FONTSTYLE_DROPSHADOW) drawSymbol(ax + xoff + (2 * fontScale), ay + yoff + (2 * fontScale), aw * FONT_WIDTH, ah, fcol + 0.015625, frow, (fcol + glyphTexSize) - 0.015625, frow + glyphTexSize, fontIndex);
+				if(style & FONTSTYLE_DROPSHADOW)
+					drawSymbol(ax + xoff + (2 * fontScale),
+					           ay + yoff + (2 * fontScale),
+					           aw * FONT_WIDTH,
+					           ah,
+					           fcol + 0.015625,
+					           frow,
+					           (fcol + glyphTexSize) - 0.015625,
+					           frow + glyphTexSize,
+					           fontIndex);
 				trap_R_SetColor(currentColor);
 				drawSymbol(ax + xoff, ay + yoff, aw * FONT_WIDTH, ah, fcol + 0.015625, frow, (fcol + glyphTexSize) - 0.015625, frow + glyphTexSize, fontIndex);
 				if(formatUnderline) drawRoundedRect(ax, y + (ah * 0.925), aw * FONT_WIDTH, ah * 0.10, 0.00, currentColor, 0);
@@ -343,7 +355,16 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 				}
 			} else if((isEmojiPage(codepoint / 256) && !(style & FONTSTYLE_LOCKEMOJI)) || !isEmojiPage(codepoint / 256)) {
 				trap_R_SetColor(shadowColor);
-				if(style & FONTSTYLE_DROPSHADOW) drawSymbol(ax + xoff + (2 * fontScale), ay + yoff + (2 * fontScale), ah, ah, fcol, frow, fcol + glyphTexSize, frow + glyphTexSize, fontIndex);
+				if(style & FONTSTYLE_DROPSHADOW)
+					drawSymbol(ax + xoff + (2 * fontScale),
+					           ay + yoff + (2 * fontScale),
+					           ah,
+					           ah,
+					           fcol,
+					           frow,
+					           fcol + glyphTexSize,
+					           frow + glyphTexSize,
+					           fontIndex);
 				if(isEmojiPage(codepoint / 256) || !strcmp(formatStyle, "Emoji"))
 					trap_R_SetColor(formatColor);
 				else
@@ -383,7 +404,9 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 	return ax - x;
 }
 
-float stringWidth(const char* str, float fontScale, int style, int maxChars) { return drawChars(0, 0, str, cgui.colors[0], fontScale, style, maxChars, qtrue, -1); }
+float stringWidth(const char* str, float fontScale, int style, int maxChars) {
+	return drawChars(0, 0, str, cgui.colors[0], fontScale, style, maxChars, qtrue, -1);
+}
 
 void drawModel(float x, float y, float w, float h, const char* model, float scale) {
 	refdef_t refdef;
@@ -578,5 +601,11 @@ void CG_HUDCounter(float x, float y, const char* value, const char* text) {
 
 	drawRoundedRectAdjusted(x, y, hud.counterW, hud.counterH, hud.counterCorner, cgui.colors[hud.counterColor], 0);
 	drawStringAdjusted(x + (hud.counterW * hud.counterTextX), textY, text, hud.counterTextStyle, cgui.colors[hud.counterTextColor], hud.counterTextScale, 256);
-	drawStringAdjusted(x + (hud.counterW * hud.counterValueX), valueY, value, hud.counterValueStyle, cgui.colors[hud.counterValueColor], hud.counterValueScale, 256);
+	drawStringAdjusted(x + (hud.counterW * hud.counterValueX),
+	                   valueY,
+	                   value,
+	                   hud.counterValueStyle,
+	                   cgui.colors[hud.counterValueColor],
+	                   hud.counterValueScale,
+	                   256);
 }

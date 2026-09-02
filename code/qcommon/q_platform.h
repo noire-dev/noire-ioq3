@@ -41,17 +41,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define id386 0
 #endif
 
-#if (defined(powerc) || defined(powerpc) || defined(ppc) || \
-	defined(__ppc) || defined(__ppc__)) && !defined(C_ONLY)
+#if (defined(powerc) || defined(powerpc) || defined(ppc) || defined(__ppc) || defined(__ppc__)) && !defined(C_ONLY)
 #define idppc 1
 #if defined(__VEC__)
 #define idppc_altivec 1
 #ifdef __APPLE__  // Apple's GCC does this differently than the FSF.
-#define VECCONST_UINT8(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
-	(vector unsigned char) (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)
+#define VECCONST_UINT8(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) (vector unsigned char)(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p)
 #else
-#define VECCONST_UINT8(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
-	(vector unsigned char) {a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p}
+#define VECCONST_UINT8(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) \
+	(vector unsigned char) { a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p }
 #endif
 #else
 #define idppc_altivec 0
@@ -83,7 +81,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #undef QCALL
 #define QCALL __stdcall
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #define OS_STRING "win_msvc64"
 #elif defined __MINGW64__
 #define OS_STRING "win_mingw64"
@@ -97,7 +95,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define idx64 1
 #define ARCH_STRING "x86_64"
 #define HAVE_VM_COMPILED
-#elif defined(__aarch64__) || defined(__ARM64__) || defined (_M_ARM64)
+#elif defined(__aarch64__) || defined(__ARM64__) || defined(_M_ARM64)
 #define ARCH_STRING "arm64"
 #endif
 
@@ -113,7 +111,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #undef QCALL
 #define QCALL __stdcall
 
-#if defined( _MSC_VER )
+#if defined(_MSC_VER)
 #define OS_STRING "win_msvc"
 #elif defined __MINGW32__
 #define OS_STRING "win_mingw"
@@ -122,7 +120,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define ID_INLINE __inline
 #define PATH_SEP '\\'
 
-#if defined( _M_IX86 ) || defined( __i386__ )
+#if defined(_M_IX86) || defined(__i386__)
 #define ARCH_STRING "x86"
 #define HAVE_VM_COMPILED
 #elif defined(__arm__) || defined(_M_ARM)
@@ -134,7 +132,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define DLL_EXT ".dll"
 
 #endif
-
 
 //================================================================ MAC OS ===
 
@@ -186,24 +183,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define PATH_SEP '/'
 
 #if defined(__x86_64__) || defined(__amd64__)
-# define ARCH_STRING "x86_64"
-# define HAVE_VM_COMPILED
+#define ARCH_STRING "x86_64"
+#define HAVE_VM_COMPILED
 #elif defined(__i386__)
-# define ARCH_STRING "x86"
-# define HAVE_VM_COMPILED
+#define ARCH_STRING "x86"
+#define HAVE_VM_COMPILED
 #elif defined(__aarch64__)
-# define ARCH_STRING "arm64"
+#define ARCH_STRING "arm64"
 #elif defined(__arm__)
-# define ARCH_STRING "arm"
-# define HAVE_VM_COMPILED
+#define ARCH_STRING "arm"
+#define HAVE_VM_COMPILED
 #elif defined(__powerpc64__) || defined(__ppc64__)
-# define ARCH_STRING "ppc64"
-# define HAVE_VM_COMPILED
+#define ARCH_STRING "ppc64"
+#define HAVE_VM_COMPILED
 #elif defined(__powerpc__) || defined(__ppc__)
-# define ARCH_STRING "ppc"
-# define HAVE_VM_COMPILED
+#define ARCH_STRING "ppc"
+#define HAVE_VM_COMPILED
 #elif defined(__alpha__)
-# define ARCH_STRING "alpha"
+#define ARCH_STRING "alpha"
 #endif
 
 #if defined __x86_64__
@@ -229,7 +226,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <machine/endian.h>
 
 #ifndef __BSD__
-  #define __BSD__
+#define __BSD__
 #endif
 
 #if defined(__FreeBSD__)
@@ -284,9 +281,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define HAVE_VM_COMPILED
 #endif
 
-#if defined( _BIG_ENDIAN )
+#if defined(_BIG_ENDIAN)
 #define Q3_BIG_ENDIAN
-#elif defined( _LITTLE_ENDIAN )
+#elif defined(_LITTLE_ENDIAN)
 #define Q3_LITTLE_ENDIAN
 #endif
 
@@ -304,7 +301,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define ARCH_STRING "mips"
 
-#define Q3_BIG_ENDIAN // SGI's MIPS are always big endian
+#define Q3_BIG_ENDIAN  // SGI's MIPS are always big endian
 
 #define DLL_EXT ".so"
 
@@ -366,17 +363,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #error "DLL_EXT not defined"
 #endif
 
+// endianness
+void CopyShortSwap(void* dest, void* src);
+void CopyLongSwap(void* dest, void* src);
+short ShortSwap(short l);
+int LongSwap(int l);
+float FloatSwap(const float* f);
 
-//endianness
-void CopyShortSwap (void *dest, void *src);
-void CopyLongSwap (void *dest, void *src);
-short ShortSwap (short l);
-int LongSwap (int l);
-float FloatSwap (const float *f);
-
-#if defined( Q3_BIG_ENDIAN ) && defined( Q3_LITTLE_ENDIAN )
+#if defined(Q3_BIG_ENDIAN) && defined(Q3_LITTLE_ENDIAN)
 #error "Endianness defined as both big and little"
-#elif defined( Q3_BIG_ENDIAN )
+#elif defined(Q3_BIG_ENDIAN)
 
 #define CopyLittleShort(dest, src) CopyShortSwap(dest, src)
 #define CopyLittleLong(dest, src) CopyLongSwap(dest, src)
@@ -387,7 +383,7 @@ float FloatSwap (const float *f);
 #define BigLong
 #define BigFloat
 
-#elif defined( Q3_LITTLE_ENDIAN )
+#elif defined(Q3_LITTLE_ENDIAN)
 
 #define CopyLittleShort(dest, src) Com_Memcpy(dest, src, 2)
 #define CopyLittleLong(dest, src) Com_Memcpy(dest, src, 4)
@@ -398,7 +394,7 @@ float FloatSwap (const float *f);
 #define BigLong(x) LongSwap(x)
 #define BigFloat(x) FloatSwap(&x)
 
-#elif defined( Q3_VM )
+#elif defined(Q3_VM)
 
 #define LittleShort
 #define LittleLong
@@ -411,8 +407,7 @@ float FloatSwap (const float *f);
 #error "Endianness not defined"
 #endif
 
-
-//platform string
+// platform string
 #ifdef NDEBUG
 #define PLATFORM_STRING OS_STRING "-" ARCH_STRING
 #else

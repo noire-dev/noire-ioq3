@@ -232,7 +232,8 @@ static void API_Element(int windowID, int elementID, int fieldID, int i1, int i2
 	API_FIELD(JSE_Float(&shell.window[windowID].element[elementID].max))
 	API_FIELD(JSE_Int(&shell.window[windowID].element[elementID].mode))
 	API_FIELD(JSE_String(shell.window[windowID].element[elementID].bind, MAX_JS_STRINGSIZE))
-	API_FIELD(bounds(i1, ELEMENT_OPTIONSCOUNT, "API_Element -> options"); JSE_String(shell.window[windowID].element[elementID].options[i1], ELEMENT_OPTIONLENGTH))
+	API_FIELD(bounds(i1, ELEMENT_OPTIONSCOUNT, "API_Element -> options");
+	          JSE_String(shell.window[windowID].element[elementID].options[i1], ELEMENT_OPTIONLENGTH))
 	API_FIELD(JSE_Int(&shell.window[windowID].element[elementID].optionsCount))
 	API_FIELD(JSE_String(shell.window[windowID].element[elementID].field, MAX_JS_STRINGSIZE))
 	API_FIELD(JSE_Int(&shell.window[windowID].element[elementID].fieldPosition))
@@ -259,9 +260,15 @@ void VMCall(int func_id) {
 #ifndef GAME
 		case VM_APICGUI: API_CGUI(vmargs.v[0].i, vmargs.v[2].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i); break;
 		case VM_APIGLCONFIG: API_GLConfig(vmargs.v[0].i, vmargs.v[2].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i); break;
-		case VM_DRAWSTRING: drawString(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].s, vmargs.v[3].i, cgui.colors[vmargs.v[4].i], vmargs.v[5].f, vmargs.v[6].i); break;
-		case VM_DRAWSTRINGADJUSTED: drawStringAdjusted(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].s, vmargs.v[3].i, cgui.colors[vmargs.v[4].i], vmargs.v[5].f, vmargs.v[6].i); break;
-		case VM_DRAWRECTANGLE: drawRoundedRect(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, cgui.colors[vmargs.v[5].i], vmargs.v[6].i); break;
+		case VM_DRAWSTRING:
+			drawString(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].s, vmargs.v[3].i, cgui.colors[vmargs.v[4].i], vmargs.v[5].f, vmargs.v[6].i);
+			break;
+		case VM_DRAWSTRINGADJUSTED:
+			drawStringAdjusted(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].s, vmargs.v[3].i, cgui.colors[vmargs.v[4].i], vmargs.v[5].f, vmargs.v[6].i);
+			break;
+		case VM_DRAWRECTANGLE:
+			drawRoundedRect(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, cgui.colors[vmargs.v[5].i], vmargs.v[6].i);
+			break;
 		case VM_DRAWSHADER: drawColoredShader(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].s, cgui.colors[vmargs.v[5].i]); break;
 #endif
 #ifdef CGAME
@@ -290,7 +297,16 @@ void VMCall(int func_id) {
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATEWINDOW:
-			vmresult.v.i = UI_Window(vmargs.v[0].i, vmargs.v[1].s, vmargs.v[2].s, vmargs.v[3].s, vmargs.v[4].i, vmargs.v[5].f, vmargs.v[6].f, vmargs.v[7].i, vmargs.v[8].i, vmargs.v[9].i);
+			vmresult.v.i = UI_Window(vmargs.v[0].i,
+			                         vmargs.v[1].s,
+			                         vmargs.v[2].s,
+			                         vmargs.v[3].s,
+			                         vmargs.v[4].i,
+			                         vmargs.v[5].f,
+			                         vmargs.v[6].f,
+			                         vmargs.v[7].i,
+			                         vmargs.v[8].i,
+			                         vmargs.v[9].i);
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATEWINDOWBUTTON:
@@ -298,39 +314,132 @@ void VMCall(int func_id) {
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATEPICTURE:
-			vmresult.v.i = UI_Picture(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s, vmargs.v[7].i, vmargs.v[8].i);
+			vmresult.v.i = UI_Picture(vmargs.v[0].i,
+			                          vmargs.v[1].i,
+			                          vmargs.v[2].f,
+			                          vmargs.v[3].f,
+			                          vmargs.v[4].f,
+			                          vmargs.v[5].f,
+			                          vmargs.v[6].s,
+			                          vmargs.v[7].i,
+			                          vmargs.v[8].i);
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATEBUTTON:
-			vmresult.v.i = UI_Button(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s, vmargs.v[7].i, vmargs.v[8].i, vmargs.v[9].f);
+			vmresult.v.i = UI_Button(vmargs.v[0].i,
+			                         vmargs.v[1].i,
+			                         vmargs.v[2].f,
+			                         vmargs.v[3].f,
+			                         vmargs.v[4].f,
+			                         vmargs.v[5].f,
+			                         vmargs.v[6].s,
+			                         vmargs.v[7].i,
+			                         vmargs.v[8].i,
+			                         vmargs.v[9].f);
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATECHECKBOX:
-			vmresult.v.i = UI_Checkbox(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s, vmargs.v[7].i, vmargs.v[8].i, vmargs.v[9].f, vmargs.v[10].s);
+			vmresult.v.i = UI_Checkbox(vmargs.v[0].i,
+			                           vmargs.v[1].i,
+			                           vmargs.v[2].f,
+			                           vmargs.v[3].f,
+			                           vmargs.v[4].f,
+			                           vmargs.v[5].f,
+			                           vmargs.v[6].s,
+			                           vmargs.v[7].i,
+			                           vmargs.v[8].i,
+			                           vmargs.v[9].f,
+			                           vmargs.v[10].s);
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATESLIDER:
-			vmresult.v.i = UI_Slider(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s, vmargs.v[7].i, vmargs.v[8].i, vmargs.v[9].f, vmargs.v[10].s, vmargs.v[11].f, vmargs.v[12].f, vmargs.v[13].i);
+			vmresult.v.i = UI_Slider(vmargs.v[0].i,
+			                         vmargs.v[1].i,
+			                         vmargs.v[2].f,
+			                         vmargs.v[3].f,
+			                         vmargs.v[4].f,
+			                         vmargs.v[5].f,
+			                         vmargs.v[6].s,
+			                         vmargs.v[7].i,
+			                         vmargs.v[8].i,
+			                         vmargs.v[9].f,
+			                         vmargs.v[10].s,
+			                         vmargs.v[11].f,
+			                         vmargs.v[12].f,
+			                         vmargs.v[13].i);
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATEACTION:
-			vmresult.v.i = UI_Action(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s, vmargs.v[7].i, vmargs.v[8].i, vmargs.v[9].f, vmargs.v[10].s);
+			vmresult.v.i = UI_Action(vmargs.v[0].i,
+			                         vmargs.v[1].i,
+			                         vmargs.v[2].f,
+			                         vmargs.v[3].f,
+			                         vmargs.v[4].f,
+			                         vmargs.v[5].f,
+			                         vmargs.v[6].s,
+			                         vmargs.v[7].i,
+			                         vmargs.v[8].i,
+			                         vmargs.v[9].f,
+			                         vmargs.v[10].s);
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATESPIN:
-			vmresult.v.i = UI_Spin(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s, vmargs.v[7].i, vmargs.v[8].i, vmargs.v[9].f, vmargs.v[10].s, vmargs.v[11].i);
+			vmresult.v.i = UI_Spin(vmargs.v[0].i,
+			                       vmargs.v[1].i,
+			                       vmargs.v[2].f,
+			                       vmargs.v[3].f,
+			                       vmargs.v[4].f,
+			                       vmargs.v[5].f,
+			                       vmargs.v[6].s,
+			                       vmargs.v[7].i,
+			                       vmargs.v[8].i,
+			                       vmargs.v[9].f,
+			                       vmargs.v[10].s,
+			                       vmargs.v[11].i);
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATEFIELD:
-			vmresult.v.i = UI_Field(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s, vmargs.v[7].i, vmargs.v[8].i, vmargs.v[9].f, vmargs.v[10].s);
+			vmresult.v.i = UI_Field(vmargs.v[0].i,
+			                        vmargs.v[1].i,
+			                        vmargs.v[2].f,
+			                        vmargs.v[3].f,
+			                        vmargs.v[4].f,
+			                        vmargs.v[5].f,
+			                        vmargs.v[6].s,
+			                        vmargs.v[7].i,
+			                        vmargs.v[8].i,
+			                        vmargs.v[9].f,
+			                        vmargs.v[10].s);
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATELIST:
-			vmresult.v.i = UI_List(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].f, vmargs.v[7].i, vmargs.v[8].i, vmargs.v[9].i, vmargs.v[10].i, vmargs.v[11].i);
+			vmresult.v.i = UI_List(vmargs.v[0].i,
+			                       vmargs.v[1].i,
+			                       vmargs.v[2].f,
+			                       vmargs.v[3].f,
+			                       vmargs.v[4].f,
+			                       vmargs.v[5].f,
+			                       vmargs.v[6].f,
+			                       vmargs.v[7].i,
+			                       vmargs.v[8].i,
+			                       vmargs.v[9].i,
+			                       vmargs.v[10].i,
+			                       vmargs.v[11].i);
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_CREATELISTFILES:
-			vmresult.v.i = UI_ListFiles(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].f, vmargs.v[7].i, vmargs.v[8].i, vmargs.v[9].i, vmargs.v[10].i, vmargs.v[11].i);
+			vmresult.v.i = UI_ListFiles(vmargs.v[0].i,
+			                            vmargs.v[1].i,
+			                            vmargs.v[2].f,
+			                            vmargs.v[3].f,
+			                            vmargs.v[4].f,
+			                            vmargs.v[5].f,
+			                            vmargs.v[6].f,
+			                            vmargs.v[7].i,
+			                            vmargs.v[8].i,
+			                            vmargs.v[9].i,
+			                            vmargs.v[10].i,
+			                            vmargs.v[11].i);
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_FILLLISTFILES: UI_FillListFiles(vmargs.v[0].i, vmargs.v[1].s, vmargs.v[2].s, vmargs.v[3].s, vmargs.v[4].i); break;

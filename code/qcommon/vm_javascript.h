@@ -132,7 +132,8 @@ int JS_GetTool(int id);
 const char* JS_GetToolNameID(int id);
 const char* JS_GetToolName(int id);
 void JS_ToolInit(int id);
-void JS_ToolCall(int id, int targetID, int playerID, char* arg1, char* arg2, char* arg3, char* arg4, char* arg5, char* arg6, char* arg7, char* arg8, char* arg9);
+void JS_ToolCall(
+    int id, int targetID, int playerID, char* arg1, char* arg2, char* arg3, char* arg4, char* arg5, char* arg6, char* arg7, char* arg8, char* arg9);
 void JS_GameRunFrame(int levelTime);
 
 extern js_args_t vmargs;
