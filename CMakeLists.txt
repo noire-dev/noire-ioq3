@@ -13,7 +13,7 @@ project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
 
 option(BUILD_SERVER "Build dedicated server" OFF)
 option(BUILD_CLIENT "Build client" ON)
-option(BUILD_RENDERER_GL2 "Build renderer" ON)
+option(BUILD_RENDERER "Build renderer" ON)
 option(BUILD_GAME_LIBRARIES "Build game module libraries" ON)
 option(BUILD_GAME_QVMS "Build game module qvms" OFF)
 option(BUILD_STANDALONE "Build binaries for standalone games" ON)

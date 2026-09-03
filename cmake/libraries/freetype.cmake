@@ -2,7 +2,7 @@ if(NOT USE_FREETYPE)
     return()
 endif()
 
-if(NOT BUILD_RENDERER_GL2)
+if(NOT BUILD_RENDERER)
     return()
 endif()
 
