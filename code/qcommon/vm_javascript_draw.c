@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2026 Noire's Mod — GPLv2
+// Copyright (C) 2023-2026 Noire's Mod [noire.dev] — GPLv2
 
 #include "vm_javascript.h"
 
@@ -128,7 +128,6 @@ static int getFontRes(float fontScale) {
 	return 0;                                  // 256 default
 }
 
-// static const int emojiPages[] = { 32, 33, 35, 36, 37, 38, 39, 41, 43, 48, 50, 496, 497, 498, 499, 500, 501, 502, 503, 505, 506, 4072, -1 };
 static const int emojiPages[] = {499, 500, 501, 502, 505, 506, 4072, -1};
 
 static qboolean isEmojiPage(int pageID) {

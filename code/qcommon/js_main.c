@@ -1,6 +1,4 @@
-// Copyright (C) 1999-2005 ID Software, Inc.
-// Copyright (C) 2023-2026 Noire.dev
-// ThreeCore — GPLv2; see LICENSE for details.
+// Copyright (C) 2023-2026 Noire's Mod [noire.dev] — GPLv2
 
 #include "q_shared.h"
 #include "qcommon.h"

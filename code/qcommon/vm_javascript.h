@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2026 Noire's Mod — GPLv2
+// Copyright (C) 2023-2026 Noire's Mod [noire.dev] — GPLv2
 
 #ifndef __JAVASCRIPT_H
 #define __JAVASCRIPT_H

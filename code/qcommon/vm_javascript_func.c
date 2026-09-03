@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2026 Noire's Mod — GPLv2
+// Copyright (C) 2023-2026 Noire's Mod [noire.dev] — GPLv2
 
 #include "vm_javascript.h"
 

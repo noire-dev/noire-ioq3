@@ -1429,13 +1429,7 @@ void CL_RequestMotd(void) {
 		return;
 	}
 	cls.updateServer.port = BigShort(PORT_UPDATE);
-	Com_Printf("%s resolved to %i.%i.%i.%i:%i\n",
-	           UPDATE_SERVER_NAME,
-	           cls.updateServer.ip[0],
-	           cls.updateServer.ip[1],
-	           cls.updateServer.ip[2],
-	           cls.updateServer.ip[3],
-	           BigShort(cls.updateServer.port));
+	Com_Printf("%s resolved to %i.%i.%i.%i:%i\n", UPDATE_SERVER_NAME, cls.updateServer.ip[0], cls.updateServer.ip[1], cls.updateServer.ip[2], cls.updateServer.ip[3], BigShort(cls.updateServer.port));
 
 	info[0] = 0;
 
@@ -2725,8 +2719,7 @@ void CL_CheckTimeout(void) {
 	//
 	// check timeout
 	//
-	if((!CL_CheckPaused() || !sv_paused->integer) && clc.state >= CA_CONNECTED && clc.state != CA_CINEMATIC &&
-	   cls.realtime - clc.lastPacketTime > cl_timeout->value * 1000) {
+	if((!CL_CheckPaused() || !sv_paused->integer) && clc.state >= CA_CONNECTED && clc.state != CA_CINEMATIC && cls.realtime - clc.lastPacketTime > cl_timeout->value * 1000) {
 		if(++cl.timeoutcount > 5) {  // timeoutcount saves debugger
 			Com_Printf("\nServer connection timed out.\n");
 			CL_Disconnect(qtrue);
@@ -2974,15 +2967,21 @@ CL_InitRenderer
 ============
 */
 void CL_InitRenderer(void) {
+	int i;
+
 	// this sets up the renderer and calls R_Init
 	re.BeginRegistration(&cls.glconfig);
 
-	// load character sets
-	cls.charSetShader = re.RegisterShader("gfx/2d/bigchars");
-	cls.whiteShader = re.RegisterShader("white");
-	cls.consoleShader = re.RegisterShader("console");
-	g_console_field_width = cls.glconfig.vidWidth / g_smallchar_width - 2;
-	g_consoleField.widthInChars = g_console_field_width;
+	cls.scale = (cls.glconfig.vidWidth * (1.0 / 960.0) < cls.glconfig.vidHeight * (1.0 / 720.0)) ? cls.glconfig.vidWidth * (1.0 / 960.0) : cls.glconfig.vidHeight * (1.0 / 720.0);
+	if(cls.glconfig.vidWidth / (cls.glconfig.vidHeight / 720.0) - 960.0 >= 0) {
+		cls.wideoffset = cls.glconfig.vidWidth / (cls.glconfig.vidHeight / 720.0) - 960.0;
+	} else {
+		cls.wideoffset = 0;
+	}
+	cls.whiteShader = re.RegisterShaderNoMip("white");
+	for(i = 0; i < 5; i++) cls.corners[i] = re.RegisterShaderNoMip(va("menu/corner_%i", i));
+
+	g_consoleField.widthInChars = 32;
 }
 
 /*

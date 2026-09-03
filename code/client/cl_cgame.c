@@ -313,11 +313,6 @@ rescan:
 	}
 
 	if(!strcmp(cmd, "map_restart")) {
-		// clear notify lines and outgoing commands before passing
-		// the restart to the cgame
-		Con_ClearNotify();
-		// reparse the string, because Con_ClearNotify() may have done another Cmd_TokenizeString()
-		Cmd_TokenizeString(s);
 		Com_Memset(cl.cmds, 0, sizeof(cl.cmds));
 		return qtrue;
 	}
@@ -413,12 +408,8 @@ intptr_t CL_CgameSystemCalls(intptr_t* args) {
 		case CG_CM_TRANSFORMEDPOINTCONTENTS: return CM_TransformedPointContents(VMA(1), args[2], VMA(3), VMA(4));
 		case CG_CM_BOXTRACE: CM_BoxTrace(VMA(1), VMA(2), VMA(3), VMA(4), VMA(5), args[6], args[7], /*int capsule*/ qfalse); return 0;
 		case CG_CM_CAPSULETRACE: CM_BoxTrace(VMA(1), VMA(2), VMA(3), VMA(4), VMA(5), args[6], args[7], /*int capsule*/ qtrue); return 0;
-		case CG_CM_TRANSFORMEDBOXTRACE:
-			CM_TransformedBoxTrace(VMA(1), VMA(2), VMA(3), VMA(4), VMA(5), args[6], args[7], VMA(8), VMA(9), /*int capsule*/ qfalse);
-			return 0;
-		case CG_CM_TRANSFORMEDCAPSULETRACE:
-			CM_TransformedBoxTrace(VMA(1), VMA(2), VMA(3), VMA(4), VMA(5), args[6], args[7], VMA(8), VMA(9), /*int capsule*/ qtrue);
-			return 0;
+		case CG_CM_TRANSFORMEDBOXTRACE: CM_TransformedBoxTrace(VMA(1), VMA(2), VMA(3), VMA(4), VMA(5), args[6], args[7], VMA(8), VMA(9), /*int capsule*/ qfalse); return 0;
+		case CG_CM_TRANSFORMEDCAPSULETRACE: CM_TransformedBoxTrace(VMA(1), VMA(2), VMA(3), VMA(4), VMA(5), args[6], args[7], VMA(8), VMA(9), /*int capsule*/ qtrue); return 0;
 		case CG_CM_MARKFRAGMENTS: return re.MarkFragments(args[1], VMA(2), VMA(3), args[4], VMA(5), args[6], VMA(7));
 		case CG_S_STARTSOUND: S_StartSound(VMA(1), args[2], args[3], args[4]); return 0;
 		case CG_S_STARTLOCALSOUND: S_StartLocalSound(args[1], args[2]); return 0;
@@ -568,9 +559,6 @@ void CL_InitCGame(void) {
 	if(!Sys_LowPhysicalMemory()) {
 		Com_TouchMemory();
 	}
-
-	// clear anything that got printed
-	Con_ClearNotify();
 }
 
 /*

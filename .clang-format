@@ -19,7 +19,7 @@ BreakConstructorInitializers: BeforeColon
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 PenaltyBreakBeforeFirstCallParameter: 10000
 PenaltyReturnTypeOnItsOwnLine: 10000
-ColumnLimit: 160
+ColumnLimit: 999999
 
 SortIncludes: Never
 

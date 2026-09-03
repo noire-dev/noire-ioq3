@@ -179,8 +179,9 @@ void NET_Sleep(int msec);
 	16384  // max length of a message, which may
 	       // be fragmented into multiple packets
 
-#define MAX_DOWNLOAD_WINDOW 48     // ACK window of 48 download chunks. Cannot set this higher, or clients
-                                   // will overflow the reliable commands buffer
+#define MAX_DOWNLOAD_WINDOW \
+	48                             // ACK window of 48 download chunks. Cannot set this higher, or clients
+	                               // will overflow the reliable commands buffer
 #define MAX_DOWNLOAD_BLKSIZE 1024  // 896 byte block chunks
 
 #define NETCHAN_GENCHECKSUM(challenge, sequence) ((challenge) ^ ((sequence) * (challenge)))
@@ -322,8 +323,7 @@ typedef struct vm_s vm_t;
 
 typedef enum { VMI_NATIVE, VMI_BYTECODE, VMI_COMPILED } vmInterpret_t;
 
-typedef intptr_t(QDECL* vmMainProc)(
-    int callNum, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
+typedef intptr_t(QDECL* vmMainProc)(int callNum, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
 
 void VM_Init(void);
 vm_t* VM_Create(const char* module, intptr_t (*systemCalls)(intptr_t*), vmInterpret_t interpret);
@@ -702,8 +702,7 @@ qboolean FS_ComparePaks(char* neededpaks, int len, qboolean dlstring);
 void FS_Remove(const char* osPath);
 void FS_Remove_HomeData(const char* homePath);
 
-void FS_FilenameCompletion(
-    const char* dir, const char* ext, char* filter, qboolean stripExt, void (*callback)(const char* s), qboolean allowNonPureFilesOnDisk);
+void FS_FilenameCompletion(const char* dir, const char* ext, char* filter, qboolean stripExt, void (*callback)(const char* s), qboolean allowNonPureFilesOnDisk);
 
 const char* FS_GetCurrentGameDir(void);
 qboolean FS_Which(const char* filename, void* searchPath);
@@ -744,16 +743,7 @@ MISC
 extern char cl_cdkey[34];
 
 // returned by Sys_GetProcessorFeatures
-typedef enum {
-	CF_RDTSC = 1 << 0,
-	CF_MMX = 1 << 1,
-	CF_MMX_EXT = 1 << 2,
-	CF_3DNOW = 1 << 3,
-	CF_3DNOW_EXT = 1 << 4,
-	CF_SSE = 1 << 5,
-	CF_SSE2 = 1 << 6,
-	CF_ALTIVEC = 1 << 7
-} cpuFeatures_t;
+typedef enum { CF_RDTSC = 1 << 0, CF_MMX = 1 << 1, CF_MMX_EXT = 1 << 2, CF_3DNOW = 1 << 3, CF_3DNOW_EXT = 1 << 4, CF_SSE = 1 << 5, CF_SSE2 = 1 << 6, CF_ALTIVEC = 1 << 7 } cpuFeatures_t;
 
 // centralized and cleaned, that's the max string you can send to a Com_Printf / Com_DPrintf (above gets truncated)
 #define MAXPRINTMSG 4096
@@ -951,7 +941,16 @@ void CL_JoystickEvent(int axis, int value, int time);
 
 void CL_PacketEvent(netadr_t from, msg_t* msg);
 
-void CL_ConsolePrint(char* text);
+#define CON_MAXLINES 16384
+#define CON_MAXLINE 256
+#define CON_PURGE_AMOUNT 1024
+
+typedef struct uiconsole_s {
+	char lines[CON_MAXLINES][CON_MAXLINE];
+	int linescount;
+} uiconsole_t;
+
+void CL_ConsolePrint(const char* txt);
 
 void CL_MapLoading(void);
 // do a screen update before starting to load a map

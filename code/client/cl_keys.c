@@ -328,93 +328,6 @@ EDIT FIELDS
 */
 
 /*
-===================
-Field_Draw
-
-Handles horizontal scrolling and cursor blinking
-x, y, and width are in pixels
-===================
-*/
-static void Field_VariableSizeDraw(field_t* edit, int x, int y, int width, int size, qboolean drawSmall, qboolean showCursor, qboolean noColorEscape) {
-	int len;
-	int drawLen;
-	int prestep;
-	int cursorChar;
-	char str[MAX_STRING_CHARS];
-	int i;
-
-	drawLen = edit->widthInChars - 1;  // - 1 so there is always a space for the cursor
-	len = strlen(edit->buffer);
-
-	// guarantee that cursor will be visible
-	if(len <= drawLen) {
-		prestep = 0;
-	} else {
-		if(edit->scroll + drawLen > len) {
-			edit->scroll = len - drawLen;
-			if(edit->scroll < 0) {
-				edit->scroll = 0;
-			}
-		}
-		prestep = edit->scroll;
-	}
-
-	if(prestep + drawLen > len) {
-		drawLen = len - prestep;
-	}
-
-	// extract <drawLen> characters from the field at <prestep>
-	if(drawLen >= MAX_STRING_CHARS) {
-		Com_Error(ERR_DROP, "drawLen >= MAX_STRING_CHARS");
-	}
-
-	Com_Memcpy(str, edit->buffer + prestep, drawLen);
-	str[drawLen] = 0;
-
-	// draw it
-	if(drawSmall) {
-		float color[4];
-
-		color[0] = color[1] = color[2] = color[3] = 1.0;
-		SCR_DrawSmallStringExt(x, y, str, color, qfalse, noColorEscape);
-	} else {
-		// draw big string with drop shadow
-		SCR_DrawBigString(x, y, str, 1.0, noColorEscape);
-	}
-
-	// draw the cursor
-	if(showCursor) {
-		if((int)(cls.realtime >> 8) & 1) {
-			return;  // off blink
-		}
-
-		if(key_overstrikeMode) {
-			cursorChar = 11;
-		} else {
-			cursorChar = 10;
-		}
-
-		i = drawLen - strlen(str);
-
-		if(drawSmall) {
-			SCR_DrawSmallChar(x + (edit->cursor - prestep - i) * size, y, cursorChar);
-		} else {
-			str[0] = cursorChar;
-			str[1] = 0;
-			SCR_DrawBigString(x + (edit->cursor - prestep - i) * size, y, str, 1.0, qfalse);
-		}
-	}
-}
-
-void Field_Draw(field_t* edit, int x, int y, int width, qboolean showCursor, qboolean noColorEscape) {
-	Field_VariableSizeDraw(edit, x, y, width, g_smallchar_width, qtrue, showCursor, noColorEscape);
-}
-
-void Field_BigDraw(field_t* edit, int x, int y, int width, qboolean showCursor, qboolean noColorEscape) {
-	Field_VariableSizeDraw(edit, x, y, width, BIGCHAR_WIDTH, qfalse, showCursor, noColorEscape);
-}
-
-/*
 ================
 Field_Paste
 ================
@@ -630,7 +543,7 @@ void Console_Key(int key) {
 
 		Field_Clear(&g_consoleField);
 
-		g_consoleField.widthInChars = g_console_field_width;
+		g_consoleField.widthInChars = 32;
 
 		CL_SaveConsoleHistory();
 
@@ -662,7 +575,7 @@ void Console_Key(int key) {
 		if(historyLine >= nextHistoryLine) {
 			historyLine = nextHistoryLine;
 			Field_Clear(&g_consoleField);
-			g_consoleField.widthInChars = g_console_field_width;
+			g_consoleField.widthInChars = 32;
 			return;
 		}
 		g_consoleField = historyEditLines[historyLine % COMMAND_HISTORY];
@@ -1434,9 +1347,7 @@ void CL_SaveConsoleHistory(void) {
 			additionalLength = lineLength + strlen("999 999 999  ");
 
 			if(saveBufferLength + additionalLength < MAX_CONSOLE_SAVE_BUFFER) {
-				Q_strcat(consoleSaveBuffer,
-				         MAX_CONSOLE_SAVE_BUFFER,
-				         va("%d %d %d %s ", historyEditLines[i].cursor, historyEditLines[i].scroll, lineLength, historyEditLines[i].buffer));
+				Q_strcat(consoleSaveBuffer, MAX_CONSOLE_SAVE_BUFFER, va("%d %d %d %s ", historyEditLines[i].cursor, historyEditLines[i].scroll, lineLength, historyEditLines[i].buffer));
 			} else
 				break;
 		}

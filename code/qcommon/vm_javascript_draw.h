@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2026 Noire's Mod — GPLv2
+// Copyright (C) 2023-2026 Noire's Mod [noire.dev] — GPLv2
 
 #include "../qcommon/vm_javascript_core.h"
 

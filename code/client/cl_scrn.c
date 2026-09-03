@@ -1,29 +1,13 @@
-/*
-===========================================================================
-Copyright (C) 1999-2005 Id Software, Inc.
-
-This file is part of Quake III Arena source code.
-
-Quake III Arena source code is free software; you can redistribute it
-and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the License,
-or (at your option) any later version.
-
-Quake III Arena source code is distributed in the hope that it will be
-useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Quake III Arena source code; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-===========================================================================
-*/
-// cl_scrn.c -- master for refresh, status bar, console, chat, notify, etc
+// Copyright (C) 2023-2026 Noire's Mod [noire.dev] — GPLv2
 
 #include "client.h"
 
 qboolean scr_initialized;  // ready to draw
+
+float color_empty[4] = {0.00f, 0.00f, 0.00f, 0.00f};
+float color_black[4] = {0.00f, 0.00f, 0.00f, 1.00f};
+float color_white[4] = {1.00f, 1.00f, 1.00f, 1.00f};
+float color_background[4] = {0.10f, 0.10f, 0.125f, 0.70f};
 
 cvar_t* cl_timegraph;
 cvar_t* cl_debuggraph;
@@ -31,306 +15,28 @@ cvar_t* cl_graphheight;
 cvar_t* cl_graphscale;
 cvar_t* cl_graphshift;
 
-/*
-================
-SCR_DrawNamedPic
-
-Coordinates are 640*480 virtual values
-=================
-*/
-void SCR_DrawNamedPic(float x, float y, float width, float height, const char* picname) {
-	qhandle_t hShader;
-
-	assert(width != 0);
-
-	hShader = re.RegisterShader(picname);
-	SCR_AdjustFrom640(&x, &y, &width, &height);
-	re.DrawStretchPic(x, y, width, height, 0, 0, 1, 1, hShader);
+void adjustFrom640(float* x, float* y, float* w, float* h, float* corner, float* fontScale) {
+	if(x) *x = *x * cls.scale;
+	if(y) *y *= cls.scale;
+	if(w) *w *= cls.scale;
+	if(h) *h *= cls.scale;
+	if(corner) *corner *= cls.scale;
+	if(fontScale) *fontScale *= cls.scale;
 }
 
-/*
-================
-SCR_AdjustFrom640
-
-Adjusted for resolution and screen aspect ratio
-================
-*/
-void SCR_AdjustFrom640(float* x, float* y, float* w, float* h) {
-	float xscale;
-	float yscale;
-
-#if 0
-		// adjust for wide screens
-		if ( cls.glconfig.vidWidth * 480 > cls.glconfig.vidHeight * 640 ) {
-			*x += 0.5 * ( cls.glconfig.vidWidth - ( cls.glconfig.vidHeight * 640 / 480 ) );
-		}
-#endif
-
-	// scale for screen sizes
-	xscale = cls.glconfig.vidWidth / 640.0;
-	yscale = cls.glconfig.vidHeight / 480.0;
-	if(x) {
-		*x *= xscale;
-	}
-	if(y) {
-		*y *= yscale;
-	}
-	if(w) {
-		*w *= xscale;
-	}
-	if(h) {
-		*h *= yscale;
-	}
-}
-
-/*
-================
-SCR_FillRect
-
-Coordinates are 640*480 virtual values
-=================
-*/
-void SCR_FillRect(float x, float y, float width, float height, const float* color) {
-	re.SetColor(color);
-
-	SCR_AdjustFrom640(&x, &y, &width, &height);
-	re.DrawStretchPic(x, y, width, height, 0, 0, 0, 0, cls.whiteShader);
-
-	re.SetColor(NULL);
-}
-
-/*
-================
-SCR_DrawPic
-
-Coordinates are 640*480 virtual values
-=================
-*/
-void SCR_DrawPic(float x, float y, float width, float height, qhandle_t hShader) {
-	SCR_AdjustFrom640(&x, &y, &width, &height);
-	re.DrawStretchPic(x, y, width, height, 0, 0, 1, 1, hShader);
-}
-
-/*
-** SCR_DrawChar
-** chars are drawn at 640*480 virtual screen size
-*/
-static void SCR_DrawChar(int x, int y, float size, int ch) {
-	int row, col;
-	float frow, fcol;
-	float ax, ay, aw, ah;
-
-	ch &= 255;
-
-	if(ch == ' ') {
-		return;
-	}
-
-	if(y < -size) {
-		return;
-	}
-
-	ax = x;
-	ay = y;
-	aw = size;
-	ah = size;
-	SCR_AdjustFrom640(&ax, &ay, &aw, &ah);
-
-	row = ch >> 4;
-	col = ch & 15;
-
-	frow = row * 0.0625;
-	fcol = col * 0.0625;
-	size = 0.0625;
-
-	re.DrawStretchPic(ax, ay, aw, ah, fcol, frow, fcol + size, frow + size, cls.charSetShader);
-}
-
-/*
-** SCR_DrawSmallChar
-** small chars are drawn at native screen resolution
-*/
-void SCR_DrawSmallChar(int x, int y, int ch) {
-	int row, col;
-	float frow, fcol;
-	float size;
-
-	ch &= 255;
-
-	if(ch == ' ') {
-		return;
-	}
-
-	if(y < -g_smallchar_height) {
-		return;
-	}
-
-	row = ch >> 4;
-	col = ch & 15;
-
-	frow = row * 0.0625;
-	fcol = col * 0.0625;
-	size = 0.0625;
-
-	re.DrawStretchPic(x, y, g_smallchar_width, g_smallchar_height, fcol, frow, fcol + size, frow + size, cls.charSetShader);
-}
-
-/*
-==================
-SCR_DrawBigString[Color]
-
-Draws a multi-colored string with a drop shadow, optionally forcing
-to a fixed color.
-
-Coordinates are at 640 by 480 virtual resolution
-==================
-*/
-void SCR_DrawStringExt(int x, int y, float size, const char* string, float* setColor, qboolean forceColor, qboolean noColorEscape) {
-	vec4_t color;
-	const char* s;
-	int xx;
-
-	// draw the drop shadow
-	color[0] = color[1] = color[2] = 0;
-	color[3] = setColor[3];
-	re.SetColor(color);
-	s = string;
-	xx = x;
-	while(*s) {
-		if(!noColorEscape && Q_IsColorString(s)) {
-			s += 2;
-			continue;
-		}
-		SCR_DrawChar(xx + 2, y + 2, size, *s);
-		xx += size;
-		s++;
-	}
-
-	// draw the colored text
-	s = string;
-	xx = x;
-	re.SetColor(setColor);
-	while(*s) {
-		if(Q_IsColorString(s)) {
-			if(!forceColor) {
-				Com_Memcpy(color, g_color_table[ColorIndex(*(s + 1))], sizeof(color));
-				color[3] = setColor[3];
-				re.SetColor(color);
-			}
-			if(!noColorEscape) {
-				s += 2;
-				continue;
-			}
-		}
-		SCR_DrawChar(xx, y, size, *s);
-		xx += size;
-		s++;
-	}
-	re.SetColor(NULL);
-}
-
-void SCR_DrawBigString(int x, int y, const char* s, float alpha, qboolean noColorEscape) {
-	float color[4];
-
-	color[0] = color[1] = color[2] = 1.0;
-	color[3] = alpha;
-	SCR_DrawStringExt(x, y, BIGCHAR_WIDTH, s, color, qfalse, noColorEscape);
-}
-
-void SCR_DrawBigStringColor(int x, int y, const char* s, vec4_t color, qboolean noColorEscape) {
-	SCR_DrawStringExt(x, y, BIGCHAR_WIDTH, s, color, qtrue, noColorEscape);
-}
-
-/*
-==================
-SCR_DrawSmallString[Color]
-
-Draws a multi-colored string with a drop shadow, optionally forcing
-to a fixed color.
-==================
-*/
-void SCR_DrawSmallStringExt(int x, int y, const char* string, float* setColor, qboolean forceColor, qboolean noColorEscape) {
-	vec4_t color;
-	const char* s;
-	int xx;
-
-	// draw the colored text
-	s = string;
-	xx = x;
-	re.SetColor(setColor);
-	while(*s) {
-		if(Q_IsColorString(s)) {
-			if(!forceColor) {
-				Com_Memcpy(color, g_color_table[ColorIndex(*(s + 1))], sizeof(color));
-				color[3] = setColor[3];
-				re.SetColor(color);
-			}
-			if(!noColorEscape) {
-				s += 2;
-				continue;
-			}
-		}
-		SCR_DrawSmallChar(xx, y, *s);
-		xx += g_smallchar_width;
-		s++;
-	}
-	re.SetColor(NULL);
-}
-
-/*
-** SCR_Strlen -- skips color escape codes
-*/
-static int SCR_Strlen(const char* str) {
-	const char* s = str;
-	int count = 0;
-
-	while(*s) {
-		if(Q_IsColorString(s)) {
-			s += 2;
-		} else {
-			count++;
-			s++;
-		}
-	}
-
-	return count;
-}
-
-/*
-** SCR_GetBigStringWidth
-*/
-int SCR_GetBigStringWidth(const char* str) { return SCR_Strlen(str) * BIGCHAR_WIDTH; }
-
-//===============================================================================
-
-/*
-=================
-SCR_DrawDemoRecording
-=================
-*/
 void SCR_DrawDemoRecording(void) {
 	char string[1024];
 	int pos;
 
-	if(!clc.demorecording) {
-		return;
-	}
-	if(clc.spDemoRecording) {
-		return;
-	}
+	if(!clc.demorecording) return;
+	if(clc.spDemoRecording) return;
 
 	pos = FS_FTell(clc.demofile);
 	sprintf(string, "RECORDING %s: %ik", clc.demoName, pos / 1024);
-
-	SCR_DrawStringExt(320 - strlen(string) * 4, 20, 8, string, g_color_table[7], qtrue, qfalse);
+	drawString((480 + (cls.wideoffset * 0.5)) * cls.scale, 25 * cls.scale, string, FONTSTYLE_CENTER | FONTSTYLE_DROPSHADOW, color_white, 0.80 * cls.scale, DEFAULT_MAXCHARS);
 }
 
 #ifdef USE_VOIP
-/*
-=================
-SCR_DrawVoipMeter
-=================
-*/
 void SCR_DrawVoipMeter(void) {
 	char buffer[16];
 	char string[256];
@@ -357,43 +63,23 @@ void SCR_DrawVoipMeter(void) {
 	buffer[i] = '\0';
 
 	sprintf(string, "VoIP: [%s]", buffer);
-	SCR_DrawStringExt(320 - strlen(string) * 4, 10, 8, string, g_color_table[7], qtrue, qfalse);
+	drawString((480 + (cls.wideoffset * 0.5)) * cls.scale, 10 * cls.scale, string, FONTSTYLE_CENTER | FONTSTYLE_DROPSHADOW, color_white, 0.80 * cls.scale, DEFAULT_MAXCHARS);
 }
 #endif
-
-/*
-===============================================================================
-
-DEBUG GRAPH
-
-===============================================================================
-*/
 
 static int current;
 static float values[1024];
 
-/*
-==============
-SCR_DebugGraph
-==============
-*/
 void SCR_DebugGraph(float value) {
 	values[current] = value;
 	current = (current + 1) % ARRAY_LEN(values);
 }
 
-/*
-==============
-SCR_DrawDebugGraph
-==============
-*/
 void SCR_DrawDebugGraph(void) {
 	int a, x, y, w, i, h;
 	float v;
 
-	//
 	// draw the graph
-	//
 	w = cls.glconfig.vidWidth;
 	x = 0;
 	y = cls.glconfig.vidHeight;
@@ -412,13 +98,6 @@ void SCR_DrawDebugGraph(void) {
 	}
 }
 
-//=============================================================================
-
-/*
-==================
-SCR_Init
-==================
-*/
 void SCR_Init(void) {
 	cl_timegraph = Cvar_Get("timegraph", "0", CVAR_CHEAT);
 	cl_debuggraph = Cvar_Get("debuggraph", "0", CVAR_CHEAT);
@@ -429,15 +108,6 @@ void SCR_Init(void) {
 	scr_initialized = qtrue;
 }
 
-//=======================================================
-
-/*
-==================
-SCR_DrawScreenField
-
-This will be called twice if rendering in stereo mode
-==================
-*/
 void SCR_DrawScreenField(stereoFrame_t stereoFrame) {
 	qboolean uiFullscreen;
 
@@ -510,24 +180,12 @@ void SCR_DrawScreenField(stereoFrame_t stereoFrame) {
 	}
 }
 
-/*
-==================
-SCR_UpdateScreen
-
-This is called every frame, and can also be called explicitly to flush
-text to the screen.
-==================
-*/
 void SCR_UpdateScreen(void) {
 	static int recursive;
 
-	if(!scr_initialized) {
-		return;  // not initialized yet
-	}
+	if(!scr_initialized) return;  // not initialized yet
 
-	if(++recursive > 2) {
-		Com_Error(ERR_FATAL, "SCR_UpdateScreen: recursively called");
-	}
+	if(++recursive > 2) Com_Error(ERR_FATAL, "SCR_UpdateScreen: recursively called");
 	recursive = 1;
 
 	// If there is no VM, there are also no rendering commands issued. Stop the renderer in
@@ -543,12 +201,399 @@ void SCR_UpdateScreen(void) {
 			SCR_DrawScreenField(STEREO_CENTER);
 		}
 
-		if(com_speeds->integer) {
+		if(com_speeds->integer)
 			re.EndFrame(&time_frontend, &time_backend);
-		} else {
+		else
 			re.EndFrame(NULL, NULL);
-		}
 	}
 
 	recursive = 0;
+}
+
+static void drawSymbol(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t fontIndex) { re.DrawStretchPic(x, y, w, h, s1, t1, s2, t2, fontIndex); }
+
+static int getFontRes(float fontScale) {
+	if(fontScale * FONT_SIZE > 128) return 4;  // 4096
+	if(fontScale * FONT_SIZE > 64) return 3;   // 2048
+	if(fontScale * FONT_SIZE > 32) return 2;   // 1024
+	if(fontScale * FONT_SIZE > 16) return 1;   // 512
+	return 0;                                  // 256 default
+}
+
+static const int emojiPages[] = {499, 500, 501, 502, 505, 506, 4072, -1};
+
+static qboolean isEmojiPage(int pageID) {
+	int i;
+	for(i = 0; emojiPages[i] != -1; i++) {
+		if(emojiPages[i] == pageID) return qtrue;
+	}
+	return qfalse;
+}
+
+static int getUTF8Font(int code, const char* style, float fontSize) {
+	int sheetIndex = code / 256;
+	if(strcmp(style, "Emoji") && code >= 1280) style = "Regular";
+	if(isEmojiPage(sheetIndex)) style = "Emoji";
+	return re.RegisterShaderNoMip(va("menu/fonts/%s_%s_%i_%i", "default", style, sheetIndex, getFontRes(fontSize)));
+}
+
+static int isHex(char c) { return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'); }
+
+static int hexToInt(char c) {
+	if(c >= '0' && c <= '9') return c - '0';
+	if(c >= 'A' && c <= 'F') return 10 + (c - 'A');
+	if(c >= 'a' && c <= 'f') return 10 + (c - 'a');
+	return 0;
+}
+
+static float drawChars(int x, int y, const char* str, float* color, float fontScale, int style, int maxChars, qboolean returnWidth, int position) {
+	const char* s;
+	float ax, ay, aw, ah;
+	float frow, fcol;
+	int codepoint, bytesRead;
+	int fontIndex = 0, currentIndex = 0, currentDrawChar = 0;
+	float glyphsPerRow = 4096.0 / 256.0;
+	float glyphTexSize = 256.0 / 4096.0;
+	const char* formatStyle = "Regular";
+	const char* savedStyle = "Regular";
+	qboolean formatUnderline = qfalse;
+	qboolean formatStrikethrough = qfalse;
+	qboolean formatMagic = qfalse;
+	qboolean formatShake = qfalse;
+	float formatColor[4] = {1.00, 1.00, 1.00, 1.00};
+	float* currentColor = color;
+	float debugColor[4] = {0.75, 0.75, 0.75, 0.50};
+	qboolean drawCursor = qtrue;
+
+	ax = x;
+	ay = y;
+	aw = FONT_SIZE * fontScale;
+	ah = FONT_SIZE * fontScale;
+
+	if(style & FONTSTYLE_BOLD) savedStyle = "Bold";
+	if(style & FONTSTYLE_ITALIC) savedStyle = "Italic";
+	if(style & FONTSTYLE_BOLD && style & FONTSTYLE_ITALIC) savedStyle = "BoldItalic";
+	if(style & FONTSTYLE_UNDERLINE) formatUnderline = qtrue;
+	if(style & FONTSTYLE_STRIKETHROUGH) formatStrikethrough = qtrue;
+	if(style & FONTSTYLE_MAGIC) formatMagic = qtrue;
+	if(style & FONTSTYLE_SHAKE) formatShake = qtrue;
+
+	formatStyle = savedStyle;
+
+	s = str;
+	while(*s) {
+		if(*s == '&' && *(s + 1) != '\0') {
+			char fmtCode = *(s + 1);
+
+			switch(fmtCode) {
+				case 'n': formatStyle = "Regular"; break;
+				case 'e': formatStyle = "Emoji"; break;
+				case 'b': formatStyle = "Bold"; break;
+				case 'i': formatStyle = "Italic"; break;
+				case 'o': formatStyle = "BoldItalic"; break;
+				case '-': formatUnderline = qtrue; break;
+				case '_': formatStrikethrough = qtrue; break;
+				case 'm': formatMagic = qtrue; break;
+				case 's': formatShake = qtrue; break;
+				case 'r':
+					formatStyle = savedStyle;
+					formatUnderline = style & FONTSTYLE_UNDERLINE;
+					formatStrikethrough = style & FONTSTYLE_STRIKETHROUGH;
+					formatMagic = style & FONTSTYLE_MAGIC;
+					formatShake = style & FONTSTYLE_SHAKE;
+					currentColor = color;
+					break;
+
+				default: break;
+			}
+
+			s += 2;
+			currentIndex += 2;
+			continue;
+		}
+
+		if(style & FONTSTYLE_LOCKSTYLE) formatStyle = savedStyle;
+		if(style & FONTSTYLE_LOCKEFFECTS) {
+			formatUnderline = style & FONTSTYLE_UNDERLINE;
+			formatStrikethrough = style & FONTSTYLE_STRIKETHROUGH;
+			formatMagic = style & FONTSTYLE_MAGIC;
+			formatShake = style & FONTSTYLE_SHAKE;
+		}
+
+		if(*s == '#' && isHex(*(s + 1)) && isHex(*(s + 2)) && isHex(*(s + 3))) {
+			int r = hexToInt(*(s + 1));
+			int g = hexToInt(*(s + 2));
+			int b = hexToInt(*(s + 3));
+
+			if(!(style & FONTSTYLE_LOCKCOLOR)) {
+				formatColor[0] = (r * 16 + r) / 255.0f;
+				formatColor[1] = (g * 16 + g) / 255.0f;
+				formatColor[2] = (b * 16 + b) / 255.0f;
+				formatColor[3] = color[3];
+
+				currentColor = formatColor;
+			}
+
+			s += 4;
+			currentIndex += 4;
+			continue;
+		}
+
+		// if(style & FONTSTYLE_ACCENT) currentColor = cgui.colors[JSC_ENABLED];
+
+		if((*s & 0x80) == 0) {
+			codepoint = *s;
+			bytesRead = 1;
+		} else if((*s & 0xE0) == 0xC0) {
+			if(*(s + 1) != '\0') {
+				codepoint = ((*s & 0x1F) << 6) | (*(s + 1) & 0x3F);
+				bytesRead = 2;
+			} else {
+				codepoint = '?';
+				bytesRead = 1;
+			}
+		} else if((*s & 0xF0) == 0xE0) {
+			if(*(s + 1) != '\0' && *(s + 2) != '\0') {
+				codepoint = ((*s & 0x0F) << 12) | ((*(s + 1) & 0x3F) << 6) | (*(s + 2) & 0x3F);
+				bytesRead = 3;
+			} else {
+				codepoint = '?';
+				bytesRead = 1;
+			}
+		} else if((*s & 0xF8) == 0xF0) {
+			if(*(s + 1) != '\0' && *(s + 2) != '\0' && *(s + 3) != '\0') {
+				codepoint = ((*s & 0x07) << 18) | ((*(s + 1) & 0x3F) << 12) | ((*(s + 2) & 0x3F) << 6) | (*(s + 3) & 0x3F);
+				bytesRead = 4;
+			} else {
+				codepoint = '?';
+				bytesRead = 1;
+			}
+		} else {
+			codepoint = '?';
+			bytesRead = 1;
+		}
+
+		if(codepoint >= 0xD800 && codepoint <= 0xDBFF) {
+			const char* next_s = s + bytesRead;
+			int next_cp = 0;
+			int next_bytes = 1;
+
+			if(*next_s) {
+				if((*next_s & 0x80) == 0) {
+					next_cp = *next_s;
+				} else if((*next_s & 0xE0) == 0xC0) {
+					next_cp = ((*next_s & 0x1F) << 6) | (*(next_s + 1) & 0x3F);
+					next_bytes = 2;
+				} else if((*next_s & 0xF0) == 0xE0) {
+					next_cp = ((*next_s & 0x0F) << 12) | ((*(next_s + 1) & 0x3F) << 6) | (*(next_s + 2) & 0x3F);
+					next_bytes = 3;
+				} else if((*next_s & 0xF8) == 0xF0) {
+					next_cp = ((*next_s & 0x07) << 18) | ((*(next_s + 1) & 0x3F) << 12) | ((*(next_s + 2) & 0x3F) << 6) | (*(next_s + 3) & 0x3F);
+					next_bytes = 4;
+				}
+			}
+
+			if(next_cp >= 0xDC00 && next_cp <= 0xDFFF) {
+				codepoint = 0x10000 + ((codepoint - 0xD800) << 10) + (next_cp - 0xDC00);
+				bytesRead += next_bytes;
+			}
+		}
+
+		if(formatMagic) codepoint = 912 + (rand() % (976 - 912 + 1));
+		if(!returnWidth) fontIndex = getUTF8Font(codepoint, formatStyle, fontScale);
+
+		if(fontIndex > 0 && !returnWidth) {
+			float shadowColor[4];
+			int glyphIndex = codepoint % 256;
+			int row = glyphIndex / (int)glyphsPerRow;
+			int col = glyphIndex % (int)glyphsPerRow;
+			float xoff = 0.00;
+			float yoff = 0.00;
+
+			shadowColor[0] = shadowColor[1] = shadowColor[2] = 0.00;
+			shadowColor[3] = currentColor[3];
+
+			if(formatShake) {
+				xoff = 2 * fontScale + (rand() % 5) - 2;
+				yoff = 2 * fontScale + (rand() % 5) - 2;
+			} else {
+				xoff = 0.00;
+				yoff = 0.00;
+			}
+
+			fcol = col * glyphTexSize;
+			frow = row * glyphTexSize;
+
+			if(codepoint < 1280) {
+				re.SetColor(shadowColor);
+				if(style & FONTSTYLE_DROPSHADOW) drawSymbol(ax + xoff + (2 * fontScale), ay + yoff + (2 * fontScale), aw * FONT_WIDTH, ah, fcol + 0.015625, frow, (fcol + glyphTexSize) - 0.015625, frow + glyphTexSize, fontIndex);
+				re.SetColor(currentColor);
+				drawSymbol(ax + xoff, ay + yoff, aw * FONT_WIDTH, ah, fcol + 0.015625, frow, (fcol + glyphTexSize) - 0.015625, frow + glyphTexSize, fontIndex);
+				if(formatUnderline) drawRoundedRect(ax, y + (ah * 0.925), aw * FONT_WIDTH, ah * 0.10, 0.00, currentColor, 0);
+				if(formatStrikethrough) drawRoundedRect(ax, y + (ah * 0.50), aw * FONT_WIDTH, ah * 0.10, 0.00, currentColor, 0);
+				if(position != -1 && currentIndex >= position && drawCursor) {
+					drawRoundedRect(ax, y, aw * 0.05, ah, 0.00, currentColor, 9);
+					drawCursor = qfalse;
+				}
+			} else if((isEmojiPage(codepoint / 256) && !(style & FONTSTYLE_LOCKEMOJI)) || !isEmojiPage(codepoint / 256)) {
+				re.SetColor(shadowColor);
+				if(style & FONTSTYLE_DROPSHADOW) drawSymbol(ax + xoff + (2 * fontScale), ay + yoff + (2 * fontScale), ah, ah, fcol, frow, fcol + glyphTexSize, frow + glyphTexSize, fontIndex);
+				if(isEmojiPage(codepoint / 256) || !strcmp(formatStyle, "Emoji"))
+					re.SetColor(formatColor);
+				else
+					re.SetColor(currentColor);
+				drawSymbol(ax + xoff, ay + yoff, ah, ah, fcol, frow, fcol + glyphTexSize, frow + glyphTexSize, fontIndex);
+				if(formatUnderline) drawRoundedRect(ax, y + (ah * 0.925), aw, ah * 0.10, 0.00, formatColor, 0);
+				if(formatStrikethrough) drawRoundedRect(ax, y + (ah * 0.50), aw, ah * 0.10, 0.00, formatColor, 0);
+				if(position != -1 && currentIndex >= position && drawCursor) {
+					drawRoundedRect(ax, y, aw * 0.05, ah, 0.00, formatColor, 0);
+					drawCursor = qfalse;
+				}
+			}
+		}
+
+		if(fontIndex > 0 || returnWidth) {
+			if(codepoint < 1280) {
+				ax += aw * FONT_WIDTH;
+				currentDrawChar += 1;
+			} else if((isEmojiPage(codepoint / 256) && !(style & FONTSTYLE_LOCKEMOJI)) || !isEmojiPage(codepoint / 256)) {
+				ax += aw * FONT_WIDTH_CJK;
+				currentDrawChar += 2;
+			}
+		}
+
+		s += bytesRead;
+		currentIndex += bytesRead;
+		if(currentDrawChar >= maxChars) {
+			re.SetColor(NULL);
+			return ax - x;
+		}
+	}
+
+	re.SetColor(NULL);
+
+	// if(!returnWidth) drawRoundedRect(x, y, stringWidth(str, fontScale, style), FONT_SIZE * fontScale, 0.00, debugColor, 0);
+
+	return ax - x;
+}
+
+float stringWidth(const char* str, float fontScale, int style, int maxChars) { return drawChars(0, 0, str, color_empty, fontScale, style, maxChars, qtrue, -1); }
+
+void drawString(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars) {
+	if(!str || !strlen(str)) return;
+
+	if(style & FONTSTYLE_RIGHT)
+		x -= stringWidth(str, fontSize, style, maxChars);
+	else if(style & FONTSTYLE_CENTER)
+		x -= stringWidth(str, fontSize, style, maxChars) * 0.50f;
+
+	drawChars(x, y, str, color, fontSize, style, maxChars, qfalse, -1);
+}
+
+void drawStringAdjusted(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars) {
+	adjustFrom640(&x, &y, NULL, NULL, NULL, &fontSize);
+	drawString(x, y, str, style, color, fontSize, maxChars);
+}
+
+void drawStringField(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars, int position) {
+	if(!str || !strlen(str)) return;
+
+	if(style & FONTSTYLE_CENTER) x -= stringWidth(str, fontSize, style, maxChars) * 0.50;
+	if(style & FONTSTYLE_RIGHT) x -= stringWidth(str, fontSize, style, maxChars) * 1.00;
+
+	drawChars(x, y, str, color, fontSize, style, maxChars, qfalse, position);
+}
+
+void drawStringFieldAdjusted(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars, int position) {
+	adjustFrom640(&x, &y, NULL, NULL, NULL, &fontSize);
+	drawStringField(x, y, str, style, color, fontSize, maxChars, position);
+}
+
+static int getCornerRes(float cornerRadius) {
+	if(cornerRadius > 128) return 4;  // 256
+	if(cornerRadius > 64) return 3;   // 128
+	if(cornerRadius > 32) return 2;   // 64
+	if(cornerRadius > 16) return 1;   // 32
+	return 0;                         // 16 default
+}
+
+float alphaRoundedRect = 1.00f;
+
+void drawRoundedRect(float x, float y, float width, float height, float radius, float* color, int style) {
+	float cx, cy, cw, ch;
+	float top_x, top_y, top_w, top_h;
+	float bot_x, bot_y, bot_w, bot_h;
+	float left_x, left_y, left_w, left_h;
+	float right_x, right_y, right_w, right_h;
+	int tl, tr, bl, br;
+	int cornerRes = 0;
+	float tempColor[4];
+
+	if(color[3] < 0.01f) return;
+
+	tempColor[0] = color[0];
+	tempColor[1] = color[1];
+	tempColor[2] = color[2];
+	tempColor[3] = color[3] * alphaRoundedRect;
+
+	if(radius * 2.0f > height) radius = height * 0.5f;
+	if(radius * 2.0f > width) radius = width * 0.5f;
+
+	cornerRes = getCornerRes(radius);
+
+	re.SetColor(tempColor);
+
+	if(radius <= 0.0f) {
+		re.DrawStretchPic(x, y, width, height, 0, 0, 0, 0, cls.whiteShader);
+		re.SetColor(NULL);
+		return;
+	}
+
+	tl = !(style & NO_TOP_LEFT);
+	tr = !(style & NO_TOP_RIGHT);
+	bl = !(style & NO_BOTTOM_LEFT);
+	br = !(style & NO_BOTTOM_RIGHT);
+
+	cx = x + radius;
+	cy = y + radius;
+	cw = width - 2.0f * radius;
+	ch = height - 2.0f * radius;
+
+	top_x = x + radius;
+	top_y = y;
+	top_w = width - (radius * 2);
+	top_h = radius;
+
+	bot_x = x + radius;
+	bot_y = y + height - radius;
+	bot_w = width - (radius * 2);
+	bot_h = radius;
+
+	left_x = x;
+	left_y = y + (tl ? radius : 0.0f);
+	left_w = radius;
+	left_h = height - (tl ? radius : 0.0f) - (bl ? radius : 0.0f);
+
+	right_x = x + width - radius;
+	right_y = y + (tr ? radius : 0.0f);
+	right_w = radius;
+	right_h = height - (tr ? radius : 0.0f) - (br ? radius : 0.0f);
+
+	if(cw > 0.0f && ch > 0.0f) re.DrawStretchPic(cx, cy, cw, ch, 0, 0, 0, 0, cls.whiteShader);
+	if(top_w > 0.0f && top_h > 0.0f) re.DrawStretchPic(top_x, top_y, top_w, top_h, 0, 0, 0, 0, cls.whiteShader);
+	if(bot_w > 0.0f && bot_h > 0.0f) re.DrawStretchPic(bot_x, bot_y, bot_w, bot_h, 0, 0, 0, 0, cls.whiteShader);
+	if(left_w > 0.0f && left_h > 0.0f) re.DrawStretchPic(left_x, left_y, left_w, left_h, 0, 0, 0, 0, cls.whiteShader);
+	if(right_w > 0.0f && right_h > 0.0f) re.DrawStretchPic(right_x, right_y, right_w, right_h, 0, 0, 0, 0, cls.whiteShader);
+
+	if(tl) re.DrawStretchPic(x, y, radius, radius, 1, 0, 0, 1, cls.corners[cornerRes]);
+	if(tr) re.DrawStretchPic(x + width - radius, y, radius, radius, 0, 0, 1, 1, cls.corners[cornerRes]);
+	if(bl) re.DrawStretchPic(x, y + height - radius, radius, radius, 1, 1, 0, 0, cls.corners[cornerRes]);
+	if(br) re.DrawStretchPic(x + width - radius, y + height - radius, radius, radius, 0, 1, 1, 0, cls.corners[cornerRes]);
+
+	re.SetColor(NULL);
+}
+
+void drawRoundedRectAdjusted(float x, float y, float width, float height, float radius, float* color, int style) {
+	adjustFrom640(&x, &y, &width, &height, &radius, NULL);
+	drawRoundedRect(x, y, width, height, radius, color, style);
 }

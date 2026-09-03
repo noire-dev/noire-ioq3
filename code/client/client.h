@@ -86,8 +86,6 @@ typedef struct {
 // it can be un-deltad from the original
 #define MAX_PARSE_ENTITIES (PACKET_BACKUP * MAX_SNAPSHOT_ENTITIES)
 
-extern int g_console_field_width;
-
 typedef struct {
 	int timeoutcount;   // it requres several frames in a timeout condition
 	                    // to disconnect, preventing debugging breaks from
@@ -342,9 +340,10 @@ typedef struct {
 
 	// rendering info
 	glconfig_t glconfig;
-	qhandle_t charSetShader;
+	float scale;
+	float wideoffset;
 	qhandle_t whiteShader;
-	qhandle_t consoleShader;
+	qhandle_t corners[5];
 } clientStatic_t;
 
 extern clientStatic_t cls;
@@ -531,18 +530,11 @@ qboolean CL_UpdateVisiblePings_f(int source);
 //
 // console
 //
-extern int g_smallchar_width;
-extern int g_smallchar_height;
-
 void Con_DrawCharacter(int cx, int line, int num);
 
-void Con_CheckResize(void);
 void Con_Init(void);
 void Con_Shutdown(void);
-void Con_Clear_f(void);
 void Con_ToggleConsole_f(void);
-void Con_DrawNotify(void);
-void Con_ClearNotify(void);
 void Con_RunConsole(void);
 void Con_DrawConsole(void);
 void Con_PageUp(void);
@@ -554,25 +546,61 @@ void Con_Close(void);
 void CL_LoadConsoleHistory(void);
 void CL_SaveConsoleHistory(void);
 
-//
 // cl_scrn.c
-//
 void SCR_Init(void);
 void SCR_UpdateScreen(void);
-
 void SCR_DebugGraph(float value);
+void adjustFrom640(float* x, float* y, float* w, float* h, float* corner, float* fontScale);
 
-int SCR_GetBigStringWidth(const char* str);  // returns in virtual 640x480 coordinates
+extern float color_empty[4];
+extern float color_black[4];
+extern float color_white[4];
+extern float color_background[4];
 
-void SCR_AdjustFrom640(float* x, float* y, float* w, float* h);
-void SCR_FillRect(float x, float y, float width, float height, const float* color);
-void SCR_DrawPic(float x, float y, float width, float height, qhandle_t hShader);
-void SCR_DrawNamedPic(float x, float y, float width, float height, const char* picname);
+// Element style
+// Fonts
+#define FONTSTYLE_LEFT 0
+#define FONTSTYLE_CENTER 1
+#define FONTSTYLE_RIGHT 2
+#define FONTSTYLE_BOLD 4
+#define FONTSTYLE_ITALIC 8
+#define FONTSTYLE_UNDERLINE 16
+#define FONTSTYLE_STRIKETHROUGH 32
+#define FONTSTYLE_MAGIC 64
+#define FONTSTYLE_SHAKE 128
+#define FONTSTYLE_LOCKSTYLE 256
+#define FONTSTYLE_LOCKEFFECTS 512
+#define FONTSTYLE_LOCKCOLOR 1024
+#define FONTSTYLE_LOCKEMOJI 2048
+#define FONTSTYLE_ACCENT 4096
+#define FONTSTYLE_DROPSHADOW 8192
+// Other
+#define NO_TOP_LEFT 16384
+#define NO_TOP_RIGHT 32768
+#define NO_BOTTOM_LEFT 65536
+#define NO_BOTTOM_RIGHT 131072
+#define NO_DRAW 262144
 
-void SCR_DrawBigString(int x, int y, const char* s, float alpha, qboolean noColorEscape);  // draws a string with embedded color control characters with fade
-void SCR_DrawBigStringColor(int x, int y, const char* s, vec4_t color, qboolean noColorEscape);  // ignores embedded color control characters
-void SCR_DrawSmallStringExt(int x, int y, const char* string, float* setColor, qboolean forceColor, qboolean noColorEscape);
-void SCR_DrawSmallChar(int x, int y, int ch);
+// Window style
+#define UI_NOTITLE 1
+#define UI_NOSCALE 2
+#define UI_NOZORDER 4
+#define UI_NOSAVE 8
+
+#define FONT_SIZE 24.00
+#define FONT_WIDTH 0.50
+#define FONT_WIDTH_CJK 0.80
+#define DEFAULT_MAXCHARS 4096
+
+void adjustFrom640(float* x, float* y, float* w, float* h, float* corner, float* fontScale);
+float stringWidth(const char* str, float fontScale, int style, int maxChars);
+void drawString(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars);
+void drawStringAdjusted(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars);
+void drawStringField(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars, int position);
+void drawStringFieldAdjusted(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars, int position);
+void drawRoundedRect(float x, float y, float width, float height, float radius, float* color, int style);
+void drawRoundedRectAdjusted(float x, float y, float width, float height, float radius, float* color, int style);
+void drawOutline(float x, float y, float width, float height, float thickness, float* color);
 
 //
 // cl_cin.c

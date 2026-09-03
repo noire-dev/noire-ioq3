@@ -885,8 +885,7 @@ static void recurseQuad(long startX, long startY, long quadSize, long xOff, long
 
 	if((startX >= lowx) && (startX + quadSize) <= (bigx) && (startY + quadSize) <= (bigy) && (startY >= lowy) && quadSize <= MAXSIZE) {
 		useY = startY;
-		scroff = cin.linbuf + (useY + ((cinTable[currentHandle].CIN_HEIGHT - bigy) >> 1) + yOff) * (cinTable[currentHandle].samplesPerLine) +
-		         (((startX + xOff)) * cinTable[currentHandle].samplesPerPixel);
+		scroff = cin.linbuf + (useY + ((cinTable[currentHandle].CIN_HEIGHT - bigy) >> 1) + yOff) * (cinTable[currentHandle].samplesPerLine) + (((startX + xOff)) * cinTable[currentHandle].samplesPerPixel);
 
 		cin.qStatus[0][cinTable[currentHandle].onQuad] = scroff;
 		cin.qStatus[1][cinTable[currentHandle].onQuad++] = scroff + offset;
@@ -913,8 +912,7 @@ static void setupQuad(long xOff, long yOff) {
 	long numQuadCels, i, x, y;
 	byte* temp;
 
-	if(xOff == cin.oldXOff && yOff == cin.oldYOff && (long)cinTable[currentHandle].ysize == cin.oldysize &&
-	   (long)cinTable[currentHandle].xsize == cin.oldxsize) {
+	if(xOff == cin.oldXOff && yOff == cin.oldYOff && (long)cinTable[currentHandle].ysize == cin.oldysize && (long)cinTable[currentHandle].xsize == cin.oldxsize) {
 		return;
 	}
 
@@ -1115,9 +1113,7 @@ redump:
 				cinTable[currentHandle].buf = cin.linbuf;
 			}
 			if(cinTable[currentHandle].numQuads == 0) {  // first frame
-				Com_Memcpy(cin.linbuf + cinTable[currentHandle].screenDelta,
-				           cin.linbuf,
-				           cinTable[currentHandle].samplesPerLine * cinTable[currentHandle].ysize);
+				Com_Memcpy(cin.linbuf + cinTable[currentHandle].screenDelta, cin.linbuf, cinTable[currentHandle].samplesPerLine * cinTable[currentHandle].ysize);
 			}
 			cinTable[currentHandle].numQuads++;
 			cinTable[currentHandle].dirty = qtrue;
@@ -1553,7 +1549,7 @@ void CIN_DrawCinematic(int handle) {
 	w = cinTable[handle].width;
 	h = cinTable[handle].height;
 	buf = cinTable[handle].buf;
-	SCR_AdjustFrom640(&x, &y, &w, &h);
+	adjustFrom640(&x, &y, &w, &h, NULL, NULL);
 
 	if(cinTable[handle].dirty && (cinTable[handle].CIN_WIDTH != cinTable[handle].drawX || cinTable[handle].CIN_HEIGHT != cinTable[handle].drawY)) {
 		int* buf2;
@@ -1651,13 +1647,7 @@ void CIN_UploadCinematic(int handle) {
 			Hunk_FreeTempMemory(buf2);
 		} else {
 			// Upload video at normal resolution
-			re.UploadCinematic(cinTable[handle].CIN_WIDTH,
-			                   cinTable[handle].CIN_HEIGHT,
-			                   cinTable[handle].drawX,
-			                   cinTable[handle].drawY,
-			                   cinTable[handle].buf,
-			                   handle,
-			                   cinTable[handle].dirty);
+			re.UploadCinematic(cinTable[handle].CIN_WIDTH, cinTable[handle].CIN_HEIGHT, cinTable[handle].drawX, cinTable[handle].drawY, cinTable[handle].buf, handle, cinTable[handle].dirty);
 			cinTable[handle].dirty = qfalse;
 		}
 
