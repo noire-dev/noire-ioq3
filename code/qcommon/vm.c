@@ -576,7 +576,7 @@ vm_t* VM_Create(const char* module, intptr_t (*systemCalls)(intptr_t*), vmInterp
 	Q_strncpyz(vm->name, module, sizeof(vm->name));
 
 	do {
-		retval = FS_FindVM(&startSearch, filename, sizeof(filename), module, (interpret == VMI_NATIVE));
+		retval = FS_FindVM(&startSearch, filename, sizeof(filename), module);
 
 		if(retval == VMI_NATIVE) {
 			Com_Printf("Try loading dll file %s\n", filename);

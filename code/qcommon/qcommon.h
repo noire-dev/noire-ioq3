@@ -591,7 +591,7 @@ bool FS_FileExists_HomeData(const char* file);
 
 bool FS_CreatePath(const char* OSPath);
 
-int FS_FindVM(void** startSearch, char* found, int foundlen, const char* name, int enableDll);
+int FS_FindVM(void** startSearch, char* found, int foundlen, const char* name);
 
 char* FS_BaseDir_BuildOSPath(const char* base, const char* qpath);
 char* FS_BuildOSPath(const char* base, const char* game, const char* qpath);

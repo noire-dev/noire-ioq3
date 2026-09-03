@@ -1251,33 +1251,12 @@ long FS_FOpenFileRead(const char* filename, fileHandle_t* file, bool uniqueFILE)
 	}
 }
 
-/*
-=================
-FS_FindVM
-
-Find a suitable VM file in search path order.
-
-In each searchpath try:
- - open DLL file if DLL loading enabled
- - open QVM file
-
-Enable search for DLL by setting enableDll to FSVM_ENABLEDLL
-
-write found DLL or QVM to "found" and return VMI_NATIVE if DLL, VMI_COMPILED if QVM
-Return the searchpath in "startSearch".
-=================
-*/
-
-int FS_FindVM(void** startSearch, char* found, int foundlen, const char* name, int enableDll) {
+int FS_FindVM(void** startSearch, char* found, int foundlen, const char* name) {
 	searchpath_t *search, *lastSearch;
 	directory_t* dir;
-	pack_t* pack;
-	char qvmName[MAX_OSPATH];
 	char* netpath;
 
 	if(!fs_searchpaths) Com_Error(ERR_FATAL, "Filesystem call made without initialization");
-
-	Com_sprintf(qvmName, sizeof(qvmName), "vm/%s.qvm", name);
 
 	lastSearch = *startSearch;
 	if(*startSearch == NULL)
@@ -1289,47 +1268,19 @@ int FS_FindVM(void** startSearch, char* found, int foundlen, const char* name, i
 		if(search->dir && !fs_numServerPaks) {
 			dir = search->dir;
 
-			if(enableDll) {
-				// The original Q3 put the architecture in the library name; in case
-				// we're loading an old binary only mod, fallback on this format if
-				// the architecture-less library doesn't exist
-				const char* dllNameFormats[] = {"%s" DLL_EXT, "%s" ARCH_STRING DLL_EXT};
+			const char* dllNameFormats[] = {"%s" DLL_EXT, "%s" ARCH_STRING DLL_EXT};
 
-				for(int i = 0; i < ARRAY_LEN(dllNameFormats); i++) {
-					char dllName[MAX_OSPATH];
-					Com_sprintf(dllName, sizeof(dllName), dllNameFormats[i], name);
-					netpath = FS_BuildOSPath(dir->path, dir->gamedir, dllName);
+			for(int i = 0; i < ARRAY_LEN(dllNameFormats); i++) {
+				char dllName[MAX_OSPATH];
+				Com_sprintf(dllName, sizeof(dllName), dllNameFormats[i], name);
+				netpath = FS_BuildOSPath(dir->path, dir->gamedir, dllName);
 
-					if(FS_FileInPathExists(netpath)) {
-						Q_strncpyz(found, netpath, foundlen);
-						*startSearch = search;
+				if(FS_FileInPathExists(netpath)) {
+					Q_strncpyz(found, netpath, foundlen);
+					*startSearch = search;
 
-						return VMI_NATIVE;
-					}
+					return VMI_NATIVE;
 				}
-			}
-
-			if(FS_FOpenFileReadDir(qvmName, search, NULL, false, false) > 0) {
-				*startSearch = search;
-				return VMI_COMPILED;
-			}
-		} else if(search->pack) {
-			pack = search->pack;
-
-			if(lastSearch && lastSearch->pack) {
-				// make sure we only try loading one VM file per game dir
-				// i.e. if VM from pak7.pk3 fails we won't try one from pak6.pk3
-
-				if(!FS_FilenameCompare(lastSearch->pack->pakPathname, pack->pakPathname)) {
-					search = search->next;
-					continue;
-				}
-			}
-
-			if(FS_FOpenFileReadDir(qvmName, search, NULL, false, false) > 0) {
-				*startSearch = search;
-
-				return VMI_COMPILED;
 			}
 		}
 
