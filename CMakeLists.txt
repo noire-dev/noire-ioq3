@@ -96,7 +96,7 @@ include(platforms/all)
 include(libraries/all)
 
 include(server)
-include(renderer_gl2)
+include(renderer)
 include(client)
 include(basegame)
 # include(missionpack)
