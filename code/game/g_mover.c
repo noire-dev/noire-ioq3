@@ -107,10 +107,10 @@ void G_RotatePoint(vec3_t point, vec3_t matrix[3]) {
 ==================
 G_TryPushingEntity
 
-Returns qfalse if the move is blocked
+Returns false if the move is blocked
 ==================
 */
-qboolean G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, vec3_t amove) {
+bool G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, vec3_t amove) {
 	vec3_t matrix[3], transpose[3];
 	vec3_t org, org2, move2;
 	gentity_t* block;
@@ -118,7 +118,7 @@ qboolean G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, ve
 	// EF_MOVER_STOP will just stop when contacting another entity
 	// instead of pushing it, but entities can still ride on top of it
 	if((pusher->s.eFlags & EF_MOVER_STOP) && check->s.groundEntityNum != pusher->s.number) {
-		return qfalse;
+		return false;
 	}
 
 	// save off the old position
@@ -170,7 +170,7 @@ qboolean G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, ve
 			VectorCopy(check->s.pos.trBase, check->r.currentOrigin);
 		}
 		trap_LinkEntity(check);
-		return qtrue;
+		return true;
 	}
 
 	// if it is ok to leave in the old position, do it
@@ -185,11 +185,11 @@ qboolean G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, ve
 	if(!block) {
 		check->s.groundEntityNum = ENTITYNUM_NONE;
 		pushed_p--;
-		return qtrue;
+		return true;
 	}
 
 	// blocked
-	return qfalse;
+	return false;
 }
 
 /*
@@ -197,7 +197,7 @@ qboolean G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, ve
 G_CheckProxMinePosition
 ==================
 */
-qboolean G_CheckProxMinePosition(gentity_t* check) {
+bool G_CheckProxMinePosition(gentity_t* check) {
 	vec3_t start, end;
 	trace_t tr;
 
@@ -205,9 +205,9 @@ qboolean G_CheckProxMinePosition(gentity_t* check) {
 	VectorMA(check->s.pos.trBase, 2, check->movedir, end);
 	trap_Trace(&tr, start, NULL, NULL, end, check->s.number, MASK_SOLID);
 
-	if(tr.startsolid || tr.fraction < 1) return qfalse;
+	if(tr.startsolid || tr.fraction < 1) return false;
 
-	return qtrue;
+	return true;
 }
 
 /*
@@ -215,7 +215,7 @@ qboolean G_CheckProxMinePosition(gentity_t* check) {
 G_TryPushingProxMine
 ==================
 */
-qboolean G_TryPushingProxMine(gentity_t* check, gentity_t* pusher, vec3_t move, vec3_t amove) {
+bool G_TryPushingProxMine(gentity_t* check, gentity_t* pusher, vec3_t move, vec3_t amove) {
 	vec3_t forward, right, up;
 	vec3_t org, org2, move2;
 	int ret;
@@ -251,10 +251,10 @@ G_MoverPush
 
 Objects need to be moved back on a failed push,
 otherwise riders would continue to slide.
-If qfalse is returned, *obstacle will be the blocking entity
+If false is returned, *obstacle will be the blocking entity
 ============
 */
-qboolean G_MoverPush(gentity_t* pusher, vec3_t move, vec3_t amove, gentity_t** obstacle) {
+bool G_MoverPush(gentity_t* pusher, vec3_t move, vec3_t amove, gentity_t** obstacle) {
 	int i, e;
 	gentity_t* check;
 	vec3_t mins, maxs;
@@ -351,8 +351,7 @@ qboolean G_MoverPush(gentity_t* pusher, vec3_t move, vec3_t amove, gentity_t** o
 		// if the entity is standing on the pusher, it will definitely be moved
 		if(check->s.groundEntityNum != pusher->s.number) {
 			// see if the ent needs to be tested
-			if(check->r.absmin[0] >= maxs[0] || check->r.absmin[1] >= maxs[1] || check->r.absmin[2] >= maxs[2] || check->r.absmax[0] <= mins[0] ||
-			   check->r.absmax[1] <= mins[1] || check->r.absmax[2] <= mins[2]) {
+			if(check->r.absmin[0] >= maxs[0] || check->r.absmin[1] >= maxs[1] || check->r.absmin[2] >= maxs[2] || check->r.absmax[0] <= mins[0] || check->r.absmax[1] <= mins[1] || check->r.absmax[2] <= mins[2]) {
 				continue;
 			}
 			// see if the ent's bbox is inside the pusher's final position
@@ -390,10 +389,10 @@ qboolean G_MoverPush(gentity_t* pusher, vec3_t move, vec3_t amove, gentity_t** o
 			}
 			trap_LinkEntity(p->ent);
 		}
-		return qfalse;
+		return false;
 	}
 
-	return qtrue;
+	return true;
 }
 
 /*
@@ -596,7 +595,7 @@ void Reached_BinaryMover(gentity_t* ent) {
 
 		// close areaportals
 		if(ent->teammaster == ent || !ent->teammaster) {
-			trap_AdjustAreaPortalState(ent, qfalse);
+			trap_AdjustAreaPortalState(ent, false);
 		}
 	} else {
 		G_Error("Reached_BinaryMover: bad moverState");
@@ -635,7 +634,7 @@ void Use_BinaryMover(gentity_t* ent, gentity_t* other, gentity_t* activator) {
 
 		// open areaportal
 		if(ent->teammaster == ent || !ent->teammaster) {
-			trap_AdjustAreaPortalState(ent, qtrue);
+			trap_AdjustAreaPortalState(ent, true);
 		}
 		return;
 	}
@@ -692,7 +691,7 @@ void InitMover(gentity_t* ent) {
 	float distance;
 	float light;
 	vec3_t color;
-	qboolean lightSet, colorSet;
+	bool lightSet, colorSet;
 	char* sound;
 
 	// if the "model2" key is set, use a separate model
@@ -859,7 +858,7 @@ void Think_SpawnNewDoorTrigger(gentity_t* ent) {
 
 	// set all of the members as shootable
 	for(other = ent; other; other = other->teamchain) {
-		other->takedamage = qtrue;
+		other->takedamage = true;
 	}
 
 	// find the bounds of everything on the team
@@ -969,7 +968,7 @@ void SP_func_door(gentity_t* ent) {
 
 		G_SpawnInt("health", "0", &health);
 		if(health) {
-			ent->takedamage = qtrue;
+			ent->takedamage = true;
 		}
 		if(ent->targetname || health) {
 			// non touch/shoot doors
@@ -1194,7 +1193,7 @@ void SP_func_button(gentity_t* ent) {
 
 	if(ent->health) {
 		// shootable button
-		ent->takedamage = qtrue;
+		ent->takedamage = true;
 	} else {
 		// touchable button
 		ent->touch = Touch_Button;

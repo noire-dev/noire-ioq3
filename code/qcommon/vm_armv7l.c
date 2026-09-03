@@ -178,11 +178,7 @@ static const unsigned char vm_opInfo[256] = {
 
 #ifdef DEBUG_VM
 static const char* opnames[256] = {
-    "OP_UNDEF", "OP_IGNORE", "OP_BREAK", "OP_ENTER", "OP_LEAVE", "OP_CALL",  "OP_PUSH",   "OP_POP",    "OP_CONST",  "OP_LOCAL", "OP_JUMP",       "OP_EQ",
-    "OP_NE",    "OP_LTI",    "OP_LEI",   "OP_GTI",   "OP_GEI",   "OP_LTU",   "OP_LEU",    "OP_GTU",    "OP_GEU",    "OP_EQF",   "OP_NEF",        "OP_LTF",
-    "OP_LEF",   "OP_GTF",    "OP_GEF",   "OP_LOAD1", "OP_LOAD2", "OP_LOAD4", "OP_STORE1", "OP_STORE2", "OP_STORE4", "OP_ARG",   "OP_BLOCK_COPY", "OP_SEX8",
-    "OP_SEX16", "OP_NEGI",   "OP_ADD",   "OP_SUB",   "OP_DIVI",  "OP_DIVU",  "OP_MODI",   "OP_MODU",   "OP_MULI",   "OP_MULU",  "OP_BAND",       "OP_BOR",
-    "OP_BXOR",  "OP_BCOM",   "OP_LSH",   "OP_RSHI",  "OP_RSHU",  "OP_NEGF",  "OP_ADDF",   "OP_SUBF",   "OP_DIVF",   "OP_MULF",  "OP_CVIF",       "OP_CVFI",
+    "OP_UNDEF", "OP_IGNORE", "OP_BREAK", "OP_ENTER", "OP_LEAVE", "OP_CALL", "OP_PUSH", "OP_POP", "OP_CONST", "OP_LOCAL", "OP_JUMP", "OP_EQ", "OP_NE", "OP_LTI", "OP_LEI", "OP_GTI", "OP_GEI", "OP_LTU", "OP_LEU", "OP_GTU", "OP_GEU", "OP_EQF", "OP_NEF", "OP_LTF", "OP_LEF", "OP_GTF", "OP_GEF", "OP_LOAD1", "OP_LOAD2", "OP_LOAD4", "OP_STORE1", "OP_STORE2", "OP_STORE4", "OP_ARG", "OP_BLOCK_COPY", "OP_SEX8", "OP_SEX16", "OP_NEGI", "OP_ADD", "OP_SUB", "OP_DIVI", "OP_DIVU", "OP_MODI", "OP_MODU", "OP_MULI", "OP_MULU", "OP_BAND", "OP_BOR", "OP_BXOR", "OP_BCOM", "OP_LSH", "OP_RSHI", "OP_RSHU", "OP_NEGF", "OP_ADDF", "OP_SUBF", "OP_DIVF", "OP_MULF", "OP_CVIF", "OP_CVFI",
 };
 
 #define NOTIMPL(x)                                                          \
@@ -193,7 +189,7 @@ static const char* opnames[256] = {
 #define NOTIMPL(x)                                                      \
 	do {                                                                \
 		Com_Printf(S_COLOR_RED "instruction not implemented: %x\n", x); \
-		vm->compiled = qfalse;                                          \
+		vm->compiled = false;                                           \
 		return;                                                         \
 	} while(0)
 #endif
@@ -472,9 +468,7 @@ static unsigned short can_encode(unsigned val) {
 // singe precision register -> arm core register
 #define VMOVssa(Rt, Vn) (AL | (0b1110 << 24) | (0b000 << 21) | (1 << 20) | ((Vn >> 1) << 16) | (Rt << 12) | (0b1010 << 8) | ((Vn & 1) << 7) | (1 << 4))
 
-#define _VCVT_F(Vd, Vm, opc2, op)                                                                                                                  \
-	(AL | (0b11101 << 23) | ((Vd & 1) << 22) | (0b111 << 19) | (opc2 << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | (op << 7) | (1 << 6) | \
-	 ((Vm & 1) << 5) | (Vm >> 1))
+#define _VCVT_F(Vd, Vm, opc2, op) (AL | (0b11101 << 23) | ((Vd & 1) << 22) | (0b111 << 19) | (opc2 << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | (op << 7) | (1 << 6) | ((Vm & 1) << 5) | (Vm >> 1))
 #define VCVT_F32_U32(Sd, Sm) _VCVT_F(Sd, Sm, 0b000, 0 /* unsigned */)
 #define VCVT_U32_F32(Sd, Sm) _VCVT_F(Sd, Sm, 0b100, 1 /* round zero */)
 #define VCVT_F32_S32(Sd, Sm) _VCVT_F(Sd, Sm, 0b000, 1 /* unsigned */)
@@ -483,25 +477,14 @@ static unsigned short can_encode(unsigned val) {
 #define VLDRa(Vd, Rn, i) (AL | (0b1101 << 24) | 1 << 23 | ((Vd & 1) << 22) | 1 << 20 | (Rn << 16) | ((Vd >> 1) << 12) | (0b1010 << 8) | off8(i))
 #define VSTRa(Vd, Rn, i) (AL | (0b1101 << 24) | 1 << 23 | ((Vd & 1) << 22) | 0 << 20 | (Rn << 16) | ((Vd >> 1) << 12) | (0b1010 << 8) | off8(i))
 
-#define VNEG_F32(Vd, Vm) \
-	(AL | (0b11101 << 23) | ((Vd & 1) << 22) | (0b11 << 20) | (1 << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | (1 << 6) | ((Vm & 1) << 5) | (Vm >> 1))
+#define VNEG_F32(Vd, Vm) (AL | (0b11101 << 23) | ((Vd & 1) << 22) | (0b11 << 20) | (1 << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | (1 << 6) | ((Vm & 1) << 5) | (Vm >> 1))
 
-#define VADD_F32(Vd, Vn, Vm)                                                                                                                                 \
-	(AL | (0b11100 << 23) | ((Vd & 1) << 22) | (0b11 << 20) | ((Vn >> 1) << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | ((Vn & 1) << 7) | (0 << 6) | \
-	 ((Vm & 1) << 5) | (Vm >> 1))
-#define VSUB_F32(Vd, Vn, Vm)                                                                                                                                 \
-	(AL | (0b11100 << 23) | ((Vd & 1) << 22) | (0b11 << 20) | ((Vn >> 1) << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | ((Vn & 1) << 7) | (1 << 6) | \
-	 ((Vm & 1) << 5) | (Vm >> 1))
-#define VMUL_F32(Vd, Vn, Vm)                                                                                                                                 \
-	(AL | (0b11100 << 23) | ((Vd & 1) << 22) | (0b10 << 20) | ((Vn >> 1) << 16) | ((Vd >> 1) << 12) | (0b101) << 9 | (0 << 8) | ((Vn & 1) << 7) | (0 << 6) | \
-	 ((Vm & 1) << 5) | (Vm >> 1))
-#define VDIV_F32(Vd, Vn, Vm)                                                                                                                                 \
-	(AL | (0b11101 << 23) | ((Vd & 1) << 22) | (0b00 << 20) | ((Vn >> 1) << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | ((Vn & 1) << 7) | (0 << 6) | \
-	 ((Vm & 1) << 5) | (Vm >> 1))
+#define VADD_F32(Vd, Vn, Vm) (AL | (0b11100 << 23) | ((Vd & 1) << 22) | (0b11 << 20) | ((Vn >> 1) << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | ((Vn & 1) << 7) | (0 << 6) | ((Vm & 1) << 5) | (Vm >> 1))
+#define VSUB_F32(Vd, Vn, Vm) (AL | (0b11100 << 23) | ((Vd & 1) << 22) | (0b11 << 20) | ((Vn >> 1) << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | ((Vn & 1) << 7) | (1 << 6) | ((Vm & 1) << 5) | (Vm >> 1))
+#define VMUL_F32(Vd, Vn, Vm) (AL | (0b11100 << 23) | ((Vd & 1) << 22) | (0b10 << 20) | ((Vn >> 1) << 16) | ((Vd >> 1) << 12) | (0b101) << 9 | (0 << 8) | ((Vn & 1) << 7) | (0 << 6) | ((Vm & 1) << 5) | (Vm >> 1))
+#define VDIV_F32(Vd, Vn, Vm) (AL | (0b11101 << 23) | ((Vd & 1) << 22) | (0b00 << 20) | ((Vn >> 1) << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | ((Vn & 1) << 7) | (0 << 6) | ((Vm & 1) << 5) | (Vm >> 1))
 
-#define _VCMP_F32(Vd, Vm, E)                                                                                                                         \
-	(AL | (0b11101 << 23) | ((Vd & 1) << 22) | (0b11 << 20) | ((0b0100) << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | (E << 7) | (1 << 6) | \
-	 ((Vm & 1) << 5) | (Vm >> 1))
+#define _VCMP_F32(Vd, Vm, E) (AL | (0b11101 << 23) | ((Vd & 1) << 22) | (0b11 << 20) | ((0b0100) << 16) | ((Vd >> 1) << 12) | (0b101 << 9) | (0 << 8) | (E << 7) | (1 << 6) | ((Vm & 1) << 5) | (Vm >> 1))
 #define VCMP_F32(Vd, Vm) _VCMP_F32(Vd, Vm, 0)
 
 #define VMRS(Rt) (AL | (0b11101111 << 20) | (0b0001 << 16) | (Rt << 12) | (0b1010 << 8) | (1 << 4))
@@ -589,7 +572,7 @@ void VM_Compile(vm_t* vm, vmHeader_t* header) {
 #define OFF_CODE 0
 #define OFF_IMMEDIATES 1
 
-	vm->compiled = qfalse;
+	vm->compiled = false;
 
 	vm->codeBase = NULL;
 	vm->codeLength = 0;
@@ -1081,7 +1064,7 @@ void VM_Compile(vm_t* vm, vmHeader_t* header) {
 	__clear_cache(vm->codeBase, vm->codeBase + vm->codeLength);
 
 	vm->destroy = VM_Destroy_Compiled;
-	vm->compiled = qtrue;
+	vm->compiled = true;
 }
 
 int VM_CallCompiled(vm_t* vm, int* args) {
@@ -1095,7 +1078,7 @@ int VM_CallCompiled(vm_t* vm, int* args) {
 
 	currentVM = vm;
 
-	vm->currentlyInterpreting = qtrue;
+	vm->currentlyInterpreting = true;
 
 	programStack -= (8 + 4 * MAX_VMMAIN_ARGS);
 	argPointer = (int*)&image[programStack + 8];
@@ -1131,7 +1114,7 @@ int VM_CallCompiled(vm_t* vm, int* args) {
 	if(programStack != stackOnEntry - (8 + 4 * MAX_VMMAIN_ARGS)) Com_Error(ERR_DROP, "programStack corrupted in compiled code");
 
 	vm->programStack = stackOnEntry;
-	vm->currentlyInterpreting = qfalse;
+	vm->currentlyInterpreting = false;
 
 	return retVal;
 }

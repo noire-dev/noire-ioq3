@@ -42,7 +42,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <time.h>
 #include <sys/resource.h>
 
-qboolean stdinIsATTY;
+bool stdinIsATTY;
 
 static char execBuffer[1024];
 static char* execBufferPointer;
@@ -242,7 +242,7 @@ static char* Sys_LegacyHomePath(void) {
 Sys_MigrateToXDG
 ==================
 */
-qboolean Sys_MigrateToXDG(void) {
+bool Sys_MigrateToXDG(void) {
 	const char* scriptTemplate = "#!/bin/sh\n"
 
 	                             "set -eu\n"
@@ -307,33 +307,32 @@ qboolean Sys_MigrateToXDG(void) {
 	                             "echo \"XDG migration complete!\"\n";
 
 	char scriptBuffer[2048];
-	int len =
-	    Com_sprintf(scriptBuffer, sizeof(scriptBuffer), scriptTemplate, Sys_LegacyHomePath(), Sys_HomeConfigPath(), Sys_HomeDataPath(), Sys_HomeStatePath());
+	int len = Com_sprintf(scriptBuffer, sizeof(scriptBuffer), scriptTemplate, Sys_LegacyHomePath(), Sys_HomeConfigPath(), Sys_HomeDataPath(), Sys_HomeStatePath());
 
 	if(len < 0 || len >= (int)sizeof(scriptBuffer)) {
 		Com_Printf("XDG migration error: substitution failed.\n");
-		return qfalse;
+		return false;
 	}
 
 	char scriptPath[] = "/tmp/xdgmigrationXXXXXX";
 	int fd = mkstemp(scriptPath);
 	if(fd == -1) {
 		Com_Printf("XDG migration error: script creation failed.\n");
-		return qfalse;
+		return false;
 	}
 
 	if(write(fd, scriptBuffer, len) != len) {
 		close(fd);
 		unlink(scriptPath);
 		Com_Printf("XDG migration error: script write failed.\n");
-		return qfalse;
+		return false;
 	}
 	close(fd);
 
 	if(chmod(scriptPath, 0700) == -1) {
 		unlink(scriptPath);
 		Com_Printf("XDG migration error: script chmod failed.\n");
-		return qfalse;
+		return false;
 	}
 
 	Sys_ClearExecBuffer();
@@ -349,23 +348,23 @@ qboolean Sys_MigrateToXDG(void) {
 Sys_ShouldUseLegacyHomePath
 ==================
 */
-static qboolean Sys_ShouldUseLegacyHomePath(void) {
+static bool Sys_ShouldUseLegacyHomePath(void) {
 	if(access(Sys_HomeConfigPath(), F_OK) == 0) {
 		// If the XDG config directory exists, prefer XDG layout, regardless
-		return qfalse;
+		return false;
 	}
 
 	if((com_homepath && com_homepath->string[0]) || Cvar_VariableString("fs_homepath")[0]) {
 		// If a custom homepath has been explicity set then
 		// that strongly implies that migration isn't desired
-		return qfalse;
+		return false;
 	}
 
 	const char* legacyHomePath = Sys_LegacyHomePath();
 
 	if(!*legacyHomePath || access(legacyHomePath, F_OK) != 0) {
 		// The legacy home path doesn't exist
-		return qfalse;
+		return false;
 	}
 
 	char migrationRefusedPath[MAX_OSPATH];
@@ -395,7 +394,7 @@ static qboolean Sys_ShouldUseLegacyHomePath(void) {
 		fclose(fopen(migrationRefusedPath, "w"));
 	}
 
-	return qtrue;
+	return true;
 }
 
 /*
@@ -498,21 +497,21 @@ int Sys_Milliseconds(void) {
 Sys_RandomBytes
 ==================
 */
-qboolean Sys_RandomBytes(byte* string, int len) {
+bool Sys_RandomBytes(byte* string, int len) {
 	FILE* fp;
 
 	fp = fopen("/dev/urandom", "r");
-	if(!fp) return qfalse;
+	if(!fp) return false;
 
 	setvbuf(fp, NULL, _IONBF, 0);  // don't buffer reads from /dev/urandom
 
 	if(fread(string, sizeof(byte), len, fp) != len) {
 		fclose(fp);
-		return qfalse;
+		return false;
 	}
 
 	fclose(fp);
-	return qtrue;
+	return true;
 }
 
 /*
@@ -538,7 +537,7 @@ Sys_LowPhysicalMemory
 TODO
 ==================
 */
-qboolean Sys_LowPhysicalMemory(void) { return qfalse; }
+bool Sys_LowPhysicalMemory(void) { return false; }
 
 /*
 ==================
@@ -573,12 +572,12 @@ FILE* Sys_FOpen(const char* ospath, const char* mode) {
 Sys_Mkdir
 ==================
 */
-qboolean Sys_Mkdir(const char* path) {
+bool Sys_Mkdir(const char* path) {
 	int result = mkdir(path, 0750);
 
 	if(result != 0) return errno == EEXIST;
 
-	return qtrue;
+	return true;
 }
 
 /*
@@ -697,7 +696,7 @@ void Sys_ListFilteredFiles(const char* basedir, char* subdirs, char* filter, cha
 			break;
 		}
 		Com_sprintf(filename, sizeof(filename), "%s/%s", subdirs, d->d_name);
-		if(!Com_FilterPath(filter, filename, qfalse)) continue;
+		if(!Com_FilterPath(filter, filename, false)) continue;
 		list[*numfiles] = CopyString(filename);
 		(*numfiles)++;
 	}
@@ -710,10 +709,10 @@ void Sys_ListFilteredFiles(const char* basedir, char* subdirs, char* filter, cha
 Sys_ListFiles
 ==================
 */
-char** Sys_ListFiles(const char* directory, const char* extension, char* filter, int* numfiles, qboolean wantsubs) {
+char** Sys_ListFiles(const char* directory, const char* extension, char* filter, int* numfiles, bool wantsubs) {
 	struct dirent* d;
 	DIR* fdir;
-	qboolean dironly = wantsubs;
+	bool dironly = wantsubs;
 	char search[MAX_OSPATH];
 	int nfiles;
 	char** listCopy;
@@ -750,7 +749,7 @@ char** Sys_ListFiles(const char* directory, const char* extension, char* filter,
 
 	if(extension[0] == '/' && extension[1] == 0) {
 		extension = "";
-		dironly = qtrue;
+		dironly = true;
 	}
 
 	extLen = strlen(extension);
@@ -988,7 +987,7 @@ dialogResult_t Sys_Dialog(dialogType_t type, const char* message, const char* ti
 	typedef void (*dialogCommandBuilder_t)(dialogType_t, const char*, const char*);
 
 	const char* session = getenv("DESKTOP_SESSION");
-	qboolean tried[NUM_DIALOG_PROGRAMS] = {qfalse};
+	bool tried[NUM_DIALOG_PROGRAMS] = {false};
 	dialogCommandBuilder_t commands[NUM_DIALOG_PROGRAMS] = {NULL};
 	dialogCommandType_t preferredCommandType = NONE;
 	int i;
@@ -1020,7 +1019,7 @@ dialogResult_t Sys_Dialog(dialogType_t type, const char* message, const char* ti
 				}
 			}
 
-			tried[i] = qtrue;
+			tried[i] = true;
 
 			// The preference failed, so start again in order
 			if(preferredCommandType != NONE) {
@@ -1119,7 +1118,7 @@ int Sys_PID(void) { return getpid(); }
 Sys_PIDIsRunning
 ==============
 */
-qboolean Sys_PIDIsRunning(int pid) { return kill(pid, 0) == 0; }
+bool Sys_PIDIsRunning(int pid) { return kill(pid, 0) == 0; }
 
 /*
 =================
@@ -1128,19 +1127,19 @@ Sys_DllExtension
 Check if filename should be allowed to be loaded as a DLL.
 =================
 */
-qboolean Sys_DllExtension(const char* name) {
+bool Sys_DllExtension(const char* name) {
 	const char* p;
 	char c = 0;
 
 	if(COM_CompareExtension(name, DLL_EXT)) {
-		return qtrue;
+		return true;
 	}
 
 #ifdef __APPLE__
 	// Allow system frameworks without dylib extensions
 	// i.e., /System/Library/Frameworks/OpenAL.framework/OpenAL
 	if(strncmp(name, "/System/Library/Frameworks/", 27) == 0) {
-		return qtrue;
+		return true;
 	}
 #endif
 
@@ -1155,7 +1154,7 @@ qboolean Sys_DllExtension(const char* name) {
 			c = *p;
 
 			if(!isdigit(c) && c != '.') {
-				return qfalse;
+				return false;
 			}
 
 			p++;
@@ -1163,11 +1162,11 @@ qboolean Sys_DllExtension(const char* name) {
 
 		// Don't allow filename to end in a period. file.so., file.so.0., etc
 		if(c != '.') {
-			return qtrue;
+			return true;
 		}
 	}
 
-	return qfalse;
+	return false;
 }
 
 /*
@@ -1175,7 +1174,7 @@ qboolean Sys_DllExtension(const char* name) {
 Sys_OpenFolderInPlatformFileManager
 ==============
 */
-qboolean Sys_OpenFolderInPlatformFileManager(const char* path) {
+bool Sys_OpenFolderInPlatformFileManager(const char* path) {
 	Sys_ClearExecBuffer();
 
 #ifdef __APPLE__
@@ -1194,7 +1193,7 @@ qboolean Sys_OpenFolderInPlatformFileManager(const char* path) {
 Sys_SetMaxFileLimit
 =================
 */
-qboolean Sys_SetMaxFileLimit(void) {
+bool Sys_SetMaxFileLimit(void) {
 #ifdef RLIMIT_NOFILE
 	struct rlimit limit;
 
@@ -1203,7 +1202,7 @@ qboolean Sys_SetMaxFileLimit(void) {
 		// Set the file limit to the maximum
 		limit.rlim_cur = limit.rlim_max;
 		if(setrlimit(RLIMIT_NOFILE, &limit) == 0)
-			return qtrue;
+			return true;
 		else
 			Com_DPrintf(S_COLOR_YELLOW "WARNING: setrlimit (rlim_max) failed\n");
 
@@ -1212,7 +1211,7 @@ qboolean Sys_SetMaxFileLimit(void) {
 		// OPEN_MAX. If we see an error, then try again with OPEN_MAX as the limit.
 		limit.rlim_cur = OPEN_MAX;
 		if(setrlimit(RLIMIT_NOFILE, &limit) == 0)
-			return qtrue;
+			return true;
 		else
 			Com_DPrintf(S_COLOR_YELLOW "WARNING: setrlimit (OPEN_MAX) failed\n");
 #endif
@@ -1221,5 +1220,5 @@ qboolean Sys_SetMaxFileLimit(void) {
 
 #endif  // RLIMIT_NOFILE
 
-	return qfalse;
+	return false;
 }

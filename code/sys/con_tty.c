@@ -44,10 +44,10 @@ called before and after a stdout or stderr output
 =============================================================
 */
 
-extern qboolean stdinIsATTY;
-static qboolean stdin_active;
+extern bool stdinIsATTY;
+static bool stdin_active;
 // general flag to tell about tty console mode
-static qboolean ttycon_on = qfalse;
+static bool ttycon_on = false;
 static int ttycon_hide = 0;
 static int ttycon_show_overdue = 0;
 
@@ -264,8 +264,8 @@ void CON_Init(void) {
 
 	if(!stdinIsATTY) {
 		Com_Printf("tty console mode disabled\n");
-		ttycon_on = qfalse;
-		stdin_active = qtrue;
+		ttycon_on = false;
+		stdin_active = true;
 		return;
 	}
 
@@ -293,7 +293,7 @@ void CON_Init(void) {
 	tc.c_cc[VMIN] = 1;
 	tc.c_cc[VTIME] = 0;
 	tcsetattr(STDIN_FILENO, TCSADRAIN, &tc);
-	ttycon_on = qtrue;
+	ttycon_on = true;
 	ttycon_hide = 1;  // Mark as hidden, so prompt is shown in CON_Show
 	CON_Show();
 }
@@ -432,7 +432,7 @@ char* CON_Input(void) {
 
 		len = read(STDIN_FILENO, text, sizeof(text));
 		if(len == 0) {  // eof!
-			stdin_active = qfalse;
+			stdin_active = false;
 			return NULL;
 		}
 

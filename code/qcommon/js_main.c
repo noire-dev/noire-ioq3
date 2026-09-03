@@ -12,12 +12,12 @@ static duk_context* js_ctx = NULL;
 
 js_args_t* vmargs;
 js_result_t* vmresult;
-static qboolean qvmcall_using = qfalse;
+static bool qvmcall_using = false;
 
 static cvar_t* js_error;
 
 static void* JSCall_ref = NULL;
-static qboolean JSCall_compiled = qfalse;
+static bool JSCall_compiled = false;
 
 void VMContext(js_args_t* args, js_result_t* result) {
 	vmargs = args;
@@ -27,7 +27,7 @@ void VMContext(js_args_t* args, js_result_t* result) {
 static void JS_InitCompiler(void) {
 	if(duk_get_global_string(js_ctx, "JSCall") && duk_is_function(js_ctx, -1)) {
 		JSCall_ref = duk_get_heapptr(js_ctx, -1);
-		JSCall_compiled = qtrue;
+		JSCall_compiled = true;
 	}
 	duk_pop(js_ctx);
 }
@@ -45,7 +45,7 @@ void JSLoadScripts(const char* path, const char* name) {
 		Com_sprintf(fullpath, sizeof(fullpath), "%s/%s", path, file);
 		Com_Printf("#5ff[%d/%d] %s\n", i + 1, numfiles, file);
 
-		JSOpenFile(fullpath, qfalse);
+		JSOpenFile(fullpath, false);
 		file += strlen(file) + 1;
 	}
 }
@@ -79,7 +79,7 @@ static duk_ret_t jsexport_console_cmd(duk_context* ctx) {
 
 static duk_ret_t jsexport_openjs_file(duk_context* ctx) {
 	const char* str = duk_get_string(ctx, 0);
-	JSOpenFile(str, qtrue);
+	JSOpenFile(str, true);
 	return 0;
 }
 
@@ -235,22 +235,22 @@ static duk_ret_t jsexport_vmcall(duk_context* ctx) {
 		return duk_throw(ctx);
 	}
 
-	qvmcall_using = qtrue;
+	qvmcall_using = true;
 
 	int func_id = duk_require_int(ctx, 0);
 	int qvm_id = duk_require_int(ctx, 1);
 
 	if(qvm_id == VM_GAME && !gvm) {
-		qvmcall_using = qfalse;
+		qvmcall_using = false;
 		return 1;
 	}
 #ifndef DEDICATED
 	if(qvm_id == VM_CGAME && !cgvm) {
-		qvmcall_using = qfalse;
+		qvmcall_using = false;
 		return 1;
 	}
 	if(qvm_id == VM_UI && !uivm) {
-		qvmcall_using = qfalse;
+		qvmcall_using = false;
 		return 1;
 	}
 #endif
@@ -295,11 +295,11 @@ static duk_ret_t jsexport_vmcall(duk_context* ctx) {
 		default: duk_push_undefined(ctx); break;
 	}
 
-	qvmcall_using = qfalse;
+	qvmcall_using = false;
 	return 1;
 }
 
-qboolean JSOpenFile(const char* filename, int notify) {
+bool JSOpenFile(const char* filename, int notify) {
 	union {
 		char* c;
 		void* v;
@@ -312,7 +312,7 @@ qboolean JSOpenFile(const char* filename, int notify) {
 
 	if(f.v == NULL) {
 		Com_Printf("#ff5Could not load script '%s'\n", fullpath);
-		return qfalse;
+		return false;
 	}
 
 	if(notify) Com_Printf("#5ffLoading %s JS script...\n", filename);
@@ -323,12 +323,12 @@ qboolean JSOpenFile(const char* filename, int notify) {
 		Cvar_Set("js.error", va("%s: %s", filename, error));
 		duk_pop(js_ctx);
 		FS_FreeFile(f.v);
-		return qfalse;
+		return false;
 	}
 
 	duk_pop(js_ctx);
 	FS_FreeFile(f.v);
-	return qtrue;
+	return true;
 }
 
 static void Cmd_JSOpenFile_f(void) {
@@ -340,16 +340,16 @@ static void Cmd_JSOpenFile_f(void) {
 	}
 
 	Q_strncpyz(filename, Cmd_Argv(1), sizeof(filename));
-	JSOpenFile(filename, qtrue);
+	JSOpenFile(filename, true);
 }
 
-qboolean JSEval(const char* code, qboolean doPrint, qboolean doResult, js_result_t* result) {
+bool JSEval(const char* code, bool doPrint, bool doResult, js_result_t* result) {
 	if(duk_peval_string(js_ctx, code) != 0) {
 		const char* error = duk_safe_to_string(js_ctx, -1);
 		Com_Printf("#f55%s\n", error);
 		Cvar_Set("js.error", va("%s", error));
 		duk_pop(js_ctx);
-		return qfalse;
+		return false;
 	}
 
 	if(doPrint) {
@@ -360,7 +360,7 @@ qboolean JSEval(const char* code, qboolean doPrint, qboolean doResult, js_result
 	if(doResult && result) ParseDuktapeResult(js_ctx, result);
 
 	duk_pop(js_ctx);
-	return qtrue;
+	return true;
 }
 
 static void Cmd_JSEval_f(void) {
@@ -369,10 +369,10 @@ static void Cmd_JSEval_f(void) {
 		return;
 	}
 
-	JSEval(va("%s", Cmd_Argv(1)), qtrue, qfalse, NULL);
+	JSEval(va("%s", Cmd_Argv(1)), true, false, NULL);
 }
 
-qboolean JSCall(int func_id, js_args_t* args, js_result_t* result) {
+bool JSCall(int func_id, js_args_t* args, js_result_t* result) {
 	int arg_count;
 
 	duk_idx_t top = duk_get_top(js_ctx);
@@ -380,7 +380,7 @@ qboolean JSCall(int func_id, js_args_t* args, js_result_t* result) {
 		duk_push_heapptr(js_ctx, JSCall_ref);
 	} else {
 		Com_Printf("#f55JavaScript JSCall not compiled\n");
-		return qfalse;
+		return false;
 	}
 
 	duk_push_int(js_ctx, func_id);
@@ -404,13 +404,13 @@ qboolean JSCall(int func_id, js_args_t* args, js_result_t* result) {
 		Com_Printf("#f55%s\n", error);
 		Cvar_Set("js.error", va("%s", error));
 		duk_set_top(js_ctx, top);
-		return qfalse;
+		return false;
 	}
 
 	ParseDuktapeResult(js_ctx, result);
 
 	duk_set_top(js_ctx, top);
-	return qtrue;
+	return true;
 }
 
 void JS_Restart(void) {
@@ -424,8 +424,8 @@ void JS_Restart(void) {
 		duk_destroy_heap(js_ctx);
 		js_ctx = NULL;
 		JSCall_ref = NULL;
-		JSCall_compiled = qfalse;
-		qvmcall_using = qfalse;
+		JSCall_compiled = false;
+		qvmcall_using = false;
 	}
 
 	vmargs = NULL;
@@ -510,8 +510,8 @@ void JS_Init(void) {
 
 		js_error = Cvar_Get("js.error", "", 0);
 
-		JSOpenFile("js/init.js", qtrue);
-		JSOpenFile("js/main.js", qtrue);
+		JSOpenFile("js/init.js", true);
+		JSOpenFile("js/main.js", true);
 		JS_InitCompiler();
 	}
 }

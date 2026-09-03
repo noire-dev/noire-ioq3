@@ -2,7 +2,7 @@
 
 #include "client.h"
 
-qboolean scr_initialized;  // ready to draw
+bool scr_initialized;  // ready to draw
 
 float color_empty[4] = {0.00f, 0.00f, 0.00f, 0.00f};
 float color_black[4] = {0.00f, 0.00f, 0.00f, 1.00f};
@@ -105,11 +105,11 @@ void SCR_Init(void) {
 	cl_graphscale = Cvar_Get("graphscale", "1", CVAR_CHEAT);
 	cl_graphshift = Cvar_Get("graphshift", "0", CVAR_CHEAT);
 
-	scr_initialized = qtrue;
+	scr_initialized = true;
 }
 
 void SCR_DrawScreenField(stereoFrame_t stereoFrame) {
-	qboolean uiFullscreen;
+	bool uiFullscreen;
 
 	re.BeginFrame(stereoFrame);
 
@@ -142,7 +142,7 @@ void SCR_DrawScreenField(stereoFrame_t stereoFrame) {
 				// connecting clients will only show the connection dialog
 				// refresh to update the time
 				VM_Call(uivm, UI_REFRESH, cls.realtime);
-				VM_Call(uivm, UI_DRAW_CONNECT_SCREEN, qfalse);
+				VM_Call(uivm, UI_DRAW_CONNECT_SCREEN, false);
 				break;
 			case CA_LOADING:
 			case CA_PRIMED:
@@ -153,7 +153,7 @@ void SCR_DrawScreenField(stereoFrame_t stereoFrame) {
 				// flash away too briefly on local or lan games
 				// refresh to update the time
 				VM_Call(uivm, UI_REFRESH, cls.realtime);
-				VM_Call(uivm, UI_DRAW_CONNECT_SCREEN, qtrue);
+				VM_Call(uivm, UI_DRAW_CONNECT_SCREEN, true);
 				break;
 			case CA_ACTIVE:
 				// always supply STEREO_CENTER as vieworg offset is now done by the engine.
@@ -222,12 +222,12 @@ static int getFontRes(float fontScale) {
 
 static const int emojiPages[] = {499, 500, 501, 502, 505, 506, 4072, -1};
 
-static qboolean isEmojiPage(int pageID) {
+static bool isEmojiPage(int pageID) {
 	int i;
 	for(i = 0; emojiPages[i] != -1; i++) {
-		if(emojiPages[i] == pageID) return qtrue;
+		if(emojiPages[i] == pageID) return true;
 	}
-	return qfalse;
+	return false;
 }
 
 static int getUTF8Font(int code, const char* style, float fontSize) {
@@ -246,7 +246,7 @@ static int hexToInt(char c) {
 	return 0;
 }
 
-static float drawChars(int x, int y, const char* str, float* color, float fontScale, int style, int maxChars, qboolean returnWidth, int position) {
+static float drawChars(int x, int y, const char* str, float* color, float fontScale, int style, int maxChars, bool returnWidth, int position) {
 	const char* s;
 	float ax, ay, aw, ah;
 	float frow, fcol;
@@ -256,14 +256,14 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 	float glyphTexSize = 256.0 / 4096.0;
 	const char* formatStyle = "Regular";
 	const char* savedStyle = "Regular";
-	qboolean formatUnderline = qfalse;
-	qboolean formatStrikethrough = qfalse;
-	qboolean formatMagic = qfalse;
-	qboolean formatShake = qfalse;
+	bool formatUnderline = false;
+	bool formatStrikethrough = false;
+	bool formatMagic = false;
+	bool formatShake = false;
 	float formatColor[4] = {1.00, 1.00, 1.00, 1.00};
 	float* currentColor = color;
 	float debugColor[4] = {0.75, 0.75, 0.75, 0.50};
-	qboolean drawCursor = qtrue;
+	bool drawCursor = true;
 
 	ax = x;
 	ay = y;
@@ -273,10 +273,10 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 	if(style & FONTSTYLE_BOLD) savedStyle = "Bold";
 	if(style & FONTSTYLE_ITALIC) savedStyle = "Italic";
 	if(style & FONTSTYLE_BOLD && style & FONTSTYLE_ITALIC) savedStyle = "BoldItalic";
-	if(style & FONTSTYLE_UNDERLINE) formatUnderline = qtrue;
-	if(style & FONTSTYLE_STRIKETHROUGH) formatStrikethrough = qtrue;
-	if(style & FONTSTYLE_MAGIC) formatMagic = qtrue;
-	if(style & FONTSTYLE_SHAKE) formatShake = qtrue;
+	if(style & FONTSTYLE_UNDERLINE) formatUnderline = true;
+	if(style & FONTSTYLE_STRIKETHROUGH) formatStrikethrough = true;
+	if(style & FONTSTYLE_MAGIC) formatMagic = true;
+	if(style & FONTSTYLE_SHAKE) formatShake = true;
 
 	formatStyle = savedStyle;
 
@@ -291,10 +291,10 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 				case 'b': formatStyle = "Bold"; break;
 				case 'i': formatStyle = "Italic"; break;
 				case 'o': formatStyle = "BoldItalic"; break;
-				case '-': formatUnderline = qtrue; break;
-				case '_': formatStrikethrough = qtrue; break;
-				case 'm': formatMagic = qtrue; break;
-				case 's': formatShake = qtrue; break;
+				case '-': formatUnderline = true; break;
+				case '_': formatStrikethrough = true; break;
+				case 'm': formatMagic = true; break;
+				case 's': formatShake = true; break;
 				case 'r':
 					formatStyle = savedStyle;
 					formatUnderline = style & FONTSTYLE_UNDERLINE;
@@ -433,7 +433,7 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 				if(formatStrikethrough) drawRoundedRect(ax, y + (ah * 0.50), aw * FONT_WIDTH, ah * 0.10, 0.00, currentColor, 0);
 				if(position != -1 && currentIndex >= position && drawCursor) {
 					drawRoundedRect(ax, y, aw * 0.05, ah, 0.00, currentColor, 9);
-					drawCursor = qfalse;
+					drawCursor = false;
 				}
 			} else if((isEmojiPage(codepoint / 256) && !(style & FONTSTYLE_LOCKEMOJI)) || !isEmojiPage(codepoint / 256)) {
 				re.SetColor(shadowColor);
@@ -447,7 +447,7 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 				if(formatStrikethrough) drawRoundedRect(ax, y + (ah * 0.50), aw, ah * 0.10, 0.00, formatColor, 0);
 				if(position != -1 && currentIndex >= position && drawCursor) {
 					drawRoundedRect(ax, y, aw * 0.05, ah, 0.00, formatColor, 0);
-					drawCursor = qfalse;
+					drawCursor = false;
 				}
 			}
 		}
@@ -477,7 +477,7 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 	return ax - x;
 }
 
-float stringWidth(const char* str, float fontScale, int style, int maxChars) { return drawChars(0, 0, str, color_empty, fontScale, style, maxChars, qtrue, -1); }
+float stringWidth(const char* str, float fontScale, int style, int maxChars) { return drawChars(0, 0, str, color_empty, fontScale, style, maxChars, true, -1); }
 
 void drawString(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars) {
 	if(!str || !strlen(str)) return;
@@ -487,7 +487,7 @@ void drawString(float x, float y, const char* str, int style, float* color, floa
 	else if(style & FONTSTYLE_CENTER)
 		x -= stringWidth(str, fontSize, style, maxChars) * 0.50f;
 
-	drawChars(x, y, str, color, fontSize, style, maxChars, qfalse, -1);
+	drawChars(x, y, str, color, fontSize, style, maxChars, false, -1);
 }
 
 void drawStringAdjusted(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars) {
@@ -501,7 +501,7 @@ void drawStringField(float x, float y, const char* str, int style, float* color,
 	if(style & FONTSTYLE_CENTER) x -= stringWidth(str, fontSize, style, maxChars) * 0.50;
 	if(style & FONTSTYLE_RIGHT) x -= stringWidth(str, fontSize, style, maxChars) * 1.00;
 
-	drawChars(x, y, str, color, fontSize, style, maxChars, qfalse, position);
+	drawChars(x, y, str, color, fontSize, style, maxChars, false, position);
 }
 
 void drawStringFieldAdjusted(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars, int position) {

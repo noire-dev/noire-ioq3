@@ -20,8 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-#if defined(powerc) || defined(powerpc) || defined(__powerpc__) || defined(ppc) || defined(__ppc) || defined(__ppc__) || defined(__powerpc64__) || \
-    defined(__ppc64__)
+#if defined(powerc) || defined(powerpc) || defined(__powerpc__) || defined(ppc) || defined(__ppc) || defined(__ppc__) || defined(__powerpc64__) || defined(__ppc64__)
 
 #include <sys/types.h> /* needed by sys/mman.h on OSX */
 #include <sys/mman.h>
@@ -370,8 +369,7 @@ ppc_instruction_t asm_instruction(powerpc_iname_t sname, const int argc, const l
 			if(operand->flags & PPC_OPERAND_SIGNED) {
 				bitm_full >>= 1;
 
-				if((opu & ~bitm_full) != 0 && (opu | bitm_full) != -1)
-					printf("%s: signed operand nr.%d to wide. op: %.8lx, mask: %.8lx\n", name, argi, opu, bitm);
+				if((opu & ~bitm_full) != 0 && (opu | bitm_full) != -1) printf("%s: signed operand nr.%d to wide. op: %.8lx, mask: %.8lx\n", name, argi, opu, bitm);
 			} else {
 				if((opu & ~bitm_full) != 0) printf("%s: unsigned operand nr.%d to wide. op: %.8lx, mask: %.8lx\n", name, argi, opu, bitm);
 			}
@@ -655,9 +653,7 @@ static unsigned long insert_ras(unsigned long insn, long value, int dialect ATTR
    function just copies the BT field into the BA field, and the
    extraction function just checks that the fields are the same.  */
 
-static unsigned long insert_rbs(unsigned long insn, long value ATTRIBUTE_UNUSED, int dialect ATTRIBUTE_UNUSED, const char** errmsg ATTRIBUTE_UNUSED) {
-	return insn | (((insn >> 21) & 0x1f) << 11);
-}
+static unsigned long insert_rbs(unsigned long insn, long value ATTRIBUTE_UNUSED, int dialect ATTRIBUTE_UNUSED, const char** errmsg ATTRIBUTE_UNUSED) { return insn | (((insn >> 21) & 0x1f) << 11); }
 
 /* Macros used to form opcodes.  */
 
@@ -2924,7 +2920,7 @@ void VM_Compile(vm_t* vm, vmHeader_t* header) {
 	struct timeval tvstart = {0, 0};
 	source_instruction_t *i_first /* dummy */, *i_last = NULL, *i_now;
 
-	vm->compiled = qfalse;
+	vm->compiled = false;
 
 	gettimeofday(&tvstart, NULL);
 
@@ -3007,7 +3003,7 @@ void VM_Compile(vm_t* vm, vmHeader_t* header) {
 	}
 
 	vm->destroy = VM_Destroy_Compiled;
-	vm->compiled = qtrue;
+	vm->compiled = true;
 
 	{
 		struct timeval tvdone = {0, 0};
@@ -3032,7 +3028,7 @@ int VM_CallCompiled(vm_t* vm, int* args) {
 
 	currentVM = vm;
 
-	vm->currentlyInterpreting = qtrue;
+	vm->currentlyInterpreting = true;
 
 	programStack -= (8 + 4 * MAX_VMMAIN_ARGS);
 	argPointer = (int*)&image[programStack + 8];
@@ -3076,7 +3072,7 @@ int VM_CallCompiled(vm_t* vm, int* args) {
 #endif
 
 	vm->programStack = stackOnEntry;
-	vm->currentlyInterpreting = qfalse;
+	vm->currentlyInterpreting = false;
 
 	return retVal;
 }

@@ -39,17 +39,13 @@ static float ProjectRadius(float r, vec3_t location) {
 	p[1] = fabs(r);
 	p[2] = -dist;
 
-	projected[0] = p[0] * tr.viewParms.projectionMatrix[0] + p[1] * tr.viewParms.projectionMatrix[4] + p[2] * tr.viewParms.projectionMatrix[8] +
-	               tr.viewParms.projectionMatrix[12];
+	projected[0] = p[0] * tr.viewParms.projectionMatrix[0] + p[1] * tr.viewParms.projectionMatrix[4] + p[2] * tr.viewParms.projectionMatrix[8] + tr.viewParms.projectionMatrix[12];
 
-	projected[1] = p[0] * tr.viewParms.projectionMatrix[1] + p[1] * tr.viewParms.projectionMatrix[5] + p[2] * tr.viewParms.projectionMatrix[9] +
-	               tr.viewParms.projectionMatrix[13];
+	projected[1] = p[0] * tr.viewParms.projectionMatrix[1] + p[1] * tr.viewParms.projectionMatrix[5] + p[2] * tr.viewParms.projectionMatrix[9] + tr.viewParms.projectionMatrix[13];
 
-	projected[2] = p[0] * tr.viewParms.projectionMatrix[2] + p[1] * tr.viewParms.projectionMatrix[6] + p[2] * tr.viewParms.projectionMatrix[10] +
-	               tr.viewParms.projectionMatrix[14];
+	projected[2] = p[0] * tr.viewParms.projectionMatrix[2] + p[1] * tr.viewParms.projectionMatrix[6] + p[2] * tr.viewParms.projectionMatrix[10] + tr.viewParms.projectionMatrix[14];
 
-	projected[3] = p[0] * tr.viewParms.projectionMatrix[3] + p[1] * tr.viewParms.projectionMatrix[7] + p[2] * tr.viewParms.projectionMatrix[11] +
-	               tr.viewParms.projectionMatrix[15];
+	projected[3] = p[0] * tr.viewParms.projectionMatrix[3] + p[1] * tr.viewParms.projectionMatrix[7] + p[2] * tr.viewParms.projectionMatrix[11] + tr.viewParms.projectionMatrix[15];
 
 	pr = projected[1] / projected[3];
 
@@ -239,7 +235,7 @@ void R_AddMD3Surfaces(trRefEntity_t* ent) {
 	int lod;
 	int fogNum;
 	int cubemapIndex;
-	qboolean personalModel;
+	bool personalModel;
 
 	// don't add third_person objects if not in a portal
 	personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !(tr.viewParms.isPortal || (tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)));
@@ -255,8 +251,7 @@ void R_AddMD3Surfaces(trRefEntity_t* ent) {
 	// when the surfaces are rendered, they don't need to be
 	// range checked again.
 	//
-	if((ent->e.frame >= tr.currentModel->mdv[0]->numFrames) || (ent->e.frame < 0) || (ent->e.oldframe >= tr.currentModel->mdv[0]->numFrames) ||
-	   (ent->e.oldframe < 0)) {
+	if((ent->e.frame >= tr.currentModel->mdv[0]->numFrames) || (ent->e.frame < 0) || (ent->e.oldframe >= tr.currentModel->mdv[0]->numFrames) || (ent->e.oldframe < 0)) {
 		ri.Printf(PRINT_DEVELOPER, "R_AddMD3Surfaces: no such frame %d to %d for '%s'\n", ent->e.oldframe, ent->e.frame, tr.currentModel->name);
 		ent->e.frame = 0;
 		ent->e.oldframe = 0;
@@ -335,17 +330,17 @@ void R_AddMD3Surfaces(trRefEntity_t* ent) {
 
 		// stencil shadows can't do personal models unless I polyhedron clip
 		if(!personalModel && r_shadows->integer == 2 && fogNum == 0 && !(ent->e.renderfx & (RF_NOSHADOW | RF_DEPTHHACK)) && shader->sort == SS_OPAQUE) {
-			R_AddDrawSurf(drawSurf, tr.shadowShader, 0, qfalse, qfalse, 0);
+			R_AddDrawSurf(drawSurf, tr.shadowShader, 0, false, false, 0);
 		}
 
 		// projection shadows work fine with personal models
 		if(r_shadows->integer == 3 && fogNum == 0 && (ent->e.renderfx & RF_SHADOW_PLANE) && shader->sort == SS_OPAQUE) {
-			R_AddDrawSurf(drawSurf, tr.projectionShadowShader, 0, qfalse, qfalse, 0);
+			R_AddDrawSurf(drawSurf, tr.projectionShadowShader, 0, false, false, 0);
 		}
 
 		// don't add third_person objects if not viewing through a portal
 		if(!personalModel) {
-			R_AddDrawSurf(drawSurf, shader, fogNum, qfalse, qfalse, cubemapIndex);
+			R_AddDrawSurf(drawSurf, shader, fogNum, false, false, cubemapIndex);
 		}
 
 		surface++;

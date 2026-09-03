@@ -1321,7 +1321,7 @@
 
 	* code/ui/ui_main.c: below.
 	* code/q3_ui/ui_main.c: UI_HASUNIQUECDKEY comment.
-	Note: mods have to return qfalse. See Bug #2890 in Fenris.
+	Note: mods have to return false. See Bug #2890 in Fenris.
 
 2001-01-17  Bernd Kreimeier  <bk@lokigames.com>
 	
@@ -1969,7 +1969,7 @@
 	The menus now work in both (TA seems mouse-only on everything 
 	but "Quit"). Segfault on delayed TA "Quit" (stack fubared):
 	#5  0x809fc28 in VM_Call (vm=0x88408a0, callnum=3) at ..//qcommon/vm.c:617
-	#6  0x805aafc in CL_KeyEvent (key=9, down=qtrue, time=128644) cl_keys.c:1194
+	#6  0x805aafc in CL_KeyEvent (key=9, down=true, time=128644) cl_keys.c:1194
 	TODO: TA menu's w/o mouse? 
 	TODO: Win32 goes submenus but does not unfold
 	TODO: Linux does not go submenus
@@ -2188,7 +2188,7 @@
 	(i.e. propagated changes from win32/, see Fakk2).
 
 	* code/unix/linux_glimp.c: fixed QGL_EnableLogging argument
-	to avoid cast error (always qfalse).
+	to avoid cast error (always false).
 
 	* code/unix/Makefile (DEBUG_CFLAGS): use ZONE_DEBUG.
 
@@ -2751,7 +2751,7 @@
 	* TEST: running against the data up to TeamArena_Q3A_001109.zip
 	Hunk_Clear: reset the hunk ok
         Program received signal SIGBUS, Bus error.
-        "q3dm2", killBots==qtrue
+        "q3dm2", killBots==true
 	#0  CM_ClearMap () at ..//qcommon/cm_load.c:644
         #1  0x80884a7 in SV_Map_f () at ..//server/sv_ccmds.c:159
         #2  0x8072579 in Cmd_ExecuteString (text=0xbffff4b0 "spmap q3dm2") at ..//qcommon/cmd.c:591

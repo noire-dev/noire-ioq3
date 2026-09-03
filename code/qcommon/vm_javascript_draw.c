@@ -13,8 +13,7 @@ hud_s hud;
 
 static void getScreenProperties(void) {
 	trap_GetGlconfig(&glconfig);
-	cgui.scale =
-	    (glconfig.vidWidth * (1.0 / 640.0) < glconfig.vidHeight * (1.0 / 480.0)) ? glconfig.vidWidth * (1.0 / 640.0) : glconfig.vidHeight * (1.0 / 480.0);
+	cgui.scale = (glconfig.vidWidth * (1.0 / 640.0) < glconfig.vidHeight * (1.0 / 480.0)) ? glconfig.vidWidth * (1.0 / 640.0) : glconfig.vidHeight * (1.0 / 480.0);
 
 	if(glconfig.vidWidth * 480 > glconfig.vidHeight * 640)
 		cgui.bias = 0.5 * (glconfig.vidWidth - (glconfig.vidHeight * (640.0 / 480.0)));
@@ -116,9 +115,7 @@ void drawColoredShaderAdjusted(float x, float y, float w, float h, const char* f
 	drawColoredShader(x, y, w, h, file, color);
 }
 
-static void drawSymbol(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t fontIndex) {
-	trap_R_DrawStretchPic(x, y, w, h, s1, t1, s2, t2, fontIndex);
-}
+static void drawSymbol(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t fontIndex) { trap_R_DrawStretchPic(x, y, w, h, s1, t1, s2, t2, fontIndex); }
 
 static int getFontRes(float fontScale) {
 	if(fontScale * FONT_SIZE > 128) return 4;  // 4096
@@ -130,12 +127,12 @@ static int getFontRes(float fontScale) {
 
 static const int emojiPages[] = {499, 500, 501, 502, 505, 506, 4072, -1};
 
-static qboolean isEmojiPage(int pageID) {
+static bool isEmojiPage(int pageID) {
 	int i;
 	for(i = 0; emojiPages[i] != -1; i++) {
-		if(emojiPages[i] == pageID) return qtrue;
+		if(emojiPages[i] == pageID) return true;
 	}
-	return qfalse;
+	return false;
 }
 
 static int getUTF8Font(int code, const char* style, float fontSize) {
@@ -154,7 +151,7 @@ static int hexToInt(char c) {
 	return 0;
 }
 
-static float drawChars(int x, int y, const char* str, float* color, float fontScale, int style, int maxChars, qboolean returnWidth, int position) {
+static float drawChars(int x, int y, const char* str, float* color, float fontScale, int style, int maxChars, bool returnWidth, int position) {
 	const char* s;
 	float ax, ay, aw, ah;
 	float frow, fcol;
@@ -164,14 +161,14 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 	float glyphTexSize = 256.0 / 4096.0;
 	const char* formatStyle = "Regular";
 	const char* savedStyle = "Regular";
-	qboolean formatUnderline = qfalse;
-	qboolean formatStrikethrough = qfalse;
-	qboolean formatMagic = qfalse;
-	qboolean formatShake = qfalse;
+	bool formatUnderline = false;
+	bool formatStrikethrough = false;
+	bool formatMagic = false;
+	bool formatShake = false;
 	float formatColor[4] = {1.00, 1.00, 1.00, 1.00};
 	float* currentColor = color;
 	float debugColor[4] = {0.75, 0.75, 0.75, 0.50};
-	qboolean drawCursor = qtrue;
+	bool drawCursor = true;
 
 	ax = x;
 	ay = y;
@@ -181,10 +178,10 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 	if(style & FONTSTYLE_BOLD) savedStyle = "Bold";
 	if(style & FONTSTYLE_ITALIC) savedStyle = "Italic";
 	if(style & FONTSTYLE_BOLD && style & FONTSTYLE_ITALIC) savedStyle = "BoldItalic";
-	if(style & FONTSTYLE_UNDERLINE) formatUnderline = qtrue;
-	if(style & FONTSTYLE_STRIKETHROUGH) formatStrikethrough = qtrue;
-	if(style & FONTSTYLE_MAGIC) formatMagic = qtrue;
-	if(style & FONTSTYLE_SHAKE) formatShake = qtrue;
+	if(style & FONTSTYLE_UNDERLINE) formatUnderline = true;
+	if(style & FONTSTYLE_STRIKETHROUGH) formatStrikethrough = true;
+	if(style & FONTSTYLE_MAGIC) formatMagic = true;
+	if(style & FONTSTYLE_SHAKE) formatShake = true;
 
 	formatStyle = savedStyle;
 
@@ -199,10 +196,10 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 				case 'b': formatStyle = "Bold"; break;
 				case 'i': formatStyle = "Italic"; break;
 				case 'o': formatStyle = "BoldItalic"; break;
-				case '-': formatUnderline = qtrue; break;
-				case '_': formatStrikethrough = qtrue; break;
-				case 'm': formatMagic = qtrue; break;
-				case 's': formatShake = qtrue; break;
+				case '-': formatUnderline = true; break;
+				case '_': formatStrikethrough = true; break;
+				case 'm': formatMagic = true; break;
+				case 's': formatShake = true; break;
 				case 'r':
 					formatStyle = savedStyle;
 					formatUnderline = style & FONTSTYLE_UNDERLINE;
@@ -334,36 +331,18 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 
 			if(codepoint < 1280) {
 				trap_R_SetColor(shadowColor);
-				if(style & FONTSTYLE_DROPSHADOW)
-					drawSymbol(ax + xoff + (2 * fontScale),
-					           ay + yoff + (2 * fontScale),
-					           aw * FONT_WIDTH,
-					           ah,
-					           fcol + 0.015625,
-					           frow,
-					           (fcol + glyphTexSize) - 0.015625,
-					           frow + glyphTexSize,
-					           fontIndex);
+				if(style & FONTSTYLE_DROPSHADOW) drawSymbol(ax + xoff + (2 * fontScale), ay + yoff + (2 * fontScale), aw * FONT_WIDTH, ah, fcol + 0.015625, frow, (fcol + glyphTexSize) - 0.015625, frow + glyphTexSize, fontIndex);
 				trap_R_SetColor(currentColor);
 				drawSymbol(ax + xoff, ay + yoff, aw * FONT_WIDTH, ah, fcol + 0.015625, frow, (fcol + glyphTexSize) - 0.015625, frow + glyphTexSize, fontIndex);
 				if(formatUnderline) drawRoundedRect(ax, y + (ah * 0.925), aw * FONT_WIDTH, ah * 0.10, 0.00, currentColor, 0);
 				if(formatStrikethrough) drawRoundedRect(ax, y + (ah * 0.50), aw * FONT_WIDTH, ah * 0.10, 0.00, currentColor, 0);
 				if(position != -1 && currentIndex >= position && drawCursor) {
 					drawRoundedRect(ax, y, aw * 0.05, ah, 0.00, currentColor, 9);
-					drawCursor = qfalse;
+					drawCursor = false;
 				}
 			} else if((isEmojiPage(codepoint / 256) && !(style & FONTSTYLE_LOCKEMOJI)) || !isEmojiPage(codepoint / 256)) {
 				trap_R_SetColor(shadowColor);
-				if(style & FONTSTYLE_DROPSHADOW)
-					drawSymbol(ax + xoff + (2 * fontScale),
-					           ay + yoff + (2 * fontScale),
-					           ah,
-					           ah,
-					           fcol,
-					           frow,
-					           fcol + glyphTexSize,
-					           frow + glyphTexSize,
-					           fontIndex);
+				if(style & FONTSTYLE_DROPSHADOW) drawSymbol(ax + xoff + (2 * fontScale), ay + yoff + (2 * fontScale), ah, ah, fcol, frow, fcol + glyphTexSize, frow + glyphTexSize, fontIndex);
 				if(isEmojiPage(codepoint / 256) || !strcmp(formatStyle, "Emoji"))
 					trap_R_SetColor(formatColor);
 				else
@@ -373,7 +352,7 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 				if(formatStrikethrough) drawRoundedRect(ax, y + (ah * 0.50), aw, ah * 0.10, 0.00, formatColor, 0);
 				if(position != -1 && currentIndex >= position && drawCursor) {
 					drawRoundedRect(ax, y, aw * 0.05, ah, 0.00, formatColor, 0);
-					drawCursor = qfalse;
+					drawCursor = false;
 				}
 			}
 		}
@@ -403,9 +382,7 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 	return ax - x;
 }
 
-float stringWidth(const char* str, float fontScale, int style, int maxChars) {
-	return drawChars(0, 0, str, cgui.colors[0], fontScale, style, maxChars, qtrue, -1);
-}
+float stringWidth(const char* str, float fontScale, int style, int maxChars) { return drawChars(0, 0, str, cgui.colors[0], fontScale, style, maxChars, true, -1); }
 
 void drawModel(float x, float y, float w, float h, const char* model, float scale) {
 	refdef_t refdef;
@@ -468,7 +445,7 @@ void drawString(float x, float y, const char* str, int style, float* color, floa
 	else if(style & FONTSTYLE_CENTER)
 		x -= stringWidth(str, fontSize, style, maxChars) * 0.50f;
 
-	drawChars(x, y, str, color, fontSize, style, maxChars, qfalse, -1);
+	drawChars(x, y, str, color, fontSize, style, maxChars, false, -1);
 }
 
 void drawStringAdjusted(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars) {
@@ -482,7 +459,7 @@ void drawStringField(float x, float y, const char* str, int style, float* color,
 	if(style & FONTSTYLE_CENTER) x -= stringWidth(str, fontSize, style, maxChars) * 0.50;
 	if(style & FONTSTYLE_RIGHT) x -= stringWidth(str, fontSize, style, maxChars) * 1.00;
 
-	drawChars(x, y, str, color, fontSize, style, maxChars, qfalse, position);
+	drawChars(x, y, str, color, fontSize, style, maxChars, false, position);
 }
 
 void drawStringFieldAdjusted(float x, float y, const char* str, int style, float* color, float fontSize, int maxChars, int position) {
@@ -600,11 +577,5 @@ void CG_HUDCounter(float x, float y, const char* value, const char* text) {
 
 	drawRoundedRectAdjusted(x, y, hud.counterW, hud.counterH, hud.counterCorner, cgui.colors[hud.counterColor], 0);
 	drawStringAdjusted(x + (hud.counterW * hud.counterTextX), textY, text, hud.counterTextStyle, cgui.colors[hud.counterTextColor], hud.counterTextScale, 256);
-	drawStringAdjusted(x + (hud.counterW * hud.counterValueX),
-	                   valueY,
-	                   value,
-	                   hud.counterValueStyle,
-	                   cgui.colors[hud.counterValueColor],
-	                   hud.counterValueScale,
-	                   256);
+	drawStringAdjusted(x + (hud.counterW * hud.counterValueX), valueY, value, hud.counterValueStyle, cgui.colors[hud.counterValueColor], hud.counterValueScale, 256);
 }

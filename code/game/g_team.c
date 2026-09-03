@@ -152,47 +152,47 @@ void AddTeamScore(vec3_t origin, int team, int score) {
 OnSameTeam
 ==============
 */
-qboolean OnSameTeam(gentity_t* ent1, gentity_t* ent2) {
+bool OnSameTeam(gentity_t* ent1, gentity_t* ent2) {
 	if(!ent1->client || !ent2->client) {
-		return qfalse;
+		return false;
 	}
 
 	if(g_gametype.integer < GT_TEAM) {
-		return qfalse;
+		return false;
 	}
 
 	if(ent1->client->sess.sessionTeam == ent2->client->sess.sessionTeam) {
-		return qtrue;
+		return true;
 	}
 
-	return qfalse;
+	return false;
 }
 
 static char ctfFlagStatusRemap[] = {'0', '1', '*', '*', '2'};
 static char oneFlagStatusRemap[] = {'0', '1', '2', '3', '4'};
 
 void Team_SetFlagStatus(int team, flagStatus_t status) {
-	qboolean modified = qfalse;
+	bool modified = false;
 
 	switch(team) {
 		case TEAM_RED:  // CTF
 			if(teamgame.redStatus != status) {
 				teamgame.redStatus = status;
-				modified = qtrue;
+				modified = true;
 			}
 			break;
 
 		case TEAM_BLUE:  // CTF
 			if(teamgame.blueStatus != status) {
 				teamgame.blueStatus = status;
-				modified = qtrue;
+				modified = true;
 			}
 			break;
 
 		case TEAM_FREE:  // One Flag CTF
 			if(teamgame.flagStatus != status) {
 				teamgame.flagStatus = status;
-				modified = qtrue;
+				modified = true;
 			}
 			break;
 	}
@@ -323,8 +323,7 @@ void Team_FragBonuses(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker
 		return;
 	}
 
-	if(targ->client->pers.teamState.lasthurtcarrier && level.time - targ->client->pers.teamState.lasthurtcarrier < CTF_CARRIER_DANGER_PROTECT_TIMEOUT &&
-	   !attacker->client->ps.powerups[flag_pw]) {
+	if(targ->client->pers.teamState.lasthurtcarrier && level.time - targ->client->pers.teamState.lasthurtcarrier < CTF_CARRIER_DANGER_PROTECT_TIMEOUT && !attacker->client->ps.powerups[flag_pw]) {
 		// attacker is on the same team as the flag carrier and
 		// fragged a guy who hurt our flag carrier
 		AddScore(attacker, targ->r.currentOrigin, CTF_CARRIER_DANGER_PROTECT_BONUS);
@@ -387,9 +386,7 @@ void Team_FragBonuses(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker
 	VectorSubtract(targ->r.currentOrigin, flag->r.currentOrigin, v1);
 	VectorSubtract(attacker->r.currentOrigin, flag->r.currentOrigin, v2);
 
-	if(((VectorLength(v1) < CTF_TARGET_PROTECT_RADIUS && trap_InPVS(flag->r.currentOrigin, targ->r.currentOrigin)) ||
-	    (VectorLength(v2) < CTF_TARGET_PROTECT_RADIUS && trap_InPVS(flag->r.currentOrigin, attacker->r.currentOrigin))) &&
-	   attacker->client->sess.sessionTeam != targ->client->sess.sessionTeam) {
+	if(((VectorLength(v1) < CTF_TARGET_PROTECT_RADIUS && trap_InPVS(flag->r.currentOrigin, targ->r.currentOrigin)) || (VectorLength(v2) < CTF_TARGET_PROTECT_RADIUS && trap_InPVS(flag->r.currentOrigin, attacker->r.currentOrigin))) && attacker->client->sess.sessionTeam != targ->client->sess.sessionTeam) {
 		// we defended the base flag
 		AddScore(attacker, targ->r.currentOrigin, CTF_FLAG_DEFENSE_BONUS);
 		attacker->client->pers.teamState.basedefense++;
@@ -407,9 +404,7 @@ void Team_FragBonuses(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker
 		VectorSubtract(targ->r.currentOrigin, carrier->r.currentOrigin, v1);
 		VectorSubtract(attacker->r.currentOrigin, carrier->r.currentOrigin, v2);
 
-		if(((VectorLength(v1) < CTF_ATTACKER_PROTECT_RADIUS && trap_InPVS(carrier->r.currentOrigin, targ->r.currentOrigin)) ||
-		    (VectorLength(v2) < CTF_ATTACKER_PROTECT_RADIUS && trap_InPVS(carrier->r.currentOrigin, attacker->r.currentOrigin))) &&
-		   attacker->client->sess.sessionTeam != targ->client->sess.sessionTeam) {
+		if(((VectorLength(v1) < CTF_ATTACKER_PROTECT_RADIUS && trap_InPVS(carrier->r.currentOrigin, targ->r.currentOrigin)) || (VectorLength(v2) < CTF_ATTACKER_PROTECT_RADIUS && trap_InPVS(carrier->r.currentOrigin, attacker->r.currentOrigin))) && attacker->client->sess.sessionTeam != targ->client->sess.sessionTeam) {
 			AddScore(attacker, targ->r.currentOrigin, CTF_CARRIER_PROTECT_BONUS);
 			attacker->client->pers.teamState.carrierdefense++;
 
@@ -449,12 +444,10 @@ void Team_CheckHurtCarrier(gentity_t* targ, gentity_t* attacker) {
 #endif
 
 	// flags
-	if(targ->client->ps.powerups[flag_pw] && targ->client->sess.sessionTeam != attacker->client->sess.sessionTeam)
-		attacker->client->pers.teamState.lasthurtcarrier = level.time;
+	if(targ->client->ps.powerups[flag_pw] && targ->client->sess.sessionTeam != attacker->client->sess.sessionTeam) attacker->client->pers.teamState.lasthurtcarrier = level.time;
 
 	// skulls
-	if(targ->client->ps.generic1 && targ->client->sess.sessionTeam != attacker->client->sess.sessionTeam)
-		attacker->client->pers.teamState.lasthurtcarrier = level.time;
+	if(targ->client->ps.generic1 && targ->client->sess.sessionTeam != attacker->client->sess.sessionTeam) attacker->client->pers.teamState.lasthurtcarrier = level.time;
 }
 
 gentity_t* Team_ResetFlag(int team) {
@@ -825,9 +818,7 @@ gentity_t* Team_GetLocation(gentity_t* ent) {
 	VectorCopy(ent->r.currentOrigin, origin);
 
 	for(eloc = level.locationHead; eloc; eloc = eloc->nextTrain) {
-		len = (origin[0] - eloc->r.currentOrigin[0]) * (origin[0] - eloc->r.currentOrigin[0]) +
-		      (origin[1] - eloc->r.currentOrigin[1]) * (origin[1] - eloc->r.currentOrigin[1]) +
-		      (origin[2] - eloc->r.currentOrigin[2]) * (origin[2] - eloc->r.currentOrigin[2]);
+		len = (origin[0] - eloc->r.currentOrigin[0]) * (origin[0] - eloc->r.currentOrigin[0]) + (origin[1] - eloc->r.currentOrigin[1]) * (origin[1] - eloc->r.currentOrigin[1]) + (origin[2] - eloc->r.currentOrigin[2]) * (origin[2] - eloc->r.currentOrigin[2]);
 
 		if(len > bestlen) {
 			continue;
@@ -851,12 +842,12 @@ Team_GetLocation
 Report a location for the player. Uses placed nearby target_location entities
 ============
 */
-qboolean Team_GetLocationMsg(gentity_t* ent, char* loc, int loclen) {
+bool Team_GetLocationMsg(gentity_t* ent, char* loc, int loclen) {
 	gentity_t* best;
 
 	best = Team_GetLocation(ent);
 
-	if(!best) return qfalse;
+	if(!best) return false;
 
 	if(best->count) {
 		if(best->count < 0) best->count = 0;
@@ -865,7 +856,7 @@ qboolean Team_GetLocationMsg(gentity_t* ent, char* loc, int loclen) {
 	} else
 		Com_sprintf(loc, loclen, "%s", best->message);
 
-	return qtrue;
+	return true;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -926,7 +917,7 @@ SelectCTFSpawnPoint
 
 ============
 */
-gentity_t* SelectCTFSpawnPoint(team_t team, int teamstate, vec3_t origin, vec3_t angles, qboolean isbot) {
+gentity_t* SelectCTFSpawnPoint(team_t team, int teamstate, vec3_t origin, vec3_t angles, bool isbot) {
 	gentity_t* spot;
 
 	spot = SelectRandomTeamSpawnPoint(teamstate, team);
@@ -943,90 +934,6 @@ gentity_t* SelectCTFSpawnPoint(team_t team, int teamstate, vec3_t origin, vec3_t
 }
 
 /*---------------------------------------------------------------------------*/
-
-static int QDECL SortClients(const void* a, const void* b) { return *(int*)a - *(int*)b; }
-
-/*
-==================
-TeamplayLocationsMessage
-
-Format:
-    clientNum location health armor weapon powerups
-
-==================
-*/
-void TeamplayInfoMessage(gentity_t* ent) {
-	char entry[1024];
-	char string[8192];
-	int stringlength;
-	int i, j;
-	gentity_t* player;
-	int cnt;
-	int h, a;
-	int clients[TEAM_MAXOVERLAY];
-	int team;
-
-	if(!ent->client->pers.teamInfo) return;
-
-	// send team info to spectator for team of followed client
-	if(ent->client->sess.sessionTeam == TEAM_SPECTATOR) {
-		if(ent->client->sess.spectatorState != SPECTATOR_FOLLOW || ent->client->sess.spectatorClient < 0) {
-			return;
-		}
-		team = g_entities[ent->client->sess.spectatorClient].client->sess.sessionTeam;
-	} else {
-		team = ent->client->sess.sessionTeam;
-	}
-
-	if(team != TEAM_RED && team != TEAM_BLUE) {
-		return;
-	}
-
-	// figure out what client should be on the display
-	// we are limited to 8, but we want to use the top eight players
-	// but in client order (so they don't keep changing position on the overlay)
-	for(i = 0, cnt = 0; i < g_maxclients.integer && cnt < TEAM_MAXOVERLAY; i++) {
-		player = g_entities + level.sortedClients[i];
-		if(player->inuse && player->client->sess.sessionTeam == team) {
-			clients[cnt++] = level.sortedClients[i];
-		}
-	}
-
-	// We have the top eight players, sort them by clientNum
-	qsort(clients, cnt, sizeof(clients[0]), SortClients);
-
-	// send the latest information on all clients
-	string[0] = 0;
-	stringlength = 0;
-
-	for(i = 0, cnt = 0; i < g_maxclients.integer && cnt < TEAM_MAXOVERLAY; i++) {
-		player = g_entities + i;
-		if(player->inuse && player->client->sess.sessionTeam == team) {
-			h = player->client->ps.stats[STAT_HEALTH];
-			a = player->client->ps.stats[STAT_ARMOR];
-			if(h < 0) h = 0;
-			if(a < 0) a = 0;
-
-			Com_sprintf(entry,
-			            sizeof(entry),
-			            " %i %i %i %i %i %i",
-			            //				level.sortedClients[i], player->client->pers.teamState.location, h, a,
-			            i,
-			            player->client->pers.teamState.location,
-			            h,
-			            a,
-			            player->client->ps.weapon,
-			            player->s.powerups);
-			j = strlen(entry);
-			if(stringlength + j >= sizeof(string)) break;
-			strcpy(string + stringlength, entry);
-			stringlength += j;
-			cnt++;
-		}
-	}
-
-	trap_SendServerCommand(ent - g_entities, va("tinfo %i %s", cnt, string));
-}
 
 void CheckTeamStatus(void) {
 	int i;
@@ -1056,10 +963,6 @@ void CheckTeamStatus(void) {
 
 			if(ent->client->pers.connected != CON_CONNECTED) {
 				continue;
-			}
-
-			if(ent->inuse) {
-				TeamplayInfoMessage(ent);
 			}
 		}
 	}
@@ -1113,7 +1016,7 @@ static void ObeliskRegen(gentity_t* self) {
 }
 
 static void ObeliskRespawn(gentity_t* self) {
-	self->takedamage = qtrue;
+	self->takedamage = true;
 	self->health = g_obeliskHealth.integer;
 
 	self->think = ObeliskRegen;
@@ -1131,7 +1034,7 @@ static void ObeliskDie(gentity_t* self, gentity_t* inflictor, gentity_t* attacke
 
 	CalculateRanks();
 
-	self->takedamage = qfalse;
+	self->takedamage = false;
 	self->think = ObeliskRespawn;
 	self->nextthink = level.time + g_obeliskRespawnDelay.integer * 1000;
 
@@ -1218,7 +1121,7 @@ gentity_t* SpawnObelisk(vec3_t origin, vec3_t mins, vec3_t maxs, int team) {
 
 	if(g_gametype.integer == GT_OBELISK) {
 		ent->r.contents = CONTENTS_SOLID;
-		ent->takedamage = qtrue;
+		ent->takedamage = true;
 		ent->health = g_obeliskHealth.integer;
 		ent->die = ObeliskDie;
 		ent->pain = ObeliskPain;
@@ -1345,29 +1248,28 @@ void SP_team_neutralobelisk(gentity_t* ent) {
 CheckObeliskAttack
 ================
 */
-qboolean CheckObeliskAttack(gentity_t* obelisk, gentity_t* attacker) {
+bool CheckObeliskAttack(gentity_t* obelisk, gentity_t* attacker) {
 	gentity_t* te;
 
 	// if this really is an obelisk
 	if(obelisk->die != ObeliskDie) {
-		return qfalse;
+		return false;
 	}
 
 	// if the attacker is a client
 	if(!attacker->client) {
-		return qfalse;
+		return false;
 	}
 
 	// if the obelisk is on the same team as the attacker then don't hurt it
 	if(obelisk->spawnflags == attacker->client->sess.sessionTeam) {
-		return qtrue;
+		return true;
 	}
 
 	// obelisk may be hurt
 
 	// if not played any sounds recently
-	if((obelisk->spawnflags == TEAM_RED && teamgame.redObeliskAttackedTime < level.time - OVERLOAD_ATTACK_BASE_SOUND_TIME) ||
-	   (obelisk->spawnflags == TEAM_BLUE && teamgame.blueObeliskAttackedTime < level.time - OVERLOAD_ATTACK_BASE_SOUND_TIME)) {
+	if((obelisk->spawnflags == TEAM_RED && teamgame.redObeliskAttackedTime < level.time - OVERLOAD_ATTACK_BASE_SOUND_TIME) || (obelisk->spawnflags == TEAM_BLUE && teamgame.blueObeliskAttackedTime < level.time - OVERLOAD_ATTACK_BASE_SOUND_TIME)) {
 		// tell which obelisk is under attack
 		te = G_TempEntity(obelisk->s.pos.trBase, EV_GLOBAL_TEAM_SOUND);
 		if(obelisk->spawnflags == TEAM_RED) {
@@ -1380,6 +1282,6 @@ qboolean CheckObeliskAttack(gentity_t* obelisk, gentity_t* attacker) {
 		te->r.svFlags |= SVF_BROADCAST;
 	}
 
-	return qfalse;
+	return false;
 }
 #endif

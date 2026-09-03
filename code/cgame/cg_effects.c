@@ -95,18 +95,7 @@ CG_SmokePuff
 Adds a smoke puff or blood trail localEntity.
 =====================
 */
-localEntity_t* CG_SmokePuff(const vec3_t p,
-                            const vec3_t vel,
-                            float radius,
-                            float r,
-                            float g,
-                            float b,
-                            float a,
-                            float duration,
-                            int startTime,
-                            int fadeInTime,
-                            int leFlags,
-                            qhandle_t hShader) {
+localEntity_t* CG_SmokePuff(const vec3_t p, const vec3_t vel, float radius, float r, float g, float b, float a, float duration, int startTime, int fadeInTime, int leFlags, qhandle_t hShader) {
 	static int seed = 0x92;
 	localEntity_t* le;
 	refEntity_t* re;
@@ -270,7 +259,7 @@ void CG_ObeliskExplode(vec3_t org, int entityNum) {
 	// create an explosion
 	VectorCopy(org, origin);
 	origin[2] += 64;
-	le = CG_MakeExplosion(origin, vec3_origin, cgs.media.dishFlashModel, cgs.media.rocketExplosionShader, 600, qtrue);
+	le = CG_MakeExplosion(origin, vec3_origin, cgs.media.dishFlashModel, cgs.media.rocketExplosionShader, 600, true);
 	le->light = 300;
 	le->lightColor[0] = 1;
 	le->lightColor[1] = 0.75;
@@ -422,7 +411,7 @@ void CG_ScorePlum(int client, vec3_t org, int score) {
 CG_MakeExplosion
 ====================
 */
-localEntity_t* CG_MakeExplosion(vec3_t origin, vec3_t dir, qhandle_t hModel, qhandle_t shader, int msec, qboolean isSprite) {
+localEntity_t* CG_MakeExplosion(vec3_t origin, vec3_t dir, qhandle_t hModel, qhandle_t shader, int msec, bool isSprite) {
 	float ang;
 	localEntity_t* ex;
 	int offset;

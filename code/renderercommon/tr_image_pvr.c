@@ -36,18 +36,11 @@ typedef struct pvr {
 } pvr_t;
 
 typedef unsigned int (*pvr_pixel_func_t)(unsigned short color);
-typedef byte* (*pvr_image_func_t)(pvr_t* pvr, int offset, qboolean detwiddle, pvr_pixel_func_t pixel_func);
+typedef byte* (*pvr_image_func_t)(pvr_t* pvr, int offset, bool detwiddle, pvr_pixel_func_t pixel_func);
 
 enum { PVR_PIXEL_TYPE_ARGB1555 = 0, PVR_PIXEL_TYPE_RGB565 = 1, PVR_PIXEL_TYPE_ARGB4444 = 2 };
 
-enum {
-	PVR_IMAGE_TYPE_TWIDDLED = 1,
-	PVR_IMAGE_TYPE_TWIDDLED_MM = 2,
-	PVR_IMAGE_TYPE_VQ = 3,
-	PVR_IMAGE_TYPE_VQ_MM = 4,
-	PVR_IMAGE_TYPE_RECTANGULAR = 9,
-	PVR_IMAGE_TYPE_RECTANGULAR_MM = 10
-};
+enum { PVR_IMAGE_TYPE_TWIDDLED = 1, PVR_IMAGE_TYPE_TWIDDLED_MM = 2, PVR_IMAGE_TYPE_VQ = 3, PVR_IMAGE_TYPE_VQ_MM = 4, PVR_IMAGE_TYPE_RECTANGULAR = 9, PVR_IMAGE_TYPE_RECTANGULAR_MM = 10 };
 
 static int log2approx(int x) {
 	switch(x) {
@@ -149,12 +142,12 @@ static int mm_offset_vq(int w) {
 	}
 }
 
-static byte* decode_mm(pvr_t* pvr, pvr_image_func_t image_func, pvr_pixel_func_t pixel_func, qboolean vq, qboolean detwiddle) {
+static byte* decode_mm(pvr_t* pvr, pvr_image_func_t image_func, pvr_pixel_func_t pixel_func, bool vq, bool detwiddle) {
 	int offset = vq ? mm_offset_vq(pvr->width) : mm_offset(pvr->width);
 	return image_func(pvr, offset, detwiddle, pixel_func);
 }
 
-static byte* decode(pvr_t* pvr, int offset, qboolean detwiddle, pvr_pixel_func_t pixel_func) {
+static byte* decode(pvr_t* pvr, int offset, bool detwiddle, pvr_pixel_func_t pixel_func) {
 	int x, y;
 	unsigned int* rgba32;
 	byte* ret;
@@ -185,7 +178,7 @@ static byte* decode(pvr_t* pvr, int offset, qboolean detwiddle, pvr_pixel_func_t
 	return ret;
 }
 
-static byte* decode_vq(pvr_t* pvr, int offset, qboolean detwiddle, pvr_pixel_func_t pixel_func) {
+static byte* decode_vq(pvr_t* pvr, int offset, bool detwiddle, pvr_pixel_func_t pixel_func) {
 	int x, y;
 	unsigned int* rgba32;
 	unsigned short* codebook;
@@ -292,27 +285,27 @@ void R_LoadPVR(const char* name, byte** pic, int* width, int* height) {
 	// decompress image
 	switch(image_type) {
 		case PVR_IMAGE_TYPE_TWIDDLED: {
-			ret = decode(pvr, 0, qtrue, pixel_func);
+			ret = decode(pvr, 0, true, pixel_func);
 			break;
 		}
 		case PVR_IMAGE_TYPE_TWIDDLED_MM: {
-			ret = decode_mm(pvr, decode, pixel_func, qfalse, qtrue);
+			ret = decode_mm(pvr, decode, pixel_func, false, true);
 			break;
 		}
 		case PVR_IMAGE_TYPE_VQ: {
-			ret = decode_vq(pvr, 0, qtrue, pixel_func);
+			ret = decode_vq(pvr, 0, true, pixel_func);
 			break;
 		}
 		case PVR_IMAGE_TYPE_VQ_MM: {
-			ret = decode_mm(pvr, decode_vq, pixel_func, qtrue, qtrue);
+			ret = decode_mm(pvr, decode_vq, pixel_func, true, true);
 			break;
 		}
 		case PVR_IMAGE_TYPE_RECTANGULAR: {
-			ret = decode(pvr, 0, qfalse, pixel_func);
+			ret = decode(pvr, 0, false, pixel_func);
 			break;
 		}
 		case PVR_IMAGE_TYPE_RECTANGULAR_MM: {
-			ret = decode_mm(pvr, decode, pixel_func, qfalse, qfalse);
+			ret = decode_mm(pvr, decode, pixel_func, false, false);
 			break;
 		}
 		default: {

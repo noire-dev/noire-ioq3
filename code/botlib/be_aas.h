@@ -66,9 +66,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define TFL_NOTTEAM2 0x10000000  // not team 2
 
 // default travel flags
-#define TFL_DEFAULT                                                                                                                                         \
-	TFL_WALK | TFL_CROUCH | TFL_BARRIERJUMP | TFL_JUMP | TFL_LADDER | TFL_WALKOFFLEDGE | TFL_SWIM | TFL_WATERJUMP | TFL_TELEPORT | TFL_ELEVATOR | TFL_AIR | \
-	    TFL_WATER | TFL_JUMPPAD | TFL_FUNCBOB
+#define TFL_DEFAULT TFL_WALK | TFL_CROUCH | TFL_BARRIERJUMP | TFL_JUMP | TFL_LADDER | TFL_WALKOFFLEDGE | TFL_SWIM | TFL_WATERJUMP | TFL_TELEPORT | TFL_ELEVATOR | TFL_AIR | TFL_WATER | TFL_JUMPPAD | TFL_FUNCBOB
 
 typedef enum {
 	SOLID_NOT,      // no interaction with other objects
@@ -79,13 +77,13 @@ typedef enum {
 
 // a trace is returned when a box is swept through the AAS world
 typedef struct aas_trace_s {
-	qboolean startsolid;  // if true, the initial point was in a solid area
-	float fraction;       // time completed, 1.0 = didn't hit anything
-	vec3_t endpos;        // final position
-	int ent;              // entity blocking the trace
-	int lastarea;         // last area the trace was in (zero if none)
-	int area;             // area blocking the trace (zero if none)
-	int planenum;         // number of the plane that was hit
+	bool startsolid;  // if true, the initial point was in a solid area
+	float fraction;   // time completed, 1.0 = didn't hit anything
+	vec3_t endpos;    // final position
+	int ent;          // entity blocking the trace
+	int lastarea;     // last area the trace was in (zero if none)
+	int area;         // area blocking the trace (zero if none)
+	int planenum;     // number of the plane that was hit
 } aas_trace_t;
 
 /* Defined in botlib.h
@@ -101,8 +99,8 @@ typedef struct bsp_surface_s
 //a trace is returned when a box is swept through the BSP world
 typedef struct bsp_trace_s
 {
-    qboolean		allsolid;	// if true, plane is not valid
-    qboolean		startsolid;	// if true, the initial point was in a solid area
+    bool		allsolid;	// if true, plane is not valid
+    bool		startsolid;	// if true, the initial point was in a solid area
     float			fraction;	// time completed, 1.0 = didn't hit anything
     vec3_t			endpos;		// final position
     cplane_t		plane;		// surface normal at impact

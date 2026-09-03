@@ -926,7 +926,7 @@ in the nptr string that was not used in the conversion
 */
 double strtod(const char* nptr, char** endptr) {
 	double res;
-	qboolean neg = qfalse;
+	bool neg = false;
 
 	// skip whitespace
 	while(isspace(*nptr)) nptr++;
@@ -969,7 +969,7 @@ double strtod(const char* nptr, char** endptr) {
 	// sign
 	if(*nptr == '-') {
 		nptr++;
-		neg = qtrue;
+		neg = true;
 	} else if(*nptr == '+')
 		nptr++;
 	// hex
@@ -978,7 +978,7 @@ double strtod(const char* nptr, char** endptr) {
 		const char *s = &nptr[1], *end = s;
 		nptr += 2;
 		res = 0;
-		while(qtrue) {
+		while(true) {
 			if(isdigit(*nptr))
 				res = 16 * res + (*nptr++ - '0');
 			else if(*nptr >= 'A' && *nptr <= 'F')
@@ -1165,7 +1165,7 @@ Will not overflow - returns LONG_MIN or LONG_MAX as appropriate
 */
 long strtol(const char* nptr, char** endptr, int base) {
 	long res;
-	qboolean pos = qtrue;
+	bool pos = true;
 
 	if(endptr) *endptr = (char*)nptr;
 	// bases other than 0, 2, 8, 16 are very rarely used, but they're
@@ -1176,7 +1176,7 @@ long strtol(const char* nptr, char** endptr, int base) {
 	// sign
 	if(*nptr == '-') {
 		nptr++;
-		pos = qfalse;
+		pos = false;
 	} else if(*nptr == '+')
 		nptr++;
 	// look for base-identifying sequences e.g. 0x for hex, 0 for octal
@@ -1197,7 +1197,7 @@ long strtol(const char* nptr, char** endptr, int base) {
 	} else if(base == 0)
 		base = 10;
 	res = 0;
-	while(qtrue) {
+	while(true) {
 		int val;
 		if(isdigit(*nptr))
 			val = *nptr - '0';
@@ -1492,7 +1492,7 @@ static int dopr(char* buffer, size_t maxlen, const char* format, va_list args) {
 						flags |= DP_F_UNSIGNED;
 						if(cflags == DP_C_SHORT)
 							//	  value = (unsigned short int) va_arg (args, unsigned short int); // Thilo: This does not work because the rcc compiler cannot
-							//do that cast correctly.
+							// do that cast correctly.
 							value = va_arg(args, unsigned int) & ((1 << sizeof(unsigned short int) * 8) - 1);  // Using this workaround instead.
 						else if(cflags == DP_C_LONG)
 							value = va_arg(args, unsigned long int);

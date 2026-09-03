@@ -60,20 +60,20 @@ static long generateHashValue(const char* fname) {
 Cvar_ValidateString
 ============
 */
-static qboolean Cvar_ValidateString(const char* s) {
+static bool Cvar_ValidateString(const char* s) {
 	if(!s) {
-		return qfalse;
+		return false;
 	}
 	if(strchr(s, '\\')) {
-		return qfalse;
+		return false;
 	}
 	if(strchr(s, '\"')) {
-		return qfalse;
+		return false;
 	}
 	if(strchr(s, ';')) {
-		return qfalse;
+		return false;
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -189,10 +189,10 @@ void Cvar_CommandCompletion(void (*callback)(const char* s)) {
 Cvar_Validate
 ============
 */
-static const char* Cvar_Validate(cvar_t* var, const char* value, qboolean warn) {
+static const char* Cvar_Validate(cvar_t* var, const char* value, bool warn) {
 	static char s[MAX_CVAR_VALUE_STRING];
 	float valuef;
-	qboolean changed = qfalse;
+	bool changed = false;
 
 	if(!var->validate) return value;
 
@@ -206,14 +206,14 @@ static const char* Cvar_Validate(cvar_t* var, const char* value, qboolean warn) 
 				if(warn) Com_Printf("WARNING: cvar '%s' must be integral", var->name);
 
 				valuef = (int)valuef;
-				changed = qtrue;
+				changed = true;
 			}
 		}
 	} else {
 		if(warn) Com_Printf("WARNING: cvar '%s' must be numeric", var->name);
 
 		valuef = atof(var->resetString);
-		changed = qtrue;
+		changed = true;
 	}
 
 	if(valuef < var->min) {
@@ -230,7 +230,7 @@ static const char* Cvar_Validate(cvar_t* var, const char* value, qboolean warn) 
 		}
 
 		valuef = var->min;
-		changed = qtrue;
+		changed = true;
 	} else if(valuef > var->max) {
 		if(warn) {
 			if(changed)
@@ -245,7 +245,7 @@ static const char* Cvar_Validate(cvar_t* var, const char* value, qboolean warn) 
 		}
 
 		valuef = var->max;
-		changed = qtrue;
+		changed = true;
 	}
 
 	if(changed) {
@@ -296,7 +296,7 @@ cvar_t* Cvar_Get(const char* var_name, const char* var_value, int flags) {
 	var = Cvar_FindVar(var_name);
 
 	if(var) {
-		var_value = Cvar_Validate(var, var_value, qfalse);
+		var_value = Cvar_Validate(var, var_value, false);
 
 		// Make sure the game code cannot mark engine-added variables as gamecode vars
 		if(var->flags & CVAR_VM_CREATED) {
@@ -345,7 +345,7 @@ cvar_t* Cvar_Get(const char* var_name, const char* var_value, int flags) {
 
 			s = var->latchedString;
 			var->latchedString = NULL;  // otherwise cvar_set2 would free it
-			Cvar_Set2(var_name, s, qtrue);
+			Cvar_Set2(var_name, s, true);
 			Z_Free(s);
 		}
 
@@ -377,12 +377,12 @@ cvar_t* Cvar_Get(const char* var_name, const char* var_value, int flags) {
 
 	var->name = CopyString(var_name);
 	var->string = CopyString(var_value);
-	var->modified = qtrue;
+	var->modified = true;
 	var->modificationCount = 1;
 	var->value = atof(var->string);
 	var->integer = atoi(var->string);
 	var->resetString = CopyString(var_value);
-	var->validate = qfalse;
+	var->validate = false;
 	var->description = NULL;
 
 	// link the variable in
@@ -442,7 +442,7 @@ void Cvar_Print(cvar_t* v) {
 Cvar_Set2
 ============
 */
-cvar_t* Cvar_Set2(const char* var_name, const char* value, qboolean force) {
+cvar_t* Cvar_Set2(const char* var_name, const char* value, bool force) {
 	cvar_t* var;
 
 	//	Com_DPrintf( "Cvar_Set2: %s %s\n", var_name, value );
@@ -476,7 +476,7 @@ cvar_t* Cvar_Set2(const char* var_name, const char* value, qboolean force) {
 		value = var->resetString;
 	}
 
-	value = Cvar_Validate(var, value, qtrue);
+	value = Cvar_Validate(var, value, true);
 
 	if((var->flags & CVAR_LATCH) && var->latchedString) {
 		if(!strcmp(value, var->string)) {
@@ -518,7 +518,7 @@ cvar_t* Cvar_Set2(const char* var_name, const char* value, qboolean force) {
 
 			Com_Printf("%s will be changed upon restarting.\n", var_name);
 			var->latchedString = CopyString(value);
-			var->modified = qtrue;
+			var->modified = true;
 			var->modificationCount++;
 			return var;
 		}
@@ -531,7 +531,7 @@ cvar_t* Cvar_Set2(const char* var_name, const char* value, qboolean force) {
 
 	if(!strcmp(value, var->string)) return var;  // not changed
 
-	var->modified = qtrue;
+	var->modified = true;
 	var->modificationCount++;
 
 	Z_Free(var->string);  // free the old value string
@@ -548,7 +548,7 @@ cvar_t* Cvar_Set2(const char* var_name, const char* value, qboolean force) {
 Cvar_Set
 ============
 */
-void Cvar_Set(const char* var_name, const char* value) { Cvar_Set2(var_name, value, qtrue); }
+void Cvar_Set(const char* var_name, const char* value) { Cvar_Set2(var_name, value, true); }
 
 /*
 ============
@@ -580,7 +580,7 @@ void Cvar_SetSafe(const char* var_name, const char* value) {
 Cvar_SetLatched
 ============
 */
-void Cvar_SetLatched(const char* var_name, const char* value) { Cvar_Set2(var_name, value, qfalse); }
+void Cvar_SetLatched(const char* var_name, const char* value) { Cvar_Set2(var_name, value, false); }
 
 /*
 ============
@@ -618,14 +618,14 @@ void Cvar_SetValueSafe(const char* var_name, float value) {
 Cvar_Reset
 ============
 */
-void Cvar_Reset(const char* var_name) { Cvar_Set2(var_name, NULL, qfalse); }
+void Cvar_Reset(const char* var_name) { Cvar_Set2(var_name, NULL, false); }
 
 /*
 ============
 Cvar_ForceReset
 ============
 */
-void Cvar_ForceReset(const char* var_name) { Cvar_Set2(var_name, NULL, qtrue); }
+void Cvar_ForceReset(const char* var_name) { Cvar_Set2(var_name, NULL, true); }
 
 /*
 ============
@@ -658,24 +658,24 @@ Cvar_Command
 Handles variable inspection and changing from the console
 ============
 */
-qboolean Cvar_Command(void) {
+bool Cvar_Command(void) {
 	cvar_t* v;
 
 	// check variables
 	v = Cvar_FindVar(Cmd_Argv(0));
 	if(!v) {
-		return qfalse;
+		return false;
 	}
 
 	// perform a variable print or set
 	if(Cmd_Argc() == 1) {
 		Cvar_Print(v);
-		return qtrue;
+		return true;
 	}
 
 	// set the value if forcing isn't required
-	Cvar_Set2(v->name, Cmd_Args(), qfalse);
-	return qtrue;
+	Cvar_Set2(v->name, Cmd_Args(), false);
+	return true;
 }
 
 /*
@@ -723,7 +723,7 @@ void Cvar_Toggle_f(void) {
 	}
 
 	if(c == 2) {
-		Cvar_Set2(Cmd_Argv(1), va("%d", !Cvar_VariableValue(Cmd_Argv(1))), qfalse);
+		Cvar_Set2(Cmd_Argv(1), va("%d", !Cvar_VariableValue(Cmd_Argv(1))), false);
 		return;
 	}
 
@@ -738,13 +738,13 @@ void Cvar_Toggle_f(void) {
 	// behaviour is the same as no match (set to the first argument)
 	for(i = 2; i + 1 < c; i++) {
 		if(strcmp(curval, Cmd_Argv(i)) == 0) {
-			Cvar_Set2(Cmd_Argv(1), Cmd_Argv(i + 1), qfalse);
+			Cvar_Set2(Cmd_Argv(1), Cmd_Argv(i + 1), false);
 			return;
 		}
 	}
 
 	// fallback
-	Cvar_Set2(Cmd_Argv(1), Cmd_Argv(2), qfalse);
+	Cvar_Set2(Cmd_Argv(1), Cmd_Argv(2), false);
 }
 
 /*
@@ -772,7 +772,7 @@ void Cvar_Set_f(void) {
 		return;
 	}
 
-	v = Cvar_Set2(Cmd_Argv(1), Cmd_ArgsFrom(2), qfalse);
+	v = Cvar_Set2(Cmd_Argv(1), Cmd_ArgsFrom(2), false);
 	if(!v) {
 		return;
 	}
@@ -816,7 +816,7 @@ void Cvar_Reset_f(void) {
 Cvar_WriteVariables
 
 Appends lines containing "set variable value" for all variables
-with the archive flag set to qtrue.
+with the archive flag set to true.
 ============
 */
 void Cvar_WriteVariables(fileHandle_t f) {
@@ -868,7 +868,7 @@ void Cvar_List_f(void) {
 
 	i = 0;
 	for(var = cvar_vars; var; var = var->next, i++) {
-		if(!var->name || (match && !Com_Filter(match, var->name, qfalse))) continue;
+		if(!var->name || (match && !Com_Filter(match, var->name, false))) continue;
 
 		if(var->flags & CVAR_SERVERINFO) {
 			Com_Printf("S");
@@ -949,7 +949,7 @@ void Cvar_ListModified_f(void) {
 
 		totalModified++;
 
-		if(match && !Com_Filter(match, var->name, qfalse)) continue;
+		if(match && !Com_Filter(match, var->name, false)) continue;
 
 		if(var->flags & CVAR_SERVERINFO) {
 			Com_Printf("S");
@@ -1075,7 +1075,7 @@ and variables added via the VMs if requested.
 ============
 */
 
-void Cvar_Restart(qboolean unsetVM) {
+void Cvar_Restart(bool unsetVM) {
 	cvar_t* curvar;
 
 	curvar = cvar_vars;
@@ -1089,7 +1089,7 @@ void Cvar_Restart(qboolean unsetVM) {
 
 		if(!(curvar->flags & (CVAR_ROM | CVAR_INIT | CVAR_NORESTART))) {
 			// Just reset the rest to their default values.
-			Cvar_Set2(curvar->name, curvar->resetString, qfalse);
+			Cvar_Set2(curvar->name, curvar->resetString, false);
 		}
 
 		curvar = curvar->next;
@@ -1103,7 +1103,7 @@ Cvar_Restart_f
 Resets all cvars to their hardcoded values
 ============
 */
-void Cvar_Restart_f(void) { Cvar_Restart(qfalse); }
+void Cvar_Restart_f(void) { Cvar_Restart(false); }
 
 /*
 =====================
@@ -1154,8 +1154,8 @@ void Cvar_InfoStringBuffer(int bit, char* buff, int buffsize) { Q_strncpyz(buff,
 Cvar_CheckRange
 =====================
 */
-void Cvar_CheckRange(cvar_t* var, float min, float max, qboolean integral) {
-	var->validate = qtrue;
+void Cvar_CheckRange(cvar_t* var, float min, float max, bool integral) {
+	var->validate = true;
 	var->min = min;
 	var->max = max;
 	var->integral = integral;
@@ -1225,10 +1225,7 @@ void Cvar_Register(vmCvar_t* vmCvar, const char* varName, const char* defaultVal
 
 	// Don't modify cvar if it's protected.
 	if(cv && (cv->flags & CVAR_PROTECTED)) {
-		Com_DPrintf(S_COLOR_YELLOW "WARNING: VM tried to register protected cvar '%s' with value '%s'%s\n",
-		            varName,
-		            defaultValue,
-		            (flags & ~cv->flags) != 0 ? " and new flags" : "");
+		Com_DPrintf(S_COLOR_YELLOW "WARNING: VM tried to register protected cvar '%s' with value '%s'%s\n", varName, defaultValue, (flags & ~cv->flags) != 0 ? " and new flags" : "");
 	} else {
 		cv = Cvar_Get(varName, defaultValue, flags | CVAR_VM_CREATED);
 	}
@@ -1264,8 +1261,7 @@ void Cvar_Update(vmCvar_t* vmCvar) {
 		return;  // variable might have been cleared by a cvar_restart
 	}
 	vmCvar->modificationCount = cv->modificationCount;
-	if(strlen(cv->string) + 1 > MAX_CVAR_VALUE_STRING)
-		Com_Error(ERR_DROP, "Cvar_Update: src %s length %u exceeds MAX_CVAR_VALUE_STRING", cv->string, (unsigned int)strlen(cv->string));
+	if(strlen(cv->string) + 1 > MAX_CVAR_VALUE_STRING) Com_Error(ERR_DROP, "Cvar_Update: src %s length %u exceeds MAX_CVAR_VALUE_STRING", cv->string, (unsigned int)strlen(cv->string));
 	Q_strncpyz(vmCvar->string, cv->string, MAX_CVAR_VALUE_STRING);
 
 	vmCvar->value = cv->value;
@@ -1282,7 +1278,7 @@ void Cvar_CompleteCvarName(char* args, int argNum) {
 		// Skip "<cmd> "
 		char* p = Com_SkipTokens(args, 1, " ");
 
-		if(p > args) Field_CompleteCommand(p, qfalse, qtrue);
+		if(p > args) Field_CompleteCommand(p, false, true);
 	}
 }
 

@@ -58,60 +58,27 @@ clipHandle_t trap_CM_TempCapsuleModel(const vec3_t mins, const vec3_t maxs) { re
 
 int trap_CM_PointContents(const vec3_t p, clipHandle_t model) { return syscall(CG_CM_POINTCONTENTS, p, model); }
 
-int trap_CM_TransformedPointContents(const vec3_t p, clipHandle_t model, const vec3_t origin, const vec3_t angles) {
-	return syscall(CG_CM_TRANSFORMEDPOINTCONTENTS, p, model, origin, angles);
-}
+int trap_CM_TransformedPointContents(const vec3_t p, clipHandle_t model, const vec3_t origin, const vec3_t angles) { return syscall(CG_CM_TRANSFORMEDPOINTCONTENTS, p, model, origin, angles); }
 
-void trap_CM_BoxTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask) {
-	syscall(CG_CM_BOXTRACE, results, start, end, mins, maxs, model, brushmask);
-}
+void trap_CM_BoxTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask) { syscall(CG_CM_BOXTRACE, results, start, end, mins, maxs, model, brushmask); }
 
-void trap_CM_CapsuleTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask) {
-	syscall(CG_CM_CAPSULETRACE, results, start, end, mins, maxs, model, brushmask);
-}
+void trap_CM_CapsuleTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask) { syscall(CG_CM_CAPSULETRACE, results, start, end, mins, maxs, model, brushmask); }
 
-void trap_CM_TransformedBoxTrace(trace_t* results,
-                                 const vec3_t start,
-                                 const vec3_t end,
-                                 const vec3_t mins,
-                                 const vec3_t maxs,
-                                 clipHandle_t model,
-                                 int brushmask,
-                                 const vec3_t origin,
-                                 const vec3_t angles) {
-	syscall(CG_CM_TRANSFORMEDBOXTRACE, results, start, end, mins, maxs, model, brushmask, origin, angles);
-}
+void trap_CM_TransformedBoxTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask, const vec3_t origin, const vec3_t angles) { syscall(CG_CM_TRANSFORMEDBOXTRACE, results, start, end, mins, maxs, model, brushmask, origin, angles); }
 
-void trap_CM_TransformedCapsuleTrace(trace_t* results,
-                                     const vec3_t start,
-                                     const vec3_t end,
-                                     const vec3_t mins,
-                                     const vec3_t maxs,
-                                     clipHandle_t model,
-                                     int brushmask,
-                                     const vec3_t origin,
-                                     const vec3_t angles) {
-	syscall(CG_CM_TRANSFORMEDCAPSULETRACE, results, start, end, mins, maxs, model, brushmask, origin, angles);
-}
+void trap_CM_TransformedCapsuleTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask, const vec3_t origin, const vec3_t angles) { syscall(CG_CM_TRANSFORMEDCAPSULETRACE, results, start, end, mins, maxs, model, brushmask, origin, angles); }
 
-int trap_CM_MarkFragments(
-    int numPoints, const vec3_t* points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t* fragmentBuffer) {
-	return syscall(CG_CM_MARKFRAGMENTS, numPoints, points, projection, maxPoints, pointBuffer, maxFragments, fragmentBuffer);
-}
+int trap_CM_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t* fragmentBuffer) { return syscall(CG_CM_MARKFRAGMENTS, numPoints, points, projection, maxPoints, pointBuffer, maxFragments, fragmentBuffer); }
 
 void trap_S_StartSound(vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfx) { syscall(CG_S_STARTSOUND, origin, entityNum, entchannel, sfx); }
 
 void trap_S_StartLocalSound(sfxHandle_t sfx, int channelNum) { syscall(CG_S_STARTLOCALSOUND, sfx, channelNum); }
 
-void trap_S_ClearLoopingSounds(qboolean killall) { syscall(CG_S_CLEARLOOPINGSOUNDS, killall); }
+void trap_S_ClearLoopingSounds(bool killall) { syscall(CG_S_CLEARLOOPINGSOUNDS, killall); }
 
-void trap_S_AddLoopingSound(int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx) {
-	syscall(CG_S_ADDLOOPINGSOUND, entityNum, origin, velocity, sfx);
-}
+void trap_S_AddLoopingSound(int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx) { syscall(CG_S_ADDLOOPINGSOUND, entityNum, origin, velocity, sfx); }
 
-void trap_S_AddRealLoopingSound(int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx) {
-	syscall(CG_S_ADDREALLOOPINGSOUND, entityNum, origin, velocity, sfx);
-}
+void trap_S_AddRealLoopingSound(int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx) { syscall(CG_S_ADDREALLOOPINGSOUND, entityNum, origin, velocity, sfx); }
 
 void trap_S_StopLoopingSound(int entityNum) { syscall(CG_S_STOPLOOPINGSOUND, entityNum); }
 
@@ -119,7 +86,7 @@ void trap_S_UpdateEntityPosition(int entityNum, const vec3_t origin) { syscall(C
 
 void trap_S_Respatialize(int entityNum, const vec3_t origin, vec3_t axis[3], int inwater) { syscall(CG_S_RESPATIALIZE, entityNum, origin, axis, inwater); }
 
-sfxHandle_t trap_S_RegisterSound(const char* sample, qboolean compressed) { return syscall(CG_S_REGISTERSOUND, sample, compressed); }
+sfxHandle_t trap_S_RegisterSound(const char* sample, bool compressed) { return syscall(CG_S_REGISTERSOUND, sample, compressed); }
 
 void trap_S_StartBackgroundTrack(const char* intro, const char* loop) { syscall(CG_S_STARTBACKGROUNDTRACK, intro, loop); }
 
@@ -143,31 +110,21 @@ void trap_R_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* ve
 
 void trap_R_AddPolysToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num) { syscall(CG_R_ADDPOLYSTOSCENE, hShader, numVerts, verts, num); }
 
-int trap_R_LightForPoint(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir) {
-	return syscall(CG_R_LIGHTFORPOINT, point, ambientLight, directedLight, lightDir);
-}
+int trap_R_LightForPoint(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir) { return syscall(CG_R_LIGHTFORPOINT, point, ambientLight, directedLight, lightDir); }
 
-void trap_R_AddLightToScene(const vec3_t org, float intensity, float r, float g, float b) {
-	syscall(CG_R_ADDLIGHTTOSCENE, org, PASSFLOAT(intensity), PASSFLOAT(r), PASSFLOAT(g), PASSFLOAT(b));
-}
+void trap_R_AddLightToScene(const vec3_t org, float intensity, float r, float g, float b) { syscall(CG_R_ADDLIGHTTOSCENE, org, PASSFLOAT(intensity), PASSFLOAT(r), PASSFLOAT(g), PASSFLOAT(b)); }
 
-void trap_R_AddAdditiveLightToScene(const vec3_t org, float intensity, float r, float g, float b) {
-	syscall(CG_R_ADDADDITIVELIGHTTOSCENE, org, PASSFLOAT(intensity), PASSFLOAT(r), PASSFLOAT(g), PASSFLOAT(b));
-}
+void trap_R_AddAdditiveLightToScene(const vec3_t org, float intensity, float r, float g, float b) { syscall(CG_R_ADDADDITIVELIGHTTOSCENE, org, PASSFLOAT(intensity), PASSFLOAT(r), PASSFLOAT(g), PASSFLOAT(b)); }
 
 void trap_R_RenderScene(const refdef_t* fd) { syscall(CG_R_RENDERSCENE, fd); }
 
 void trap_R_SetColor(const float* rgba) { syscall(CG_R_SETCOLOR, rgba); }
 
-void trap_R_DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader) {
-	syscall(CG_R_DRAWSTRETCHPIC, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(w), PASSFLOAT(h), PASSFLOAT(s1), PASSFLOAT(t1), PASSFLOAT(s2), PASSFLOAT(t2), hShader);
-}
+void trap_R_DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader) { syscall(CG_R_DRAWSTRETCHPIC, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(w), PASSFLOAT(h), PASSFLOAT(s1), PASSFLOAT(t1), PASSFLOAT(s2), PASSFLOAT(t2), hShader); }
 
 void trap_R_ModelBounds(clipHandle_t model, vec3_t mins, vec3_t maxs) { syscall(CG_R_MODELBOUNDS, model, mins, maxs); }
 
-int trap_R_LerpTag(orientation_t* tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char* tagName) {
-	return syscall(CG_R_LERPTAG, tag, mod, startFrame, endFrame, PASSFLOAT(frac), tagName);
-}
+int trap_R_LerpTag(orientation_t* tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char* tagName) { return syscall(CG_R_LERPTAG, tag, mod, startFrame, endFrame, PASSFLOAT(frac), tagName); }
 
 void trap_R_RemapShader(const char* oldShader, const char* newShader, const char* timeOffset) { syscall(CG_R_REMAP_SHADER, oldShader, newShader, timeOffset); }
 
@@ -177,13 +134,13 @@ void trap_GetGameState(gameState_t* gamestate) { syscall(CG_GETGAMESTATE, gamest
 
 void trap_GetCurrentSnapshotNumber(int* snapshotNumber, int* serverTime) { syscall(CG_GETCURRENTSNAPSHOTNUMBER, snapshotNumber, serverTime); }
 
-qboolean trap_GetSnapshot(int snapshotNumber, snapshot_t* snapshot) { return syscall(CG_GETSNAPSHOT, snapshotNumber, snapshot); }
+bool trap_GetSnapshot(int snapshotNumber, snapshot_t* snapshot) { return syscall(CG_GETSNAPSHOT, snapshotNumber, snapshot); }
 
-qboolean trap_GetServerCommand(int serverCommandNumber) { return syscall(CG_GETSERVERCOMMAND, serverCommandNumber); }
+bool trap_GetServerCommand(int serverCommandNumber) { return syscall(CG_GETSERVERCOMMAND, serverCommandNumber); }
 
 int trap_GetCurrentCmdNumber(void) { return syscall(CG_GETCURRENTCMDNUMBER); }
 
-qboolean trap_GetUserCmd(int cmdNumber, usercmd_t* ucmd) { return syscall(CG_GETUSERCMD, cmdNumber, ucmd); }
+bool trap_GetUserCmd(int cmdNumber, usercmd_t* ucmd) { return syscall(CG_GETUSERCMD, cmdNumber, ucmd); }
 
 void trap_SetUserCmdValue(int stateValue, float sensitivityScale) { syscall(CG_SETUSERCMDVALUE, stateValue, PASSFLOAT(sensitivityScale)); }
 
@@ -193,7 +150,7 @@ void testPrintFloat(char* string, float f) { syscall(CG_TESTPRINTFLOAT, string, 
 
 int trap_MemoryRemaining(void) { return syscall(CG_MEMORY_REMAINING); }
 
-qboolean trap_Key_IsDown(int keynum) { return syscall(CG_KEY_ISDOWN, keynum); }
+bool trap_Key_IsDown(int keynum) { return syscall(CG_KEY_ISDOWN, keynum); }
 
 int trap_Key_GetCatcher(void) { return syscall(CG_KEY_GETCATCHER); }
 
@@ -215,10 +172,8 @@ void trap_S_StopBackgroundTrack(void) { syscall(CG_S_STOPBACKGROUNDTRACK); }
 
 void trap_SnapVector(float* v) { syscall(CG_SNAPVECTOR, v); }
 
-// this returns a handle.  arg0 is the name in the format "idlogo.roq", set arg1 to NULL, alteredstates to qfalse (do not alter gamestate)
-int trap_CIN_PlayCinematic(const char* arg0, int xpos, int ypos, int width, int height, int bits) {
-	return syscall(CG_CIN_PLAYCINEMATIC, arg0, xpos, ypos, width, height, bits);
-}
+// this returns a handle.  arg0 is the name in the format "idlogo.roq", set arg1 to NULL, alteredstates to false (do not alter gamestate)
+int trap_CIN_PlayCinematic(const char* arg0, int xpos, int ypos, int width, int height, int bits) { return syscall(CG_CIN_PLAYCINEMATIC, arg0, xpos, ypos, width, height, bits); }
 
 // stops playing the cinematic and ends it.  should always return FMV_EOF
 // cinematics must be stopped in reverse order of when they are started
@@ -234,7 +189,7 @@ void trap_CIN_DrawCinematic(int handle) { syscall(CG_CIN_DRAWCINEMATIC, handle);
 void trap_CIN_SetExtents(int handle, int x, int y, int w, int h) { syscall(CG_CIN_SETEXTENTS, handle, x, y, w, h); }
 
 /*
-qboolean trap_loadCamera( const char *name ) {
+bool trap_loadCamera( const char *name ) {
     return syscall( CG_LOADCAMERA, name );
 }
 
@@ -242,13 +197,13 @@ void trap_startCamera(int time) {
     syscall(CG_STARTCAMERA, time);
 }
 
-qboolean trap_getCameraInfo( int time, vec3_t *origin, vec3_t *angles) {
+bool trap_getCameraInfo( int time, vec3_t *origin, vec3_t *angles) {
     return syscall( CG_GETCAMERAINFO, time, origin, angles );
 }
 */
 
-qboolean trap_GetEntityToken(char* buffer, int bufferSize) { return syscall(CG_GET_ENTITY_TOKEN, buffer, bufferSize); }
+bool trap_GetEntityToken(char* buffer, int bufferSize) { return syscall(CG_GET_ENTITY_TOKEN, buffer, bufferSize); }
 
-qboolean trap_R_inPVS(const vec3_t p1, const vec3_t p2) { return syscall(CG_R_INPVS, p1, p2); }
+bool trap_R_inPVS(const vec3_t p1, const vec3_t p2) { return syscall(CG_R_INPVS, p1, p2); }
 
 #include "../qcommon/vm_sharedsyscalls.inc"

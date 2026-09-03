@@ -34,9 +34,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // msg.c
 //
 typedef struct {
-	qboolean allowoverflow;  // if false, do a Com_Error
-	qboolean overflowed;     // set to true if the buffer size failed (with allowoverflow set)
-	qboolean oob;            // set to true if the buffer size failed (with allowoverflow set)
+	bool allowoverflow;  // if false, do a Com_Error
+	bool overflowed;     // set to true if the buffer size failed (with allowoverflow set)
+	bool oob;            // set to true if the buffer size failed (with allowoverflow set)
 	byte* data;
 	int maxsize;
 	int cursize;
@@ -92,7 +92,7 @@ int MSG_LookaheadByte(msg_t* msg);
 void MSG_WriteDeltaUsercmdKey(msg_t* msg, int key, usercmd_t* from, usercmd_t* to);
 void MSG_ReadDeltaUsercmdKey(msg_t* msg, int key, usercmd_t* from, usercmd_t* to);
 
-void MSG_WriteDeltaEntity(msg_t* msg, struct entityState_s* from, struct entityState_s* to, qboolean force);
+void MSG_WriteDeltaEntity(msg_t* msg, struct entityState_s* from, struct entityState_s* to, bool force);
 void MSG_ReadDeltaEntity(msg_t* msg, entityState_t* from, entityState_t* to, int number);
 
 void MSG_WriteDeltaPlayerstate(msg_t* msg, struct playerState_s* from, struct playerState_s* to);
@@ -157,20 +157,20 @@ typedef struct {
 void NET_Init(void);
 void NET_Shutdown(void);
 void NET_Restart_f(void);
-void NET_Config(qboolean enableNetworking);
+void NET_Config(bool enableNetworking);
 void NET_FlushPacketQueue(void);
 void NET_SendPacket(netsrc_t sock, int length, const void* data, netadr_t to);
 void QDECL NET_OutOfBandPrint(netsrc_t net_socket, netadr_t adr, const char* format, ...) Q_PRINTF_FUNC(3, 4);
 void QDECL NET_OutOfBandData(netsrc_t sock, netadr_t adr, byte* format, int len);
 
-qboolean NET_CompareAdr(netadr_t a, netadr_t b);
-qboolean NET_CompareBaseAdrMask(netadr_t a, netadr_t b, int netmask);
-qboolean NET_CompareBaseAdr(netadr_t a, netadr_t b);
-qboolean NET_IsLocalAddress(netadr_t adr);
+bool NET_CompareAdr(netadr_t a, netadr_t b);
+bool NET_CompareBaseAdrMask(netadr_t a, netadr_t b, int netmask);
+bool NET_CompareBaseAdr(netadr_t a, netadr_t b);
+bool NET_IsLocalAddress(netadr_t adr);
 const char* NET_AdrToString(netadr_t a);
 const char* NET_AdrToStringwPort(netadr_t a);
 int NET_StringToAdr(const char* s, netadr_t* a, netadrtype_t family);
-qboolean NET_GetLoopPacket(netsrc_t sock, netadr_t* net_from, msg_t* net_message);
+bool NET_GetLoopPacket(netsrc_t sock, netadr_t* net_from, msg_t* net_message);
 void NET_JoinMulticast6(void);
 void NET_LeaveMulticast6(void);
 void NET_Sleep(int msec);
@@ -209,7 +209,7 @@ typedef struct {
 
 	// outgoing fragment buffer
 	// we need to space out the sending of large fragmented messages
-	qboolean unsentFragments;
+	bool unsentFragments;
 	int unsentFragmentStart;
 	int unsentLength;
 	byte unsentBuffer[MAX_MSGLEN];
@@ -219,17 +219,17 @@ typedef struct {
 	int lastSentSize;
 
 #ifdef LEGACY_PROTOCOL
-	qboolean compat;
+	bool compat;
 #endif
 } netchan_t;
 
 void Netchan_Init(int qport);
-void Netchan_Setup(netsrc_t sock, netchan_t* chan, netadr_t adr, int qport, int challenge, qboolean compat);
+void Netchan_Setup(netsrc_t sock, netchan_t* chan, netadr_t adr, int qport, int challenge, bool compat);
 
 void Netchan_Transmit(netchan_t* chan, int length, const byte* data);
 void Netchan_TransmitNextFragment(netchan_t* chan);
 
-qboolean Netchan_Process(netchan_t* chan, msg_t* msg);
+bool Netchan_Process(netchan_t* chan, msg_t* msg);
 
 /*
 ==============================================================
@@ -333,7 +333,7 @@ void VM_Free(vm_t* vm);
 void VM_Clear(void);
 void VM_Forced_Unload_Start(void);
 void VM_Forced_Unload_Done(void);
-vm_t* VM_Restart(vm_t* vm, qboolean unpure);
+vm_t* VM_Restart(vm_t* vm, bool unpure);
 
 intptr_t QDECL VM_Call(vm_t* vm, int callNum, ...);
 
@@ -479,7 +479,7 @@ void Cvar_Update(vmCvar_t* vmCvar);
 void Cvar_Set(const char* var_name, const char* value);
 // will create the variable with no flags if it doesn't exist
 
-cvar_t* Cvar_Set2(const char* var_name, const char* value, qboolean force);
+cvar_t* Cvar_Set2(const char* var_name, const char* value, bool force);
 // same as Cvar_Set, but allows more control over setting of cvar
 
 void Cvar_SetSafe(const char* var_name, const char* value);
@@ -513,7 +513,7 @@ void Cvar_ForceReset(const char* var_name);
 void Cvar_SetCheatState(void);
 // reset all testing vars to a safe value
 
-qboolean Cvar_Command(void);
+bool Cvar_Command(void);
 // called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
 // command.  Returns true if the command was a variable reference that
 // was handled. (print or change)
@@ -529,10 +529,10 @@ char* Cvar_InfoString_Big(int bit);
 // returns an info string containing all the cvars that have the given bit set
 // in their flags ( CVAR_USERINFO, CVAR_SERVERINFO, CVAR_SYSTEMINFO, etc )
 void Cvar_InfoStringBuffer(int bit, char* buff, int buffsize);
-void Cvar_CheckRange(cvar_t* cv, float minVal, float maxVal, qboolean shouldBeIntegral);
+void Cvar_CheckRange(cvar_t* cv, float minVal, float maxVal, bool shouldBeIntegral);
 void Cvar_SetDescription(cvar_t* var, const char* var_description);
 
-void Cvar_Restart(qboolean unsetVM);
+void Cvar_Restart(bool unsetVM);
 void Cvar_Restart_f(void);
 
 void Cvar_CompleteCvarName(char* args, int argNum);
@@ -571,12 +571,12 @@ issues.
 #define Q3CONFIG_CFG CONFIG_PREFIX ".cfg"
 #endif
 
-qboolean FS_Initialized(void);
+bool FS_Initialized(void);
 
 void FS_InitFilesystem(void);
-void FS_Shutdown(qboolean closemfp);
+void FS_Shutdown(bool closemfp);
 
-qboolean FS_ConditionalRestart(int checksumFeed, qboolean disconnect);
+bool FS_ConditionalRestart(int checksumFeed, bool disconnect);
 void FS_Restart(int checksumFeed);
 // shutdown and restart the filesystem so changes to fs_gamedir can take effect
 
@@ -587,15 +587,15 @@ char** FS_ListFiles(const char* directory, const char* extension, int* numfiles)
 
 void FS_FreeFileList(char** list);
 
-qboolean FS_FileExists_HomeData(const char* file);
+bool FS_FileExists_HomeData(const char* file);
 
-qboolean FS_CreatePath(const char* OSPath);
+bool FS_CreatePath(const char* OSPath);
 
 int FS_FindVM(void** startSearch, char* found, int foundlen, const char* name, int enableDll);
 
 char* FS_BaseDir_BuildOSPath(const char* base, const char* qpath);
 char* FS_BuildOSPath(const char* base, const char* game, const char* qpath);
-qboolean FS_CompareZipChecksum(const char* zipfile);
+bool FS_CompareZipChecksum(const char* zipfile);
 
 int FS_LoadStack(void);
 
@@ -615,8 +615,8 @@ fileHandle_t FS_BaseDir_FOpenFileWrite_HomeConfig(const char* filename);
 fileHandle_t FS_BaseDir_FOpenFileWrite_HomeData(const char* filename);
 fileHandle_t FS_BaseDir_FOpenFileWrite_HomeState(const char* filename);
 long FS_BaseDir_FOpenFileRead(const char* filename, fileHandle_t* fp);
-void FS_BaseDir_Rename_HomeData(const char* from, const char* to, qboolean safe);
-long FS_FOpenFileRead(const char* qpath, fileHandle_t* file, qboolean uniqueFILE);
+void FS_BaseDir_Rename_HomeData(const char* from, const char* to, bool safe);
+long FS_FOpenFileRead(const char* qpath, fileHandle_t* file, bool uniqueFILE);
 // if uniqueFILE is true, then a new FILE will be fopened even if the file
 // is found in an already open pak file.  If uniqueFILE is false, you must call
 // FS_FCloseFile instead of fclose, otherwise the pak FILE would be improperly closed
@@ -634,7 +634,7 @@ int FS_Read(void* buffer, int len, fileHandle_t f);
 void FS_FCloseFile(fileHandle_t f);
 // note: you can't just fclose from another DLL, due to MS libc issues
 
-long FS_ReadFileDir(const char* qpath, void* searchPath, qboolean unpure, void** buffer);
+long FS_ReadFileDir(const char* qpath, void* searchPath, bool unpure, void** buffer);
 long FS_ReadFile(const char* qpath, void** buffer);
 // returns the length of the file
 // a null buffer will just return the file length without loading
@@ -669,7 +669,7 @@ int FS_FOpenFileByMode(const char* qpath, fileHandle_t* f, fsMode_t mode);
 int FS_Seek(fileHandle_t f, long offset, int origin);
 // seek on a file
 
-qboolean FS_FilenameCompare(const char* s1, const char* s2);
+bool FS_FilenameCompare(const char* s1, const char* s2);
 
 const char* FS_LoadedPakNames(void);
 const char* FS_LoadedPakChecksums(void);
@@ -694,18 +694,18 @@ void FS_PureServerSetLoadedPaks(const char* pakSums, const char* pakNames);
 // separated checksums will be checked for files, with the
 // sole exception of .cfg files.
 
-qboolean FS_CheckDirTraversal(const char* checkdir);
-qboolean FS_InvalidGameDir(const char* gamedir);
-qboolean FS_idPak(char* pak, char* base, int numPaks);
-qboolean FS_ComparePaks(char* neededpaks, int len, qboolean dlstring);
+bool FS_CheckDirTraversal(const char* checkdir);
+bool FS_InvalidGameDir(const char* gamedir);
+bool FS_idPak(char* pak, char* base, int numPaks);
+bool FS_ComparePaks(char* neededpaks, int len, bool dlstring);
 
 void FS_Remove(const char* osPath);
 void FS_Remove_HomeData(const char* homePath);
 
-void FS_FilenameCompletion(const char* dir, const char* ext, char* filter, qboolean stripExt, void (*callback)(const char* s), qboolean allowNonPureFilesOnDisk);
+void FS_FilenameCompletion(const char* dir, const char* ext, char* filter, bool stripExt, void (*callback)(const char* s), bool allowNonPureFilesOnDisk);
 
 const char* FS_GetCurrentGameDir(void);
-qboolean FS_Which(const char* filename, void* searchPath);
+bool FS_Which(const char* filename, void* searchPath);
 
 /*
 ==============================================================
@@ -726,8 +726,8 @@ typedef struct {
 void Field_Clear(field_t* edit);
 void Field_AutoComplete(field_t* edit);
 void Field_CompleteKeyname(void);
-void Field_CompleteFilename(const char* dir, const char* ext, char* filter, qboolean stripExt, qboolean allowNonPureFilesOnDisk);
-void Field_CompleteCommand(char* cmd, qboolean doCommands, qboolean doCvars);
+void Field_CompleteFilename(const char* dir, const char* ext, char* filter, bool stripExt, bool allowNonPureFilesOnDisk);
+void Field_CompleteCommand(char* cmd, bool doCommands, bool doCvars);
 void Field_CompletePlayerName(const char** names, int count);
 
 /*
@@ -779,7 +779,7 @@ void QDECL Com_Printf(const char* fmt, ...) Q_PRINTF_FUNC(1, 2);
 void QDECL Com_DPrintf(const char* fmt, ...) Q_PRINTF_FUNC(1, 2);
 void QDECL Com_Error(int code, const char* fmt, ...) Q_NO_RETURN Q_PRINTF_FUNC(2, 3);
 void Com_Quit_f(void) Q_NO_RETURN;
-void Com_GameRestart(int checksumFeed, qboolean disconnect);
+void Com_GameRestart(int checksumFeed, bool disconnect);
 
 int Com_Milliseconds(void);  // will be journaled properly
 unsigned Com_BlockChecksum(const void* buffer, int length);
@@ -787,18 +787,18 @@ char* Com_MD5File(const char* filename, int length, const char* prefix, int pref
 int Com_Filter(char* filter, char* name, int casesensitive);
 int Com_FilterPath(char* filter, char* name, int casesensitive);
 int Com_RealTime(qtime_t* qtime);
-qboolean Com_SafeMode(void);
+bool Com_SafeMode(void);
 void Com_RunAndTimeServerPacket(netadr_t* evFrom, msg_t* buf);
 
-qboolean Com_IsVoipTarget(uint8_t* voipTargets, int voipTargetsSize, int clientNum);
+bool Com_IsVoipTarget(uint8_t* voipTargets, int voipTargetsSize, int clientNum);
 
 void Com_StartupVariable(const char* match);
 // checks for and removes command line "+set var arg" constructs
 // if match is NULL, all set commands will be executed, otherwise
 // only a set with the exact name.  Only used during startup.
 
-qboolean Com_PlayerNameToFieldString(char* str, int length, const char* name);
-qboolean Com_FieldStringToPlayerName(char* name, int length, const char* rawname);
+bool Com_PlayerNameToFieldString(char* str, int length, const char* name);
+bool Com_FieldStringToPlayerName(char* name, int length, const char* rawname);
 int QDECL Com_strCompare(const void* a, const void* b);
 
 extern cvar_t* com_developer;
@@ -845,8 +845,8 @@ extern int time_backend;  // renderer backend time
 
 extern int com_frameTime;
 
-extern qboolean com_errorEntered;
-extern qboolean com_fullyInitialized;
+extern bool com_errorEntered;
+extern bool com_fullyInitialized;
 
 extern fileHandle_t com_journalFile;
 extern fileHandle_t com_journalDataFile;
@@ -896,7 +896,7 @@ void Z_LogHeap(void);
 void Hunk_Clear(void);
 void Hunk_ClearToMark(void);
 void Hunk_SetMark(void);
-qboolean Hunk_CheckMark(void);
+bool Hunk_CheckMark(void);
 void Hunk_ClearTempMemory(void);
 void* Hunk_AllocateTempMemory(int size);
 void Hunk_FreeTempMemory(void* buf);
@@ -926,11 +926,11 @@ void CL_InitKeyCommands(void);
 // config files, but the rest of client startup will happen later
 
 void CL_Init(void);
-void CL_Disconnect(qboolean showMainMenu);
-void CL_Shutdown(char* finalmsg, qboolean disconnect, qboolean quit);
+void CL_Disconnect(bool showMainMenu);
+void CL_Shutdown(char* finalmsg, bool disconnect, bool quit);
 void CL_Frame(int msec);
-qboolean CL_GameCommand(void);
-void CL_KeyEvent(int key, qboolean down, unsigned time);
+bool CL_GameCommand(void);
+void CL_KeyEvent(int key, bool down, unsigned time);
 
 void CL_CharEvent(int key);
 // char events are for field typing, not game control
@@ -969,13 +969,13 @@ void CL_CDDialog(void);
 void CL_FlushMemory(void);
 // dump all memory on an error
 
-void CL_ShutdownAll(qboolean shutdownRef);
+void CL_ShutdownAll(bool shutdownRef);
 // shutdown client
 
 void CL_InitRef(void);
 // initialize renderer interface
 
-void CL_StartHunkUsers(qboolean rendererOnly);
+void CL_StartHunkUsers(bool rendererOnly);
 // start all the client stuff using the hunk
 
 void CL_Snd_Shutdown(void);
@@ -1003,14 +1003,14 @@ void SV_Shutdown(char* finalmsg);
 void SV_Frame(int msec);
 void SV_PacketEvent(netadr_t from, msg_t* msg);
 int SV_FrameMsec(void);
-qboolean SV_GameCommand(void);
+bool SV_GameCommand(void);
 int SV_SendQueuedPackets(void);
 
 //
 // UI interface
 //
-qboolean UI_GameCommand(void);
-qboolean UI_usesUniqueCDKey(void);
+bool UI_GameCommand(void);
+bool UI_usesUniqueCDKey(void);
 
 //
 // input interface
@@ -1036,7 +1036,7 @@ void Sys_Init(void);
 void* QDECL Sys_LoadGameDll(const char* name, vmMainProc* entryPoint, intptr_t(QDECL* systemcalls)(intptr_t, ...));
 void Sys_UnloadDll(void* dllHandle);
 
-qboolean Sys_DllExtension(const char* name);
+bool Sys_DllExtension(const char* name);
 
 char* Sys_GetCurrentUser(void);
 
@@ -1050,10 +1050,10 @@ void Sys_Print(const char* msg);
 // any game related timing information should come from event timestamps
 int Sys_Milliseconds(void);
 
-qboolean Sys_RandomBytes(byte* string, int len);
+bool Sys_RandomBytes(byte* string, int len);
 
 // the system console is shown when a dedicated server is running
-void Sys_DisplaySystemConsole(qboolean show);
+void Sys_DisplaySystemConsole(bool show);
 
 cpuFeatures_t Sys_GetProcessorFeatures(void);
 
@@ -1061,14 +1061,14 @@ void Sys_SetErrorText(const char* text);
 
 void Sys_SendPacket(int length, const void* data, netadr_t to);
 
-qboolean Sys_StringToAdr(const char* s, netadr_t* a, netadrtype_t family);
+bool Sys_StringToAdr(const char* s, netadr_t* a, netadrtype_t family);
 // Does NOT parse port numbers, only base addresses.
 
-qboolean Sys_IsLANAddress(netadr_t adr);
+bool Sys_IsLANAddress(netadr_t adr);
 void Sys_ShowIP(void);
 
 FILE* Sys_FOpen(const char* ospath, const char* mode);
-qboolean Sys_Mkdir(const char* path);
+bool Sys_Mkdir(const char* path);
 FILE* Sys_Mkfifo(const char* ospath);
 char* Sys_Cwd(void);
 void Sys_SetDefaultInstallPath(const char* path);
@@ -1088,11 +1088,11 @@ const char* Sys_Dirname(char* path);
 const char* Sys_Basename(char* path);
 char* Sys_ConsoleInput(void);
 
-char** Sys_ListFiles(const char* directory, const char* extension, char* filter, int* numfiles, qboolean wantsubs);
+char** Sys_ListFiles(const char* directory, const char* extension, char* filter, int* numfiles, bool wantsubs);
 void Sys_FreeFileList(char** list);
 void Sys_Sleep(int msec);
 
-qboolean Sys_LowPhysicalMemory(void);
+bool Sys_LowPhysicalMemory(void);
 
 void Sys_SetEnv(const char* name, const char* value);
 
@@ -1101,7 +1101,7 @@ typedef enum { DR_YES = 0, DR_NO = 1, DR_OK = 0, DR_CANCEL = 1 } dialogResult_t;
 typedef enum { DT_INFO, DT_WARNING, DT_ERROR, DT_YES_NO, DT_OK_CANCEL } dialogType_t;
 
 dialogResult_t Sys_Dialog(dialogType_t type, const char* message, const char* title);
-qboolean Sys_OpenFolderInFileManager(const char* path, qboolean create);
+bool Sys_OpenFolderInFileManager(const char* path, bool create);
 
 void Sys_RemovePIDFile(const char* gamedir);
 void Sys_InitPIDFile(const char* gamedir);

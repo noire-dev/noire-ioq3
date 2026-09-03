@@ -62,7 +62,7 @@ CURLMsg* (*qcurl_multi_info_read)(CURLM* multi_handle, int* msgs_in_queue);
 const char* (*qcurl_multi_strerror)(CURLMcode);
 
 static void* cURLLib = NULL;
-static qboolean cURLSymbolLoadFailed = qfalse;
+static bool cURLSymbolLoadFailed = false;
 
 static CURL* downloadCURL = NULL;
 static CURLM* downloadCURLM = NULL;
@@ -78,7 +78,7 @@ static void* GPA(char* str) {
 	rv = Sys_LoadFunction(cURLLib, str);
 	if(!rv) {
 		Com_Printf("Can't load symbol %s\n", str);
-		cURLSymbolLoadFailed = qtrue;
+		cURLSymbolLoadFailed = true;
 		return NULL;
 	} else {
 		Com_DPrintf("Loaded symbol %s (0x%p)\n", str, rv);
@@ -91,21 +91,21 @@ static void* GPA(char* str) {
 CL_HTTP_Init
 =================
 */
-qboolean CL_HTTP_Init(void) {
-	if(cURLLib) return qtrue;
+bool CL_HTTP_Init(void) {
+	if(cURLLib) return true;
 
 	cl_cURLLib = Cvar_Get("cl_cURLLib", DEFAULT_CURL_LIB, CVAR_ARCHIVE | CVAR_PROTECTED);
 
 	Com_Printf("Loading \"%s\"...", cl_cURLLib->string);
-	if(!(cURLLib = Sys_LoadDll(cl_cURLLib->string, qtrue))) {
+	if(!(cURLLib = Sys_LoadDll(cl_cURLLib->string, true))) {
 #ifdef ALTERNATE_CURL_LIB
 		// On some linux distributions there is no libcurl.so.3, but only libcurl.so.4. That one works too.
-		if(!(cURLLib = Sys_LoadDll(ALTERNATE_CURL_LIB, qtrue)))
+		if(!(cURLLib = Sys_LoadDll(ALTERNATE_CURL_LIB, true)))
 #endif
-			return qfalse;
+			return false;
 	}
 
-	cURLSymbolLoadFailed = qfalse;
+	cURLSymbolLoadFailed = false;
 
 	qcurl_version = GPA("curl_version");
 
@@ -130,11 +130,11 @@ qboolean CL_HTTP_Init(void) {
 	if(cURLSymbolLoadFailed) {
 		CL_HTTP_Shutdown();
 		Com_Printf("FAIL One or more symbols not found\n");
-		return qfalse;
+		return false;
 	}
 	Com_Printf("OK\n");
 
-	return qtrue;
+	return true;
 }
 
 /*
@@ -142,7 +142,7 @@ qboolean CL_HTTP_Init(void) {
 CL_HTTP_Available
 =================
 */
-qboolean CL_HTTP_Available(void) { return cURLLib != NULL; }
+bool CL_HTTP_Available(void) { return cURLLib != NULL; }
 
 static void CL_cURL_Cleanup(void) {
 	if(downloadCURLM) {
@@ -285,7 +285,7 @@ void CL_HTTP_BeginDownload(const char* remoteURL) {
 	}
 }
 
-qboolean CL_HTTP_PerformDownload(void) {
+bool CL_HTTP_PerformDownload(void) {
 	CURLMcode res;
 	CURLMsg* msg;
 	int c;
@@ -296,10 +296,10 @@ qboolean CL_HTTP_PerformDownload(void) {
 		res = qcurl_multi_perform(downloadCURLM, &c);
 		i++;
 	}
-	if(res == CURLM_CALL_MULTI_PERFORM) return qfalse;
+	if(res == CURLM_CALL_MULTI_PERFORM) return false;
 	msg = qcurl_multi_info_read(downloadCURLM, &c);
 	if(msg == NULL) {
-		return qfalse;
+		return false;
 	}
 	if(msg->msg != CURLMSG_DONE || msg->data.result != CURLE_OK) {
 		long code;
@@ -308,7 +308,7 @@ qboolean CL_HTTP_PerformDownload(void) {
 		Com_Error(ERR_DROP, "Download Error: %s Code: %ld URL: %s", qcurl_easy_strerror(msg->data.result), code, clc.downloadURL);
 	}
 
-	return qtrue;
+	return true;
 }
 
 #endif /* USE_HTTP */

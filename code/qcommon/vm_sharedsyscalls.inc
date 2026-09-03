@@ -110,7 +110,7 @@ void VMContext(js_args_t* args, js_result_t* result) {
 	syscall( TRAP_JS_CONTEXT, args, result );
 }
 
-qboolean JSOpenFile(const char* filename) {
+bool JSOpenFile(const char* filename) {
 	return syscall( TRAP_JS_OPENFILE, filename );
 }
 
@@ -118,10 +118,10 @@ void JSLoadScripts(const char* path, const char* name) {
 	syscall( TRAP_JS_LOADSCRIPTS, path, name );
 }
 
-qboolean JSEval(const char* code, js_result_t* result) {
+bool JSEval(const char* code, js_result_t* result) {
 	return syscall( TRAP_JS_EVAL, code, result );
 }
 
-qboolean JSCall(int id, js_args_t* args, js_result_t* result) {
+bool JSCall(int id, js_args_t* args, js_result_t* result) {
 	return syscall( TRAP_JS_CALL, id, args, result );
 }

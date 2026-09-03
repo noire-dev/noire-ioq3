@@ -63,7 +63,7 @@ TELEPORTERS
 
 void TeleportPlayer(gentity_t* player, vec3_t origin, vec3_t angles) {
 	gentity_t* tent;
-	qboolean noAngles;
+	bool noAngles;
 
 	noAngles = (angles[0] > 999999.0);
 	// use temp events at source and destination to prevent the effect
@@ -98,7 +98,7 @@ void TeleportPlayer(gentity_t* player, vec3_t origin, vec3_t angles) {
 	}
 
 	// save results of pmove
-	BG_PlayerStateToEntityState(&player->client->ps, &player->s, qtrue);
+	BG_PlayerStateToEntityState(&player->client->ps, &player->s, true);
 
 	// use the precise origin for linking
 	VectorCopy(player->client->ps.origin, player->r.currentOrigin);
@@ -327,7 +327,7 @@ void DropPortalDestination(gentity_t* player) {
 	ent->s.pos.trType = TR_STATIONARY;
 
 	ent->r.contents = CONTENTS_CORPSE;
-	ent->takedamage = qtrue;
+	ent->takedamage = true;
 	ent->health = 200;
 	ent->die = PortalDie;
 
@@ -415,7 +415,7 @@ void DropPortalSource(gentity_t* player) {
 	ent->s.pos.trType = TR_STATIONARY;
 
 	ent->r.contents = CONTENTS_CORPSE | CONTENTS_TRIGGER;
-	ent->takedamage = qtrue;
+	ent->takedamage = true;
 	ent->health = 200;
 	ent->die = PortalDie;
 

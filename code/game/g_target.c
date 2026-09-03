@@ -370,9 +370,7 @@ void SP_target_relay(gentity_t* self) { self->use = target_relay_use; }
 /*QUAKED target_kill (.5 .5 .5) (-8 -8 -8) (8 8 8)
 Kills the activator.
 */
-void target_kill_use(gentity_t* self, gentity_t* other, gentity_t* activator) {
-	G_Damage(activator, NULL, NULL, NULL, NULL, 100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG);
-}
+void target_kill_use(gentity_t* self, gentity_t* other, gentity_t* activator) { G_Damage(activator, NULL, NULL, NULL, NULL, 100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG); }
 
 void SP_target_kill(gentity_t* self) { self->use = target_kill_use; }
 
@@ -387,7 +385,7 @@ static void target_location_linkup(gentity_t* ent) {
 
 	if(level.locationLinked) return;
 
-	level.locationLinked = qtrue;
+	level.locationLinked = true;
 
 	level.locationHead = NULL;
 

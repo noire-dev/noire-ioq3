@@ -245,7 +245,7 @@ void GibEntity(gentity_t* self, int killer) {
 		}
 	}
 	G_AddEvent(self, EV_GIB_PLAYER, killer);
-	self->takedamage = qfalse;
+	self->takedamage = false;
 	self->s.eType = ET_INVISIBLE;
 	self->r.contents = 0;
 }
@@ -268,12 +268,9 @@ void body_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int da
 }
 
 // these are just for logging, the client prints its own messages
-char* modNames[] = {"MOD_UNKNOWN",  "MOD_SHOTGUN",       "MOD_GAUNTLET",       "MOD_MACHINEGUN",    "MOD_GRENADE",      "MOD_GRENADE_SPLASH",
-                    "MOD_ROCKET",   "MOD_ROCKET_SPLASH", "MOD_PLASMA",         "MOD_PLASMA_SPLASH", "MOD_RAILGUN",      "MOD_LIGHTNING",
-                    "MOD_BFG",      "MOD_BFG_SPLASH",    "MOD_WATER",          "MOD_SLIME",         "MOD_LAVA",         "MOD_CRUSH",
-                    "MOD_TELEFRAG", "MOD_FALLING",       "MOD_SUICIDE",        "MOD_TARGET_LASER",  "MOD_TRIGGER_HURT",
+char* modNames[] = {"MOD_UNKNOWN", "MOD_SHOTGUN",  "MOD_GAUNTLET",       "MOD_MACHINEGUN", "MOD_GRENADE", "MOD_GRENADE_SPLASH", "MOD_ROCKET", "MOD_ROCKET_SPLASH", "MOD_PLASMA", "MOD_PLASMA_SPLASH", "MOD_RAILGUN", "MOD_LIGHTNING", "MOD_BFG", "MOD_BFG_SPLASH", "MOD_WATER", "MOD_SLIME", "MOD_LAVA", "MOD_CRUSH", "MOD_TELEFRAG", "MOD_FALLING", "MOD_SUICIDE", "MOD_TARGET_LASER", "MOD_TRIGGER_HURT",
 #ifdef MISSIONPACK
-                    "MOD_NAIL",     "MOD_CHAINGUN",      "MOD_PROXIMITY_MINE", "MOD_KAMIKAZE",      "MOD_JUICED",
+                    "MOD_NAIL",    "MOD_CHAINGUN", "MOD_PROXIMITY_MINE", "MOD_KAMIKAZE",   "MOD_JUICED",
 #endif
                     "MOD_GRAPPLE"};
 
@@ -471,8 +468,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 				attacker->client->ps.persistant[PERS_GAUNTLET_FRAG_COUNT]++;
 
 				// add the sprite over the player's head
-				attacker->client->ps.eFlags &=
-				    ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP);
+				attacker->client->ps.eFlags &= ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP);
 				attacker->client->ps.eFlags |= EF_AWARD_GAUNTLET;
 				attacker->client->rewardTime = level.time + REWARD_SPRITE_TIME;
 
@@ -487,8 +483,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 				attacker->client->ps.persistant[PERS_EXCELLENT_COUNT]++;
 
 				// add the sprite over the player's head
-				attacker->client->ps.eFlags &=
-				    ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP);
+				attacker->client->ps.eFlags &= ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP);
 				attacker->client->ps.eFlags |= EF_AWARD_EXCELLENT;
 				attacker->client->rewardTime = level.time + REWARD_SPRITE_TIME;
 			}
@@ -541,7 +536,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 		}
 	}
 
-	self->takedamage = qtrue;  // can still be gibbed
+	self->takedamage = true;  // can still be gibbed
 
 	self->s.weapon = WP_NONE;
 	self->s.powerups = 0;
@@ -654,8 +649,7 @@ int RaySphereIntersections(vec3_t origin, float radius, vec3_t point, vec3_t dir
 	// normalize dir so a = 1
 	VectorNormalize(dir);
 	b = 2 * (dir[0] * (point[0] - origin[0]) + dir[1] * (point[1] - origin[1]) + dir[2] * (point[2] - origin[2]));
-	c = (point[0] - origin[0]) * (point[0] - origin[0]) + (point[1] - origin[1]) * (point[1] - origin[1]) + (point[2] - origin[2]) * (point[2] - origin[2]) -
-	    radius * radius;
+	c = (point[0] - origin[0]) * (point[0] - origin[0]) + (point[1] - origin[1]) * (point[1] - origin[1]) + (point[2] - origin[2]) * (point[2] - origin[2]) - radius * radius;
 
 	d = b * b - 4 * c;
 	if(d > 0) {
@@ -684,7 +678,7 @@ int G_InvulnerabilityEffect(gentity_t* targ, vec3_t dir, vec3_t point, vec3_t im
 	int n;
 
 	if(!targ->client) {
-		return qfalse;
+		return false;
 	}
 	VectorCopy(dir, vec);
 	VectorInverse(vec);
@@ -702,9 +696,9 @@ int G_InvulnerabilityEffect(gentity_t* targ, vec3_t dir, vec3_t point, vec3_t im
 			VectorCopy(vec, bouncedir);
 			VectorNormalize(bouncedir);
 		}
-		return qtrue;
+		return true;
 	} else {
-		return qfalse;
+		return false;
 	}
 }
 #endif
@@ -927,10 +921,10 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 		client->damage_knockback += knockback;
 		if(dir) {
 			VectorCopy(dir, client->damage_from);
-			client->damage_fromWorld = qfalse;
+			client->damage_fromWorld = false;
 		} else {
 			VectorCopy(targ->r.currentOrigin, client->damage_from);
-			client->damage_fromWorld = qtrue;
+			client->damage_fromWorld = true;
 		}
 	}
 
@@ -974,11 +968,11 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 ============
 CanDamage
 
-Returns qtrue if the inflictor can directly damage the target.  Used for
+Returns true if the inflictor can directly damage the target.  Used for
 explosions and melee attacks.
 ============
 */
-qboolean CanDamage(gentity_t* targ, vec3_t origin) {
+bool CanDamage(gentity_t* targ, vec3_t origin) {
 	vec3_t dest;
 	trace_t tr;
 	vec3_t midpoint;
@@ -993,7 +987,7 @@ qboolean CanDamage(gentity_t* targ, vec3_t origin) {
 	VectorCopy(midpoint, dest);
 	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
 
-	if(tr.fraction == 1.0 || tr.entityNum == targ->s.number) return qtrue;
+	if(tr.fraction == 1.0 || tr.entityNum == targ->s.number) return true;
 
 	// this should probably check in the plane of projection,
 	// rather than in world coordinate
@@ -1003,7 +997,7 @@ qboolean CanDamage(gentity_t* targ, vec3_t origin) {
 	dest[2] += offsetmaxs[2];
 	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
 
-	if(tr.fraction == 1.0) return qtrue;
+	if(tr.fraction == 1.0) return true;
 
 	VectorCopy(midpoint, dest);
 	dest[0] += offsetmaxs[0];
@@ -1011,7 +1005,7 @@ qboolean CanDamage(gentity_t* targ, vec3_t origin) {
 	dest[2] += offsetmaxs[2];
 	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
 
-	if(tr.fraction == 1.0) return qtrue;
+	if(tr.fraction == 1.0) return true;
 
 	VectorCopy(midpoint, dest);
 	dest[0] += offsetmins[0];
@@ -1019,7 +1013,7 @@ qboolean CanDamage(gentity_t* targ, vec3_t origin) {
 	dest[2] += offsetmaxs[2];
 	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
 
-	if(tr.fraction == 1.0) return qtrue;
+	if(tr.fraction == 1.0) return true;
 
 	VectorCopy(midpoint, dest);
 	dest[0] += offsetmins[0];
@@ -1027,7 +1021,7 @@ qboolean CanDamage(gentity_t* targ, vec3_t origin) {
 	dest[2] += offsetmaxs[2];
 	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
 
-	if(tr.fraction == 1.0) return qtrue;
+	if(tr.fraction == 1.0) return true;
 
 	VectorCopy(midpoint, dest);
 	dest[0] += offsetmaxs[0];
@@ -1035,7 +1029,7 @@ qboolean CanDamage(gentity_t* targ, vec3_t origin) {
 	dest[2] += offsetmins[2];
 	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
 
-	if(tr.fraction == 1.0) return qtrue;
+	if(tr.fraction == 1.0) return true;
 
 	VectorCopy(midpoint, dest);
 	dest[0] += offsetmaxs[0];
@@ -1043,7 +1037,7 @@ qboolean CanDamage(gentity_t* targ, vec3_t origin) {
 	dest[2] += offsetmins[2];
 	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
 
-	if(tr.fraction == 1.0) return qtrue;
+	if(tr.fraction == 1.0) return true;
 
 	VectorCopy(midpoint, dest);
 	dest[0] += offsetmins[0];
@@ -1051,7 +1045,7 @@ qboolean CanDamage(gentity_t* targ, vec3_t origin) {
 	dest[2] += offsetmins[2];
 	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
 
-	if(tr.fraction == 1.0) return qtrue;
+	if(tr.fraction == 1.0) return true;
 
 	VectorCopy(midpoint, dest);
 	dest[0] += offsetmins[0];
@@ -1059,9 +1053,9 @@ qboolean CanDamage(gentity_t* targ, vec3_t origin) {
 	dest[2] += offsetmins[2];
 	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
 
-	if(tr.fraction == 1.0) return qtrue;
+	if(tr.fraction == 1.0) return true;
 
-	return qfalse;
+	return false;
 }
 
 /*
@@ -1069,7 +1063,7 @@ qboolean CanDamage(gentity_t* targ, vec3_t origin) {
 G_RadiusDamage
 ============
 */
-qboolean G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float radius, gentity_t* ignore, int mod) {
+bool G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float radius, gentity_t* ignore, int mod) {
 	float points, dist;
 	gentity_t* ent;
 	int entityList[MAX_GENTITIES];
@@ -1078,7 +1072,7 @@ qboolean G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float 
 	vec3_t v;
 	vec3_t dir;
 	int i, e;
-	qboolean hitClient = qfalse;
+	bool hitClient = false;
 
 	if(radius < 1) {
 		radius = 1;
@@ -1117,7 +1111,7 @@ qboolean G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float 
 
 		if(CanDamage(ent, origin)) {
 			if(LogAccuracyHit(ent, attacker)) {
-				hitClient = qtrue;
+				hitClient = true;
 			}
 			VectorSubtract(ent->r.currentOrigin, origin, dir);
 			// push the center of mass higher than the origin so players

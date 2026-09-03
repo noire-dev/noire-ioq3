@@ -33,7 +33,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../client/snd_local.h"
 #include "../client/client.h"
 
-qboolean snd_inited = qfalse;
+bool snd_inited = false;
 
 cvar_t* s_sdlBits;
 cvar_t* s_sdlSpeed;
@@ -118,14 +118,7 @@ static void SNDDMA_AudioCallback(void* userdata, Uint8* stream, int len) {
 static struct {
 	Uint16 enumFormat;
 	char* stringFormat;
-} formatToStringTable[] = {{AUDIO_U8, "AUDIO_U8"},
-                           {AUDIO_S8, "AUDIO_S8"},
-                           {AUDIO_U16LSB, "AUDIO_U16LSB"},
-                           {AUDIO_S16LSB, "AUDIO_S16LSB"},
-                           {AUDIO_U16MSB, "AUDIO_U16MSB"},
-                           {AUDIO_S16MSB, "AUDIO_S16MSB"},
-                           {AUDIO_F32LSB, "AUDIO_F32LSB"},
-                           {AUDIO_F32MSB, "AUDIO_F32MSB"}};
+} formatToStringTable[] = {{AUDIO_U8, "AUDIO_U8"}, {AUDIO_S8, "AUDIO_S8"}, {AUDIO_U16LSB, "AUDIO_U16LSB"}, {AUDIO_S16LSB, "AUDIO_S16LSB"}, {AUDIO_U16MSB, "AUDIO_U16MSB"}, {AUDIO_S16MSB, "AUDIO_S16MSB"}, {AUDIO_F32LSB, "AUDIO_F32LSB"}, {AUDIO_F32MSB, "AUDIO_F32MSB"}};
 
 static int formatToStringTableSize = ARRAY_LEN(formatToStringTable);
 
@@ -162,12 +155,12 @@ static void SNDDMA_PrintAudiospec(const char* str, const SDL_AudioSpec* spec) {
 SNDDMA_Init
 ===============
 */
-qboolean SNDDMA_Init(void) {
+bool SNDDMA_Init(void) {
 	SDL_AudioSpec desired;
 	SDL_AudioSpec obtained;
 	int tmp;
 
-	if(snd_inited) return qtrue;
+	if(snd_inited) return true;
 
 	if(!s_sdlBits) {
 		s_sdlBits = Cvar_Get("s_sdlBits", "16", CVAR_ARCHIVE);
@@ -181,7 +174,7 @@ qboolean SNDDMA_Init(void) {
 
 	if(SDL_Init(SDL_INIT_AUDIO) != 0) {
 		Com_Printf("FAILED (%s)\n", SDL_GetError());
-		return qfalse;
+		return false;
 	}
 
 	Com_Printf("OK\n");
@@ -221,7 +214,7 @@ qboolean SNDDMA_Init(void) {
 	if(sdlPlaybackDevice == 0) {
 		Com_Printf("SDL_OpenAudioDevice() failed: %s\n", SDL_GetError());
 		SDL_QuitSubSystem(SDL_INIT_AUDIO);
-		return qfalse;
+		return false;
 	}
 
 	SNDDMA_PrintAudiospec("SDL_AudioSpec", &obtained);
@@ -281,8 +274,8 @@ qboolean SNDDMA_Init(void) {
 	// don't unpause the capture device; we'll do that in StartCapture.
 
 	Com_Printf("SDL audio initialized.\n");
-	snd_inited = qtrue;
-	return qtrue;
+	snd_inited = true;
+	return true;
 }
 
 /*
@@ -318,7 +311,7 @@ void SNDDMA_Shutdown(void) {
 	free(dma.buffer);
 	dma.buffer = NULL;
 	dmapos = dmasize = 0;
-	snd_inited = qfalse;
+	snd_inited = false;
 	Com_Printf("SDL audio shut down.\n");
 }
 

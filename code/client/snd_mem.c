@@ -112,7 +112,7 @@ ResampleSfx
 resample / decimate to the current source rate
 ================
 */
-static int ResampleSfx(sfx_t* sfx, int channels, int inrate, int inwidth, int samples, byte* data, qboolean compressed) {
+static int ResampleSfx(sfx_t* sfx, int channels, int inrate, int inwidth, int samples, byte* data, bool compressed) {
 	int outcount;
 	int srcsample;
 	float stepscale;
@@ -207,7 +207,7 @@ The filename may be different than sfx->name in the case
 of a forced fallback of a player specific sound
 ==============
 */
-qboolean S_LoadSound(sfx_t* sfx) {
+bool S_LoadSound(sfx_t* sfx) {
 	byte* data;
 	short* samples;
 	snd_info_t info;
@@ -215,7 +215,7 @@ qboolean S_LoadSound(sfx_t* sfx) {
 
 	// load it in
 	data = S_CodecLoad(sfx->soundName, &info);
-	if(!data) return qfalse;
+	if(!data) return false;
 
 	if(info.width == 1) {
 		Com_DPrintf(S_COLOR_YELLOW "WARNING: %s is a 8 bit audio file\n", sfx->soundName);
@@ -235,7 +235,7 @@ qboolean S_LoadSound(sfx_t* sfx) {
 	// manager to do the right thing for us and page
 	// sound in as needed
 
-	if(info.channels == 1 && sfx->soundCompressed == qtrue) {
+	if(info.channels == 1 && sfx->soundCompressed == true) {
 		sfx->soundCompressionMethod = 1;
 		sfx->soundData = NULL;
 		sfx->soundLength = ResampleSfxRaw(samples, info.channels, info.rate, info.width, info.samples, data + info.dataofs);
@@ -255,7 +255,7 @@ qboolean S_LoadSound(sfx_t* sfx) {
 	} else {
 		sfx->soundCompressionMethod = 0;
 		sfx->soundData = NULL;
-		sfx->soundLength = ResampleSfx(sfx, info.channels, info.rate, info.width, info.samples, data + info.dataofs, qfalse);
+		sfx->soundLength = ResampleSfx(sfx, info.channels, info.rate, info.width, info.samples, data + info.dataofs, false);
 	}
 
 	sfx->soundChannels = info.channels;
@@ -263,7 +263,7 @@ qboolean S_LoadSound(sfx_t* sfx) {
 	Hunk_FreeTempMemory(samples);
 	Hunk_FreeTempMemory(data);
 
-	return qtrue;
+	return true;
 }
 
 void S_DisplayFreeMemory(void) { Com_Printf("%d bytes free sound buffer memory, %d total used\n", inUse, totalInUse); }

@@ -35,44 +35,15 @@ void R_PerformanceCounters(void) {
 	}
 
 	if(r_speeds->integer == 1) {
-		ri.Printf(PRINT_ALL,
-		          "%i/%i/%i shaders/batches/surfs %i leafs %i verts %i/%i tris %.2f mtex %.2f dc\n",
-		          backEnd.pc.c_shaders,
-		          backEnd.pc.c_surfBatches,
-		          backEnd.pc.c_surfaces,
-		          tr.pc.c_leafs,
-		          backEnd.pc.c_vertexes,
-		          backEnd.pc.c_indexes / 3,
-		          backEnd.pc.c_totalIndexes / 3,
-		          R_SumOfUsedImages() / (1000000.0f),
-		          backEnd.pc.c_overDraw / (float)(glConfig.vidWidth * glConfig.vidHeight));
+		ri.Printf(PRINT_ALL, "%i/%i/%i shaders/batches/surfs %i leafs %i verts %i/%i tris %.2f mtex %.2f dc\n", backEnd.pc.c_shaders, backEnd.pc.c_surfBatches, backEnd.pc.c_surfaces, tr.pc.c_leafs, backEnd.pc.c_vertexes, backEnd.pc.c_indexes / 3, backEnd.pc.c_totalIndexes / 3, R_SumOfUsedImages() / (1000000.0f), backEnd.pc.c_overDraw / (float)(glConfig.vidWidth * glConfig.vidHeight));
 	} else if(r_speeds->integer == 2) {
-		ri.Printf(PRINT_ALL,
-		          "(patch) %i sin %i sclip  %i sout %i bin %i bclip %i bout\n",
-		          tr.pc.c_sphere_cull_patch_in,
-		          tr.pc.c_sphere_cull_patch_clip,
-		          tr.pc.c_sphere_cull_patch_out,
-		          tr.pc.c_box_cull_patch_in,
-		          tr.pc.c_box_cull_patch_clip,
-		          tr.pc.c_box_cull_patch_out);
-		ri.Printf(PRINT_ALL,
-		          "(md3) %i sin %i sclip  %i sout %i bin %i bclip %i bout\n",
-		          tr.pc.c_sphere_cull_md3_in,
-		          tr.pc.c_sphere_cull_md3_clip,
-		          tr.pc.c_sphere_cull_md3_out,
-		          tr.pc.c_box_cull_md3_in,
-		          tr.pc.c_box_cull_md3_clip,
-		          tr.pc.c_box_cull_md3_out);
+		ri.Printf(PRINT_ALL, "(patch) %i sin %i sclip  %i sout %i bin %i bclip %i bout\n", tr.pc.c_sphere_cull_patch_in, tr.pc.c_sphere_cull_patch_clip, tr.pc.c_sphere_cull_patch_out, tr.pc.c_box_cull_patch_in, tr.pc.c_box_cull_patch_clip, tr.pc.c_box_cull_patch_out);
+		ri.Printf(PRINT_ALL, "(md3) %i sin %i sclip  %i sout %i bin %i bclip %i bout\n", tr.pc.c_sphere_cull_md3_in, tr.pc.c_sphere_cull_md3_clip, tr.pc.c_sphere_cull_md3_out, tr.pc.c_box_cull_md3_in, tr.pc.c_box_cull_md3_clip, tr.pc.c_box_cull_md3_out);
 	} else if(r_speeds->integer == 3) {
 		ri.Printf(PRINT_ALL, "viewcluster: %i\n", tr.viewCluster);
 	} else if(r_speeds->integer == 4) {
 		if(backEnd.pc.c_dlightVertexes) {
-			ri.Printf(PRINT_ALL,
-			          "dlight srf:%i  culled:%i  verts:%i  tris:%i\n",
-			          tr.pc.c_dlightSurfaces,
-			          tr.pc.c_dlightSurfacesCulled,
-			          backEnd.pc.c_dlightVertexes,
-			          backEnd.pc.c_dlightIndexes / 3);
+			ri.Printf(PRINT_ALL, "dlight srf:%i  culled:%i  verts:%i  tris:%i\n", tr.pc.c_dlightSurfaces, tr.pc.c_dlightSurfacesCulled, backEnd.pc.c_dlightVertexes, backEnd.pc.c_dlightIndexes / 3);
 		}
 	} else if(r_speeds->integer == 5) {
 		ri.Printf(PRINT_ALL, "zFar: %.0f\n", tr.viewParms.zFar);
@@ -80,13 +51,7 @@ void R_PerformanceCounters(void) {
 		ri.Printf(PRINT_ALL, "flare adds:%i tests:%i renders:%i\n", backEnd.pc.c_flareAdds, backEnd.pc.c_flareTests, backEnd.pc.c_flareRenders);
 	} else if(r_speeds->integer == 7) {
 		ri.Printf(PRINT_ALL, "VAO draws: static %i dynamic %i\n", backEnd.pc.c_staticVaoDraws, backEnd.pc.c_dynamicVaoDraws);
-		ri.Printf(PRINT_ALL,
-		          "GLSL binds: %i  draws: gen %i light %i fog %i dlight %i\n",
-		          backEnd.pc.c_glslShaderBinds,
-		          backEnd.pc.c_genericDraws,
-		          backEnd.pc.c_lightallDraws,
-		          backEnd.pc.c_fogDraws,
-		          backEnd.pc.c_dlightDraws);
+		ri.Printf(PRINT_ALL, "GLSL binds: %i  draws: gen %i light %i fog %i dlight %i\n", backEnd.pc.c_glslShaderBinds, backEnd.pc.c_genericDraws, backEnd.pc.c_lightallDraws, backEnd.pc.c_fogDraws, backEnd.pc.c_dlightDraws);
 	}
 
 	Com_Memset(&tr.pc, 0, sizeof(tr.pc));
@@ -98,7 +63,7 @@ void R_PerformanceCounters(void) {
 R_IssueRenderCommands
 ====================
 */
-void R_IssueRenderCommands(qboolean runPerformanceCounters) {
+void R_IssueRenderCommands(bool runPerformanceCounters) {
 	renderCommandList_t* cmdList;
 
 	cmdList = &backEndData->commands;
@@ -131,7 +96,7 @@ void R_IssuePendingRenderCommands(void) {
 	if(!tr.registered) {
 		return;
 	}
-	R_IssueRenderCommands(qfalse);
+	R_IssueRenderCommands(false);
 }
 
 /*
@@ -340,7 +305,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame) {
 	if(!tr.registered) {
 		return;
 	}
-	glState.finishCalled = qfalse;
+	glState.finishCalled = false;
 
 	tr.frameCount++;
 	tr.frameSceneNum = 0;
@@ -352,15 +317,15 @@ void RE_BeginFrame(stereoFrame_t stereoFrame) {
 		if(qglesMajorVersion >= 1 && !glRefConfig.readStencil) {
 			ri.Printf(PRINT_WARNING, "OpenGL ES needs GL_NV_read_stencil to read stencil bits to measure overdraw\n");
 			ri.Cvar_Set("r_measureOverdraw", "0");
-			r_measureOverdraw->modified = qfalse;
+			r_measureOverdraw->modified = false;
 		} else if(glConfig.stencilBits < 4) {
 			ri.Printf(PRINT_ALL, "Warning: not enough stencil bits to measure overdraw: %d\n", glConfig.stencilBits);
 			ri.Cvar_Set("r_measureOverdraw", "0");
-			r_measureOverdraw->modified = qfalse;
+			r_measureOverdraw->modified = false;
 		} else if(r_shadows->integer == 2) {
 			ri.Printf(PRINT_ALL, "Warning: stencil shadows and overdraw measurement are mutually exclusive\n");
 			ri.Cvar_Set("r_measureOverdraw", "0");
-			r_measureOverdraw->modified = qfalse;
+			r_measureOverdraw->modified = false;
 		} else {
 			R_IssuePendingRenderCommands();
 			qglEnable(GL_STENCIL_TEST);
@@ -369,14 +334,14 @@ void RE_BeginFrame(stereoFrame_t stereoFrame) {
 			qglStencilFunc(GL_ALWAYS, 0U, ~0U);
 			qglStencilOp(GL_KEEP, GL_INCR, GL_INCR);
 		}
-		r_measureOverdraw->modified = qfalse;
+		r_measureOverdraw->modified = false;
 	} else {
 		// this is only reached if it was on and is now off
 		if(r_measureOverdraw->modified) {
 			R_IssuePendingRenderCommands();
 			qglDisable(GL_STENCIL_TEST);
 		}
-		r_measureOverdraw->modified = qfalse;
+		r_measureOverdraw->modified = false;
 	}
 
 	//
@@ -385,14 +350,14 @@ void RE_BeginFrame(stereoFrame_t stereoFrame) {
 	if(r_textureMode->modified) {
 		R_IssuePendingRenderCommands();
 		GL_TextureMode(r_textureMode->string);
-		r_textureMode->modified = qfalse;
+		r_textureMode->modified = false;
 	}
 
 	//
 	// gamma stuff
 	//
 	if(r_gamma->modified) {
-		r_gamma->modified = qfalse;
+		r_gamma->modified = false;
 
 		R_IssuePendingRenderCommands();
 		R_SetColorMappings();
@@ -422,7 +387,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame) {
 		if(qglesMajorVersion >= 1 && r_anaglyphMode->integer) {
 			ri.Printf(PRINT_WARNING, "OpenGL ES does not support drawing to separate buffer for anaglyph mode\n");
 			ri.Cvar_Set("r_anaglyphMode", "0");
-			r_anaglyphMode->modified = qfalse;
+			r_anaglyphMode->modified = false;
 		}
 
 		if(r_anaglyphMode->integer) {
@@ -454,7 +419,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame) {
 				qglDrawBuffer(GL_BACK);
 				qglClear(GL_COLOR_BUFFER_BIT);
 
-				r_anaglyphMode->modified = qfalse;
+				r_anaglyphMode->modified = false;
 			}
 
 			if(stereoFrame == STEREO_LEFT) {
@@ -489,7 +454,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame) {
 				backEnd.colorMask[1] = 0;
 				backEnd.colorMask[2] = 0;
 				backEnd.colorMask[3] = 0;
-				r_anaglyphMode->modified = qfalse;
+				r_anaglyphMode->modified = false;
 			}
 
 			if(!Q_stricmp(r_drawBuffer->string, "GL_FRONT"))
@@ -521,7 +486,7 @@ void RE_EndFrame(int* frontEndMsec, int* backEndMsec) {
 	}
 	cmd->commandId = RC_SWAP_BUFFERS;
 
-	R_IssueRenderCommands(qtrue);
+	R_IssueRenderCommands(true);
 
 	R_InitNextFrame();
 
@@ -540,7 +505,7 @@ void RE_EndFrame(int* frontEndMsec, int* backEndMsec) {
 RE_TakeVideoFrame
 =============
 */
-void RE_TakeVideoFrame(int width, int height, byte* captureBuffer, byte* encodeBuffer, qboolean motionJpeg) {
+void RE_TakeVideoFrame(int width, int height, byte* captureBuffer, byte* encodeBuffer, bool motionJpeg) {
 	videoFrameCommand_t* cmd;
 
 	if(!tr.registered) {

@@ -43,14 +43,7 @@ void G_WriteClientSessionData(gclient_t* client) {
 	const char* s;
 	const char* var;
 
-	s = va("%i %i %i %i %i %i %i",
-	       client->sess.sessionTeam,
-	       client->sess.spectatorNum,
-	       client->sess.spectatorState,
-	       client->sess.spectatorClient,
-	       client->sess.wins,
-	       client->sess.losses,
-	       client->sess.teamLeader);
+	s = va("%i %i %i %i %i %i %i", client->sess.sessionTeam, client->sess.spectatorNum, client->sess.spectatorState, client->sess.spectatorClient, client->sess.wins, client->sess.losses, client->sess.teamLeader);
 
 	var = va("session%i", (int)(client - level.clients));
 
@@ -74,19 +67,11 @@ void G_ReadSessionData(gclient_t* client) {
 	var = va("session%i", (int)(client - level.clients));
 	trap_Cvar_VariableStringBuffer(var, s, sizeof(s));
 
-	sscanf(s,
-	       "%i %i %i %i %i %i %i",
-	       &sessionTeam,
-	       &client->sess.spectatorNum,
-	       &spectatorState,
-	       &client->sess.spectatorClient,
-	       &client->sess.wins,
-	       &client->sess.losses,
-	       &teamLeader);
+	sscanf(s, "%i %i %i %i %i %i %i", &sessionTeam, &client->sess.spectatorNum, &spectatorState, &client->sess.spectatorClient, &client->sess.wins, &client->sess.losses, &teamLeader);
 
 	client->sess.sessionTeam = (team_t)sessionTeam;
 	client->sess.spectatorState = (spectatorState_t)spectatorState;
-	client->sess.teamLeader = (qboolean)teamLeader;
+	client->sess.teamLeader = (bool)teamLeader;
 }
 
 /*
@@ -172,7 +157,7 @@ void G_InitWorldSession(void) {
 	// if the gametype changed since the last session, don't use any
 	// client sessions
 	if(g_gametype.integer != gt) {
-		level.newSession = qtrue;
+		level.newSession = true;
 		G_Printf("Gametype changed, clearing session data.\n");
 	}
 }

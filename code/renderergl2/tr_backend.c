@@ -76,7 +76,7 @@ void GL_Cull(int cullType) {
 	if(cullType == CT_TWO_SIDED) {
 		qglDisable(GL_CULL_FACE);
 	} else {
-		qboolean cullFront = (cullType == CT_FRONT_SIDED);
+		bool cullFront = (cullType == CT_FRONT_SIDED);
 
 		if(glState.faceCulling == CT_TWO_SIDED) qglEnable(GL_CULL_FACE);
 
@@ -228,7 +228,7 @@ static void RB_Hyperspace(void) {
 	qglClear(GL_COLOR_BUFFER_BIT);
 	qglClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-	backEnd.isHyperspace = qtrue;
+	backEnd.isHyperspace = true;
 }
 
 static void SetViewportAndScissor(void) {
@@ -253,15 +253,15 @@ void RB_BeginDrawingView(void) {
 	// sync with gl if needed
 	if(r_finish->integer == 1 && !glState.finishCalled) {
 		qglFinish();
-		glState.finishCalled = qtrue;
+		glState.finishCalled = true;
 	}
 	if(r_finish->integer == 0) {
-		glState.finishCalled = qtrue;
+		glState.finishCalled = true;
 	}
 
 	// we will need to change the projection matrix before drawing
 	// 2D images again
-	backEnd.projection2D = qfalse;
+	backEnd.projection2D = false;
 
 	if(glRefConfig.framebufferObject) {
 		FBO_t* fbo = backEnd.viewParms.targetFbo;
@@ -304,11 +304,11 @@ void RB_BeginDrawingView(void) {
 		RB_Hyperspace();
 		return;
 	} else {
-		backEnd.isHyperspace = qfalse;
+		backEnd.isHyperspace = false;
 	}
 
 	// we will only draw a sun if there was sky rendered in this view
-	backEnd.skyRenderedThisView = qfalse;
+	backEnd.skyRenderedThisView = false;
 
 	// cache the clamped greyscale value
 	backEnd.greyscale = Com_Clamp(0.0f, 1.0f, r_greyscale->value);
@@ -345,7 +345,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	int dlighted, oldDlighted;
 	int pshadowed, oldPshadowed;
 	int cubemapIndex, oldCubemapIndex;
-	qboolean depthRange, oldDepthRange, isCrosshair, wasCrosshair;
+	bool depthRange, oldDepthRange, isCrosshair, wasCrosshair;
 	int i;
 	drawSurf_t* drawSurf;
 	int oldSort;
@@ -362,10 +362,10 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	backEnd.currentEntity = &tr.worldEntity;
 	oldShader = NULL;
 	oldFogNum = -1;
-	oldDepthRange = qfalse;
-	wasCrosshair = qfalse;
-	oldDlighted = qfalse;
-	oldPshadowed = qfalse;
+	oldDepthRange = false;
+	wasCrosshair = false;
+	oldDlighted = false;
+	oldPshadowed = false;
 	oldCubemapIndex = -1;
 	oldSort = -1;
 
@@ -387,8 +387,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 		// change the tess parameters if needed
 		// a "entityMergable" shader is a shader that can have surfaces from separate
 		// entities merged into a single batch, like smoke and blood puff sprites
-		if(shader != NULL && (shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted || pshadowed != oldPshadowed ||
-		                      cubemapIndex != oldCubemapIndex || (entityNum != oldEntityNum && !shader->entityMergable))) {
+		if(shader != NULL && (shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted || pshadowed != oldPshadowed || cubemapIndex != oldCubemapIndex || (entityNum != oldEntityNum && !shader->entityMergable))) {
 			if(oldShader != NULL) {
 				RB_EndSurface();
 			}
@@ -407,7 +406,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 		// change the modelview matrix if needed
 		//
 		if(entityNum != oldEntityNum) {
-			depthRange = isCrosshair = qfalse;
+			depthRange = isCrosshair = false;
 
 			if(entityNum != REFENTITYNUM_WORLD) {
 				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
@@ -429,9 +428,9 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 
 				if(backEnd.currentEntity->e.renderfx & RF_DEPTHHACK) {
 					// hack the depth range to prevent view model from poking into walls
-					depthRange = qtrue;
+					depthRange = true;
 
-					if(backEnd.currentEntity->e.renderfx & RF_CROSSHAIR) isCrosshair = qtrue;
+					if(backEnd.currentEntity->e.renderfx & RF_CROSSHAIR) isCrosshair = true;
 				}
 			} else {
 				backEnd.currentEntity = &tr.worldEntity;
@@ -460,7 +459,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 						} else {
 							viewParms_t temp = backEnd.viewParms;
 
-							R_SetupProjection(&temp, r_znear->value, 0, qfalse);
+							R_SetupProjection(&temp, r_znear->value, 0, false);
 
 							GL_SetProjectionMatrix(temp.projectionMatrix);
 						}
@@ -522,7 +521,7 @@ void RB_SetGL2D(void) {
 
 	if(backEnd.projection2D && backEnd.last2DFBO == glState.currentFBO) return;
 
-	backEnd.projection2D = qtrue;
+	backEnd.projection2D = true;
 	backEnd.last2DFBO = glState.currentFBO;
 
 	if(glState.currentFBO) {
@@ -560,7 +559,7 @@ Stretches a raw 32 bit power of 2 bitmap image over the given screen rectangle.
 Used for cinematics.
 =============
 */
-void RE_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte* data, int client, qboolean dirty) {
+void RE_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte* data, int client, bool dirty) {
 	int i, j;
 	int start, end;
 	vec4_t quadVerts[4];
@@ -624,7 +623,7 @@ void RE_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte* d
 	RB_InstantQuad2(quadVerts, texCoords);
 }
 
-void RE_UploadCinematic(int w, int h, int cols, int rows, const byte* data, int client, qboolean dirty) {
+void RE_UploadCinematic(int w, int h, int cols, int rows, const byte* data, int client, bool dirty) {
 	byte* buffer;
 	GLuint texture;
 
@@ -781,7 +780,7 @@ RB_DrawSurfs
 */
 const void* RB_DrawSurfs(const void* data) {
 	const drawSurfsCommand_t* cmd;
-	qboolean isShadowView;
+	bool isShadowView;
 
 	// finish any 2D drawing if needed
 	if(tess.numIndexes) {
@@ -808,11 +807,11 @@ const void* RB_DrawSurfs(const void* data) {
 
 		VectorSet4(viewInfo, backEnd.viewParms.zFar / r_znear->value, backEnd.viewParms.zFar, 0.0, 0.0);
 
-		backEnd.depthFill = qtrue;
+		backEnd.depthFill = true;
 		qglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 		RB_RenderDrawSurfList(cmd->drawSurfs, cmd->numDrawSurfs);
 		qglColorMask(!backEnd.colorMask[0], !backEnd.colorMask[1], !backEnd.colorMask[2], !backEnd.colorMask[3]);
-		backEnd.depthFill = qfalse;
+		backEnd.depthFill = false;
 
 		if(!isShadowView) {
 			if(tr.msaaResolveFbo) {
@@ -821,8 +820,7 @@ const void* RB_DrawSurfs(const void* data) {
 			} else if(tr.renderFbo == NULL && tr.renderDepthImage) {
 				// If we're rendering directly to the screen, copy the depth to a texture
 				// This is incredibly slow on Intel Graphics, so just skip it on there
-				if(!glRefConfig.intelGraphics)
-					qglCopyTextureSubImage2DEXT(tr.renderDepthImage->texnum, GL_TEXTURE_2D, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
+				if(!glRefConfig.intelGraphics) qglCopyTextureSubImage2DEXT(tr.renderDepthImage->texnum, GL_TEXTURE_2D, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
 			}
 
 			if(tr.hdrDepthFbo) {
@@ -1036,7 +1034,7 @@ const void* RB_DrawSurfs(const void* data) {
 			qglClear(GL_COLOR_BUFFER_BIT);
 
 			if(glRefConfig.occlusionQuery) {
-				tr.sunFlareQueryActive[tr.sunFlareQueryIndex] = qtrue;
+				tr.sunFlareQueryActive[tr.sunFlareQueryIndex] = true;
 				qglBeginQuery(glRefConfig.occlusionQueryTarget, tr.sunFlareQuery[tr.sunFlareQueryIndex]);
 			}
 
@@ -1065,9 +1063,9 @@ const void* RB_DrawSurfs(const void* data) {
 
 	// FIXME? backEnd.viewParms doesn't get properly initialized for 2D drawing.
 	// r_cubeMapping 1 generates cubemaps with R_RenderCubemapSide()
-	// and sets isMirror = qtrue. Clear it here to prevent it from leaking
+	// and sets isMirror = true. Clear it here to prevent it from leaking
 	// to 2D drawing and causing the loading screen to be culled.
-	backEnd.viewParms.isMirror = qfalse;
+	backEnd.viewParms.isMirror = false;
 	backEnd.viewParms.flags = 0;
 
 	return (const void*)(cmd + 1);
@@ -1331,7 +1329,7 @@ const void* RB_SwapBuffers(const void* data) {
 
 	GLimp_EndFrame();
 
-	backEnd.projection2D = qfalse;
+	backEnd.projection2D = false;
 
 	return (const void*)(cmd + 1);
 }
@@ -1351,27 +1349,11 @@ const void* RB_CapShadowMap(const void* data) {
 	if(cmd->map != -1) {
 		if(cmd->cubeSide != -1) {
 			if(tr.shadowCubemaps[cmd->map]) {
-				qglCopyTextureSubImage2DEXT(tr.shadowCubemaps[cmd->map]->texnum,
-				                            GL_TEXTURE_CUBE_MAP_POSITIVE_X + cmd->cubeSide,
-				                            0,
-				                            0,
-				                            0,
-				                            backEnd.refdef.x,
-				                            glConfig.vidHeight - (backEnd.refdef.y + PSHADOW_MAP_SIZE),
-				                            PSHADOW_MAP_SIZE,
-				                            PSHADOW_MAP_SIZE);
+				qglCopyTextureSubImage2DEXT(tr.shadowCubemaps[cmd->map]->texnum, GL_TEXTURE_CUBE_MAP_POSITIVE_X + cmd->cubeSide, 0, 0, 0, backEnd.refdef.x, glConfig.vidHeight - (backEnd.refdef.y + PSHADOW_MAP_SIZE), PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE);
 			}
 		} else {
 			if(tr.pshadowMaps[cmd->map]) {
-				qglCopyTextureSubImage2DEXT(tr.pshadowMaps[cmd->map]->texnum,
-				                            GL_TEXTURE_2D,
-				                            0,
-				                            0,
-				                            0,
-				                            backEnd.refdef.x,
-				                            glConfig.vidHeight - (backEnd.refdef.y + PSHADOW_MAP_SIZE),
-				                            PSHADOW_MAP_SIZE,
-				                            PSHADOW_MAP_SIZE);
+				qglCopyTextureSubImage2DEXT(tr.pshadowMaps[cmd->map]->texnum, GL_TEXTURE_2D, 0, 0, 0, backEnd.refdef.x, glConfig.vidHeight - (backEnd.refdef.y + PSHADOW_MAP_SIZE), PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE);
 			}
 		}
 	}
@@ -1389,7 +1371,7 @@ const void* RB_PostProcess(const void* data) {
 	const postProcessCommand_t* cmd = data;
 	FBO_t *srcFbo, *dstFbo;
 	ivec4_t srcBox, dstBox;
-	qboolean autoExposure;
+	bool autoExposure;
 
 	// finish any 2D drawing if needed
 	if(tess.numIndexes) RB_EndSurface();

@@ -483,10 +483,10 @@ void SV_PhysicsWeld(int entA, int entB, float px, float py, float pz) {
 	return;
 }
 
-qboolean SV_PhysicsIsSleeping(int entityID) {
-	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) return qfalse;
+bool SV_PhysicsIsSleeping(int entityID) {
+	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) return false;
 	int state = bodies[entityID]->m_body->getActivationState();
-	return (state == ISLAND_SLEEPING || state == WANTS_DEACTIVATION) ? qtrue : qfalse;
+	return (state == ISLAND_SLEEPING || state == WANTS_DEACTIVATION) ? true : false;
 }
 
 struct PhysicsTraceCallback : public btCollisionWorld::ClosestRayResultCallback {
@@ -506,7 +506,7 @@ struct PhysicsTraceCallback : public btCollisionWorld::ClosestRayResultCallback 
 
 void BT_PhysicsTrace(const float* start, const float* end, const float* mins, const float* maxs, int skipEntity, physTrace_t* result) {
 	result->fraction = 1.0f;
-	result->hit = qfalse;
+	result->hit = false;
 	result->entityNum = -1;
 	VectorCopy(end, result->endpos);
 	VectorClear(result->normal);
@@ -553,7 +553,7 @@ void BT_PhysicsTrace(const float* start, const float* end, const float* mins, co
 
 		if(cb.hasHit()) {
 			result->fraction = cb.m_closestHitFraction;
-			result->hit = qtrue;
+			result->hit = true;
 			btVector3 hp = cb.m_hitPointWorld;
 			btVector3 hn = cb.m_hitNormalWorld;
 
@@ -577,7 +577,7 @@ void BT_PhysicsTrace(const float* start, const float* end, const float* mins, co
 
 		if(cb.hasHit()) {
 			result->fraction = cb.m_closestHitFraction;
-			result->hit = qtrue;
+			result->hit = true;
 			btVector3 hp = cb.m_hitPointWorld;
 			btVector3 hn = cb.m_hitNormalWorld;
 

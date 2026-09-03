@@ -42,8 +42,8 @@ static cvar_t* in_keyboardDebug = NULL;
 static SDL_GameController* gamepad = NULL;
 static SDL_Joystick* stick = NULL;
 
-static qboolean mouseAvailable = qfalse;
-static qboolean mouseActive = qfalse;
+static bool mouseAvailable = false;
+static bool mouseActive = false;
 
 static cvar_t* in_mouse = NULL;
 static cvar_t* in_nograb;
@@ -66,7 +66,7 @@ static SDL_Window* SDL_window = NULL;
 IN_PrintKey
 ===============
 */
-static void IN_PrintKey(const SDL_Keysym* keysym, keyNum_t key, qboolean down) {
+static void IN_PrintKey(const SDL_Keysym* keysym, keyNum_t key, bool down) {
 	if(down)
 		Com_Printf("+ ");
 	else
@@ -100,7 +100,7 @@ TODO: If the SDL_Scancode situation improves, use it instead of
       both of these methods
 ===============
 */
-static qboolean IN_IsConsoleKey(keyNum_t key, int character) {
+static bool IN_IsConsoleKey(keyNum_t key, int character) {
 	typedef struct consoleKey_s {
 		enum { QUAKE_KEY, CHARACTER } type;
 
@@ -118,7 +118,7 @@ static qboolean IN_IsConsoleKey(keyNum_t key, int character) {
 	if(cl_consoleKeys->modified) {
 		char *text_p, *token;
 
-		cl_consoleKeys->modified = qfalse;
+		cl_consoleKeys->modified = false;
 		text_p = cl_consoleKeys->string;
 		numConsoleKeys = 0;
 
@@ -154,16 +154,16 @@ static qboolean IN_IsConsoleKey(keyNum_t key, int character) {
 
 		switch(c->type) {
 			case QUAKE_KEY:
-				if(key && c->u.key == key) return qtrue;
+				if(key && c->u.key == key) return true;
 				break;
 
 			case CHARACTER:
-				if(c->u.character == character) return qtrue;
+				if(c->u.character == character) return true;
 				break;
 		}
 	}
 
-	return qfalse;
+	return false;
 }
 
 /*
@@ -171,7 +171,7 @@ static qboolean IN_IsConsoleKey(keyNum_t key, int character) {
 IN_TranslateSDLToQ3Key
 ===============
 */
-static keyNum_t IN_TranslateSDLToQ3Key(SDL_Keysym* keysym, qboolean down) {
+static keyNum_t IN_TranslateSDLToQ3Key(SDL_Keysym* keysym, bool down) {
 	keyNum_t key = 0;
 
 	if(keysym->scancode >= SDL_SCANCODE_1 && keysym->scancode <= SDL_SCANCODE_0) {
@@ -311,7 +311,7 @@ static void IN_GobbleMotionEvents(void) {
 IN_ActivateMouse
 ===============
 */
-static void IN_ActivateMouse(qboolean isFullscreen) {
+static void IN_ActivateMouse(bool isFullscreen) {
 	if(!mouseAvailable || !SDL_WasInit(SDL_INIT_VIDEO)) return;
 
 	if(!mouseActive) {
@@ -332,11 +332,11 @@ static void IN_ActivateMouse(qboolean isFullscreen) {
 				SDL_SetWindowGrab(SDL_window, SDL_TRUE);
 			}
 
-			in_nograb->modified = qfalse;
+			in_nograb->modified = false;
 		}
 	}
 
-	mouseActive = qtrue;
+	mouseActive = true;
 }
 
 /*
@@ -344,7 +344,7 @@ static void IN_ActivateMouse(qboolean isFullscreen) {
 IN_DeactivateMouse
 ===============
 */
-static void IN_DeactivateMouse(qboolean isFullscreen) {
+static void IN_DeactivateMouse(bool isFullscreen) {
 	if(!SDL_WasInit(SDL_INIT_VIDEO)) return;
 
 	// Always show the cursor when the mouse is disabled,
@@ -362,35 +362,19 @@ static void IN_DeactivateMouse(qboolean isFullscreen) {
 		// Don't warp the mouse unless the cursor is within the window
 		if(SDL_GetWindowFlags(SDL_window) & SDL_WINDOW_MOUSE_FOCUS) SDL_WarpMouseInWindow(SDL_window, cls.glconfig.vidWidth / 2, cls.glconfig.vidHeight / 2);
 
-		mouseActive = qfalse;
+		mouseActive = false;
 	}
 }
 
 // We translate axes movement into keypresses
-static int joy_keys[16] = {K_LEFTARROW,
-                           K_RIGHTARROW,
-                           K_UPARROW,
-                           K_DOWNARROW,
-                           K_JOY17,
-                           K_JOY18,
-                           K_JOY19,
-                           K_JOY20,
-                           K_JOY21,
-                           K_JOY22,
-                           K_JOY23,
-                           K_JOY24,
-                           K_JOY25,
-                           K_JOY26,
-                           K_JOY27,
-                           K_JOY28};
+static int joy_keys[16] = {K_LEFTARROW, K_RIGHTARROW, K_UPARROW, K_DOWNARROW, K_JOY17, K_JOY18, K_JOY19, K_JOY20, K_JOY21, K_JOY22, K_JOY23, K_JOY24, K_JOY25, K_JOY26, K_JOY27, K_JOY28};
 
 // translate hat events into keypresses
 // the 4 highest buttons are used for the first hat ...
-static int hat_keys[16] =
-    {K_JOY29, K_JOY30, K_JOY31, K_JOY32, K_JOY25, K_JOY26, K_JOY27, K_JOY28, K_JOY21, K_JOY22, K_JOY23, K_JOY24, K_JOY17, K_JOY18, K_JOY19, K_JOY20};
+static int hat_keys[16] = {K_JOY29, K_JOY30, K_JOY31, K_JOY32, K_JOY25, K_JOY26, K_JOY27, K_JOY28, K_JOY21, K_JOY22, K_JOY23, K_JOY24, K_JOY17, K_JOY18, K_JOY19, K_JOY20};
 
 struct {
-	qboolean buttons[SDL_CONTROLLER_BUTTON_MAX + 1];  // +1 because old max was 16, current SDL_CONTROLLER_BUTTON_MAX is 15
+	bool buttons[SDL_CONTROLLER_BUTTON_MAX + 1];  // +1 because old max was 16, current SDL_CONTROLLER_BUTTON_MAX is 15
 	unsigned int oldaxes;
 	int oldaaxes[MAX_JOYSTICK_AXIS];
 	unsigned int oldhats;
@@ -507,14 +491,14 @@ static void IN_ShutdownJoystick(void) {
 	SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
 }
 
-static qboolean KeyToAxisAndSign(int keynum, int* outAxis, int* outSign) {
+static bool KeyToAxisAndSign(int keynum, int* outAxis, int* outSign) {
 	char* bind;
 
-	if(!keynum) return qfalse;
+	if(!keynum) return false;
 
 	bind = Key_GetBinding(keynum);
 
-	if(!bind || *bind != '+') return qfalse;
+	if(!bind || *bind != '+') return false;
 
 	*outSign = 0;
 
@@ -598,14 +582,14 @@ IN_GamepadMove
 static void IN_GamepadMove(void) {
 	int i;
 	int translatedAxes[MAX_JOYSTICK_AXIS];
-	qboolean translatedAxesSet[MAX_JOYSTICK_AXIS];
+	bool translatedAxesSet[MAX_JOYSTICK_AXIS];
 
 	SDL_GameControllerUpdate();
 
 	// check buttons
 	for(i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++) {
 		SDL_GameControllerButton sdlButton = SDL_CONTROLLER_BUTTON_A + i;
-		qboolean pressed = SDL_GameControllerGetButton(gamepad, sdlButton);
+		bool pressed = SDL_GameControllerGetButton(gamepad, sdlButton);
 		if(pressed != stick_state.buttons[i]) {
 			Com_QueueEvent(in_eventTime, SE_KEY, IN_KeyFor(sdlButton), pressed, 0, NULL);
 			stick_state.buttons[i] = pressed;
@@ -617,7 +601,7 @@ static void IN_GamepadMove(void) {
 	if(in_joystickUseAnalog->integer) {
 		for(i = 0; i < MAX_JOYSTICK_AXIS; i++) {
 			translatedAxes[i] = 0;
-			translatedAxesSet[i] = qfalse;
+			translatedAxesSet[i] = false;
 		}
 	}
 
@@ -635,10 +619,9 @@ static void IN_GamepadMove(void) {
 
 		if(axis != oldAxis) {
 			const int negMap[SDL_CONTROLLER_AXIS_MAX] = {K_PAD0_LEFTSTICK_LEFT, K_PAD0_LEFTSTICK_UP, K_PAD0_RIGHTSTICK_LEFT, K_PAD0_RIGHTSTICK_UP, 0, 0};
-			const int posMap[SDL_CONTROLLER_AXIS_MAX] =
-			    {K_PAD0_LEFTSTICK_RIGHT, K_PAD0_LEFTSTICK_DOWN, K_PAD0_RIGHTSTICK_RIGHT, K_PAD0_RIGHTSTICK_DOWN, K_PAD0_LEFTTRIGGER, K_PAD0_RIGHTTRIGGER};
+			const int posMap[SDL_CONTROLLER_AXIS_MAX] = {K_PAD0_LEFTSTICK_RIGHT, K_PAD0_LEFTSTICK_DOWN, K_PAD0_RIGHTSTICK_RIGHT, K_PAD0_RIGHTSTICK_DOWN, K_PAD0_LEFTTRIGGER, K_PAD0_RIGHTTRIGGER};
 
-			qboolean posAnalog = qfalse, negAnalog = qfalse;
+			bool posAnalog = false, negAnalog = false;
 			int negKey = negMap[i];
 			int posKey = posMap[i];
 
@@ -652,41 +635,41 @@ static void IN_GamepadMove(void) {
 				// positive to negative/neutral -> keyup if axis hasn't yet been set
 				if(posAnalog && !translatedAxesSet[posAxis] && oldAxis > 0 && axis <= 0) {
 					translatedAxes[posAxis] = 0;
-					translatedAxesSet[posAxis] = qtrue;
+					translatedAxesSet[posAxis] = true;
 				}
 
 				// negative to positive/neutral -> keyup if axis hasn't yet been set
 				if(negAnalog && !translatedAxesSet[negAxis] && oldAxis < 0 && axis >= 0) {
 					translatedAxes[negAxis] = 0;
-					translatedAxesSet[negAxis] = qtrue;
+					translatedAxesSet[negAxis] = true;
 				}
 
 				// negative/neutral to positive -> keydown
 				if(posAnalog && axis > 0) {
 					translatedAxes[posAxis] = axis * posSign;
-					translatedAxesSet[posAxis] = qtrue;
+					translatedAxesSet[posAxis] = true;
 				}
 
 				// positive/neutral to negative -> keydown
 				if(negAnalog && axis < 0) {
 					translatedAxes[negAxis] = -axis * negSign;
-					translatedAxesSet[negAxis] = qtrue;
+					translatedAxesSet[negAxis] = true;
 				}
 			}
 
 			// keyups first so they get overridden by keydowns later
 
 			// positive to negative/neutral -> keyup
-			if(!posAnalog && posKey && oldAxis > 0 && axis <= 0) Com_QueueEvent(in_eventTime, SE_KEY, posKey, qfalse, 0, NULL);
+			if(!posAnalog && posKey && oldAxis > 0 && axis <= 0) Com_QueueEvent(in_eventTime, SE_KEY, posKey, false, 0, NULL);
 
 			// negative to positive/neutral -> keyup
-			if(!negAnalog && negKey && oldAxis < 0 && axis >= 0) Com_QueueEvent(in_eventTime, SE_KEY, negKey, qfalse, 0, NULL);
+			if(!negAnalog && negKey && oldAxis < 0 && axis >= 0) Com_QueueEvent(in_eventTime, SE_KEY, negKey, false, 0, NULL);
 
 			// negative/neutral to positive -> keydown
-			if(!posAnalog && posKey && oldAxis <= 0 && axis > 0) Com_QueueEvent(in_eventTime, SE_KEY, posKey, qtrue, 0, NULL);
+			if(!posAnalog && posKey && oldAxis <= 0 && axis > 0) Com_QueueEvent(in_eventTime, SE_KEY, posKey, true, 0, NULL);
 
 			// positive/neutral to negative -> keydown
-			if(!negAnalog && negKey && oldAxis >= 0 && axis < 0) Com_QueueEvent(in_eventTime, SE_KEY, negKey, qtrue, 0, NULL);
+			if(!negAnalog && negKey && oldAxis >= 0 && axis < 0) Com_QueueEvent(in_eventTime, SE_KEY, negKey, true, 0, NULL);
 
 			stick_state.oldaaxes[i] = axis;
 		}
@@ -746,7 +729,7 @@ static void IN_JoyMove(void) {
 	if(total > 0) {
 		if(total > ARRAY_LEN(stick_state.buttons)) total = ARRAY_LEN(stick_state.buttons);
 		for(i = 0; i < total; i++) {
-			qboolean pressed = (SDL_JoystickGetButton(stick, i) != 0);
+			bool pressed = (SDL_JoystickGetButton(stick, i) != 0);
 			if(pressed != stick_state.buttons[i]) {
 				Com_QueueEvent(in_eventTime, SE_KEY, K_JOY1 + i, pressed, 0, NULL);
 				stick_state.buttons[i] = pressed;
@@ -769,49 +752,49 @@ static void IN_JoyMove(void) {
 			if(((Uint8*)&hats)[i] != ((Uint8*)&stick_state.oldhats)[i]) {
 				// release event
 				switch(((Uint8*)&stick_state.oldhats)[i]) {
-					case SDL_HAT_UP: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], qfalse, 0, NULL); break;
-					case SDL_HAT_RIGHT: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], qfalse, 0, NULL); break;
-					case SDL_HAT_DOWN: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], qfalse, 0, NULL); break;
-					case SDL_HAT_LEFT: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], qfalse, 0, NULL); break;
+					case SDL_HAT_UP: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], false, 0, NULL); break;
+					case SDL_HAT_RIGHT: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], false, 0, NULL); break;
+					case SDL_HAT_DOWN: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], false, 0, NULL); break;
+					case SDL_HAT_LEFT: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], false, 0, NULL); break;
 					case SDL_HAT_RIGHTUP:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], qfalse, 0, NULL);
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], qfalse, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], false, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], false, 0, NULL);
 						break;
 					case SDL_HAT_RIGHTDOWN:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], qfalse, 0, NULL);
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], qfalse, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], false, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], false, 0, NULL);
 						break;
 					case SDL_HAT_LEFTUP:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], qfalse, 0, NULL);
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], qfalse, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], false, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], false, 0, NULL);
 						break;
 					case SDL_HAT_LEFTDOWN:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], qfalse, 0, NULL);
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], qfalse, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], false, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], false, 0, NULL);
 						break;
 					default: break;
 				}
 				// press event
 				switch(((Uint8*)&hats)[i]) {
-					case SDL_HAT_UP: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], qtrue, 0, NULL); break;
-					case SDL_HAT_RIGHT: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], qtrue, 0, NULL); break;
-					case SDL_HAT_DOWN: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], qtrue, 0, NULL); break;
-					case SDL_HAT_LEFT: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], qtrue, 0, NULL); break;
+					case SDL_HAT_UP: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], true, 0, NULL); break;
+					case SDL_HAT_RIGHT: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], true, 0, NULL); break;
+					case SDL_HAT_DOWN: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], true, 0, NULL); break;
+					case SDL_HAT_LEFT: Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], true, 0, NULL); break;
 					case SDL_HAT_RIGHTUP:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], qtrue, 0, NULL);
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], qtrue, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], true, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], true, 0, NULL);
 						break;
 					case SDL_HAT_RIGHTDOWN:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], qtrue, 0, NULL);
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], qtrue, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], true, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 1], true, 0, NULL);
 						break;
 					case SDL_HAT_LEFTUP:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], qtrue, 0, NULL);
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], qtrue, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 0], true, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], true, 0, NULL);
 						break;
 					case SDL_HAT_LEFTDOWN:
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], qtrue, 0, NULL);
-						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], qtrue, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 2], true, 0, NULL);
+						Com_QueueEvent(in_eventTime, SE_KEY, hat_keys[4 * i + 3], true, 0, NULL);
 						break;
 					default: break;
 				}
@@ -856,11 +839,11 @@ static void IN_JoyMove(void) {
 	if(axes != stick_state.oldaxes) {
 		for(i = 0; i < 16; i++) {
 			if((axes & (1 << i)) && !(stick_state.oldaxes & (1 << i))) {
-				Com_QueueEvent(in_eventTime, SE_KEY, joy_keys[i], qtrue, 0, NULL);
+				Com_QueueEvent(in_eventTime, SE_KEY, joy_keys[i], true, 0, NULL);
 			}
 
 			if(!(axes & (1 << i)) && (stick_state.oldaxes & (1 << i))) {
-				Com_QueueEvent(in_eventTime, SE_KEY, joy_keys[i], qfalse, 0, NULL);
+				Com_QueueEvent(in_eventTime, SE_KEY, joy_keys[i], false, 0, NULL);
 			}
 		}
 	}
@@ -886,7 +869,7 @@ static void IN_ProcessEvents(void) {
 			case SDL_KEYDOWN:
 				if(e.key.repeat && Key_GetCatcher() == 0) break;
 
-				if((key = IN_TranslateSDLToQ3Key(&e.key.keysym, qtrue))) Com_QueueEvent(in_eventTime, SE_KEY, key, qtrue, 0, NULL);
+				if((key = IN_TranslateSDLToQ3Key(&e.key.keysym, true))) Com_QueueEvent(in_eventTime, SE_KEY, key, true, 0, NULL);
 
 				if(key == K_BACKSPACE)
 					Com_QueueEvent(in_eventTime, SE_CHAR, CTRL('h'), 0, 0, NULL);
@@ -897,7 +880,7 @@ static void IN_ProcessEvents(void) {
 				break;
 
 			case SDL_KEYUP:
-				if((key = IN_TranslateSDLToQ3Key(&e.key.keysym, qfalse))) Com_QueueEvent(in_eventTime, SE_KEY, key, qfalse, 0, NULL);
+				if((key = IN_TranslateSDLToQ3Key(&e.key.keysym, false))) Com_QueueEvent(in_eventTime, SE_KEY, key, false, 0, NULL);
 
 				lastKeyDown = 0;
 				break;
@@ -934,8 +917,8 @@ static void IN_ProcessEvents(void) {
 
 						if(utf32 != 0) {
 							if(IN_IsConsoleKey(0, utf32)) {
-								Com_QueueEvent(in_eventTime, SE_KEY, K_CONSOLE, qtrue, 0, NULL);
-								Com_QueueEvent(in_eventTime, SE_KEY, K_CONSOLE, qfalse, 0, NULL);
+								Com_QueueEvent(in_eventTime, SE_KEY, K_CONSOLE, true, 0, NULL);
+								Com_QueueEvent(in_eventTime, SE_KEY, K_CONSOLE, false, 0, NULL);
 							} else
 								Com_QueueEvent(in_eventTime, SE_CHAR, utf32, 0, 0, NULL);
 						}
@@ -961,16 +944,16 @@ static void IN_ProcessEvents(void) {
 					case SDL_BUTTON_X2: b = K_MOUSE5; break;
 					default: b = K_AUX1 + (e.button.button - SDL_BUTTON_X2 + 1) % 16; break;
 				}
-				Com_QueueEvent(in_eventTime, SE_KEY, b, (e.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL);
+				Com_QueueEvent(in_eventTime, SE_KEY, b, (e.type == SDL_MOUSEBUTTONDOWN ? true : false), 0, NULL);
 			} break;
 
 			case SDL_MOUSEWHEEL:
 				if(e.wheel.y > 0) {
-					Com_QueueEvent(in_eventTime, SE_KEY, K_MWHEELUP, qtrue, 0, NULL);
-					Com_QueueEvent(in_eventTime, SE_KEY, K_MWHEELUP, qfalse, 0, NULL);
+					Com_QueueEvent(in_eventTime, SE_KEY, K_MWHEELUP, true, 0, NULL);
+					Com_QueueEvent(in_eventTime, SE_KEY, K_MWHEELUP, false, 0, NULL);
 				} else if(e.wheel.y < 0) {
-					Com_QueueEvent(in_eventTime, SE_KEY, K_MWHEELDOWN, qtrue, 0, NULL);
-					Com_QueueEvent(in_eventTime, SE_KEY, K_MWHEELDOWN, qfalse, 0, NULL);
+					Com_QueueEvent(in_eventTime, SE_KEY, K_MWHEELDOWN, true, 0, NULL);
+					Com_QueueEvent(in_eventTime, SE_KEY, K_MWHEELDOWN, false, 0, NULL);
 				}
 				break;
 
@@ -1046,7 +1029,7 @@ IN_Frame
 ===============
 */
 void IN_Frame(void) {
-	qboolean loading;
+	bool loading;
 
 	IN_JoyMove();
 
@@ -1132,7 +1115,7 @@ void IN_Shutdown(void) {
 	SDL_StopTextInput();
 
 	IN_DeactivateMouse(Cvar_VariableIntegerValue("r_fullscreen") != 0);
-	mouseAvailable = qfalse;
+	mouseAvailable = false;
 
 	IN_ShutdownJoystick();
 

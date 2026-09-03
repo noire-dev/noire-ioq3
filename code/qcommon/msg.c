@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static huffman_t msgHuff;
 
-static qboolean msgInit = qfalse;
+static bool msgInit = false;
 
 int pcount[256];
 
@@ -57,27 +57,27 @@ void MSG_InitOOB(msg_t* buf, byte* data, int length) {
 	Com_Memset(buf, 0, sizeof(*buf));
 	buf->data = data;
 	buf->maxsize = length;
-	buf->oob = qtrue;
+	buf->oob = true;
 }
 
 void MSG_Clear(msg_t* buf) {
 	buf->cursize = 0;
-	buf->overflowed = qfalse;
+	buf->overflowed = false;
 	buf->bit = 0;  //<- in bits
 }
 
-void MSG_Bitstream(msg_t* buf) { buf->oob = qfalse; }
+void MSG_Bitstream(msg_t* buf) { buf->oob = false; }
 
 void MSG_BeginReading(msg_t* msg) {
 	msg->readcount = 0;
 	msg->bit = 0;
-	msg->oob = qfalse;
+	msg->oob = false;
 }
 
 void MSG_BeginReadingOOB(msg_t* msg) {
 	msg->readcount = 0;
 	msg->bit = 0;
-	msg->oob = qtrue;
+	msg->oob = true;
 }
 
 void MSG_Copy(msg_t* buf, byte* data, int length, msg_t* src) {
@@ -117,7 +117,7 @@ void MSG_WriteBits(msg_t* msg, int value, int bits) {
 
 	if(msg->oob) {
 		if(msg->cursize + (bits >> 3) > msg->maxsize) {
-			msg->overflowed = qtrue;
+			msg->overflowed = true;
 			return;
 		}
 
@@ -144,7 +144,7 @@ void MSG_WriteBits(msg_t* msg, int value, int bits) {
 			int nbits;
 			nbits = bits & 7;
 			if(msg->bit + nbits >= msg->maxsize << 3) {
-				msg->overflowed = qtrue;
+				msg->overflowed = true;
 				return;
 			}
 			for(i = 0; i < nbits; i++) {
@@ -159,7 +159,7 @@ void MSG_WriteBits(msg_t* msg, int value, int bits) {
 				value = (value >> 8);
 
 				if(msg->bit >= msg->maxsize << 3) {
-					msg->overflowed = qtrue;
+					msg->overflowed = true;
 					return;
 				}
 			}
@@ -171,7 +171,7 @@ void MSG_WriteBits(msg_t* msg, int value, int bits) {
 int MSG_ReadBits(msg_t* msg, int bits) {
 	int value;
 	int get;
-	qboolean sgn;
+	bool sgn;
 	int i, nbits;
 	//	FILE*	fp;
 
@@ -183,9 +183,9 @@ int MSG_ReadBits(msg_t* msg, int bits) {
 
 	if(bits < 0) {
 		bits = -bits;
-		sgn = qtrue;
+		sgn = true;
 	} else {
-		sgn = qfalse;
+		sgn = false;
 	}
 
 	if(msg->oob) {
@@ -554,9 +554,7 @@ delta functions with keys
 */
 
 int kbitmask[32] = {
-    0x00000001, 0x00000003, 0x00000007, 0x0000000F, 0x0000001F, 0x0000003F, 0x0000007F, 0x000000FF, 0x000001FF, 0x000003FF, 0x000007FF,
-    0x00000FFF, 0x00001FFF, 0x00003FFF, 0x00007FFF, 0x0000FFFF, 0x0001FFFF, 0x0003FFFF, 0x0007FFFF, 0x000FFFFF, 0x001FFFFf, 0x003FFFFF,
-    0x007FFFFF, 0x00FFFFFF, 0x01FFFFFF, 0x03FFFFFF, 0x07FFFFFF, 0x0FFFFFFF, 0x1FFFFFFF, 0x3FFFFFFF, 0x7FFFFFFF, 0xFFFFFFFF,
+    0x00000001, 0x00000003, 0x00000007, 0x0000000F, 0x0000001F, 0x0000003F, 0x0000007F, 0x000000FF, 0x000001FF, 0x000003FF, 0x000007FF, 0x00000FFF, 0x00001FFF, 0x00003FFF, 0x00007FFF, 0x0000FFFF, 0x0001FFFF, 0x0003FFFF, 0x0007FFFF, 0x000FFFFF, 0x001FFFFf, 0x003FFFFF, 0x007FFFFF, 0x00FFFFFF, 0x01FFFFFF, 0x03FFFFFF, 0x07FFFFFF, 0x0FFFFFFF, 0x1FFFFFFF, 0x3FFFFFFF, 0x7FFFFFFF, 0xFFFFFFFF,
 };
 
 void MSG_WriteDeltaKey(msg_t* msg, int key, int oldV, int newV, int bits) {
@@ -617,8 +615,7 @@ void MSG_WriteDeltaUsercmdKey(msg_t* msg, int key, usercmd_t* from, usercmd_t* t
 		MSG_WriteBits(msg, 0, 1);
 		MSG_WriteBits(msg, to->serverTime, 32);
 	}
-	if(from->angles[0] == to->angles[0] && from->angles[1] == to->angles[1] && from->angles[2] == to->angles[2] && from->forwardmove == to->forwardmove &&
-	   from->rightmove == to->rightmove && from->upmove == to->upmove && from->buttons == to->buttons && from->weapon == to->weapon) {
+	if(from->angles[0] == to->angles[0] && from->angles[1] == to->angles[1] && from->angles[2] == to->angles[2] && from->forwardmove == to->forwardmove && from->rightmove == to->rightmove && from->upmove == to->upmove && from->buttons == to->buttons && from->weapon == to->weapon) {
 		MSG_WriteBits(msg, 0, 1);  // no change
 		oldsize += 7;
 		return;
@@ -704,57 +701,7 @@ typedef struct {
 // using the stringizing operator to save typing...
 #define NETF(x) #x, (size_t)&((entityState_t*)0)->x
 
-netField_t entityStateFields[] = {{NETF(pos.trTime), 32},
-                                  {NETF(pos.trBase[0]), 0},
-                                  {NETF(pos.trBase[1]), 0},
-                                  {NETF(pos.trDelta[0]), 0},
-                                  {NETF(pos.trDelta[1]), 0},
-                                  {NETF(pos.trBase[2]), 0},
-                                  {NETF(apos.trBase[1]), 0},
-                                  {NETF(pos.trDelta[2]), 0},
-                                  {NETF(apos.trBase[0]), 0},
-                                  {NETF(event), 10},
-                                  {NETF(angles2[1]), 0},
-                                  {NETF(eType), 8},
-                                  {NETF(torsoAnim), 8},
-                                  {NETF(eventParm), 8},
-                                  {NETF(legsAnim), 8},
-                                  {NETF(groundEntityNum), GENTITYNUM_BITS},
-                                  {NETF(pos.trType), 8},
-                                  {NETF(eFlags), 19},
-                                  {NETF(otherEntityNum), GENTITYNUM_BITS},
-                                  {NETF(weapon), 8},
-                                  {NETF(clientNum), 8},
-                                  {NETF(angles[1]), 0},
-                                  {NETF(pos.trDuration), 32},
-                                  {NETF(apos.trType), 8},
-                                  {NETF(origin[0]), 0},
-                                  {NETF(origin[1]), 0},
-                                  {NETF(origin[2]), 0},
-                                  {NETF(solid), 24},
-                                  {NETF(powerups), MAX_POWERUPS},
-                                  {NETF(modelindex), 8},
-                                  {NETF(otherEntityNum2), GENTITYNUM_BITS},
-                                  {NETF(loopSound), 8},
-                                  {NETF(generic1), 8},
-                                  {NETF(origin2[2]), 0},
-                                  {NETF(origin2[0]), 0},
-                                  {NETF(origin2[1]), 0},
-                                  {NETF(modelindex2), 8},
-                                  {NETF(angles[0]), 0},
-                                  {NETF(time), 32},
-                                  {NETF(apos.trTime), 32},
-                                  {NETF(apos.trDuration), 32},
-                                  {NETF(apos.trBase[2]), 0},
-                                  {NETF(apos.trDelta[0]), 0},
-                                  {NETF(apos.trDelta[1]), 0},
-                                  {NETF(apos.trDelta[2]), 0},
-                                  {NETF(time2), 32},
-                                  {NETF(angles[2]), 0},
-                                  {NETF(angles2[0]), 0},
-                                  {NETF(angles2[2]), 0},
-                                  {NETF(constantLight), 32},
-                                  {NETF(frame), 16}};
+netField_t entityStateFields[] = {{NETF(pos.trTime), 32}, {NETF(pos.trBase[0]), 0}, {NETF(pos.trBase[1]), 0}, {NETF(pos.trDelta[0]), 0}, {NETF(pos.trDelta[1]), 0}, {NETF(pos.trBase[2]), 0}, {NETF(apos.trBase[1]), 0}, {NETF(pos.trDelta[2]), 0}, {NETF(apos.trBase[0]), 0}, {NETF(event), 10}, {NETF(angles2[1]), 0}, {NETF(eType), 8}, {NETF(torsoAnim), 8}, {NETF(eventParm), 8}, {NETF(legsAnim), 8}, {NETF(groundEntityNum), GENTITYNUM_BITS}, {NETF(pos.trType), 8}, {NETF(eFlags), 19}, {NETF(otherEntityNum), GENTITYNUM_BITS}, {NETF(weapon), 8}, {NETF(clientNum), 8}, {NETF(angles[1]), 0}, {NETF(pos.trDuration), 32}, {NETF(apos.trType), 8}, {NETF(origin[0]), 0}, {NETF(origin[1]), 0}, {NETF(origin[2]), 0}, {NETF(solid), 24}, {NETF(powerups), MAX_POWERUPS}, {NETF(modelindex), 8}, {NETF(otherEntityNum2), GENTITYNUM_BITS}, {NETF(loopSound), 8}, {NETF(generic1), 8}, {NETF(origin2[2]), 0}, {NETF(origin2[0]), 0}, {NETF(origin2[1]), 0}, {NETF(modelindex2), 8}, {NETF(angles[0]), 0}, {NETF(time), 32}, {NETF(apos.trTime), 32}, {NETF(apos.trDuration), 32}, {NETF(apos.trBase[2]), 0}, {NETF(apos.trDelta[0]), 0}, {NETF(apos.trDelta[1]), 0}, {NETF(apos.trDelta[2]), 0}, {NETF(time2), 32}, {NETF(angles[2]), 0}, {NETF(angles2[0]), 0}, {NETF(angles2[2]), 0}, {NETF(constantLight), 32}, {NETF(frame), 16}};
 
 // if (int)f == f and (int)f + ( 1<<(FLOAT_INT_BITS-1) ) < ( 1 << FLOAT_INT_BITS )
 // the float will be sent with FLOAT_INT_BITS, otherwise all 32 bits will be sent
@@ -772,7 +719,7 @@ If force is not set, then nothing at all will be generated if the entity is
 identical, under the assumption that the in-order delta code will catch it.
 ==================
 */
-void MSG_WriteDeltaEntity(msg_t* msg, struct entityState_s* from, struct entityState_s* to, qboolean force) {
+void MSG_WriteDeltaEntity(msg_t* msg, struct entityState_s* from, struct entityState_s* to, bool force) {
 	int i, lc;
 	int numFields;
 	netField_t* field;
@@ -1013,54 +960,7 @@ plyer_state_t communication
 // using the stringizing operator to save typing...
 #define PSF(x) #x, (size_t)&((playerState_t*)0)->x
 
-netField_t playerStateFields[] = {{PSF(commandTime), 32},
-                                  {PSF(origin[0]), 0},
-                                  {PSF(origin[1]), 0},
-                                  {PSF(bobCycle), 8},
-                                  {PSF(velocity[0]), 0},
-                                  {PSF(velocity[1]), 0},
-                                  {PSF(viewangles[1]), 0},
-                                  {PSF(viewangles[0]), 0},
-                                  {PSF(weaponTime), -16},
-                                  {PSF(origin[2]), 0},
-                                  {PSF(velocity[2]), 0},
-                                  {PSF(legsTimer), 8},
-                                  {PSF(pm_time), -16},
-                                  {PSF(eventSequence), 16},
-                                  {PSF(torsoAnim), 8},
-                                  {PSF(movementDir), 4},
-                                  {PSF(events[0]), 8},
-                                  {PSF(legsAnim), 8},
-                                  {PSF(events[1]), 8},
-                                  {PSF(pm_flags), 16},
-                                  {PSF(groundEntityNum), GENTITYNUM_BITS},
-                                  {PSF(weaponstate), 4},
-                                  {PSF(eFlags), 16},
-                                  {PSF(externalEvent), 10},
-                                  {PSF(gravity), 16},
-                                  {PSF(speed), 16},
-                                  {PSF(delta_angles[1]), 16},
-                                  {PSF(externalEventParm), 8},
-                                  {PSF(viewheight), -8},
-                                  {PSF(damageEvent), 8},
-                                  {PSF(damageYaw), 8},
-                                  {PSF(damagePitch), 8},
-                                  {PSF(damageCount), 8},
-                                  {PSF(generic1), 8},
-                                  {PSF(pm_type), 8},
-                                  {PSF(delta_angles[0]), 16},
-                                  {PSF(delta_angles[2]), 16},
-                                  {PSF(torsoTimer), 12},
-                                  {PSF(eventParms[0]), 8},
-                                  {PSF(eventParms[1]), 8},
-                                  {PSF(clientNum), 8},
-                                  {PSF(weapon), 5},
-                                  {PSF(viewangles[2]), 0},
-                                  {PSF(grapplePoint[0]), 0},
-                                  {PSF(grapplePoint[1]), 0},
-                                  {PSF(grapplePoint[2]), 0},
-                                  {PSF(jumppad_ent), GENTITYNUM_BITS},
-                                  {PSF(loopSound), 16}};
+netField_t playerStateFields[] = {{PSF(commandTime), 32}, {PSF(origin[0]), 0}, {PSF(origin[1]), 0}, {PSF(bobCycle), 8}, {PSF(velocity[0]), 0}, {PSF(velocity[1]), 0}, {PSF(viewangles[1]), 0}, {PSF(viewangles[0]), 0}, {PSF(weaponTime), -16}, {PSF(origin[2]), 0}, {PSF(velocity[2]), 0}, {PSF(legsTimer), 8}, {PSF(pm_time), -16}, {PSF(eventSequence), 16}, {PSF(torsoAnim), 8}, {PSF(movementDir), 4}, {PSF(events[0]), 8}, {PSF(legsAnim), 8}, {PSF(events[1]), 8}, {PSF(pm_flags), 16}, {PSF(groundEntityNum), GENTITYNUM_BITS}, {PSF(weaponstate), 4}, {PSF(eFlags), 16}, {PSF(externalEvent), 10}, {PSF(gravity), 16}, {PSF(speed), 16}, {PSF(delta_angles[1]), 16}, {PSF(externalEventParm), 8}, {PSF(viewheight), -8}, {PSF(damageEvent), 8}, {PSF(damageYaw), 8}, {PSF(damagePitch), 8}, {PSF(damageCount), 8}, {PSF(generic1), 8}, {PSF(pm_type), 8}, {PSF(delta_angles[0]), 16}, {PSF(delta_angles[2]), 16}, {PSF(torsoTimer), 12}, {PSF(eventParms[0]), 8}, {PSF(eventParms[1]), 8}, {PSF(clientNum), 8}, {PSF(weapon), 5}, {PSF(viewangles[2]), 0}, {PSF(grapplePoint[0]), 0}, {PSF(grapplePoint[1]), 0}, {PSF(grapplePoint[2]), 0}, {PSF(jumppad_ent), GENTITYNUM_BITS}, {PSF(loopSound), 16}};
 
 /*
 =============
@@ -1610,7 +1510,7 @@ int msg_hData[256] = {
 void MSG_initHuffman(void) {
 	int i, j;
 
-	msgInit = qtrue;
+	msgInit = true;
 	Huff_Init(&msgHuff);
 	for(i = 0; i < 256; i++) {
 		for(j = 0; j < msg_hData[i]; j++) {
@@ -1626,7 +1526,7 @@ void MSG_NUinitHuffman() {
     int		size, i, ch;
     int		array[256];
 
-    msgInit = qtrue;
+    msgInit = true;
 
     Huff_Init(&msgHuff);
     // load it in

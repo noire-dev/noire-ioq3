@@ -54,7 +54,7 @@
 #define ELEMENT_OPTIONSCOUNT 64
 typedef struct {
 	void* parentWindow;
-	qboolean created;
+	bool created;
 	int type;
 	int id;
 	float baseX, baseY, baseW, baseH, x, y, w, h;
@@ -106,11 +106,11 @@ typedef struct {
 #define WINDOW_MAX_ELEMENTS 512
 #define WINDOW_MAX_LISTS 2
 typedef struct {
-	qboolean created;
-	qboolean minimized;
-	qboolean pinned;
-	qboolean linked;
-	qboolean keyboardCapture;
+	bool created;
+	bool minimized;
+	bool pinned;
+	bool linked;
+	bool keyboardCapture;
 	int id;
 	char nameID[MAX_JS_STRINGSIZE];
 	char name[MAX_JS_STRINGSIZE];
@@ -125,7 +125,7 @@ typedef struct {
 	fileList_s fileList[WINDOW_MAX_LISTS];
 	float worldX, worldY, worldZ;
 	float worldScale;
-	qboolean worldDisable;
+	bool worldDisable;
 	float worldCursorScale;
 	float worldMoveDist;
 } window_s;
@@ -141,7 +141,7 @@ typedef struct {
 } tool_s;
 
 typedef struct {
-	qboolean saved;
+	bool saved;
 	char nameID[MAX_JS_STRINGSIZE];
 	float x, y;
 	float scaleFactor;
@@ -152,11 +152,11 @@ typedef struct {
 #define SHELL_MAX_WINDOWS 16
 typedef struct {
 	int cursorX, cursorY;
-	qboolean cursorIsDragging;
-	qboolean cursorIsMovingDesktop;
-	qboolean rendered;
+	bool cursorIsDragging;
+	bool cursorIsMovingDesktop;
+	bool rendered;
 	int debug;
-	qboolean onMap;
+	bool onMap;
 	app_s app[SHELL_MAX_APPS];
 	int appCount;
 	int focusedWindow;
@@ -166,8 +166,8 @@ typedef struct {
 	saveState_s saveState[SHELL_MAX_WINDOWS];
 	float scale;
 	int windowCorner;
-	qboolean windowOutline;
-	qboolean windowColoredOutline;
+	bool windowOutline;
+	bool windowColoredOutline;
 
 	tool_s tool[SHELL_MAX_TOOLS];
 	int toolCount;
@@ -182,12 +182,12 @@ int UI_MouseEvent(int dx, int dy);
 int UI_Refresh(void);
 int UI_IsFullscreen(void);
 int UI_SetActiveMenu(uiMenuCommand_t cmd);
-qboolean UI_ConsoleCommand(void);
+bool UI_ConsoleCommand(void);
 int UI_DrawConnectScreen(void);
 
 // Функции подключенные к JS
-qboolean UI_ItemFocused(element_s* element);
-qboolean UI_CursorInWindowRect(window_s* window, float x, float y, float w, float h);
+bool UI_ItemFocused(element_s* element);
+bool UI_CursorInWindowRect(window_s* window, float x, float y, float w, float h);
 void UI_Move3DWindow(int windowID, float distance);
 void UI_CloseWindow(int windowID);
 void UI_ClearWindow(int windowID, int min, int max);
@@ -197,8 +197,7 @@ int UI_WindowButton(int windowID, int elementID, float x, char* text, int style,
 int UI_Picture(int windowID, int elementID, float x, float y, float w, float h, char* picture, int style, int color);
 int UI_Button(int windowID, int elementID, float x, float y, float w, float h, char* text, int style, int color, float scale);
 int UI_Checkbox(int windowID, int elementID, float x, float y, float w, float h, char* text, int style, int color, float scale, char* cvar);
-int UI_Slider(
-    int windowID, int elementID, float x, float y, float w, float h, char* text, int style, int color, float scale, char* cvar, float min, float max, int mode);
+int UI_Slider(int windowID, int elementID, float x, float y, float w, float h, char* text, int style, int color, float scale, char* cvar, float min, float max, int mode);
 int UI_Action(int windowID, int elementID, float x, float y, float w, float h, char* text, int style, int color, float scale, char* cvar);
 int UI_Spin(int windowID, int elementID, float x, float y, float w, float h, char* text, int style, int color, float scale, char* cvar, int mode);
 int UI_Field(int windowID, int elementID, float x, float y, float w, float h, char* text, int style, int color, float scale, char* cvar);
@@ -223,13 +222,13 @@ void trap_R_DrawStretchPic(float x, float y, float w, float h, float s1, float t
 void trap_UpdateScreen(void);
 int trap_CM_LerpTag(orientation_t* tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char* tagName);
 void trap_S_StartLocalSound(sfxHandle_t sfx, int channelNum);
-sfxHandle_t trap_S_RegisterSound(const char* sample, qboolean compressed);
+sfxHandle_t trap_S_RegisterSound(const char* sample, bool compressed);
 void trap_Key_KeynumToStringBuf(int keynum, char* buf, int buflen);
 void trap_Key_GetBindingBuf(int keynum, char* buf, int buflen);
 void trap_Key_SetBinding(int keynum, const char* binding);
-qboolean trap_Key_IsDown(int keynum);
-qboolean trap_Key_GetOverstrikeMode(void);
-void trap_Key_SetOverstrikeMode(qboolean state);
+bool trap_Key_IsDown(int keynum);
+bool trap_Key_GetOverstrikeMode(void);
+void trap_Key_SetOverstrikeMode(bool state);
 void trap_Key_ClearStates(void);
 int trap_Key_GetCatcher(void);
 void trap_Key_SetCatcher(int catcher);
@@ -248,6 +247,6 @@ void trap_LAN_GetPingInfo(int n, char* buf, int buflen);
 int trap_MemoryRemaining(void);
 void trap_GetCDKey(char* buf, int buflen);
 void trap_SetCDKey(char* buf);
-qboolean trap_VerifyCDKey(const char* key, const char* chksum);
+bool trap_VerifyCDKey(const char* key, const char* chksum);
 void trap_SetPbClStatus(int status);
 #endif

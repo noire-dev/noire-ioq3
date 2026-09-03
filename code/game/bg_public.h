@@ -169,10 +169,10 @@ typedef struct {
 
 	// command (in)
 	usercmd_t cmd;
-	int tracemask;         // collide against these types of surfaces
-	int debugLevel;        // if set, diagnostic output will be printed
-	qboolean noFootsteps;  // if the game is setup for no footsteps by the server
-	qboolean gauntletHit;  // true if a gauntlet attack would actually hit something
+	int tracemask;     // collide against these types of surfaces
+	int debugLevel;    // if set, diagnostic output will be printed
+	bool noFootsteps;  // if the game is setup for no footsteps by the server
+	bool gauntletHit;  // true if a gauntlet attack would actually hit something
 
 	int framecount;
 
@@ -448,22 +448,7 @@ typedef enum {
 
 } entity_event_t;
 
-typedef enum {
-	GTS_RED_CAPTURE,
-	GTS_BLUE_CAPTURE,
-	GTS_RED_RETURN,
-	GTS_BLUE_RETURN,
-	GTS_RED_TAKEN,
-	GTS_BLUE_TAKEN,
-	GTS_REDOBELISK_ATTACKED,
-	GTS_BLUEOBELISK_ATTACKED,
-	GTS_REDTEAM_SCORED,
-	GTS_BLUETEAM_SCORED,
-	GTS_REDTEAM_TOOK_LEAD,
-	GTS_BLUETEAM_TOOK_LEAD,
-	GTS_TEAMS_ARE_TIED,
-	GTS_KAMIKAZE
-} global_team_sound_t;
+typedef enum { GTS_RED_CAPTURE, GTS_BLUE_CAPTURE, GTS_RED_RETURN, GTS_BLUE_RETURN, GTS_RED_TAKEN, GTS_BLUE_TAKEN, GTS_REDOBELISK_ATTACKED, GTS_BLUEOBELISK_ATTACKED, GTS_REDTEAM_SCORED, GTS_BLUETEAM_SCORED, GTS_REDTEAM_TOOK_LEAD, GTS_BLUETEAM_TOOK_LEAD, GTS_TEAMS_ARE_TIED, GTS_KAMIKAZE } global_team_sound_t;
 
 // animations
 typedef enum {
@@ -550,16 +535,7 @@ typedef enum {
 #define TEAM_MAXOVERLAY 32
 
 // team task
-typedef enum {
-	TEAMTASK_NONE,
-	TEAMTASK_OFFENSE,
-	TEAMTASK_DEFENSE,
-	TEAMTASK_PATROL,
-	TEAMTASK_FOLLOW,
-	TEAMTASK_RETRIEVE,
-	TEAMTASK_ESCORT,
-	TEAMTASK_CAMP
-} teamtask_t;
+typedef enum { TEAMTASK_NONE, TEAMTASK_OFFENSE, TEAMTASK_DEFENSE, TEAMTASK_PATROL, TEAMTASK_FOLLOW, TEAMTASK_RETRIEVE, TEAMTASK_ESCORT, TEAMTASK_CAMP } teamtask_t;
 
 // means of death
 typedef enum {
@@ -642,7 +618,7 @@ gitem_t* BG_FindItemForPowerup(powerup_t pw);
 gitem_t* BG_FindItemForHoldable(holdable_t pw);
 #define ITEM_INDEX(x) ((x) - bg_itemlist)
 
-qboolean BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playerState_t* ps);
+bool BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playerState_t* ps);
 
 // g_dmflags->integer flags
 #define DF_NO_FALLING 8
@@ -688,10 +664,10 @@ void BG_AddPredictableEventToPlayerstate(int newEvent, int eventParm, playerStat
 
 void BG_TouchJumpPad(playerState_t* ps, entityState_t* jumppad);
 
-void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, qboolean snap);
-void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s, int time, qboolean snap);
+void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, bool snap);
+void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s, int time, bool snap);
 
-qboolean BG_PlayerTouchesItem(playerState_t* ps, entityState_t* item, int atTime);
+bool BG_PlayerTouchesItem(playerState_t* ps, entityState_t* item, int atTime);
 
 #define ARENAS_PER_TIER 4
 #define MAX_ARENAS 8192

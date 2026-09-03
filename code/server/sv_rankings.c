@@ -38,13 +38,13 @@ typedef struct {
 } ranked_player_t;
 
 static int s_rankings_contexts = 0;
-static qboolean s_rankings_active = qfalse;
+static bool s_rankings_active = false;
 static GR_CONTEXT s_server_context = 0;
 static uint64_t s_server_match = 0;
 static char* s_rankings_game_key = NULL;
 static uint64_t s_rankings_game_id = 0;
 static ranked_player_t* s_ranked_players = NULL;
-static qboolean s_server_quitting = qfalse;
+static bool s_server_quitting = false;
 static const char s_ascii_encoding[] = "0123456789abcdef"
                                        "ghijklmnopqrstuv"
                                        "wxyzABCDEFGHIJKL"
@@ -80,7 +80,7 @@ void SV_RankBegin(char* gamekey) {
 	assert(s_ranked_players == NULL);
 
 	if(sv_enableRankings->integer == 0 || Cvar_VariableValue("g_gametype") == GT_SINGLE_PLAYER) {
-		s_rankings_active = qfalse;
+		s_rankings_active = false;
 		if(sv_rankingsActive->integer == 1) {
 			Cvar_Set("sv_rankingsActive", "0");
 		}
@@ -186,7 +186,7 @@ void SV_RankEnd(void) {
 		SV_RankError("SV_RankEnd: Expected GR_STATUS_PENDING, got %s", SV_RankStatusString(status));
 	}
 
-	s_rankings_active = qfalse;
+	s_rankings_active = false;
 	Cvar_Set("sv_rankingsActive", "0");
 }
 
@@ -202,14 +202,14 @@ void SV_RankPoll(void) { GRankPoll(); }
 SV_RankCheckInit
 ================
 */
-qboolean SV_RankCheckInit(void) { return (s_rankings_contexts > 0); }
+bool SV_RankCheckInit(void) { return (s_rankings_contexts > 0); }
 
 /*
 ================
 SV_RankActive
 ================
 */
-qboolean SV_RankActive(void) { return s_rankings_active; }
+bool SV_RankActive(void) { return s_rankings_active; }
 
 /*
 =================
@@ -389,17 +389,17 @@ void SV_RankUserLogin(int index, char* username, char* password) {
 SV_RankUserValidate
 ===================
 */
-qboolean SV_RankUserValidate(int index, const char* player_id, const char* key, int token_len, int rank, char* name) {
+bool SV_RankUserValidate(int index, const char* player_id, const char* key, int token_len, int rank, char* name) {
 	GR_INIT init;
 	GR_STATUS status;
-	qboolean rVal;
+	bool rVal;
 	ranked_player_t* ranked_player;
 	int i;
 
 	assert(s_ranked_players);
 	assert(s_ranked_players[index].grank_status != QGR_STATUS_ACTIVE);
 
-	rVal = qfalse;
+	rVal = false;
 
 	if(!s_rankings_active) {
 		Com_DPrintf("SV_RankUserValidate: Not ready to validate\n");
@@ -435,7 +435,7 @@ qboolean SV_RankUserValidate(int index, const char* player_id, const char* key, 
 				ranked_player->grank_status = QGR_STATUS_NO_USER;
 				ranked_player->final_status = QGR_STATUS_NEW;
 				ranked_player->grank = 0;
-				return qfalse;
+				return false;
 			}
 		}
 
@@ -450,12 +450,12 @@ qboolean SV_RankUserValidate(int index, const char* player_id, const char* key, 
 		ranked_player->grank_status = QGR_STATUS_ACTIVE;
 		ranked_player->final_status = QGR_STATUS_NEW;
 		ranked_player->grank = rank;
-		rVal = qtrue;
+		rVal = true;
 	} else if(status == GR_STATUS_INVALIDUSER) {
 		ranked_player->grank_status = QGR_STATUS_INVALIDUSER;
 		ranked_player->final_status = QGR_STATUS_NEW;
 		ranked_player->grank = 0;
-		rVal = qfalse;
+		rVal = false;
 	} else {
 		SV_RankError("SV_RankUserValidate: Unexpected status %s", SV_RankStatusString(status));
 		s_ranked_players[index].grank_status = QGR_STATUS_ERROR;
@@ -517,7 +517,7 @@ void SV_RankUserLogout(int index) {
 SV_RankReportInt
 ================
 */
-void SV_RankReportInt(int index1, int index2, int key, int value, qboolean accum) {
+void SV_RankReportInt(int index1, int index2, int key, int value, bool accum) {
 	GR_STATUS status;
 	GR_CONTEXT context;
 	uint64_t match;
@@ -749,7 +749,7 @@ static void SV_RankNewGameCBF(GR_NEWGAME* gr_newgame, void* cbf_arg) {
 		s_server_match = match.match;
 
 		// ready to go
-		s_rankings_active = qtrue;
+		s_rankings_active = true;
 		Cvar_Set("sv_rankingsActive", "1");
 
 	} else if(gr_newgame->status == GR_STATUS_BADLEAGUE) {
@@ -977,7 +977,7 @@ static void SV_RankCloseContext(ranked_player_t* ranked_player) {
 			s_ranked_players = NULL;
 		}
 
-		s_rankings_active = qfalse;
+		s_rankings_active = false;
 		Cvar_Set("sv_rankingsActive", "0");
 	}
 }
@@ -1184,7 +1184,7 @@ static void SV_RankError(const char* fmt, ...) {
 	Com_DPrintf("SV_RankError: %s\n", text);
 	Com_DPrintf("****************************************\n");
 
-	s_rankings_active = qfalse;
+	s_rankings_active = false;
 	Cvar_Set("sv_rankingsActive", "0");
 	// FIXME - attempt clean shutdown?
 }

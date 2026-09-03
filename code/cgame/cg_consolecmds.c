@@ -67,9 +67,7 @@ CG_Viewpos_f
 Debugging command to print the current position
 =============
 */
-static void CG_Viewpos_f(void) {
-	CG_Printf("(%i %i %i) : %i\n", (int)cg.refdef.vieworg[0], (int)cg.refdef.vieworg[1], (int)cg.refdef.vieworg[2], (int)cg.refdefViewAngles[YAW]);
-}
+static void CG_Viewpos_f(void) { CG_Printf("(%i %i %i) : %i\n", (int)cg.refdef.vieworg[0], (int)cg.refdef.vieworg[1], (int)cg.refdef.vieworg[2], (int)cg.refdefViewAngles[YAW]); }
 
 static void CG_ScoresDown_f(void) {
 #ifdef MISSIONPACK
@@ -84,19 +82,19 @@ static void CG_ScoresDown_f(void) {
 		// leave the current scores up if they were already
 		// displayed, but if this is the first hit, clear them out
 		if(!cg.showScores) {
-			cg.showScores = qtrue;
+			cg.showScores = true;
 			cg.numScores = 0;
 		}
 	} else {
 		// show the cached contents even if they just pressed if it
 		// is within two seconds
-		cg.showScores = qtrue;
+		cg.showScores = true;
 	}
 }
 
 static void CG_ScoresUp_f(void) {
 	if(cg.showScores) {
-		cg.showScores = qfalse;
+		cg.showScores = false;
 		cg.scoreFadeTime = cg.time;
 	}
 }
@@ -125,17 +123,17 @@ static void CG_LoadHud_f(void) {
 
 static void CG_scrollScoresDown_f(void) {
 	if(menuScoreboard && cg.scoreBoardShowing) {
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_SCOREBOARD, qtrue);
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_REDTEAM_LIST, qtrue);
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_BLUETEAM_LIST, qtrue);
+		Menu_ScrollFeeder(menuScoreboard, FEEDER_SCOREBOARD, true);
+		Menu_ScrollFeeder(menuScoreboard, FEEDER_REDTEAM_LIST, true);
+		Menu_ScrollFeeder(menuScoreboard, FEEDER_BLUETEAM_LIST, true);
 	}
 }
 
 static void CG_scrollScoresUp_f(void) {
 	if(menuScoreboard && cg.scoreBoardShowing) {
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_SCOREBOARD, qfalse);
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_REDTEAM_LIST, qfalse);
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_BLUETEAM_LIST, qfalse);
+		Menu_ScrollFeeder(menuScoreboard, FEEDER_SCOREBOARD, false);
+		Menu_ScrollFeeder(menuScoreboard, FEEDER_REDTEAM_LIST, false);
+		Menu_ScrollFeeder(menuScoreboard, FEEDER_BLUETEAM_LIST, false);
 	}
 }
 
@@ -255,7 +253,7 @@ static void CG_NextOrder_f(void) {
 	} else {
 		cgs.currentOrder = TEAMTASK_OFFENSE;
 	}
-	cgs.orderPending = qtrue;
+	cgs.orderPending = true;
 	cgs.orderTime = cg.time + 3000;
 }
 
@@ -400,7 +398,7 @@ static void CG_Camera_f( void ) {
     char name[1024];
     trap_Argv( 1, name, sizeof(name));
     if (trap_loadCamera(name)) {
-        cg.cameraMode = qtrue;
+        cg.cameraMode = true;
         trap_startCamera(cg.time);
     } else {
         CG_Printf ("Unable to load camera %s\n",name);
@@ -472,7 +470,7 @@ The string has been tokenized and can be retrieved with
 Cmd_Argc() / Cmd_Argv()
 =================
 */
-qboolean CG_ConsoleCommand(void) {
+bool CG_ConsoleCommand(void) {
 	const char* cmd;
 	int i;
 
@@ -481,11 +479,11 @@ qboolean CG_ConsoleCommand(void) {
 	for(i = 0; i < ARRAY_LEN(commands); i++) {
 		if(!Q_stricmp(cmd, commands[i].cmd)) {
 			commands[i].function();
-			return qtrue;
+			return true;
 		}
 	}
 
-	return qfalse;
+	return false;
 }
 
 /*

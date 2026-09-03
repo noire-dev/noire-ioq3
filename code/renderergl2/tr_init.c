@@ -27,10 +27,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 glconfig_t glConfig;
 glRefConfig_t glRefConfig;
-qboolean textureFilterAnisotropic = qfalse;
+bool textureFilterAnisotropic = false;
 int maxAnisotropy = 0;
 float displayAspect = 0.0f;
-qboolean haveClampToEdge = qfalse;
+bool haveClampToEdge = false;
 
 glstate_t glState;
 
@@ -261,10 +261,10 @@ static void InitOpenGL(void) {
 	if(glConfig.vidWidth == 0) {
 		GLint temp;
 
-		GLimp_Init(qfalse);
+		GLimp_Init(false);
 		GLimp_InitExtraExtensions();
 
-		glConfig.textureEnvAddAvailable = qtrue;
+		glConfig.textureEnvAddAvailable = true;
 
 		// OpenGL driver constants
 		qglGetIntegerv(GL_MAX_TEXTURE_SIZE, &temp);
@@ -342,29 +342,18 @@ typedef struct vidmode_s {
 	float pixelAspect;  // pixel width / height
 } vidmode_t;
 
-vidmode_t r_vidModes[] = {{"Mode  0: 320x240", 320, 240, 1},
-                          {"Mode  1: 400x300", 400, 300, 1},
-                          {"Mode  2: 512x384", 512, 384, 1},
-                          {"Mode  3: 640x480", 640, 480, 1},
-                          {"Mode  4: 800x600", 800, 600, 1},
-                          {"Mode  5: 960x720", 960, 720, 1},
-                          {"Mode  6: 1024x768", 1024, 768, 1},
-                          {"Mode  7: 1152x864", 1152, 864, 1},
-                          {"Mode  8: 1280x1024", 1280, 1024, 1},
-                          {"Mode  9: 1600x1200", 1600, 1200, 1},
-                          {"Mode 10: 2048x1536", 2048, 1536, 1},
-                          {"Mode 11: 856x480 (wide)", 856, 480, 1}};
+vidmode_t r_vidModes[] = {{"Mode  0: 320x240", 320, 240, 1}, {"Mode  1: 400x300", 400, 300, 1}, {"Mode  2: 512x384", 512, 384, 1}, {"Mode  3: 640x480", 640, 480, 1}, {"Mode  4: 800x600", 800, 600, 1}, {"Mode  5: 960x720", 960, 720, 1}, {"Mode  6: 1024x768", 1024, 768, 1}, {"Mode  7: 1152x864", 1152, 864, 1}, {"Mode  8: 1280x1024", 1280, 1024, 1}, {"Mode  9: 1600x1200", 1600, 1200, 1}, {"Mode 10: 2048x1536", 2048, 1536, 1}, {"Mode 11: 856x480 (wide)", 856, 480, 1}};
 static int s_numVidModes = ARRAY_LEN(r_vidModes);
 
-qboolean R_GetModeInfo(int* width, int* height, float* windowAspect, int mode) {
+bool R_GetModeInfo(int* width, int* height, float* windowAspect, int mode) {
 	vidmode_t* vm;
 	float pixelAspect;
 
 	if(mode < -1) {
-		return qfalse;
+		return false;
 	}
 	if(mode >= s_numVidModes) {
-		return qfalse;
+		return false;
 	}
 
 	if(mode == -1) {
@@ -381,7 +370,7 @@ qboolean R_GetModeInfo(int* width, int* height, float* windowAspect, int mode) {
 
 	*windowAspect = (float)*width / (*height * pixelAspect);
 
-	return qtrue;
+	return true;
 }
 
 /*
@@ -582,7 +571,7 @@ const void* RB_TakeScreenshotCmd(const void* data) {
 R_TakeScreenshot
 ==================
 */
-void R_TakeScreenshot(int x, int y, int width, int height, char* name, qboolean jpeg) {
+void R_TakeScreenshot(int x, int y, int width, int height, char* name, bool jpeg) {
 	static char fileName[MAX_OSPATH];  // bad things if two screenshots per frame?
 	screenshotCommand_t* cmd;
 
@@ -730,7 +719,7 @@ Doesn't print the pacifier message if there is a second arg
 void R_ScreenShot_f(void) {
 	char checkname[MAX_OSPATH];
 	static int lastNumber = -1;
-	qboolean silent;
+	bool silent;
 
 	if(!strcmp(ri.Cmd_Argv(1), "levelshot")) {
 		R_LevelShot();
@@ -738,9 +727,9 @@ void R_ScreenShot_f(void) {
 	}
 
 	if(!strcmp(ri.Cmd_Argv(1), "silent")) {
-		silent = qtrue;
+		silent = true;
 	} else {
-		silent = qfalse;
+		silent = false;
 	}
 
 	if(ri.Cmd_Argc() == 2 && !silent) {
@@ -772,7 +761,7 @@ void R_ScreenShot_f(void) {
 		lastNumber++;
 	}
 
-	R_TakeScreenshot(0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname, qfalse);
+	R_TakeScreenshot(0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname, false);
 
 	if(!silent) {
 		ri.Printf(PRINT_ALL, "Wrote %s\n", checkname);
@@ -782,7 +771,7 @@ void R_ScreenShot_f(void) {
 void R_ScreenShotJPEG_f(void) {
 	char checkname[MAX_OSPATH];
 	static int lastNumber = -1;
-	qboolean silent;
+	bool silent;
 
 	if(!strcmp(ri.Cmd_Argv(1), "levelshot")) {
 		R_LevelShot();
@@ -790,9 +779,9 @@ void R_ScreenShotJPEG_f(void) {
 	}
 
 	if(!strcmp(ri.Cmd_Argv(1), "silent")) {
-		silent = qtrue;
+		silent = true;
 	} else {
-		silent = qfalse;
+		silent = false;
 	}
 
 	if(ri.Cmd_Argc() == 2 && !silent) {
@@ -824,7 +813,7 @@ void R_ScreenShotJPEG_f(void) {
 		lastNumber++;
 	}
 
-	R_TakeScreenshot(0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname, qtrue);
+	R_TakeScreenshot(0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname, true);
 
 	if(!silent) {
 		ri.Printf(PRINT_ALL, "Wrote %s\n", checkname);
@@ -979,7 +968,7 @@ void GL_SetDefaultState(void) {
 	glState.glStateBits = GLS_DEPTHTEST_DISABLE | GLS_DEPTHMASK_TRUE;
 	glState.storedGlState = 0;
 	glState.faceCulling = CT_TWO_SIDED;
-	glState.faceCullFront = qtrue;
+	glState.faceCullFront = true;
 
 	GL_BindNullProgram();
 
@@ -1126,12 +1115,7 @@ void GfxMemInfo_f(void) {
 			ri.Printf(PRINT_ALL, "TEXTURE_FREE_MEMORY_ATI: %ikb total %ikb largest aux: %ikb total %ikb largest\n", value[0], value[1], value[2], value[3]);
 
 			qglGetIntegerv(GL_RENDERBUFFER_FREE_MEMORY_ATI, &value[0]);
-			ri.Printf(PRINT_ALL,
-			          "RENDERBUFFER_FREE_MEMORY_ATI: %ikb total %ikb largest aux: %ikb total %ikb largest\n",
-			          value[0],
-			          value[1],
-			          value[2],
-			          value[3]);
+			ri.Printf(PRINT_ALL, "RENDERBUFFER_FREE_MEMORY_ATI: %ikb total %ikb largest aux: %ikb total %ikb largest\n", value[0], value[1], value[2], value[3]);
 		} break;
 	}
 }
@@ -1168,14 +1152,14 @@ void R_Register(void) {
 	r_picmip = ri.Cvar_Get("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_roundImagesDown = ri.Cvar_Get("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_colorMipLevels = ri.Cvar_Get("r_colorMipLevels", "0", CVAR_LATCH);
-	ri.Cvar_CheckRange(r_picmip, 0, 16, qtrue);
+	ri.Cvar_CheckRange(r_picmip, 0, 16, true);
 	r_detailTextures = ri.Cvar_Get("r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_texturebits = ri.Cvar_Get("r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_colorbits = ri.Cvar_Get("r_colorbits", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_stencilbits = ri.Cvar_Get("r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH);
 	r_depthbits = ri.Cvar_Get("r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ext_multisample = ri.Cvar_Get("r_ext_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	ri.Cvar_CheckRange(r_ext_multisample, 0, 4, qtrue);
+	ri.Cvar_CheckRange(r_ext_multisample, 0, 4, true);
 	r_overBrightBits = ri.Cvar_Get("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ignorehwgamma = ri.Cvar_Get("r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = ri.Cvar_Get("r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH);
@@ -1190,7 +1174,7 @@ void R_Register(void) {
 	r_subdivisions = ri.Cvar_Get("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
 	r_stereoEnabled = ri.Cvar_Get("r_stereoEnabled", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	ri.Cvar_CheckRange(r_greyscale, 0, 1, qfalse);
+	ri.Cvar_CheckRange(r_greyscale, 0, 1, false);
 
 	r_externalGLSL = ri.Cvar_Get("r_externalGLSL", "0", CVAR_LATCH);
 
@@ -1257,7 +1241,7 @@ void R_Register(void) {
 	// temporary latched variables that can only change over a restart
 	//
 	r_displayRefresh = ri.Cvar_Get("r_displayRefresh", "0", CVAR_LATCH);
-	ri.Cvar_CheckRange(r_displayRefresh, 0, 999, qtrue);
+	ri.Cvar_CheckRange(r_displayRefresh, 0, 999, true);
 	r_fullbright = ri.Cvar_Get("r_fullbright", "0", CVAR_LATCH | CVAR_CHEAT);
 	r_mapOverBrightBits = ri.Cvar_Get("r_mapOverBrightBits", "2", CVAR_LATCH);
 	r_intensity = ri.Cvar_Get("r_intensity", "1", CVAR_LATCH);
@@ -1270,7 +1254,7 @@ void R_Register(void) {
 	r_lodbias = ri.Cvar_Get("r_lodbias", "0", CVAR_ARCHIVE);
 	r_flares = ri.Cvar_Get("r_flares", "0", CVAR_ARCHIVE);
 	r_znear = ri.Cvar_Get("r_znear", "4", CVAR_CHEAT);
-	ri.Cvar_CheckRange(r_znear, 0.001f, 200, qfalse);
+	ri.Cvar_CheckRange(r_znear, 0.001f, 200, false);
 	r_zproj = ri.Cvar_Get("r_zproj", "64", CVAR_ARCHIVE);
 	r_stereoSeparation = ri.Cvar_Get("r_stereoSeparation", "64", CVAR_ARCHIVE);
 	r_ignoreGLErrors = ri.Cvar_Get("r_ignoreGLErrors", "1", CVAR_ARCHIVE);
@@ -1399,7 +1383,7 @@ void R_Init(void) {
 	Com_Memset(&backEnd, 0, sizeof(backEnd));
 	Com_Memset(&tess, 0, sizeof(tess));
 
-	if(sizeof(glconfig_t) != 11332) ri.Error(ERR_FATAL, "Mod ABI incompatible: sizeof(glconfig_t) == %u != 11332", (unsigned int)sizeof(glconfig_t));
+	if(sizeof(glconfig_t) != 11324) ri.Error(ERR_FATAL, "Mod ABI incompatible: sizeof(glconfig_t) == %u != 11324", (unsigned int)sizeof(glconfig_t));
 
 	//	Swap_Init();
 
@@ -1479,7 +1463,7 @@ void R_Init(void) {
 RE_Shutdown
 ===============
 */
-void RE_Shutdown(qboolean destroyWindow) {
+void RE_Shutdown(bool destroyWindow) {
 	ri.Printf(PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow);
 
 	ri.Cmd_RemoveCommand("imagelist");
@@ -1511,15 +1495,15 @@ void RE_Shutdown(qboolean destroyWindow) {
 
 		Com_Memset(&glConfig, 0, sizeof(glConfig));
 		Com_Memset(&glRefConfig, 0, sizeof(glRefConfig));
-		textureFilterAnisotropic = qfalse;
+		textureFilterAnisotropic = false;
 		maxAnisotropy = 0;
 		displayAspect = 0.0f;
-		haveClampToEdge = qfalse;
+		haveClampToEdge = false;
 
 		Com_Memset(&glState, 0, sizeof(glState));
 	}
 
-	tr.registered = qfalse;
+	tr.registered = false;
 }
 
 /*

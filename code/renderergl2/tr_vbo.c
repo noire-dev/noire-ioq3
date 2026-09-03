@@ -316,7 +316,7 @@ void R_BindVao(vao_t* vao) {
 		glState.currentVao = vao;
 
 		glState.vertexAttribsInterpolation = 0;
-		glState.vertexAnimation = qfalse;
+		glState.vertexAnimation = false;
 		backEnd.pc.c_vaoBinds++;
 
 		if(glRefConfig.vertexArrayObject) {
@@ -564,8 +564,7 @@ void RB_UpdateTessVao(unsigned int attribBits) {
 			}
 
 			if(attribBits & attribBit) {
-				if(!glRefConfig.vertexArrayObject)
-					qglVertexAttribPointer(attribIndex, vAtb->count, vAtb->type, vAtb->normalized, vAtb->stride, BUFFER_OFFSET(vAtb->offset));
+				if(!glRefConfig.vertexArrayObject) qglVertexAttribPointer(attribIndex, vAtb->count, vAtb->type, vAtb->normalized, vAtb->stride, BUFFER_OFFSET(vAtb->offset));
 
 				if(!(glState.vertexAttribsEnabled & attribBit)) {
 					qglEnableVertexAttribArray(attribIndex);
@@ -805,48 +804,48 @@ void VaoCache_Init(void) {
 
 void VaoCache_BindVao(void) { R_BindVao(vc.vao); }
 
-void VaoCache_CheckAdd(qboolean* endSurface, qboolean* recycleVertexBuffer, qboolean* recycleIndexBuffer, int numVerts, int numIndexes) {
+void VaoCache_CheckAdd(bool* endSurface, bool* recycleVertexBuffer, bool* recycleIndexBuffer, int numVerts, int numIndexes) {
 	int vertexesSize = sizeof(srfVert_t) * numVerts;
 	int indexesSize = glRefConfig.vaoCacheGlIndexSize * numIndexes;
 
 	if(vc.vao->vertexesSize < vc.vertexOffset + vcq.vertexCommitSize + vertexesSize) {
 		// ri.Printf(PRINT_ALL, "out of space in vertex cache: %d < %d + %d + %d\n", vc.vao->vertexesSize, vc.vertexOffset, vcq.vertexCommitSize, vertexesSize);
-		*recycleVertexBuffer = qtrue;
-		*recycleIndexBuffer = qtrue;
-		*endSurface = qtrue;
+		*recycleVertexBuffer = true;
+		*recycleIndexBuffer = true;
+		*endSurface = true;
 	}
 
 	if(vc.vao->indexesSize < vc.indexOffset + vcq.indexCommitSize + indexesSize) {
 		// ri.Printf(PRINT_ALL, "out of space in index cache\n");
-		*recycleIndexBuffer = qtrue;
-		*endSurface = qtrue;
+		*recycleIndexBuffer = true;
+		*endSurface = true;
 	}
 
 	if(vc.numSurfaces + vcq.numSurfaces >= VAOCACHE_MAX_SURFACES) {
 		// ri.Printf(PRINT_ALL, "out of surfaces in index cache\n");
-		*recycleIndexBuffer = qtrue;
-		*endSurface = qtrue;
+		*recycleIndexBuffer = true;
+		*endSurface = true;
 	}
 
 	if(vc.numBatches >= VAOCACHE_MAX_BATCHES) {
 		// ri.Printf(PRINT_ALL, "out of batches in index cache\n");
-		*recycleIndexBuffer = qtrue;
-		*endSurface = qtrue;
+		*recycleIndexBuffer = true;
+		*endSurface = true;
 	}
 
 	if(vcq.numSurfaces >= VAOCACHE_QUEUE_MAX_SURFACES) {
 		// ri.Printf(PRINT_ALL, "out of queued surfaces\n");
-		*endSurface = qtrue;
+		*endSurface = true;
 	}
 
 	if(VAOCACHE_QUEUE_MAX_VERTEXES * sizeof(srfVert_t) < vcq.vertexCommitSize + vertexesSize) {
 		// ri.Printf(PRINT_ALL, "out of queued vertexes\n");
-		*endSurface = qtrue;
+		*endSurface = true;
 	}
 
 	if(VAOCACHE_QUEUE_MAX_INDEXES * glRefConfig.vaoCacheGlIndexSize < vcq.indexCommitSize + indexesSize) {
 		// ri.Printf(PRINT_ALL, "out of queued indexes\n");
-		*endSurface = qtrue;
+		*endSurface = true;
 	}
 }
 

@@ -227,13 +227,12 @@ int Q_vsnprintf(char* str, size_t size, const char* format, va_list ap) Q_PRINTF
 
 #endif
 
+#include <stdbool.h>
 #include "q_platform.h"
 
 //=============================================================
 
 typedef unsigned char byte;
-
-typedef enum { qfalse, qtrue } qboolean;
 
 typedef union {
 	float f;
@@ -432,7 +431,7 @@ extern vec4_t colorMdGrey;
 extern vec4_t colorDkGrey;
 
 #define Q_COLOR_ESCAPE '^'
-qboolean Q_IsColorString(const char* p);  // ^[0-9a-zA-Z]
+bool Q_IsColorString(const char* p);  // ^[0-9a-zA-Z]
 
 #define COLOR_BLACK '0'
 #define COLOR_RED '1'
@@ -725,9 +724,9 @@ void AxisCopy(vec3_t in[3], vec3_t out[3]);
 void SetPlaneSignbits(struct cplane_s* out);
 int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s* plane);
 
-qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs, const vec3_t mins2, const vec3_t maxs2);
-qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs, const vec3_t origin, vec_t radius);
-qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs, const vec3_t origin);
+bool BoundsIntersect(const vec3_t mins, const vec3_t maxs, const vec3_t mins2, const vec3_t maxs2);
+bool BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs, const vec3_t origin, vec_t radius);
+bool BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs, const vec3_t origin);
 
 float AngleMod(float a);
 float LerpAngle(float from, float to, float frac);
@@ -738,7 +737,7 @@ float AngleNormalize360(float angle);
 float AngleNormalize180(float angle);
 float AngleDelta(float angle1, float angle2);
 
-qboolean PlaneFromPoints(vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c);
+bool PlaneFromPoints(vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c);
 void ProjectPointOnPlane(vec3_t dst, const vec3_t p, const vec3_t normal);
 void RotatePointAroundVector(vec3_t dst, const vec3_t dir, const vec3_t point, float degrees);
 void RotateAroundDirection(vec3_t axis[3], float yaw);
@@ -766,13 +765,13 @@ float Com_Clamp(float min, float max, float value);
 char* COM_SkipPath(char* pathname);
 const char* COM_GetExtension(const char* name);
 void COM_StripExtension(const char* in, char* out, int destsize);
-qboolean COM_CompareExtension(const char* in, const char* ext);
+bool COM_CompareExtension(const char* in, const char* ext);
 void COM_DefaultExtension(char* path, int maxSize, const char* extension);
 
 void COM_BeginParseSession(const char* name);
 int COM_GetCurrentParseLine(void);
 char* COM_Parse(char** data_p);
-char* COM_ParseExt(char** data_p, qboolean allowLineBreak);
+char* COM_ParseExt(char** data_p, bool allowLineBreak);
 int COM_Compress(char* data_p);
 void COM_ParseError(char* format, ...) Q_PRINTF_FUNC(1, 2);
 void COM_ParseWarning(char* format, ...) Q_PRINTF_FUNC(1, 2);
@@ -801,7 +800,7 @@ typedef struct pc_token_s {
 
 void COM_MatchToken(char** buf_p, char* match);
 
-qboolean SkipBracedSection(char** program, int depth);
+bool SkipBracedSection(char** program, int depth);
 void SkipRestOfLine(char** data);
 
 void Parse1DMatrix(char** buf_p, int x, float* m);
@@ -827,8 +826,8 @@ int Q_isprint(int c);
 int Q_islower(int c);
 int Q_isupper(int c);
 int Q_isalpha(int c);
-qboolean Q_isanumber(const char* s);
-qboolean Q_isintegral(float f);
+bool Q_isanumber(const char* s);
+bool Q_isintegral(float f);
 
 // portable case insensitive compare
 int Q_stricmp(const char* s1, const char* s2);
@@ -892,7 +891,7 @@ void Info_RemoveKey(char* s, const char* key);
 void Info_RemoveKey_Big(char* s, const char* key);
 void Info_SetValueForKey(char* s, const char* key, const char* value);
 void Info_SetValueForKey_Big(char* s, const char* key, const char* value);
-qboolean Info_Validate(const char* s);
+bool Info_Validate(const char* s);
 void Info_NextPair(const char** s, char* key, char* value);
 
 // this is only here so the functions in q_shared.c and bg_*.c can link
@@ -910,19 +909,22 @@ default values.
 ==========================================================
 */
 
-#define CVAR_ARCHIVE 0x0001       // set to cause it to be saved to vars.rc
-                                  // used for system variables, not for player
-                                  // specific configurations
-#define CVAR_USERINFO 0x0002      // sent to server on connect or change
-#define CVAR_SERVERINFO 0x0004    // sent in response to front end requests
-#define CVAR_SYSTEMINFO 0x0008    // these cvars will be duplicated on all clients
-#define CVAR_INIT 0x0010          // don't allow change from console at all,
-                                  // but can be set from the command line
-#define CVAR_LATCH 0x0020         // will only change when C code next does
-                                  // a Cvar_Get(), so it can't be changed
-                                  // without proper initialization.  modified
-                                  // will be set, even though the value hasn't
-                                  // changed yet
+#define CVAR_ARCHIVE \
+	0x0001                      // set to cause it to be saved to vars.rc
+	                            // used for system variables, not for player
+	                            // specific configurations
+#define CVAR_USERINFO 0x0002    // sent to server on connect or change
+#define CVAR_SERVERINFO 0x0004  // sent in response to front end requests
+#define CVAR_SYSTEMINFO 0x0008  // these cvars will be duplicated on all clients
+#define CVAR_INIT \
+	0x0010  // don't allow change from console at all,
+	        // but can be set from the command line
+#define CVAR_LATCH \
+	0x0020                        // will only change when C code next does
+	                              // a Cvar_Get(), so it can't be changed
+	                              // without proper initialization.  modified
+	                              // will be set, even though the value hasn't
+	                              // changed yet
 #define CVAR_ROM 0x0040           // display only, cannot be set by user at all
 #define CVAR_USER_CREATED 0x0080  // created by a set command
 #define CVAR_TEMP 0x0100          // can be set even when cheats are disabled, but is not archived
@@ -945,12 +947,12 @@ struct cvar_s {
 	char* resetString;    // cvar_restart will reset to this value
 	char* latchedString;  // for CVAR_LATCH vars
 	int flags;
-	qboolean modified;      // set each time the cvar is changed
+	bool modified;          // set each time the cvar is changed
 	int modificationCount;  // incremented each time the cvar is changed
 	float value;            // atof( string )
 	int integer;            // atoi( string )
-	qboolean validate;
-	qboolean integral;
+	bool validate;
+	bool integral;
 	float min;
 	float max;
 	char* description;
@@ -1030,14 +1032,14 @@ typedef struct cplane_s {
 
 // a trace is returned when a box is swept through the world
 typedef struct {
-	qboolean allsolid;    // if true, plane is not valid
-	qboolean startsolid;  // if true, the initial point was in a solid area
-	float fraction;       // time completed, 1.0 = didn't hit anything
-	vec3_t endpos;        // final position
-	cplane_t plane;       // surface normal at impact, transformed to world space
-	int surfaceFlags;     // surface hit
-	int contents;         // contents on other side of surface hit
-	int entityNum;        // entity the contacted sirface is a part of
+	bool allsolid;     // if true, plane is not valid
+	bool startsolid;   // if true, the initial point was in a solid area
+	float fraction;    // time completed, 1.0 = didn't hit anything
+	vec3_t endpos;     // final position
+	cplane_t plane;    // surface normal at impact, transformed to world space
+	int surfaceFlags;  // surface hit
+	int contents;      // contents on other side of surface hit
+	int entityNum;     // entity the contacted sirface is a part of
 } trace_t;
 
 // trace->entityNum can also be 0 to (MAX_GENTITIES-1)

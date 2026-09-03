@@ -61,14 +61,14 @@ typedef struct flare_s {
 
 	int addedFrame;
 
-	qboolean inPortal;  // true if in a portal view of the scene
+	bool inPortal;  // true if in a portal view of the scene
 	int frameSceneNum;
 	void* surface;
 	int fogNum;
 
 	int fadeTime;
 
-	qboolean visible;     // state of last test
+	bool visible;         // state of last test
 	float drawIntensity;  // may be non 0 even if !visible due to fading
 
 	int windowX, windowY;
@@ -184,7 +184,7 @@ void RB_AddFlare(void* surface, int fogNum, vec3_t point, vec3_t color, vec3_t n
 	}
 
 	if(f->addedFrame != backEnd.viewParms.frameCount - 1) {
-		f->visible = qfalse;
+		f->visible = false;
 		f->fadeTime = backEnd.refdef.time - 2000;
 	}
 
@@ -262,7 +262,7 @@ RB_TestFlare
 */
 void RB_TestFlare(flare_t* f) {
 	float depth;
-	qboolean visible;
+	bool visible;
 	float fade;
 	float flareDepth;
 
@@ -272,7 +272,7 @@ void RB_TestFlare(flare_t* f) {
 
 	// doing a readpixels is as good as doing a glFinish(), so
 	// don't bother with another sync
-	glState.finishCalled = qfalse;
+	glState.finishCalled = false;
 
 	// if we're doing multisample rendering, read from the correct FBO
 	oldFbo = glState.currentFBO;
@@ -292,7 +292,7 @@ void RB_TestFlare(flare_t* f) {
 	vec4_t eyePos, clipPos;
 	R_TransformModelToClip(f->origin, backEnd.or.modelMatrix, backEnd.viewParms.projectionMatrix, eyePos, clipPos);
 	if(clipPos[3] <= 0.0f) {
-		visible = qfalse;  // behind eye
+		visible = false;  // behind eye
 	} else {
 		// Treat near-equal depths as visible, tiny margin to avoid false occlusion from rounding
 		const float depthBias = 1e-5f;  // ~256 / 2^24
@@ -304,13 +304,13 @@ void RB_TestFlare(flare_t* f) {
 
 	if(visible) {
 		if(!f->visible) {
-			f->visible = qtrue;
+			f->visible = true;
 			f->fadeTime = backEnd.refdef.time - 1;
 		}
 		fade = ((backEnd.refdef.time - f->fadeTime) / 1000.0f) * r_flareFade->value;
 	} else {
 		if(f->visible) {
-			f->visible = qfalse;
+			f->visible = false;
 			f->fadeTime = backEnd.refdef.time - 1;
 		}
 		fade = 1.0f - ((backEnd.refdef.time - f->fadeTime) / 1000.0f) * r_flareFade->value;
@@ -464,7 +464,7 @@ extend past the portal edge will be overwritten.
 void RB_RenderFlares(void) {
 	flare_t* f;
 	flare_t** prev;
-	qboolean draw;
+	bool draw;
 	mat4_t oldmodelview, oldprojection, matrix;
 
 	if(!r_flares->integer) {
@@ -476,12 +476,12 @@ void RB_RenderFlares(void) {
 			ri.Printf(PRINT_WARNING, "OpenGL ES needs GL_NV_read_depth to read depth to determine if flares are visible\n");
 			ri.Cvar_Set("r_flares", "0");
 		}
-		r_flares->modified = qfalse;
+		r_flares->modified = false;
 	}
 
 	if(r_flareCoeff->modified) {
 		R_SetFlareCoeff();
-		r_flareCoeff->modified = qfalse;
+		r_flareCoeff->modified = false;
 	}
 
 	// Reset currentEntity to world so that any previously referenced entities
@@ -492,7 +492,7 @@ void RB_RenderFlares(void) {
 	//	RB_AddDlightFlares();
 
 	// perform z buffer readback on each flare in this view
-	draw = qfalse;
+	draw = false;
 	prev = &r_activeFlares;
 	while((f = *prev) != NULL) {
 		// throw out any flares that weren't added last frame
@@ -508,7 +508,7 @@ void RB_RenderFlares(void) {
 		if(f->frameSceneNum == backEnd.viewParms.frameSceneNum && f->inPortal == backEnd.viewParms.isPortal) {
 			RB_TestFlare(f);
 			if(f->drawIntensity) {
-				draw = qtrue;
+				draw = true;
 			} else {
 				// this flare has completely faded out, so remove it from the chain
 				*prev = f->next;
@@ -529,13 +529,7 @@ void RB_RenderFlares(void) {
 	Mat4Copy(glState.modelview, oldmodelview);
 	Mat4Identity(matrix);
 	GL_SetModelviewMatrix(matrix);
-	Mat4Ortho(backEnd.viewParms.viewportX,
-	          backEnd.viewParms.viewportX + backEnd.viewParms.viewportWidth,
-	          backEnd.viewParms.viewportY,
-	          backEnd.viewParms.viewportY + backEnd.viewParms.viewportHeight,
-	          -99999,
-	          99999,
-	          matrix);
+	Mat4Ortho(backEnd.viewParms.viewportX, backEnd.viewParms.viewportX + backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportY, backEnd.viewParms.viewportY + backEnd.viewParms.viewportHeight, -99999, 99999, matrix);
 	GL_SetProjectionMatrix(matrix);
 
 	for(f = r_activeFlares; f; f = f->next) {

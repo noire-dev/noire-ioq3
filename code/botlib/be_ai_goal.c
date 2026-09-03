@@ -132,15 +132,7 @@ typedef struct iteminfo_s {
 
 #define ITEMINFO_OFS(x) (size_t)&(((iteminfo_t*)0)->x)
 
-fielddef_t iteminfo_fields[] = {{"name", ITEMINFO_OFS(name), FT_STRING},
-                                {"model", ITEMINFO_OFS(model), FT_STRING},
-                                {"modelindex", ITEMINFO_OFS(modelindex), FT_INT},
-                                {"type", ITEMINFO_OFS(type), FT_INT},
-                                {"index", ITEMINFO_OFS(index), FT_INT},
-                                {"respawntime", ITEMINFO_OFS(respawntime), FT_FLOAT},
-                                {"mins", ITEMINFO_OFS(mins), FT_FLOAT | FT_ARRAY, 3},
-                                {"maxs", ITEMINFO_OFS(maxs), FT_FLOAT | FT_ARRAY, 3},
-                                {NULL, 0, 0}};
+fielddef_t iteminfo_fields[] = {{"name", ITEMINFO_OFS(name), FT_STRING}, {"model", ITEMINFO_OFS(model), FT_STRING}, {"modelindex", ITEMINFO_OFS(modelindex), FT_INT}, {"type", ITEMINFO_OFS(type), FT_INT}, {"index", ITEMINFO_OFS(index), FT_INT}, {"respawntime", ITEMINFO_OFS(respawntime), FT_FLOAT}, {"mins", ITEMINFO_OFS(mins), FT_FLOAT | FT_ARRAY, 3}, {"maxs", ITEMINFO_OFS(maxs), FT_FLOAT | FT_ARRAY, 3}, {NULL, 0, 0}};
 
 structdef_t iteminfo_struct = {sizeof(iteminfo_t), iteminfo_fields};
 
@@ -822,10 +814,10 @@ int BotGetMapLocationGoal(char* name, bot_goal_t* goal) {
 			goal->number = 0;
 			goal->flags = 0;
 			goal->iteminfo = 0;
-			return qtrue;
+			return true;
 		}  // end if
 	}  // end for
-	return qfalse;
+	return false;
 }  // end of the function BotGetMapLocationGoal
 //===========================================================================
 //
@@ -877,8 +869,7 @@ void BotFindEntityForLevelItem(levelitem_t* li) {
 		// get info about the entity
 		AAS_EntityInfo(ent, &entinfo);
 		// if the entity is still moving
-		if(entinfo.origin[0] != entinfo.lastvisorigin[0] || entinfo.origin[1] != entinfo.lastvisorigin[1] || entinfo.origin[2] != entinfo.lastvisorigin[2])
-			continue;
+		if(entinfo.origin[0] != entinfo.lastvisorigin[0] || entinfo.origin[1] != entinfo.lastvisorigin[1] || entinfo.origin[2] != entinfo.lastvisorigin[2]) continue;
 		//
 		if(ic->iteminfo[li->iteminfo].modelindex == modelindex) {
 			// check if the entity is very close
@@ -935,8 +926,7 @@ void BotUpdateEntityItems(void) {
 		// skip all floating items for now
 		// if (entinfo.groundent != ENTITYNUM_WORLD) continue;
 		// if the entity is still moving
-		if(entinfo.origin[0] != entinfo.lastvisorigin[0] || entinfo.origin[1] != entinfo.lastvisorigin[1] || entinfo.origin[2] != entinfo.lastvisorigin[2])
-			continue;
+		if(entinfo.origin[0] != entinfo.lastvisorigin[0] || entinfo.origin[1] != entinfo.lastvisorigin[1] || entinfo.origin[2] != entinfo.lastvisorigin[2]) continue;
 		// check if the entity is already stored as a level item
 		for(li = levelitems; li; li = li->next) {
 			// if the level item is linked to an entity
@@ -1110,10 +1100,10 @@ int BotGetTopGoal(int goalstate, bot_goal_t* goal) {
 	bot_goalstate_t* gs;
 
 	gs = BotGoalStateFromHandle(goalstate);
-	if(!gs) return qfalse;
-	if(!gs->goalstacktop) return qfalse;
+	if(!gs) return false;
+	if(!gs->goalstacktop) return false;
 	Com_Memcpy(goal, &gs->goalstack[gs->goalstacktop], sizeof(bot_goal_t));
-	return qtrue;
+	return true;
 }  // end of the function BotGetTopGoal
 //===========================================================================
 //
@@ -1125,10 +1115,10 @@ int BotGetSecondGoal(int goalstate, bot_goal_t* goal) {
 	bot_goalstate_t* gs;
 
 	gs = BotGoalStateFromHandle(goalstate);
-	if(!gs) return qfalse;
-	if(gs->goalstacktop <= 1) return qfalse;
+	if(!gs) return false;
+	if(gs->goalstacktop <= 1) return false;
 	Com_Memcpy(goal, &gs->goalstack[gs->goalstacktop - 1], sizeof(bot_goal_t));
-	return qtrue;
+	return true;
 }  // end of the function BotGetSecondGoal
 //===========================================================================
 // pops a new long term goal on the goal stack in the goalstate
@@ -1147,8 +1137,8 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 	bot_goalstate_t* gs;
 
 	gs = BotGoalStateFromHandle(goalstate);
-	if(!gs) return qfalse;
-	if(!gs->itemweightconfig) return qfalse;
+	if(!gs) return false;
+	if(!gs->itemweightconfig) return false;
 	// get the area the bot is in
 	areanum = BotReachabilityArea(origin, gs->client);
 	// if the bot is in solid or if the area the bot is in has no reachability links
@@ -1159,10 +1149,10 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 	// remember the last area with reachabilities the bot was in
 	gs->lastreachabilityarea = areanum;
 	// if still in solid
-	if(!areanum) return qfalse;
+	if(!areanum) return false;
 	// the item configuration
 	ic = itemconfig;
-	if(!itemconfig) return qfalse;
+	if(!itemconfig) return false;
 	// best weight and item so far
 	bestweight = 0;
 	bestitem = NULL;
@@ -1236,11 +1226,11 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 #ifdef DEBUG
 		        botimport.Print(PRT_MESSAGE, "chosen roam goal area %d\n", goal.areanum);
 #endif //DEBUG
-		        return qtrue;
+		        return true;
 		    } //end if
 		} //end if
 		*/
-		return qfalse;
+		return false;
 	}  // end if
 	// create a bot goal for this item
 	iteminfo = &ic->iteminfo[bestitem->iteminfo];
@@ -1268,7 +1258,7 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 	// push the goal on the stack
 	BotPushGoal(goalstate, &goal);
 	//
-	return qtrue;
+	return true;
 }  // end of the function BotChooseLTGItem
 //===========================================================================
 //
@@ -1286,8 +1276,8 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 	bot_goalstate_t* gs;
 
 	gs = BotGoalStateFromHandle(goalstate);
-	if(!gs) return qfalse;
-	if(!gs->itemweightconfig) return qfalse;
+	if(!gs) return false;
+	if(!gs->itemweightconfig) return false;
 	// get the area the bot is in
 	areanum = BotReachabilityArea(origin, gs->client);
 	// if the bot is in solid or if the area the bot is in has no reachability links
@@ -1298,7 +1288,7 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 	// remember the last area with reachabilities the bot was in
 	gs->lastreachabilityarea = areanum;
 	// if still in solid
-	if(!areanum) return qfalse;
+	if(!areanum) return false;
 	//
 	if(ltg)
 		ltg_time = AAS_AreaTravelTimeToGoalArea(areanum, origin, ltg->areanum, travelflags);
@@ -1306,7 +1296,7 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 		ltg_time = 99999;
 	// the item configuration
 	ic = itemconfig;
-	if(!itemconfig) return qfalse;
+	if(!itemconfig) return false;
 	// best weight and item so far
 	bestweight = 0;
 	bestitem = NULL;
@@ -1369,7 +1359,7 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 		}  // end if
 	}  // end for
 	// if no goal item found
-	if(!bestitem) return qfalse;
+	if(!bestitem) return false;
 	// create a bot goal for this item
 	iteminfo = &ic->iteminfo[bestitem->iteminfo];
 	VectorCopy(bestitem->goalorigin, goal.origin);
@@ -1396,7 +1386,7 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 	// push the goal on the stack
 	BotPushGoal(goalstate, &goal);
 	//
-	return qtrue;
+	return true;
 }  // end of the function BotChooseNBGItem
 //===========================================================================
 //
@@ -1421,9 +1411,9 @@ int BotTouchingGoal(vec3_t origin, bot_goal_t* goal) {
 	VectorSubtract(absmins, safety_mins, absmins);
 
 	for(i = 0; i < 3; i++) {
-		if(origin[i] < absmins[i] || origin[i] > absmaxs[i]) return qfalse;
+		if(origin[i] < absmins[i] || origin[i] > absmaxs[i]) return false;
 	}  // end for
-	return qtrue;
+	return true;
 }  // end of the function BotTouchingGoal
 //===========================================================================
 //
@@ -1436,7 +1426,7 @@ int BotItemGoalInVisButNotVisible(int viewer, vec3_t eye, vec3_t viewangles, bot
 	bsp_trace_t trace;
 	vec3_t middle;
 
-	if(!(goal->flags & GFL_ITEM)) return qfalse;
+	if(!(goal->flags & GFL_ITEM)) return false;
 	//
 	VectorAdd(goal->mins, goal->mins, middle);
 	VectorScale(middle, 0.5, middle);
@@ -1447,16 +1437,16 @@ int BotItemGoalInVisButNotVisible(int viewer, vec3_t eye, vec3_t viewangles, bot
 	if(trace.fraction >= 1) {
 		// the goal entity number doesn't have to be valid
 		// just assume it's valid
-		if(goal->entitynum <= 0) return qfalse;
+		if(goal->entitynum <= 0) return false;
 		//
 		// if the entity data isn't valid
 		AAS_EntityInfo(goal->entitynum, &entinfo);
 		// NOTE: for some wacko reason entities are sometimes
 		//  not updated
-		// if (!entinfo.valid) return qtrue;
-		if(entinfo.ltime < AAS_Time() - 0.5) return qtrue;
+		// if (!entinfo.valid) return true;
+		if(entinfo.ltime < AAS_Time() - 0.5) return true;
 	}  // end if
-	return qfalse;
+	return false;
 }  // end of the function BotItemGoalInVisButNotVisible
 //===========================================================================
 //

@@ -39,11 +39,11 @@ clipHandle_t SV_ClipHandleForEntity(const sharedEntity_t* ent) {
 	}
 	if(ent->r.svFlags & SVF_CAPSULE) {
 		// create a temp capsule from bounding box sizes
-		return CM_TempBoxModel(ent->r.mins, ent->r.maxs, qtrue);
+		return CM_TempBoxModel(ent->r.mins, ent->r.maxs, true);
 	}
 
 	// create a temp tree from bounding box sizes
-	return CM_TempBoxModel(ent->r.mins, ent->r.maxs, qfalse);
+	return CM_TempBoxModel(ent->r.mins, ent->r.maxs, false);
 }
 
 /*
@@ -167,7 +167,7 @@ void SV_UnlinkEntity(sharedEntity_t* gEnt) {
 
 	ent = SV_SvEntityForGentity(gEnt);
 
-	gEnt->r.linked = qfalse;
+	gEnt->r.linked = false;
 
 	ws = ent->worldSector;
 	if(!ws) {
@@ -335,7 +335,7 @@ void SV_LinkEntity(sharedEntity_t* gEnt) {
 	ent->nextEntityInWorldSector = node->entities;
 	node->entities = ent;
 
-	gEnt->r.linked = qtrue;
+	gEnt->r.linked = true;
 }
 
 /*
@@ -532,15 +532,15 @@ static void SV_ClipMoveToEntities(moveclip_t* clip) {
 		CM_TransformedBoxTrace(&trace, (float*)clip->start, (float*)clip->end, (float*)clip->mins, (float*)clip->maxs, clipHandle, clip->contentmask, origin, angles, clip->capsule);
 
 		if(trace.allsolid) {
-			clip->trace.allsolid = qtrue;
+			clip->trace.allsolid = true;
 			trace.entityNum = touch->s.number;
 		} else if(trace.startsolid) {
-			clip->trace.startsolid = qtrue;
+			clip->trace.startsolid = true;
 			trace.entityNum = touch->s.number;
 		}
 
 		if(trace.fraction < clip->trace.fraction) {
-			qboolean oldStart;
+			bool oldStart;
 
 			// make sure we keep a startsolid from a previous trace
 			oldStart = clip->trace.startsolid;

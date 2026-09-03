@@ -281,7 +281,7 @@ static void CG_Item(centity_t* cent) {
 	VectorCopy(cent->lerpOrigin, ent.origin);
 	VectorCopy(cent->lerpOrigin, ent.oldorigin);
 
-	ent.nonNormalizedAxes = qfalse;
+	ent.nonNormalizedAxes = false;
 
 	// if just respawned, slowly scale up
 	msec = cg.time - cent->miscTime;
@@ -290,7 +290,7 @@ static void CG_Item(centity_t* cent) {
 		VectorScale(ent.axis[0], frac, ent.axis[0]);
 		VectorScale(ent.axis[1], frac, ent.axis[1]);
 		VectorScale(ent.axis[2], frac, ent.axis[2]);
-		ent.nonNormalizedAxes = qtrue;
+		ent.nonNormalizedAxes = true;
 	} else {
 		frac = 1.0;
 	}
@@ -306,7 +306,7 @@ static void CG_Item(centity_t* cent) {
 		VectorScale(ent.axis[0], 1.5, ent.axis[0]);
 		VectorScale(ent.axis[1], 1.5, ent.axis[1]);
 		VectorScale(ent.axis[2], 1.5, ent.axis[2]);
-		ent.nonNormalizedAxes = qtrue;
+		ent.nonNormalizedAxes = true;
 #ifdef MISSIONPACK
 		trap_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.weaponHoverSound);
 #endif
@@ -317,7 +317,7 @@ static void CG_Item(centity_t* cent) {
 		VectorScale(ent.axis[0], 2, ent.axis[0]);
 		VectorScale(ent.axis[1], 2, ent.axis[1]);
 		VectorScale(ent.axis[2], 2, ent.axis[2]);
-		ent.nonNormalizedAxes = qtrue;
+		ent.nonNormalizedAxes = true;
 	}
 #endif
 
@@ -367,7 +367,7 @@ static void CG_Item(centity_t* cent) {
 					VectorScale(ent.axis[0], frac, ent.axis[0]);
 					VectorScale(ent.axis[1], frac, ent.axis[1]);
 					VectorScale(ent.axis[2], frac, ent.axis[2]);
-					ent.nonNormalizedAxes = qtrue;
+					ent.nonNormalizedAxes = true;
 				}
 				trap_R_AddRefEntityToScene(&ent);
 			}
@@ -420,11 +420,7 @@ static void CG_Missile(centity_t* cent) {
 	*/
 	// add dynamic light
 	if(weapon->missileDlight) {
-		trap_R_AddLightToScene(cent->lerpOrigin,
-		                       weapon->missileDlight,
-		                       weapon->missileDlightColor[0],
-		                       weapon->missileDlightColor[1],
-		                       weapon->missileDlightColor[2]);
+		trap_R_AddLightToScene(cent->lerpOrigin, weapon->missileDlight, weapon->missileDlightColor[0], weapon->missileDlightColor[1], weapon->missileDlightColor[2]);
 	}
 
 	// add missile sound
@@ -789,13 +785,7 @@ static void CG_CalcEntityLerpPositions(centity_t* cent) {
 	// adjust for riding a mover if it wasn't rolled into the predicted
 	// player state
 	if(cent != &cg.predictedPlayerEntity) {
-		CG_AdjustPositionForMover(cent->lerpOrigin,
-		                          cent->currentState.groundEntityNum,
-		                          cg.snap->serverTime,
-		                          cg.time,
-		                          cent->lerpOrigin,
-		                          cent->lerpAngles,
-		                          cent->lerpAngles);
+		CG_AdjustPositionForMover(cent->lerpOrigin, cent->currentState.groundEntityNum, cg.snap->serverTime, cg.time, cent->lerpOrigin, cent->lerpAngles, cent->lerpAngles);
 	}
 }
 
@@ -1019,7 +1009,7 @@ void CG_AddPacketEntities(void) {
 
 	// generate and add the entity from the playerstate
 	ps = &cg.predictedPlayerState;
-	BG_PlayerStateToEntityState(ps, &cg.predictedPlayerEntity.currentState, qfalse);
+	BG_PlayerStateToEntityState(ps, &cg.predictedPlayerEntity.currentState, false);
 	CG_AddCEntity(&cg.predictedPlayerEntity);
 
 	// lerp the non-predicted value for lightning gun origins

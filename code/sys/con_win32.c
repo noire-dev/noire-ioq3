@@ -43,7 +43,7 @@ static int qconsole_history_oldest = 0;
 // current edit buffer
 static char qconsole_line[MAX_EDIT_LINE];
 static int qconsole_linelen = 0;
-static qboolean qconsole_drawinput = qtrue;
+static bool qconsole_drawinput = true;
 static int qconsole_cursor;
 
 static HANDLE qconsole_hout;
@@ -66,8 +66,7 @@ static WORD CON_ColorCharToAttrib(char color) {
 		float* rgba = g_color_table[ColorIndex(color)];
 
 		// set foreground color
-		attrib = (rgba[0] >= 0.5 ? FOREGROUND_RED : 0) | (rgba[1] >= 0.5 ? FOREGROUND_GREEN : 0) | (rgba[2] >= 0.5 ? FOREGROUND_BLUE : 0) |
-		         (rgba[3] >= 0.5 ? FOREGROUND_INTENSITY : 0);
+		attrib = (rgba[0] >= 0.5 ? FOREGROUND_RED : 0) | (rgba[1] >= 0.5 ? FOREGROUND_GREEN : 0) | (rgba[2] >= 0.5 ? FOREGROUND_BLUE : 0) | (rgba[3] >= 0.5 ? FOREGROUND_INTENSITY : 0);
 
 		// use console's background color
 		attrib |= qconsole_backgroundAttrib;

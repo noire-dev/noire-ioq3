@@ -6,18 +6,7 @@
 
 shell_s shell;
 
-Q_EXPORT intptr_t vmMain(int command,
-                         int arg0,
-                         int arg1,
-                         int arg2,
-                         int arg3,
-                         int arg4,
-                         int arg5,
-                         int arg6,
-                         int arg7,
-                         int arg8,
-                         int arg9,
-                         int arg10,
+Q_EXPORT intptr_t vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10,
                          int arg11) {  // Точка входа движка (функция должна быть первой)
 	switch(command) {
 		case UI_GETAPIVERSION: return UI_API_VERSION;
@@ -30,7 +19,7 @@ Q_EXPORT intptr_t vmMain(int command,
 		case UI_SET_ACTIVE_MENU: return UI_SetActiveMenu(arg0);
 		case UI_CONSOLE_COMMAND: return UI_ConsoleCommand();
 		case UI_DRAW_CONNECT_SCREEN: return UI_DrawConnectScreen();
-		case UI_HASUNIQUECDKEY: return qtrue;
+		case UI_HASUNIQUECDKEY: return true;
 
 		case GETVMCONTEXT: VMContext(&vmargs, &vmresult); return 0;
 		case VMCALL: VMCall(arg0); return 0;
@@ -89,7 +78,7 @@ static char* ui_arenaInfos[MAX_ARENAS];
 
 static char dirlist[DIRLIST_SIZE];
 
-static int UI_ParseInfos(char* buf, int max, char* infos[], qboolean arenas) {
+static int UI_ParseInfos(char* buf, int max, char* infos[], bool arenas) {
 	char* token;
 	int count;
 	char key[MAX_TOKEN_CHARS], info[MAX_INFO_STRING];
@@ -110,14 +99,14 @@ static int UI_ParseInfos(char* buf, int max, char* infos[], qboolean arenas) {
 
 		info[0] = '\0';
 		while(1) {
-			token = COM_ParseExt(&buf, qtrue);
+			token = COM_ParseExt(&buf, true);
 			if(!token[0]) {
 				trap_Print("Unexpected end of info file\n");
 				break;
 			}
 			if(!strcmp(token, "}")) break;
 			Q_strncpyz(key, token, sizeof(key));
-			token = COM_ParseExt(&buf, qfalse);
+			token = COM_ParseExt(&buf, false);
 			if(!token[0]) strcpy(token, "<NULL>");
 			if(!arenas || (!strcmp(key, "map") || !strcmp(key, "type"))) Info_SetValueForKey(info, key, token);
 		}
@@ -150,7 +139,7 @@ static void UI_LoadArenasFromFile(char* filename) {
 	buf[len] = 0;
 	trap_FS_FCloseFile(f);
 
-	ui_numArenas += UI_ParseInfos(buf, MAX_ARENAS - ui_numArenas, &ui_arenaInfos[ui_numArenas], qtrue);
+	ui_numArenas += UI_ParseInfos(buf, MAX_ARENAS - ui_numArenas, &ui_arenaInfos[ui_numArenas], true);
 }
 
 static void UI_LoadArenas(void) {
@@ -190,7 +179,7 @@ static void UI_LoadBotsFromFile(char* filename) {
 	buf[len] = 0;
 	trap_FS_FCloseFile(f);
 
-	ui_numBots += UI_ParseInfos(buf, MAX_BOTS - ui_numBots, &ui_botInfos[ui_numBots], qfalse);
+	ui_numBots += UI_ParseInfos(buf, MAX_BOTS - ui_numBots, &ui_botInfos[ui_numBots], false);
 }
 
 static void UI_LoadBots(void) {
@@ -226,16 +215,16 @@ static char* UI_GetBotInfoByName(const char* name) {
 	return NULL;
 }
 
-static qboolean MapHasGametype(char* typeString, const char* mode) {
+static bool MapHasGametype(char* typeString, const char* mode) {
 	char* token;
 
 	while(1) {
-		token = COM_ParseExt(&typeString, qfalse);
+		token = COM_ParseExt(&typeString, false);
 		if(!typeString || !token[0]) break;
-		if(!Q_stricmp(token, mode)) return qtrue;
+		if(!Q_stricmp(token, mode)) return true;
 	}
 
-	return qfalse;
+	return false;
 }
 
 static char mapListCache[MAX_ARENAS][64];
@@ -355,7 +344,7 @@ static void UI_Status(void) {  // Проверка статуса UI
 	trap_GetClientState(&cstate);
 
 	trap_GetConfigString(CS_SERVERINFO, svinfo, MAX_INFO_STRING);
-	shell.onMap = (strlen(svinfo) <= 0 && cstate.connState < CA_LOADING) ? qfalse : qtrue;
+	shell.onMap = (strlen(svinfo) <= 0 && cstate.connState < CA_LOADING) ? false : true;
 }
 
 static void UI_OpenShell(void) {  // Открытие UI
@@ -368,7 +357,7 @@ static void UI_OpenShell(void) {  // Открытие UI
 static void UI_CloseShell(void) {  // Закрытие UI (состояние сохраняется)
 	trap_Key_SetCatcher(trap_Key_GetCatcher() & ~KEYCATCH_UI);
 	trap_Key_ClearStates();
-	shell.rendered = qfalse;
+	shell.rendered = false;
 }
 
 static void UI_ShellInit(void) {  // Инициализация Shell
@@ -474,7 +463,7 @@ int UI_Shutdown(void) {  // Выключение UI и сохранение со
 		if(!window->created) continue;
 		if(window->style & UI_NOSAVE) continue;
 		if(!strlen(window->nameID)) continue;
-		savedWindow->saved = qtrue;
+		savedWindow->saved = true;
 		StringCopy(savedWindow->nameID, window->nameID, MAX_JS_STRINGSIZE);
 		savedWindow->x = window->x;
 		savedWindow->y = window->y;
@@ -532,43 +521,39 @@ static void UI_ScaleToWindow(window_s* window) {  // Применение мас
 	window->h = window->baseH * window->scaleFactor;
 }
 
-static qboolean UI_ElementIsVisible(element_s* element) {  // Проверка видимости элемента
-	if(element->x > glconfig.vidWidth) return qfalse;      // проверка +X
-	if(element->y > glconfig.vidHeight) return qfalse;     // проверка +Y
-	if((element->x + element->w) < 0) return qfalse;       // проверка -X
-	if((element->y + element->h) < 0) return qfalse;       // проверка -Y
-	return qtrue;
+static bool UI_ElementIsVisible(element_s* element) {  // Проверка видимости элемента
+	if(element->x > glconfig.vidWidth) return false;   // проверка +X
+	if(element->y > glconfig.vidHeight) return false;  // проверка +Y
+	if((element->x + element->w) < 0) return false;    // проверка -X
+	if((element->y + element->h) < 0) return false;    // проверка -Y
+	return true;
 }
 
-static qboolean UI_CursorOnItem(element_s* element) {  // Проверка мыши на элементе
+static bool UI_CursorOnItem(element_s* element) {  // Проверка мыши на элементе
 	window_s* window = (window_s*)element->parentWindow;
 
-	if(shell.cursorX < element->x || shell.cursorY < element->y || shell.cursorX > element->x + element->w || shell.cursorY > element->y + element->h)
-		return qfalse;
-	return qtrue;
+	if(shell.cursorX < element->x || shell.cursorY < element->y || shell.cursorX > element->x + element->w || shell.cursorY > element->y + element->h) return false;
+	return true;
 }
 
-qboolean UI_ItemFocused(element_s* element) {  // Проверка мыши на элементе в окне
+bool UI_ItemFocused(element_s* element) {  // Проверка мыши на элементе в окне
 	window_s* window = (window_s*)element->parentWindow;
 
-	if(shell.focusedWindow != window->id) return qfalse;
-	if(window->focusedElement != element->id) return qfalse;
+	if(shell.focusedWindow != window->id) return false;
+	if(window->focusedElement != element->id) return false;
 
-	return qtrue;
+	return true;
 }
 
-static qboolean UI_CursorInRect(float x, float y, float w, float h) {  // Проверка мыши в области
-	if(shell.cursorX < x || shell.cursorY < y || shell.cursorX > x + w || shell.cursorY > y + h) return qfalse;
-	return qtrue;
+static bool UI_CursorInRect(float x, float y, float w, float h) {  // Проверка мыши в области
+	if(shell.cursorX < x || shell.cursorY < y || shell.cursorX > x + w || shell.cursorY > y + h) return false;
+	return true;
 }
 
-qboolean UI_CursorInWindowRect(window_s* window, float x, float y, float w, float h) {  // Проверка мыши в координатах окна
-	if(shell.activeWindow != window->id) return qfalse;
-	if(shell.cursorX < (x * window->scaleFactor) + window->x || shell.cursorY < (y * window->scaleFactor) + window->y ||
-	   shell.cursorX > ((x * window->scaleFactor) + window->x) + w * window->scaleFactor ||
-	   shell.cursorY > ((y * window->scaleFactor) + window->y) + h * window->scaleFactor)
-		return qfalse;
-	return qtrue;
+bool UI_CursorInWindowRect(window_s* window, float x, float y, float w, float h) {  // Проверка мыши в координатах окна
+	if(shell.activeWindow != window->id) return false;
+	if(shell.cursorX < (x * window->scaleFactor) + window->x || shell.cursorY < (y * window->scaleFactor) + window->y || shell.cursorX > ((x * window->scaleFactor) + window->x) + w * window->scaleFactor || shell.cursorY > ((y * window->scaleFactor) + window->y) + h * window->scaleFactor) return false;
+	return true;
 }
 
 static float UI_SliderValue(float min, float max, float x, float w) {  // Значение слайдера из позиции мыши
@@ -754,22 +739,22 @@ int UI_KeyEvent(int key, int isDown, int isChar) {  // [SAFE] Обработка
 	element_s* element = NULL;
 	window_s* activeWindow = NULL;
 	window_s* focusedWindow = NULL;
-	qboolean keyCapture = qfalse;
+	bool keyCapture = false;
 	int i;
 
 	if(!isDown) {  // Обработка поднятия клавиш
-		if(key == K_MOUSE1) shell.cursorIsDragging = qfalse;
-		if(key == K_ALT) shell.cursorIsMovingDesktop = qfalse;
+		if(key == K_MOUSE1) shell.cursorIsDragging = false;
+		if(key == K_ALT) shell.cursorIsMovingDesktop = false;
 		return 0;
 	}
 
 	if(key == K_MOUSE1) {  // Активация окна при нажатии мыши
-		shell.cursorIsDragging = qtrue;
+		shell.cursorIsDragging = true;
 		shell.activeWindow = shell.focusedWindow;
 		if(shell.activeWindow != NONE) UI_WindowToTop(shell.activeWindow);
 	}
 
-	if(key == K_ALT) shell.cursorIsMovingDesktop = qtrue;
+	if(key == K_ALT) shell.cursorIsMovingDesktop = true;
 
 	if(shell.activeWindow != NONE) activeWindow = &shell.window[shell.activeWindow];
 	if(shell.focusedWindow != NONE) focusedWindow = &shell.window[shell.focusedWindow];
@@ -798,7 +783,7 @@ int UI_KeyEvent(int key, int isDown, int isChar) {  // [SAFE] Обработка
 
 	if(activeWindow != NULL && activeWindow->keyCapture != NONE && key != K_MOUSE1) {  // Выбор элемента
 		element = &activeWindow->element[activeWindow->keyCapture];
-		keyCapture = qtrue;
+		keyCapture = true;
 	} else if(activeWindow != NULL) {
 		if(activeWindow->focusedElement != NONE) element = &activeWindow->element[activeWindow->focusedElement];
 	}
@@ -877,8 +862,8 @@ int UI_KeyEvent(int key, int isDown, int isChar) {  // [SAFE] Обработка
 			} else if(key == K_END) {
 				element->fieldPosition = len;
 			} else if(key == K_DEL) {
-				UI_KeyEvent(K_RIGHTARROW, qtrue, qfalse);
-				UI_KeyEvent(K_BACKSPACE, qtrue, qfalse);
+				UI_KeyEvent(K_RIGHTARROW, true, false);
+				UI_KeyEvent(K_BACKSPACE, true, false);
 			} else if(key == K_ENTER) {
 				if(strlen(element->cvar)) trap_Cvar_Set(element->cvar, element->field);
 				JS_ShellCallback(activeWindow->id, element->id, key);
@@ -938,10 +923,8 @@ int UI_MouseEvent(int dx, int dy) {  // Обработка событий мыш
 			window->x = clamp(window->x + dx, 0 - (window->w * 0.5), glconfig.vidWidth - (window->w * 0.5));
 			window->y = clamp(window->y + dy, 0 + UI_WINDOW_TITLE_HEIGHT, glconfig.vidHeight);
 			if(window->x >= -10 * cgui.scale && window->x <= 10 * cgui.scale && abs(dx) <= 1) window->x = 0;
-			if(window->x >= glconfig.vidWidth - window->w - 10 * cgui.scale && window->x <= glconfig.vidWidth - window->w + 10 * cgui.scale && abs(dx) <= 1)
-				window->x = glconfig.vidWidth - window->w;
-			if(window->y >= glconfig.vidHeight - window->h - 10 * cgui.scale && window->y <= glconfig.vidHeight - window->h + 10 * cgui.scale && abs(dy) <= 1)
-				window->y = glconfig.vidHeight - window->h;
+			if(window->x >= glconfig.vidWidth - window->w - 10 * cgui.scale && window->x <= glconfig.vidWidth - window->w + 10 * cgui.scale && abs(dx) <= 1) window->x = glconfig.vidWidth - window->w;
+			if(window->y >= glconfig.vidHeight - window->h - 10 * cgui.scale && window->y <= glconfig.vidHeight - window->h + 10 * cgui.scale && abs(dy) <= 1) window->y = glconfig.vidHeight - window->h;
 			break;
 		}
 	}
@@ -989,20 +972,13 @@ int UI_MouseEvent(int dx, int dy) {  // Обработка событий мыш
 		}
 	}
 
-	if(trap_Cvar_VariableIntegerValue("ui.control") && shell.cursorIsMovingDesktop && shell.focusedWindow != NONE)
-		UI_Move3DWindow(shell.window[shell.focusedWindow].id, 0.00);
+	if(trap_Cvar_VariableIntegerValue("ui.control") && shell.cursorIsMovingDesktop && shell.focusedWindow != NONE) UI_Move3DWindow(shell.window[shell.focusedWindow].id, 0.00);
 
 	return 0;
 }
 
 static void UI_DrawTip(const char* text) {  // Отрисовка подсказки
-	drawRoundedRect((shell.cursorX - 5) + (9 * cgui.scale),
-	                shell.cursorY - (10 * cgui.scale),
-	                (stringWidth(text, 0.50, 0, 32) + 4) * cgui.scale,
-	                ((FONT_SIZE * 0.50) + 2) * cgui.scale,
-	                0,
-	                cgui.colors[JSC_CONTEXTMENU],
-	                0);
+	drawRoundedRect((shell.cursorX - 5) + (9 * cgui.scale), shell.cursorY - (10 * cgui.scale), (stringWidth(text, 0.50, 0, 32) + 4) * cgui.scale, ((FONT_SIZE * 0.50) + 2) * cgui.scale, 0, cgui.colors[JSC_CONTEXTMENU], 0);
 	drawString(shell.cursorX + (9 * cgui.scale), shell.cursorY - (9 * cgui.scale), text, 0, cgui.colors[JSC_WHITE], 0.50 * cgui.scale, 256);
 }
 
@@ -1040,35 +1016,11 @@ static void UI_Checkbox_Draw(element_s* e) {
 
 	drawRoundedRect(UISTYLE_BACKGROUND);
 	if(e->value) {
-		drawRoundedRect(((e->x + e->w) - e->h * 1.38) - e->margin,
-		                (e->y + (e->h * 0.5)) - e->h * 0.37,
-		                e->h * 1.38,
-		                e->h * 0.74,
-		                999999,
-		                cgui.colors[JSC_ENABLED],
-		                0);
-		drawRoundedRect(((e->x + e->w) - e->h * 0.66) - e->margin,
-		                (e->y + (e->h * 0.5)) - e->h * 0.27,
-		                e->h * 0.54,
-		                e->h * 0.54,
-		                999999,
-		                cgui.colors[JSC_WHITE],
-		                0);
+		drawRoundedRect(((e->x + e->w) - e->h * 1.38) - e->margin, (e->y + (e->h * 0.5)) - e->h * 0.37, e->h * 1.38, e->h * 0.74, 999999, cgui.colors[JSC_ENABLED], 0);
+		drawRoundedRect(((e->x + e->w) - e->h * 0.66) - e->margin, (e->y + (e->h * 0.5)) - e->h * 0.27, e->h * 0.54, e->h * 0.54, 999999, cgui.colors[JSC_WHITE], 0);
 	} else {
-		drawRoundedRect(((e->x + e->w) - e->h * 1.38) - e->margin,
-		                (e->y + (e->h * 0.5)) - e->h * 0.37,
-		                e->h * 1.38,
-		                e->h * 0.74,
-		                999999,
-		                cgui.colors[JSC_DISABLED],
-		                0);
-		drawRoundedRect(((e->x + e->w) - e->h * 1.26) - e->margin,
-		                (e->y + (e->h * 0.5)) - e->h * 0.27,
-		                e->h * 0.54,
-		                e->h * 0.54,
-		                999999,
-		                cgui.colors[JSC_WHITE],
-		                0);
+		drawRoundedRect(((e->x + e->w) - e->h * 1.38) - e->margin, (e->y + (e->h * 0.5)) - e->h * 0.37, e->h * 1.38, e->h * 0.74, 999999, cgui.colors[JSC_DISABLED], 0);
+		drawRoundedRect(((e->x + e->w) - e->h * 1.26) - e->margin, (e->y + (e->h * 0.5)) - e->h * 0.27, e->h * 0.54, e->h * 0.54, 999999, cgui.colors[JSC_WHITE], 0);
 	}
 	drawString(UISTYLE_LEFT_TEXT(e->text));
 }
@@ -1085,27 +1037,9 @@ static void UI_Slider_Draw(element_s* e) {
 	int hoverStyle = UISTYLE_HOVER;
 
 	drawRoundedRect(UISTYLE_BACKGROUND);
-	drawRoundedRect(e->x + (e->w * 0.5),
-	                (e->y + (e->h * 0.5)) - e->h * 0.15,
-	                (e->w * 0.5) - (e->margin * 1.50),
-	                e->h * 0.30,
-	                999999,
-	                cgui.colors[JSC_DISABLED],
-	                0);
-	drawRoundedRect(e->x + (e->w * 0.5),
-	                (e->y + (e->h * 0.5)) - e->h * 0.15,
-	                ((e->w * 0.5) - (e->margin * 1.50)) * UI_SliderProgress(e->value, e->min, e->max),
-	                e->h * 0.30,
-	                999999,
-	                cgui.colors[JSC_ENABLED],
-	                0);
-	drawRoundedRect(((e->x + (e->w * 0.5)) - (e->h * 0.32)) + (((e->w * 0.5) - (e->margin * 1.50)) * UI_SliderProgress(e->value, e->min, e->max)),
-	                (e->y + (e->h * 0.5)) - e->h * 0.32,
-	                e->h * 0.64,
-	                e->h * 0.64,
-	                999999,
-	                cgui.colors[JSC_WHITE],
-	                0);
+	drawRoundedRect(e->x + (e->w * 0.5), (e->y + (e->h * 0.5)) - e->h * 0.15, (e->w * 0.5) - (e->margin * 1.50), e->h * 0.30, 999999, cgui.colors[JSC_DISABLED], 0);
+	drawRoundedRect(e->x + (e->w * 0.5), (e->y + (e->h * 0.5)) - e->h * 0.15, ((e->w * 0.5) - (e->margin * 1.50)) * UI_SliderProgress(e->value, e->min, e->max), e->h * 0.30, 999999, cgui.colors[JSC_ENABLED], 0);
+	drawRoundedRect(((e->x + (e->w * 0.5)) - (e->h * 0.32)) + (((e->w * 0.5) - (e->margin * 1.50)) * UI_SliderProgress(e->value, e->min, e->max)), (e->y + (e->h * 0.5)) - e->h * 0.32, e->h * 0.64, e->h * 0.64, 999999, cgui.colors[JSC_WHITE], 0);
 	drawString(UISTYLE_LEFT_TEXT(e->text));
 	if(UI_ItemFocused(e)) UI_DrawTip(va("%f", e->value));
 }
@@ -1133,7 +1067,7 @@ static void UI_Field_Draw(element_s* e) {
 	window_s* window = (window_s*)e->parentWindow;
 	float text_y = UISTYLE_Y;
 	int hoverStyle = UISTYLE_HOVER;
-	qboolean keyCaptureActive = (shell.window[shell.activeWindow].keyCapture == e->id && window->id == shell.window[shell.activeWindow].id);
+	bool keyCaptureActive = (shell.window[shell.activeWindow].keyCapture == e->id && window->id == shell.window[shell.activeWindow].id);
 
 	if(keyCaptureActive) hoverStyle = 0;
 
@@ -1154,30 +1088,13 @@ static void UI_List_Draw(element_s* e) {
 	for(i = 0; i < e->row && currentItem < totalItems; i++) {
 		for(j = 0; j < e->col && currentItem < totalItems; j++) {
 			if(!strlen(UI_ListGetName(e->listType, e->listSubtype, currentItem))) return;
-			if(UI_CursorInRect(e->x + (e->itemW * j), e->y + (e->itemH * i), e->itemW, e->itemH) && shell.focusedWindow == window->id)
-				drawRoundedRect(e->x + (e->itemW * j), e->y + (e->itemH * i), e->itemW, e->itemH, e->corner, cgui.colors[JSC_CONTEXTMENU], 0);
+			if(UI_CursorInRect(e->x + (e->itemW * j), e->y + (e->itemH * i), e->itemW, e->itemH) && shell.focusedWindow == window->id) drawRoundedRect(e->x + (e->itemW * j), e->y + (e->itemH * i), e->itemW, e->itemH, e->corner, cgui.colors[JSC_CONTEXTMENU], 0);
 			if(e->listStyle == LSTYLE_GRID) {
-				drawShader((e->x + e->margin4[0]) + (e->itemW * j),
-				           (e->y + e->margin4[1]) + (e->itemH * i),
-				           e->itemW - (e->margin4[2] + e->margin4[0]),
-				           e->itemH - (e->margin4[3] + e->margin4[1]),
-				           UI_ListGetIcon(e->listType, e->listSubtype, currentItem));
-				drawString((e->x + (e->itemW * 0.50)) + (e->itemW * j),
-				           e->y + (e->itemH * i) + (e->itemH * 0.85),
-				           UI_ListGetName(e->listType, e->listSubtype, currentItem),
-				           FONTSTYLE_CENTER | e->style,
-				           cgui.colors[e->colorText],
-				           e->scale,
-				           (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
+				drawShader((e->x + e->margin4[0]) + (e->itemW * j), (e->y + e->margin4[1]) + (e->itemH * i), e->itemW - (e->margin4[2] + e->margin4[0]), e->itemH - (e->margin4[3] + e->margin4[1]), UI_ListGetIcon(e->listType, e->listSubtype, currentItem));
+				drawString((e->x + (e->itemW * 0.50)) + (e->itemW * j), e->y + (e->itemH * i) + (e->itemH * 0.85), UI_ListGetName(e->listType, e->listSubtype, currentItem), FONTSTYLE_CENTER | e->style, cgui.colors[e->colorText], e->scale, (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
 			}
 			if(e->listStyle == LSTYLE_LIST) {
-				drawString((e->x + e->margin) + (e->itemW * j),
-				           e->y + (e->itemH - (FONT_SIZE * e->scale)) * 0.5 + (i * e->itemH),
-				           UI_ListGetName(e->listType, e->listSubtype, currentItem),
-				           FONTSTYLE_LEFT | e->style,
-				           cgui.colors[e->colorText],
-				           e->scale,
-				           (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
+				drawString((e->x + e->margin) + (e->itemW * j), e->y + (e->itemH - (FONT_SIZE * e->scale)) * 0.5 + (i * e->itemH), UI_ListGetName(e->listType, e->listSubtype, currentItem), FONTSTYLE_LEFT | e->style, cgui.colors[e->colorText], e->scale, (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
 			}
 			currentItem++;
 		}
@@ -1208,64 +1125,24 @@ static void UI_ListFiles_Draw(element_s* e) {
 				continue;
 			}
 			COM_StripExtension(file, nameWithoutExt, MAX_JS_STRINGSIZE);
-			if(UI_CursorInRect(e->x + (e->itemW * j), e->y + (e->itemH * i), e->itemW, e->itemH) && shell.focusedWindow == window->id)
-				drawRoundedRect(e->x + (e->itemW * j), e->y + (e->itemH * i), e->itemW, e->itemH, e->corner, cgui.colors[JSC_CONTEXTMENU], 0);
+			if(UI_CursorInRect(e->x + (e->itemW * j), e->y + (e->itemH * i), e->itemW, e->itemH) && shell.focusedWindow == window->id) drawRoundedRect(e->x + (e->itemW * j), e->y + (e->itemH * i), e->itemW, e->itemH, e->corner, cgui.colors[JSC_CONTEXTMENU], 0);
 			if(e->listStyle == LSTYLE_GRID) {
 				if(!strcmp(window->fileList[e->listID].ext, "/")) {
-					drawShaderInFolder((e->x + e->margin4[0]) + (e->itemW * j),
-					                   (e->y + e->margin4[1]) + (e->itemH * i),
-					                   e->itemW - (e->margin4[2] + e->margin4[0]),
-					                   e->itemH - (e->margin4[3] + e->margin4[1]),
-					                   va("%s%s", window->fileList[e->listID].drawDir, file));
+					drawShaderInFolder((e->x + e->margin4[0]) + (e->itemW * j), (e->y + e->margin4[1]) + (e->itemH * i), e->itemW - (e->margin4[2] + e->margin4[0]), e->itemH - (e->margin4[3] + e->margin4[1]), va("%s%s", window->fileList[e->listID].drawDir, file));
 				} else {
-					if(e->listContent == LCONTENT_SHADER)
-						drawShader((e->x + e->margin4[0]) + (e->itemW * j),
-						           (e->y + e->margin4[1]) + (e->itemH * i),
-						           e->itemW - (e->margin4[2] + e->margin4[0]),
-						           e->itemH - (e->margin4[3] + e->margin4[1]),
-						           va("%s%s", window->fileList[e->listID].drawDir, nameWithoutExt));
-					if(e->listContent == LCONTENT_MODEL)
-						drawModel((e->x + e->margin4[0]) + (e->itemW * j),
-						          (e->y + e->margin4[1]) + (e->itemH * i),
-						          e->itemW - (e->margin4[2] + e->margin4[0]),
-						          e->itemH - (e->margin4[3] + e->margin4[1]),
-						          va("%s%s", window->fileList[e->listID].drawDir, nameWithoutExt),
-						          75.0f);
+					if(e->listContent == LCONTENT_SHADER) drawShader((e->x + e->margin4[0]) + (e->itemW * j), (e->y + e->margin4[1]) + (e->itemH * i), e->itemW - (e->margin4[2] + e->margin4[0]), e->itemH - (e->margin4[3] + e->margin4[1]), va("%s%s", window->fileList[e->listID].drawDir, nameWithoutExt));
+					if(e->listContent == LCONTENT_MODEL) drawModel((e->x + e->margin4[0]) + (e->itemW * j), (e->y + e->margin4[1]) + (e->itemH * i), e->itemW - (e->margin4[2] + e->margin4[0]), e->itemH - (e->margin4[3] + e->margin4[1]), va("%s%s", window->fileList[e->listID].drawDir, nameWithoutExt), 75.0f);
 				}
 				if(strcmp(window->fileList[e->listID].ext, "/"))
-					drawString((e->x + (e->itemW * 0.50)) + (e->itemW * j),
-					           e->y + (e->itemH * i) + (e->itemH * 0.85),
-					           nameWithoutExt,
-					           FONTSTYLE_CENTER | e->style,
-					           cgui.colors[e->colorText],
-					           e->scale,
-					           (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
+					drawString((e->x + (e->itemW * 0.50)) + (e->itemW * j), e->y + (e->itemH * i) + (e->itemH * 0.85), nameWithoutExt, FONTSTYLE_CENTER | e->style, cgui.colors[e->colorText], e->scale, (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
 				else
-					drawString((e->x + (e->itemW * 0.50)) + (e->itemW * j),
-					           e->y + (e->itemH * i) + (e->itemH * 0.85),
-					           file,
-					           FONTSTYLE_CENTER | e->style,
-					           cgui.colors[e->colorText],
-					           e->scale,
-					           (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
+					drawString((e->x + (e->itemW * 0.50)) + (e->itemW * j), e->y + (e->itemH * i) + (e->itemH * 0.85), file, FONTSTYLE_CENTER | e->style, cgui.colors[e->colorText], e->scale, (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
 			}
 			if(e->listStyle == LSTYLE_LIST) {
 				if(strcmp(window->fileList[e->listID].ext, "/"))
-					drawString((e->x + e->margin) + (e->itemW * j),
-					           e->y + (e->itemH - (FONT_SIZE * e->scale)) * 0.5 + (i * e->itemH),
-					           nameWithoutExt,
-					           FONTSTYLE_LEFT | e->style,
-					           cgui.colors[e->colorText],
-					           e->scale,
-					           (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
+					drawString((e->x + e->margin) + (e->itemW * j), e->y + (e->itemH - (FONT_SIZE * e->scale)) * 0.5 + (i * e->itemH), nameWithoutExt, FONTSTYLE_LEFT | e->style, cgui.colors[e->colorText], e->scale, (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
 				else
-					drawString((e->x + e->margin) + (e->itemW * j),
-					           e->y + (e->itemH - (FONT_SIZE * e->scale)) * 0.5 + (i * e->itemH),
-					           file,
-					           FONTSTYLE_LEFT | e->style,
-					           cgui.colors[e->colorText],
-					           e->scale,
-					           (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
+					drawString((e->x + e->margin) + (e->itemW * j), e->y + (e->itemH - (FONT_SIZE * e->scale)) * 0.5 + (i * e->itemH), file, FONTSTYLE_LEFT | e->style, cgui.colors[e->colorText], e->scale, (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
 			}
 			currentItem++;
 			file += strlen(file) + 1;
@@ -1276,17 +1153,10 @@ static void UI_ListFiles_Draw(element_s* e) {
 static void UI_WindowButton_Draw(element_s* e) {
 	window_s* window = (window_s*)e->parentWindow;
 
-	if((!(trap_Key_GetCatcher() & KEYCATCH_UI) && !window->linked) || (!(trap_Key_GetCatcher() & KEYCATCH_UI) && window->linked && window->worldDisable))
-		return;
+	if((!(trap_Key_GetCatcher() & KEYCATCH_UI) && !window->linked) || (!(trap_Key_GetCatcher() & KEYCATCH_UI) && window->linked && window->worldDisable)) return;
 
 	drawRoundedRect(e->x, e->y, e->w, e->h, e->corner, cgui.colors[e->colorBackground], e->style);
-	drawString(e->x + (e->w * 0.456f),
-	           (e->y + (e->h * 0.525)) - ((FONT_SIZE * 0.50) * e->scale),
-	           e->text,
-	           UI_CENTER | FONTSTYLE_BOLD,
-	           cgui.colors[e->colorText],
-	           e->scale,
-	           256);
+	drawString(e->x + (e->w * 0.456f), (e->y + (e->h * 0.525)) - ((FONT_SIZE * 0.50) * e->scale), e->text, UI_CENTER | FONTSTYLE_BOLD, cgui.colors[e->colorText], e->scale, 256);
 }
 
 static void UI_ElementRender(int windowID, int elementID) {  // Отрисовка элемента
@@ -1327,7 +1197,7 @@ static void UI_Draw3DWindow(float x, float y, float z, int windowID, float max) 
 	float size;
 	float rX, rY, rScale;
 	trace_t trace;
-	qboolean blocked = qfalse;
+	bool blocked = false;
 
 	viewOrg[0] = trap_Cvar_VariableValue("cgame.vieworg[0]");
 	viewOrg[1] = trap_Cvar_VariableValue("cgame.vieworg[1]");
@@ -1353,7 +1223,7 @@ static void UI_Draw3DWindow(float x, float y, float z, int windowID, float max) 
 	VectorSubtract(worldPos, viewOrg, dir);
 
 	// trap_CM_BoxTrace(&trace, viewOrg, worldPos, vec3_origin, vec3_origin, 0, CONTENTS_SOLID);
-	// if(trace.fraction < 1.0f) blocked = qtrue;
+	// if(trace.fraction < 1.0f) blocked = true;
 
 	localX = -DotProduct(dir, viewAxis[1]);
 	localY = DotProduct(dir, viewAxis[2]);
@@ -1386,9 +1256,9 @@ static void UI_Draw3DWindow(float x, float y, float z, int windowID, float max) 
 	window->x -= window->w * 0.5f;
 	window->y -= window->h * 0.5f;
 	if(window->h < glconfig.vidHeight * 0.15)
-		window->worldDisable = qtrue;
+		window->worldDisable = true;
 	else
-		window->worldDisable = qfalse;
+		window->worldDisable = false;
 
 	if(blocked)
 		alphaRoundedRect = 0.25;
@@ -1396,13 +1266,7 @@ static void UI_Draw3DWindow(float x, float y, float z, int windowID, float max) 
 		alphaRoundedRect = 0.90;
 
 	if(window->y == UI_WINDOW_TITLE_HEIGHT) window->y -= UI_WINDOW_TITLE_HEIGHT;
-	drawRoundedRect(window->x,
-	                window->y,
-	                window->w,
-	                window->h,
-	                shell.windowCorner * shell.scale,
-	                cgui.colors[window->colorBackground],
-	                NO_TOP_LEFT | NO_TOP_RIGHT | NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT);
+	drawRoundedRect(window->x, window->y, window->w, window->h, shell.windowCorner * shell.scale, cgui.colors[window->colorBackground], NO_TOP_LEFT | NO_TOP_RIGHT | NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT);
 	if(window->h > glconfig.vidHeight * 0.025 && !blocked)
 		for(i = 0; i < WINDOW_MAX_ELEMENTS; i++) UI_ElementRender(windowID, i);
 	if(window->y == 0) window->y += UI_WINDOW_TITLE_HEIGHT;
@@ -1414,8 +1278,7 @@ static void UI_Draw3DWindow(float x, float y, float z, int windowID, float max) 
 		shell.cursorY = glconfig.vidHeight * 0.50;
 	}
 
-	if(window->h > glconfig.vidHeight * 0.025 &&
-	   UI_CursorInRect(window->x, window->y - UI_WINDOW_TITLE_HEIGHT, window->w, window->h + UI_WINDOW_TITLE_HEIGHT)) {
+	if(window->h > glconfig.vidHeight * 0.025 && UI_CursorInRect(window->x, window->y - UI_WINDOW_TITLE_HEIGHT, window->w, window->h + UI_WINDOW_TITLE_HEIGHT)) {
 		if(window->keyboardCapture)
 			trap_Cvar_Set("ui.control", "2");
 		else
@@ -1457,28 +1320,10 @@ static void UI_ShellDraw(void) {  // Отрисовка всех окон и п�
 			float titleHeight = 0;
 			if(!(window->style & UI_NOTITLE)) titleHeight = th;
 			if(shell.windowOutline && shell.windowColoredOutline && window->colorBackground != JSC_EMPTY)
-				drawRoundedRect(window->x - 1,
-				                (window->y - titleHeight) - 1,
-				                window->w + 2,
-				                (window->h + titleHeight) + 2,
-				                tc,
-				                cgui.colors[JSC_ENABLED],
-				                NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT);
+				drawRoundedRect(window->x - 1, (window->y - titleHeight) - 1, window->w + 2, (window->h + titleHeight) + 2, tc, cgui.colors[JSC_ENABLED], NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT);
 			else if(shell.windowOutline && window->colorBackground != JSC_EMPTY)
-				drawRoundedRect(window->x - 1,
-				                (window->y - titleHeight) - 1,
-				                window->w + 2,
-				                (window->h + titleHeight) + 2,
-				                tc,
-				                cgui.colors[JSC_WINDOWBUTTON],
-				                NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT);
-			drawRoundedRect(window->x,
-			                window->y,
-			                window->w,
-			                window->h,
-			                tc,
-			                cgui.colors[window->colorBackground],
-			                NO_TOP_LEFT | NO_TOP_RIGHT | NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT);
+				drawRoundedRect(window->x - 1, (window->y - titleHeight) - 1, window->w + 2, (window->h + titleHeight) + 2, tc, cgui.colors[JSC_WINDOWBUTTON], NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT);
+			drawRoundedRect(window->x, window->y, window->w, window->h, tc, cgui.colors[window->colorBackground], NO_TOP_LEFT | NO_TOP_RIGHT | NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT);
 			if(shell.debug) drawOutline(window->x, window->y, window->w, window->h, 2, cgui.colors[JSC_DEBUG2]);
 		}
 		if(!(window->style & UI_NOTITLE)) {
@@ -1486,21 +1331,10 @@ static void UI_ShellDraw(void) {  // Отрисовка всех окон и п�
 			if(window->x == 0 && window->y == th) adaptiveStyle += NO_TOP_LEFT;
 			if(window->x + window->w == glconfig.vidWidth && window->y == th) adaptiveStyle += NO_TOP_RIGHT;
 			drawRoundedRect(window->x, window->y - th, window->w, th, tc, cgui.colors[window->colorTitle], NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT | adaptiveStyle);
-			drawString(window->x + (window->w * 0.5),
-			           (window->y - th) + (th - FONT_SIZE * (0.75 * shell.scale)) * 0.5,
-			           window->name,
-			           FONTSTYLE_CENTER | FONTSTYLE_BOLD,
-			           cgui.colors[window->colorText],
-			           0.75 * shell.scale,
-			           256);
+			drawString(window->x + (window->w * 0.5), (window->y - th) + (th - FONT_SIZE * (0.75 * shell.scale)) * 0.5, window->name, FONTSTYLE_CENTER | FONTSTYLE_BOLD, cgui.colors[window->colorText], 0.75 * shell.scale, 256);
 		}
 		for(j = 0; j < WINDOW_MAX_ELEMENTS; j++) UI_ElementRender(shell.zOrder[i], j);
-		if(!(window->style & UI_NOTITLE))
-			drawShader(clamp(window->x + (8 * shell.scale), 0, glconfig.vidWidth - (th * 0.70)),
-			           clamp(window->y - (th * 0.85), 0, glconfig.vidHeight - (th * 0.70)),
-			           th * 0.70,
-			           th * 0.70,
-			           window->icon);
+		if(!(window->style & UI_NOTITLE)) drawShader(clamp(window->x + (8 * shell.scale), 0, glconfig.vidWidth - (th * 0.70)), clamp(window->y - (th * 0.85), 0, glconfig.vidHeight - (th * 0.70)), th * 0.70, th * 0.70, window->icon);
 	}
 
 	if(activeWindow->keyCapture >= 0) UI_DrawTip("Press any key, ESC for cancel");
@@ -1520,7 +1354,7 @@ static void UI_ShellRender(void) {  // Отрисовка UI
 int UI_Refresh(void) {  // Обновление UI (отрисовка кадра)
 	UI_ShellRender();
 	drawShader(shell.cursorX - (12 * cgui.scale), shell.cursorY - (12 * cgui.scale), 24 * cgui.scale, 24 * cgui.scale, "menu/cursor");
-	shell.rendered = qtrue;
+	shell.rendered = true;
 
 	return 0;
 }
@@ -1541,26 +1375,26 @@ static char* UI_Argv(int arg) {  // Буфер аргумента
 	return buffer;
 }
 
-qboolean UI_ConsoleCommand(void) {  // Команда консоли из движка
+bool UI_ConsoleCommand(void) {  // Команда консоли из движка
 	char* cmd;
 	cmd = UI_Argv(0);
 
 	if(Q_stricmp(cmd, "shell.open") == 0) {
 		UI_OpenShell();
-		return qtrue;
+		return true;
 	}
 
 	if(Q_stricmp(cmd, "shell.restart") == 0) {
 		UI_HotReload();
-		return qtrue;
+		return true;
 	}
 
 	if(Q_stricmp(cmd, "shell.close") == 0) {
 		UI_CloseShell();
-		return qtrue;
+		return true;
 	}
 
-	return qfalse;
+	return false;
 }
 
 int UI_DrawConnectScreen(void) {  // Экран подключение к серверу (до фактического подключения)
@@ -1592,28 +1426,10 @@ int UI_DrawConnectScreen(void) {  // Экран подключение к сер
 				if(window->pinned) {
 					float titleHeight = 0;
 					if(shell.windowOutline && shell.windowColoredOutline && window->colorBackground != JSC_EMPTY)
-						drawRoundedRect(window->x - 1,
-						                (window->y - titleHeight) - 1,
-						                window->w + 2,
-						                (window->h + titleHeight) + 2,
-						                tc,
-						                cgui.colors[JSC_ENABLED],
-						                NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT | NO_TOP_LEFT | NO_TOP_RIGHT);
+						drawRoundedRect(window->x - 1, (window->y - titleHeight) - 1, window->w + 2, (window->h + titleHeight) + 2, tc, cgui.colors[JSC_ENABLED], NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT | NO_TOP_LEFT | NO_TOP_RIGHT);
 					else if(shell.windowOutline && window->colorBackground != JSC_EMPTY)
-						drawRoundedRect(window->x - 1,
-						                (window->y - titleHeight) - 1,
-						                window->w + 2,
-						                (window->h + titleHeight) + 2,
-						                tc,
-						                cgui.colors[JSC_WINDOWBUTTON],
-						                NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT | NO_TOP_LEFT | NO_TOP_RIGHT);
-					drawRoundedRect(window->x,
-					                window->y,
-					                window->w,
-					                window->h,
-					                tc,
-					                cgui.colors[window->colorBackground],
-					                NO_TOP_LEFT | NO_TOP_RIGHT | NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT);
+						drawRoundedRect(window->x - 1, (window->y - titleHeight) - 1, window->w + 2, (window->h + titleHeight) + 2, tc, cgui.colors[JSC_WINDOWBUTTON], NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT | NO_TOP_LEFT | NO_TOP_RIGHT);
+					drawRoundedRect(window->x, window->y, window->w, window->h, tc, cgui.colors[window->colorBackground], NO_TOP_LEFT | NO_TOP_RIGHT | NO_BOTTOM_LEFT | NO_BOTTOM_RIGHT);
 					if(shell.debug) drawOutline(window->x, window->y, window->w, window->h, 2, cgui.colors[JSC_DEBUG2]);
 				}
 				for(j = 0; j < WINDOW_MAX_ELEMENTS; j++)
@@ -1623,12 +1439,7 @@ int UI_DrawConnectScreen(void) {  // Экран подключение к сер
 		}
 
 		if(shell.focusedWindow != NONE && shell.window[shell.focusedWindow].linked) cursorScale = shell.window[shell.focusedWindow].worldCursorScale;
-		if(trap_Cvar_VariableIntegerValue("ui.control"))
-			drawShader(shell.cursorX - (12 * cgui.scale) * cursorScale,
-			           shell.cursorY - (12 * cgui.scale) * cursorScale,
-			           (24 * cgui.scale) * cursorScale,
-			           (24 * cgui.scale) * cursorScale,
-			           "menu/cursor");
+		if(trap_Cvar_VariableIntegerValue("ui.control")) drawShader(shell.cursorX - (12 * cgui.scale) * cursorScale, shell.cursorY - (12 * cgui.scale) * cursorScale, (24 * cgui.scale) * cursorScale, (24 * cgui.scale) * cursorScale, "menu/cursor");
 	}
 
 	for(i = 0; i < SHELL_MAX_WINDOWS; i++) {
@@ -1639,55 +1450,18 @@ int UI_DrawConnectScreen(void) {  // Экран подключение к сер
 	if(cstate.connState >= CA_ACTIVE || cstate.connState == CA_DISCONNECTED) return 0;
 
 	if(cstate.connState > CA_CONNECTED)
-		drawRoundedRect((glconfig.vidWidth * 0.50) - (glconfig.vidWidth * 0.08),
-		                0,
-		                glconfig.vidWidth * 0.16,
-		                glconfig.vidWidth * 0.015,
-		                shell.windowCorner,
-		                cgui.colors[JSC_LOADINGISLAND],
-		                NO_TOP_LEFT | NO_TOP_RIGHT);
+		drawRoundedRect((glconfig.vidWidth * 0.50) - (glconfig.vidWidth * 0.08), 0, glconfig.vidWidth * 0.16, glconfig.vidWidth * 0.015, shell.windowCorner, cgui.colors[JSC_LOADINGISLAND], NO_TOP_LEFT | NO_TOP_RIGHT);
 	else
-		drawRoundedRect((glconfig.vidWidth * 0.50) - (glconfig.vidWidth * 0.08),
-		                0,
-		                glconfig.vidWidth * 0.16,
-		                glconfig.vidWidth * 0.03,
-		                shell.windowCorner,
-		                cgui.colors[JSC_LOADINGISLAND],
-		                NO_TOP_LEFT | NO_TOP_RIGHT);
+		drawRoundedRect((glconfig.vidWidth * 0.50) - (glconfig.vidWidth * 0.08), 0, glconfig.vidWidth * 0.16, glconfig.vidWidth * 0.03, shell.windowCorner, cgui.colors[JSC_LOADINGISLAND], NO_TOP_LEFT | NO_TOP_RIGHT);
 
-	drawString(glconfig.vidWidth * 0.5,
-	           glconfig.vidHeight * 0.005,
-	           "Connecting to server...",
-	           FONTSTYLE_CENTER,
-	           cgui.colors[JSC_WHITE],
-	           0.35 * cgui.scale,
-	           256);
+	drawString(glconfig.vidWidth * 0.5, glconfig.vidHeight * 0.005, "Connecting to server...", FONTSTYLE_CENTER, cgui.colors[JSC_WHITE], 0.35 * cgui.scale, 256);
 
-	if(cstate.connState < CA_CONNECTED)
-		drawString(glconfig.vidWidth * 0.5, glconfig.vidHeight * 0.03, cstate.messageString, FONTSTYLE_CENTER, color_white, 0.35 * cgui.scale, 256);
+	if(cstate.connState < CA_CONNECTED) drawString(glconfig.vidWidth * 0.5, glconfig.vidHeight * 0.03, cstate.messageString, FONTSTYLE_CENTER, color_white, 0.35 * cgui.scale, 256);
 
 	switch(cstate.connState) {
-		case CA_CONNECTING:
-			drawString(glconfig.vidWidth * 0.5,
-			           glconfig.vidHeight * 0.03,
-			           va("Awaiting challenge...%i", cstate.connectPacketCount),
-			           FONTSTYLE_CENTER,
-			           color_white,
-			           0.35 * cgui.scale,
-			           256);
-			break;
-		case CA_CHALLENGING:
-			drawString(glconfig.vidWidth * 0.5,
-			           glconfig.vidHeight * 0.03,
-			           va("Awaiting connection...%i", cstate.connectPacketCount),
-			           FONTSTYLE_CENTER,
-			           color_white,
-			           0.35 * cgui.scale,
-			           256);
-			break;
-		case CA_CONNECTED:
-			drawString(glconfig.vidWidth * 0.5, glconfig.vidHeight * 0.03, "Awaiting gamestate...", FONTSTYLE_CENTER, color_white, 0.35 * cgui.scale, 256);
-			break;
+		case CA_CONNECTING: drawString(glconfig.vidWidth * 0.5, glconfig.vidHeight * 0.03, va("Awaiting challenge...%i", cstate.connectPacketCount), FONTSTYLE_CENTER, color_white, 0.35 * cgui.scale, 256); break;
+		case CA_CHALLENGING: drawString(glconfig.vidWidth * 0.5, glconfig.vidHeight * 0.03, va("Awaiting connection...%i", cstate.connectPacketCount), FONTSTYLE_CENTER, color_white, 0.35 * cgui.scale, 256); break;
+		case CA_CONNECTED: drawString(glconfig.vidWidth * 0.5, glconfig.vidHeight * 0.03, "Awaiting gamestate...", FONTSTYLE_CENTER, color_white, 0.35 * cgui.scale, 256); break;
 		case CA_UNINITIALIZED:
 		case CA_DISCONNECTED:
 		case CA_AUTHORIZING:
@@ -1743,11 +1517,11 @@ int UI_Window(int windowID, char* nameID, char* name, char* icon, int style, flo
 		return id;
 	}
 
-	shell.window[id].created = qtrue;
-	shell.window[id].minimized = qfalse;
-	shell.window[id].pinned = qfalse;
-	shell.window[id].linked = qfalse;
-	shell.window[id].keyboardCapture = qfalse;
+	shell.window[id].created = true;
+	shell.window[id].minimized = false;
+	shell.window[id].pinned = false;
+	shell.window[id].linked = false;
+	shell.window[id].keyboardCapture = false;
 	shell.window[id].id = id;
 	StringCopy(shell.window[id].nameID, nameID, MAX_JS_STRINGSIZE);
 	StringCopy(shell.window[id].name, name, MAX_JS_STRINGSIZE);
@@ -1766,7 +1540,7 @@ int UI_Window(int windowID, char* nameID, char* name, char* icon, int style, flo
 	shell.window[id].worldY = 0;
 	shell.window[id].worldZ = -20;
 	shell.window[id].worldScale = 1.00;
-	shell.window[id].worldDisable = qfalse;
+	shell.window[id].worldDisable = false;
 	UI_WindowToTop(id);
 	return id;
 }
@@ -1789,7 +1563,7 @@ static int UI_GenericItem(int windowID, int elementID, int type, float x, float 
 		return id;
 	}
 
-	shell.window[windowID].element[id].created = qtrue;
+	shell.window[windowID].element[id].created = true;
 	shell.window[windowID].element[id].type = type;
 	shell.window[windowID].element[id].id = id;
 	shell.window[windowID].element[id].parentWindow = &shell.window[windowID];
@@ -1836,20 +1610,7 @@ int UI_Checkbox(int windowID, int elementID, float x, float y, float w, float h,
 	return id;
 }
 
-int UI_Slider(int windowID,
-              int elementID,
-              float x,
-              float y,
-              float w,
-              float h,
-              char* text,
-              int style,
-              int color,
-              float scale,
-              char* cvar,
-              float min,
-              float max,
-              int mode) {
+int UI_Slider(int windowID, int elementID, float x, float y, float w, float h, char* text, int style, int color, float scale, char* cvar, float min, float max, int mode) {
 	int id = UI_GenericItem(windowID, elementID, ETYPE_SLIDER, x, y, w, h, text, style, color, scale);
 	StringCopy(shell.window[windowID].element[id].cvar, cvar, MAX_JS_STRINGSIZE);
 	shell.window[windowID].element[id].value = trap_Cvar_VariableValue(shell.window[windowID].element[id].cvar);
@@ -1878,8 +1639,7 @@ int UI_Spin(int windowID, int elementID, float x, float y, float w, float h, cha
 		shell.window[windowID].element[id].value = trap_Cvar_VariableValue(shell.window[windowID].element[id].cvar);
 	} else if(mode == EMODE_STRING) {
 		for(i = 0; i < shell.window[windowID].element[id].optionsCount; i++) {
-			if(!strcmp(trap_Cvar_VariableString(shell.window[windowID].element[id].cvar), shell.window[windowID].element[id].options[i]))
-				shell.window[windowID].element[id].value = i;
+			if(!strcmp(trap_Cvar_VariableString(shell.window[windowID].element[id].cvar), shell.window[windowID].element[id].options[i])) shell.window[windowID].element[id].value = i;
 		}
 	}
 	return id;

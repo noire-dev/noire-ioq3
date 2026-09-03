@@ -61,7 +61,7 @@ void P_DamageFeedback(gentity_t* player) {
 		client->ps.damagePitch = 255;
 		client->ps.damageYaw = 255;
 
-		client->damage_fromWorld = qfalse;
+		client->damage_fromWorld = false;
 	} else {
 		vectoangles(client->damage_from, angles);
 		client->ps.damagePitch = angles[PITCH] / 360.0 * 256;
@@ -93,7 +93,7 @@ Check for lava / slime contents and drowning
 =============
 */
 void P_WorldEffects(gentity_t* ent) {
-	qboolean envirosuit;
+	bool envirosuit;
 	int waterlevel;
 
 	if(ent->client->noclip) {
@@ -346,29 +346,29 @@ void SpectatorThink(gentity_t* ent, usercmd_t* ucmd) {
 =================
 ClientInactivityTimer
 
-Returns qfalse if the client is dropped
+Returns false if the client is dropped
 =================
 */
-qboolean ClientInactivityTimer(gclient_t* client) {
+bool ClientInactivityTimer(gclient_t* client) {
 	if(!g_inactivity.integer) {
 		// give everyone some time, so if the operator sets g_inactivity during
 		// gameplay, everyone isn't kicked
 		client->inactivityTime = level.time + 60 * 1000;
-		client->inactivityWarning = qfalse;
+		client->inactivityWarning = false;
 	} else if(client->pers.cmd.forwardmove || client->pers.cmd.rightmove || client->pers.cmd.upmove || (client->pers.cmd.buttons & BUTTON_ATTACK)) {
 		client->inactivityTime = level.time + g_inactivity.integer * 1000;
-		client->inactivityWarning = qfalse;
+		client->inactivityWarning = false;
 	} else if(!client->pers.localClient) {
 		if(level.time > client->inactivityTime) {
 			trap_DropClient(client - level.clients, "Dropped due to inactivity");
-			return qfalse;
+			return false;
 		}
 		if(level.time > client->inactivityTime - 10000 && !client->inactivityWarning) {
-			client->inactivityWarning = qtrue;
+			client->inactivityWarning = true;
 			trap_SendServerCommand(client - level.clients, "cp \"Ten seconds until inactivity drop!\n\"");
 		}
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -444,17 +444,7 @@ void ClientTimerActions(gentity_t* ent, int msec) {
 #ifdef MISSIONPACK
 	if(bg_itemlist[client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_AMMOREGEN) {
 		int w, max, inc, t, i;
-		int weapList[] = {WP_MACHINEGUN,
-		                  WP_SHOTGUN,
-		                  WP_GRENADE_LAUNCHER,
-		                  WP_ROCKET_LAUNCHER,
-		                  WP_LIGHTNING,
-		                  WP_RAILGUN,
-		                  WP_PLASMAGUN,
-		                  WP_BFG,
-		                  WP_NAILGUN,
-		                  WP_PROX_LAUNCHER,
-		                  WP_CHAINGUN};
+		int weapList[] = {WP_MACHINEGUN, WP_SHOTGUN, WP_GRENADE_LAUNCHER, WP_ROCKET_LAUNCHER, WP_LIGHTNING, WP_RAILGUN, WP_PLASMAGUN, WP_BFG, WP_NAILGUN, WP_PROX_LAUNCHER, WP_CHAINGUN};
 		int weapCount = ARRAY_LEN(weapList);
 		//
 		for(i = 0; i < weapCount; i++) {
@@ -572,7 +562,7 @@ void ClientEvents(gentity_t* ent, int oldEventSequence) {
 	gclient_t* client;
 	int damage;
 	vec3_t origin, angles;
-	//	qboolean	fired;
+	//	bool	fired;
 	gitem_t* item;
 	gentity_t* drop;
 
@@ -653,7 +643,7 @@ void ClientEvents(gentity_t* ent, int oldEventSequence) {
 					}
 				}
 #endif
-				SelectSpawnPoint(ent->client->ps.origin, origin, angles, qfalse);
+				SelectSpawnPoint(ent->client->ps.origin, origin, angles, false);
 				TeleportPlayer(ent, origin, angles);
 				break;
 
@@ -718,9 +708,9 @@ static int StuckInOtherClient(gentity_t* ent) {
 		if(ent2->r.absmax[0] < ent->r.absmin[0]) continue;
 		if(ent2->r.absmax[1] < ent->r.absmin[1]) continue;
 		if(ent2->r.absmax[2] < ent->r.absmin[2]) continue;
-		return qtrue;
+		return true;
 	}
-	return qfalse;
+	return false;
 }
 #endif
 
@@ -748,7 +738,7 @@ void SendPendingPredictableEvents(playerState_t* ps) {
 		// create temporary entity for event
 		t = G_TempEntity(ps->origin, event);
 		number = t->s.number;
-		BG_PlayerStateToEntityState(ps, &t->s, qtrue);
+		BG_PlayerStateToEntityState(ps, &t->s, true);
 		t->s.number = number;
 		t->s.eType = ET_EVENTS + event;
 		t->s.eFlags |= EF_PLAYER_EVENT;
@@ -944,14 +934,14 @@ void ClientThink_real(gentity_t* ent) {
 		ent->eventTime = level.time;
 	}
 	if(g_smoothClients.integer) {
-		BG_PlayerStateToEntityStateExtraPolate(&ent->client->ps, &ent->s, ent->client->ps.commandTime, qtrue);
+		BG_PlayerStateToEntityStateExtraPolate(&ent->client->ps, &ent->s, ent->client->ps.commandTime, true);
 	} else {
-		BG_PlayerStateToEntityState(&ent->client->ps, &ent->s, qtrue);
+		BG_PlayerStateToEntityState(&ent->client->ps, &ent->s, true);
 	}
 	SendPendingPredictableEvents(&ent->client->ps);
 
 	if(!(ent->client->ps.eFlags & EF_FIRING)) {
-		client->fireHeld = qfalse;  // for grapple
+		client->fireHeld = false;  // for grapple
 	}
 
 	// use the snapped origin for linking so it matches client predicted versions
@@ -1170,9 +1160,9 @@ void ClientEndFrame(gentity_t* ent) {
 
 	// set the latest infor
 	if(g_smoothClients.integer) {
-		BG_PlayerStateToEntityStateExtraPolate(&ent->client->ps, &ent->s, ent->client->ps.commandTime, qtrue);
+		BG_PlayerStateToEntityStateExtraPolate(&ent->client->ps, &ent->s, ent->client->ps.commandTime, true);
 	} else {
-		BG_PlayerStateToEntityState(&ent->client->ps, &ent->s, qtrue);
+		BG_PlayerStateToEntityState(&ent->client->ps, &ent->s, true);
 	}
 	SendPendingPredictableEvents(&ent->client->ps);
 

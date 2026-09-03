@@ -156,14 +156,7 @@ void RB_BokehBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox, float 
 				color[3] = 1.0f;
 
 				if(i != 0)
-					FBO_Blit(tr.textureScratchFbo[0],
-					         NULL,
-					         blurTexScale,
-					         tr.textureScratchFbo[1],
-					         NULL,
-					         &tr.bokehShader,
-					         color,
-					         GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE);
+					FBO_Blit(tr.textureScratchFbo[0], NULL, blurTexScale, tr.textureScratchFbo[1], NULL, &tr.bokehShader, color, GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE);
 				else
 					FBO_Blit(tr.textureScratchFbo[0], NULL, blurTexScale, tr.textureScratchFbo[1], NULL, &tr.bokehShader, color, 0);
 			}
@@ -194,14 +187,7 @@ void RB_BokehBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox, float 
 				else
 					color[3] = 0.5f;
 
-				FBO_Blit(tr.quarterFbo[0],
-				         NULL,
-				         blurTexScale,
-				         tr.quarterFbo[1],
-				         NULL,
-				         &tr.bokehShader,
-				         color,
-				         GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
+				FBO_Blit(tr.quarterFbo[0], NULL, blurTexScale, tr.quarterFbo[1], NULL, &tr.bokehShader, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
 			}
 
 			FBO_Blit(tr.quarterFbo[1], NULL, NULL, dst, dstBox, NULL, NULL, 0);
@@ -210,8 +196,7 @@ void RB_BokehBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox, float 
 	}
 }
 
-static void RB_RadialBlur(
-    FBO_t* srcFbo, FBO_t* dstFbo, int passes, float stretch, float x, float y, float w, float h, float xcenter, float ycenter, float alpha) {
+static void RB_RadialBlur(FBO_t* srcFbo, FBO_t* dstFbo, int passes, float stretch, float x, float y, float w, float h, float xcenter, float ycenter, float alpha) {
 	ivec4_t srcBox, dstBox;
 	int srcWidth, srcHeight;
 	vec4_t color;
@@ -249,12 +234,12 @@ static void RB_RadialBlur(
 	}
 }
 
-static qboolean RB_UpdateSunFlareVis(void) {
+static bool RB_UpdateSunFlareVis(void) {
 	GLuint sampleCount = 0;
-	if(!glRefConfig.occlusionQuery) return qtrue;
+	if(!glRefConfig.occlusionQuery) return true;
 
 	tr.sunFlareQueryIndex ^= 1;
-	if(!tr.sunFlareQueryActive[tr.sunFlareQueryIndex]) return qtrue;
+	if(!tr.sunFlareQueryActive[tr.sunFlareQueryIndex]) return true;
 
 	/* debug code */
 	if(0) {
@@ -278,7 +263,7 @@ void RB_SunRays(FBO_t* srcFbo, ivec4_t srcBox, FBO_t* dstFbo, ivec4_t dstBox) {
 	vec4_t color;
 	float dot;
 	const float cutoff = 0.25f;
-	qboolean colorize = qtrue;
+	bool colorize = true;
 
 	//	float w, h, w2, h2;
 	mat4_t mvp;
@@ -347,17 +332,7 @@ void RB_SunRays(FBO_t* srcFbo, ivec4_t srcBox, FBO_t* dstFbo, ivec4_t dstBox) {
 		float stretch = 1.f + stretch_add;
 		int i;
 		for(i = 0; i < 2; ++i) {
-			RB_RadialBlur(tr.quarterFbo[i & 1],
-			              tr.quarterFbo[(~i) & 1],
-			              5,
-			              stretch,
-			              0.f,
-			              0.f,
-			              tr.quarterFbo[0]->width,
-			              tr.quarterFbo[0]->height,
-			              pos[0],
-			              pos[1],
-			              1.125f);
+			RB_RadialBlur(tr.quarterFbo[i & 1], tr.quarterFbo[(~i) & 1], 5, stretch, 0.f, 0.f, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height, pos[0], pos[1], 1.125f);
 			stretch += stretch_add;
 		}
 	}
@@ -372,7 +347,7 @@ void RB_SunRays(FBO_t* srcFbo, ivec4_t srcBox, FBO_t* dstFbo, ivec4_t dstBox) {
 	}
 }
 
-static void RB_BlurAxis(FBO_t* srcFbo, FBO_t* dstFbo, float strength, qboolean horizontal) {
+static void RB_BlurAxis(FBO_t* srcFbo, FBO_t* dstFbo, float strength, bool horizontal) {
 	float dx, dy;
 	float xmul, ymul;
 	float weights[3] = {
@@ -419,9 +394,9 @@ static void RB_BlurAxis(FBO_t* srcFbo, FBO_t* dstFbo, float strength, qboolean h
 	}
 }
 
-static void RB_HBlur(FBO_t* srcFbo, FBO_t* dstFbo, float strength) { RB_BlurAxis(srcFbo, dstFbo, strength, qtrue); }
+static void RB_HBlur(FBO_t* srcFbo, FBO_t* dstFbo, float strength) { RB_BlurAxis(srcFbo, dstFbo, strength, true); }
 
-static void RB_VBlur(FBO_t* srcFbo, FBO_t* dstFbo, float strength) { RB_BlurAxis(srcFbo, dstFbo, strength, qfalse); }
+static void RB_VBlur(FBO_t* srcFbo, FBO_t* dstFbo, float strength) { RB_BlurAxis(srcFbo, dstFbo, strength, false); }
 
 void RB_GaussianBlur(FBO_t* srcFbo, FBO_t* dstFbo, float blur) {
 	// float mul = 1.f;

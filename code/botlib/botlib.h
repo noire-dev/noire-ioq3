@@ -126,8 +126,8 @@ typedef struct bsp_surface_s {
 // remove the bsp_trace_s structure definition l8r on
 // a trace is returned when a box is swept through the world
 typedef struct bsp_trace_s {
-	qboolean allsolid;      // if true, plane is not valid
-	qboolean startsolid;    // if true, the initial point was in a solid area
+	bool allsolid;          // if true, plane is not valid
+	bool startsolid;        // if true, the initial point was in a solid area
 	float fraction;         // time completed, 1.0 = didn't hit anything
 	vec3_t endpos;          // final position
 	cplane_t plane;         // surface normal at impact
@@ -237,45 +237,16 @@ typedef struct aas_export_s {
 	//--------------------------------------------
 	int (*AAS_AreaTravelTimeToGoalArea)(int areanum, vec3_t origin, int goalareanum, int travelflags);
 	int (*AAS_EnableRoutingArea)(int areanum, int enable);
-	int (*AAS_PredictRoute)(struct aas_predictroute_s* route,
-	                        int areanum,
-	                        vec3_t origin,
-	                        int goalareanum,
-	                        int travelflags,
-	                        int maxareas,
-	                        int maxtime,
-	                        int stopevent,
-	                        int stopcontents,
-	                        int stoptfl,
-	                        int stopareanum);
+	int (*AAS_PredictRoute)(struct aas_predictroute_s* route, int areanum, vec3_t origin, int goalareanum, int travelflags, int maxareas, int maxtime, int stopevent, int stopcontents, int stoptfl, int stopareanum);
 	//--------------------------------------------
 	// be_aas_altroute.c
 	//--------------------------------------------
-	int (*AAS_AlternativeRouteGoals)(vec3_t start,
-	                                 int startareanum,
-	                                 vec3_t goal,
-	                                 int goalareanum,
-	                                 int travelflags,
-	                                 struct aas_altroutegoal_s* altroutegoals,
-	                                 int maxaltroutegoals,
-	                                 int type);
+	int (*AAS_AlternativeRouteGoals)(vec3_t start, int startareanum, vec3_t goal, int goalareanum, int travelflags, struct aas_altroutegoal_s* altroutegoals, int maxaltroutegoals, int type);
 	//--------------------------------------------
 	// be_aas_move.c
 	//--------------------------------------------
 	int (*AAS_Swimming)(vec3_t origin);
-	int (*AAS_PredictClientMovement)(struct aas_clientmove_s* move,
-	                                 int entnum,
-	                                 vec3_t origin,
-	                                 int presencetype,
-	                                 int onground,
-	                                 vec3_t velocity,
-	                                 vec3_t cmdmove,
-	                                 int cmdframes,
-	                                 int maxframes,
-	                                 float frametime,
-	                                 int stopevent,
-	                                 int stopareanum,
-	                                 int visualize);
+	int (*AAS_PredictClientMovement)(struct aas_clientmove_s* move, int entnum, vec3_t origin, int presencetype, int onground, vec3_t velocity, vec3_t cmdmove, int cmdframes, int maxframes, float frametime, int stopevent, int stopareanum, int visualize);
 } aas_export_t;
 
 typedef struct ea_export_s {
@@ -329,21 +300,9 @@ typedef struct ai_export_s {
 	void (*BotRemoveConsoleMessage)(int chatstate, int handle);
 	int (*BotNextConsoleMessage)(int chatstate, struct bot_consolemessage_s* cm);
 	int (*BotNumConsoleMessages)(int chatstate);
-	void (*BotInitialChat)(
-	    int chatstate, char* type, int mcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7);
+	void (*BotInitialChat)(int chatstate, char* type, int mcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7);
 	int (*BotNumInitialChats)(int chatstate, char* type);
-	int (*BotReplyChat)(int chatstate,
-	                    char* message,
-	                    int mcontext,
-	                    int vcontext,
-	                    char* var0,
-	                    char* var1,
-	                    char* var2,
-	                    char* var3,
-	                    char* var4,
-	                    char* var5,
-	                    char* var6,
-	                    char* var7);
+	int (*BotReplyChat)(int chatstate, char* message, int mcontext, int vcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7);
 	int (*BotChatLength)(int chatstate);
 	void (*BotEnterChat)(int chatstate, int client, int sendto);
 	void (*BotGetChatMessage)(int chatstate, char* buf, int size);

@@ -24,7 +24,7 @@ void Con_ToggleConsole_f(void) {
 
 void Con_MessageMode_f(void) {
 	chat_playerNum = -1;
-	chat_team = qfalse;
+	chat_team = false;
 	Field_Clear(&chatField);
 	chatField.widthInChars = 32;
 
@@ -33,7 +33,7 @@ void Con_MessageMode_f(void) {
 
 void Con_MessageMode2_f(void) {
 	chat_playerNum = -1;
-	chat_team = qtrue;
+	chat_team = true;
 	Field_Clear(&chatField);
 	chatField.widthInChars = 32;
 	Key_SetCatcher(Key_GetCatcher() ^ KEYCATCH_MESSAGE);
@@ -45,7 +45,7 @@ void Con_MessageMode3_f(void) {
 		chat_playerNum = -1;
 		return;
 	}
-	chat_team = qfalse;
+	chat_team = false;
 	Field_Clear(&chatField);
 	chatField.widthInChars = 32;
 	Key_SetCatcher(Key_GetCatcher() ^ KEYCATCH_MESSAGE);

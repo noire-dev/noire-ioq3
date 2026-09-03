@@ -136,7 +136,7 @@ ClipSkyPolygon
 static void ClipSkyPolygon(int nump, vec3_t vecs, int stage) {
 	float* norm;
 	float* v;
-	qboolean front, back;
+	bool front, back;
 	float d, e;
 	float dists[MAX_CLIP_VERTS];
 	int sides[MAX_CLIP_VERTS];
@@ -150,15 +150,15 @@ static void ClipSkyPolygon(int nump, vec3_t vecs, int stage) {
 		return;
 	}
 
-	front = back = qfalse;
+	front = back = false;
 	norm = sky_clip[stage];
 	for(i = 0, v = vecs; i < nump; i++, v += 3) {
 		d = DotProduct(v, norm);
 		if(d > ON_EPSILON) {
-			front = qtrue;
+			front = true;
 			sides[i] = SIDE_FRONT;
 		} else if(d < -ON_EPSILON) {
-			back = qtrue;
+			back = true;
 			sides[i] = SIDE_BACK;
 		} else
 			sides[i] = SIDE_ON;
@@ -473,11 +473,7 @@ static void DrawSkyBox(shader_t* shader) {
 		//
 		for(t = sky_mins_subd[1] + HALF_SKY_SUBDIVISIONS; t <= sky_maxs_subd[1] + HALF_SKY_SUBDIVISIONS; t++) {
 			for(s = sky_mins_subd[0] + HALF_SKY_SUBDIVISIONS; s <= sky_maxs_subd[0] + HALF_SKY_SUBDIVISIONS; s++) {
-				MakeSkyVec((s - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS,
-				           (t - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS,
-				           i,
-				           s_skyTexCoords[t][s],
-				           s_skyPoints[t][s]);
+				MakeSkyVec((s - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS, (t - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS, i, s_skyTexCoords[t][s], s_skyPoints[t][s]);
 			}
 		}
 
@@ -485,7 +481,7 @@ static void DrawSkyBox(shader_t* shader) {
 	}
 }
 
-static void FillCloudySkySide(const int mins[2], const int maxs[2], qboolean addIndexes) {
+static void FillCloudySkySide(const int mins[2], const int maxs[2], bool addIndexes) {
 	int s, t;
 	int vertexStart = tess.numVertexes;
 	int tHeight, sWidth;
@@ -594,11 +590,7 @@ static void FillCloudBox(const shader_t* shader, int stage) {
 		//
 		for(t = sky_mins_subd[1] + HALF_SKY_SUBDIVISIONS; t <= sky_maxs_subd[1] + HALF_SKY_SUBDIVISIONS; t++) {
 			for(s = sky_mins_subd[0] + HALF_SKY_SUBDIVISIONS; s <= sky_maxs_subd[0] + HALF_SKY_SUBDIVISIONS; s++) {
-				MakeSkyVec((s - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS,
-				           (t - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS,
-				           i,
-				           NULL,
-				           s_skyPoints[t][s]);
+				MakeSkyVec((s - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS, (t - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS, i, NULL, s_skyPoints[t][s]);
 
 				s_skyTexCoords[t][s][0] = s_cloudTexCoords[i][t][s][0];
 				s_skyTexCoords[t][s][1] = s_cloudTexCoords[i][t][s][1];
@@ -660,18 +652,10 @@ void R_InitSkyTexCoords(float heightCloud) {
 		for(t = 0; t <= SKY_SUBDIVISIONS; t++) {
 			for(s = 0; s <= SKY_SUBDIVISIONS; s++) {
 				// compute vector from view origin to sky side integral point
-				MakeSkyVec((s - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS,
-				           (t - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS,
-				           i,
-				           NULL,
-				           skyVec);
+				MakeSkyVec((s - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS, (t - HALF_SKY_SUBDIVISIONS) / (float)HALF_SKY_SUBDIVISIONS, i, NULL, skyVec);
 
 				// compute parametric value 'p' that intersects with cloud layer
-				p = (1.0f / (2 * DotProduct(skyVec, skyVec))) *
-				    (-2 * skyVec[2] * radiusWorld +
-				     2 * sqrt(SQR(skyVec[2]) * SQR(radiusWorld) + 2 * SQR(skyVec[0]) * radiusWorld * heightCloud + SQR(skyVec[0]) * SQR(heightCloud) +
-				              2 * SQR(skyVec[1]) * radiusWorld * heightCloud + SQR(skyVec[1]) * SQR(heightCloud) +
-				              2 * SQR(skyVec[2]) * radiusWorld * heightCloud + SQR(skyVec[2]) * SQR(heightCloud)));
+				p = (1.0f / (2 * DotProduct(skyVec, skyVec))) * (-2 * skyVec[2] * radiusWorld + 2 * sqrt(SQR(skyVec[2]) * SQR(radiusWorld) + 2 * SQR(skyVec[0]) * radiusWorld * heightCloud + SQR(skyVec[0]) * SQR(heightCloud) + 2 * SQR(skyVec[1]) * radiusWorld * heightCloud + SQR(skyVec[1]) * SQR(heightCloud) + 2 * SQR(skyVec[2]) * radiusWorld * heightCloud + SQR(skyVec[2]) * SQR(heightCloud)));
 
 				s_cloudTexP[i][t][s] = p;
 
@@ -803,5 +787,5 @@ void RB_StageIteratorSky(void) {
 	qglDepthRange(0.0, 1.0);
 
 	// note that sky was drawn so we will draw a sun later
-	backEnd.skyRenderedThisView = qtrue;
+	backEnd.skyRenderedThisView = true;
 }

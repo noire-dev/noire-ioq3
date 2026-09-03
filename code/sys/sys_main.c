@@ -183,15 +183,15 @@ void Sys_RemovePIDFile(const char* gamedir) {
 =================
 Sys_WritePIDFile
 
-Return qtrue if there is an existing stale PID file
+Return true if there is an existing stale PID file
 =================
 */
-static qboolean Sys_WritePIDFile(const char* gamedir) {
+static bool Sys_WritePIDFile(const char* gamedir) {
 	char* pidFile = Sys_PIDFileName(gamedir);
 	FILE* f;
-	qboolean stale = qfalse;
+	bool stale = false;
 
-	if(pidFile == NULL) return qfalse;
+	if(pidFile == NULL) return false;
 
 	// First, check if the pid file is already there
 	if((f = fopen(pidFile, "r")) != NULL) {
@@ -203,9 +203,9 @@ static qboolean Sys_WritePIDFile(const char* gamedir) {
 
 		if(pid > 0) {
 			pid = atoi(pidBuffer);
-			if(!Sys_PIDIsRunning(pid)) stale = qtrue;
+			if(!Sys_PIDIsRunning(pid)) stale = true;
 		} else
-			stale = qtrue;
+			stale = true;
 	}
 
 	if(FS_CreatePath(pidFile)) {
@@ -254,9 +254,9 @@ void Sys_InitPIDFile(const char* gamedir) {
 Sys_OpenFolderInFileManager
 =================
 */
-qboolean Sys_OpenFolderInFileManager(const char* path, qboolean create) {
+bool Sys_OpenFolderInFileManager(const char* path, bool create) {
 	if(create) {
-		if(FS_CreatePath(path)) return qfalse;
+		if(FS_CreatePath(path)) return false;
 	}
 
 	return Sys_OpenFolderInPlatformFileManager(path);
@@ -467,7 +467,7 @@ from executable path, then fs_basepath.
 =================
 */
 
-void* Sys_LoadDll(const char* name, qboolean useSystemLib) {
+void* Sys_LoadDll(const char* name, bool useSystemLib) {
 	void* dllhandle = NULL;
 
 	if(!Sys_DllExtension(name)) {
@@ -658,15 +658,15 @@ Sys_SigHandler
 =================
 */
 void Sys_SigHandler(int signal) {
-	static qboolean signalcaught = qfalse;
+	static bool signalcaught = false;
 
 	if(signalcaught) {
 		fprintf(stderr, "DOUBLE SIGNAL FAULT: Received signal %d, exiting...\n", signal);
 	} else {
-		signalcaught = qtrue;
+		signalcaught = true;
 		VM_Forced_Unload_Start();
 #ifndef DEDICATED
-		CL_Shutdown(va("Received signal %d", signal), qtrue, qtrue);
+		CL_Shutdown(va("Received signal %d", signal), true, true);
 #endif
 		SV_Shutdown(va("Received signal %d", signal));
 		VM_Forced_Unload_Done();
@@ -739,7 +739,7 @@ int main(int argc, char** argv) {
 
 	// Concatenate the command line for passing to Com_Init
 	for(i = 1; i < argc; i++) {
-		qboolean containsSpaces;
+		bool containsSpaces;
 
 		// For security reasons we always detect --uri, even when PROTOCOL_HANDLER is undefined
 		// Any arguments after "--uri quake3://..." is ignored

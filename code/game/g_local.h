@@ -73,13 +73,13 @@ struct gentity_s {
 
 	struct gclient_s* client;  // NULL if not a client
 
-	qboolean inuse;
+	bool inuse;
 
 	char* classname;  // set in QuakeEd
 	int spawnflags;   // set in QuakeEd
 
-	qboolean neverFree;  // if true, FreeEntity will only unlink
-	                     // bodyque uses this
+	bool neverFree;  // if true, FreeEntity will only unlink
+	                 // bodyque uses this
 
 	int flags;  // FL_* variables
 
@@ -88,15 +88,15 @@ struct gentity_s {
 	int freetime;  // level.time when the object was freed
 
 	int eventTime;  // events will be cleared EVENT_VALID_MSEC after set
-	qboolean freeAfterEvent;
-	qboolean unlinkAfterEvent;
+	bool freeAfterEvent;
+	bool unlinkAfterEvent;
 
-	qboolean physicsObject;  // if true, it can be pushed by movers and fall off edges
-	                         // all game items are physicsObjects,
-	float physicsBounce;     // 1.0 = continuous bounce, 0.0 = no bounce
-	int clipmask;            // brushes with this content value will be collided against
-	                         // when moving.  items and corpses do not collide against
-	                         // players, for instance
+	bool physicsObject;   // if true, it can be pushed by movers and fall off edges
+	                      // all game items are physicsObjects,
+	float physicsBounce;  // 1.0 = continuous bounce, 0.0 = no bounce
+	int clipmask;         // brushes with this content value will be collided against
+	                      // when moving.  items and corpses do not collide against
+	                      // players, for instance
 
 	// movers
 	moverState_t moverState;
@@ -139,7 +139,7 @@ struct gentity_s {
 
 	int health;
 
-	qboolean takedamage;
+	bool takedamage;
 
 	int damage;
 	int splashDamage;  // quad will increase this without increasing radius
@@ -209,7 +209,7 @@ typedef struct {
 	spectatorState_t spectatorState;
 	int spectatorClient;  // for chasecam and follow mode
 	int wins, losses;     // tournament stats
-	qboolean teamLeader;  // true when this client is a team leader
+	bool teamLeader;      // true when this client is a team leader
 } clientSession_t;
 
 //
@@ -220,18 +220,18 @@ typedef struct {
 // on each level change or team change at ClientBegin()
 typedef struct {
 	clientConnected_t connected;
-	usercmd_t cmd;               // we would lose angles if not persistant
-	qboolean localClient;        // true if "ip" info key is "localhost"
-	qboolean initialSpawn;       // the first spawn should be at a cool location
-	qboolean predictItemPickup;  // based on cg_predictItems userinfo
-	qboolean pmoveFixed;         //
+	usercmd_t cmd;           // we would lose angles if not persistant
+	bool localClient;        // true if "ip" info key is "localhost"
+	bool initialSpawn;       // the first spawn should be at a cool location
+	bool predictItemPickup;  // based on cg_predictItems userinfo
+	bool pmoveFixed;         //
 	char netname[MAX_NETNAME];
 	int maxHealth;                // for handicapping
 	int enterTime;                // level.time the client entered the game
 	playerTeamState_t teamState;  // status in teamplay games
 	int voteCount;                // to prevent people from constantly calling votes
 	int teamVoteCount;            // to prevent people from constantly calling votes
-	qboolean teamInfo;            // send team overlay updates?
+	bool teamInfo;                // send team overlay updates?
 } clientPersistant_t;
 
 // this structure is cleared on each ClientSpawn(),
@@ -244,9 +244,9 @@ struct gclient_s {
 	clientPersistant_t pers;
 	clientSession_t sess;
 
-	qboolean readyToExit;  // wishes to leave the intermission
+	bool readyToExit;  // wishes to leave the intermission
 
-	qboolean noclip;
+	bool noclip;
 
 	int lastCmdTime;  // level.time of last usercmd_t, for EF_CONNECTION
 	                  // we can't just use pers.lastCommand.time, because
@@ -259,11 +259,11 @@ struct gclient_s {
 
 	// sum up damage over an entire frame, so
 	// shotgun blasts give a single big kick
-	int damage_armor;           // damage absorbed by armor
-	int damage_blood;           // damage taken out of health
-	int damage_knockback;       // impact damage
-	vec3_t damage_from;         // origin for vector calculation
-	qboolean damage_fromWorld;  // if true, don't use the damage_from vector
+	int damage_armor;       // damage absorbed by armor
+	int damage_blood;       // damage taken out of health
+	int damage_knockback;   // impact damage
+	vec3_t damage_from;     // origin for vector calculation
+	bool damage_fromWorld;  // if true, don't use the damage_from vector
 
 	int accurateCount;  // for "impressive" reward sound
 
@@ -276,17 +276,17 @@ struct gclient_s {
 	int lasthurt_mod;       // type of damage the client did
 
 	// timers
-	int respawnTime;             // can respawn when time > this, force after g_forcerespwan
-	int inactivityTime;          // kick players when time > this
-	qboolean inactivityWarning;  // qtrue if the five seoond warning has been given
-	int rewardTime;              // clear the EF_AWARD_IMPRESSIVE, etc when time > this
+	int respawnTime;         // can respawn when time > this, force after g_forcerespwan
+	int inactivityTime;      // kick players when time > this
+	bool inactivityWarning;  // true if the five seoond warning has been given
+	int rewardTime;          // clear the EF_AWARD_IMPRESSIVE, etc when time > this
 
 	int airOutTime;
 
 	int lastKillTime;  // for multiple kill rewards
 
-	qboolean fireHeld;  // used for hook
-	gentity_t* hook;    // grapple hook if out
+	bool fireHeld;    // used for hook
+	gentity_t* hook;  // grapple hook if out
 
 	int switchTeamTime;  // time the player switched teams
 
@@ -333,10 +333,10 @@ typedef struct {
 	int teamScores[TEAM_NUM_TEAMS];
 	int lastTeamLocationTime;  // last time of client team location update
 
-	qboolean newSession;  // don't use any old session data, because
-	                      // we changed gametype
+	bool newSession;  // don't use any old session data, because
+	                  // we changed gametype
 
-	qboolean restarted;  // waiting for a map_restart to fire
+	bool restarted;  // waiting for a map_restart to fire
 
 	int numConnectedClients;
 	int numNonSpectatorClients;      // includes connecting clients
@@ -365,7 +365,7 @@ typedef struct {
 	int numteamVotingClients[2];  // set by CalculateRanks
 
 	// spawn variables
-	qboolean spawning;  // the G_Spawn*() functions are valid
+	bool spawning;  // the G_Spawn*() functions are valid
 	int numSpawnVars;
 	char* spawnVars[MAX_SPAWN_VARS][2];  // key / value pairs
 	int numSpawnVarChars;
@@ -379,12 +379,12 @@ typedef struct {
 	                         // kills during this delay
 	int intermissiontime;    // time the intermission was started
 	char* changemap;
-	qboolean readyToExit;  // at least one client wants to exit
+	bool readyToExit;  // at least one client wants to exit
 	int exitTime;
 	vec3_t intermission_origin;  // also used for spectator spawns
 	vec3_t intermission_angle;
 
-	qboolean locationLinked;  // target_locations get linked
+	bool locationLinked;      // target_locations get linked
 	gentity_t* locationHead;  // head of the location list
 	int bodyQueIndex;         // dead bodies
 	gentity_t* bodyQue[BODY_QUEUE_SIZE];
@@ -396,11 +396,11 @@ typedef struct {
 //
 // g_spawn.c
 //
-qboolean G_SpawnString(const char* key, const char* defaultString, char** out);
+bool G_SpawnString(const char* key, const char* defaultString, char** out);
 // spawn string returns a temporary reference, you must CopyString() if you want to keep it
-qboolean G_SpawnFloat(const char* key, const char* defaultString, float* out);
-qboolean G_SpawnInt(const char* key, const char* defaultString, int* out);
-qboolean G_SpawnVector(const char* key, const char* defaultString, float* out);
+bool G_SpawnFloat(const char* key, const char* defaultString, float* out);
+bool G_SpawnInt(const char* key, const char* defaultString, int* out);
+bool G_SpawnVector(const char* key, const char* defaultString, float* out);
 void G_SpawnEntitiesFromString(void);
 char* G_NewString(const char* string);
 
@@ -453,7 +453,7 @@ gentity_t* G_Spawn(void);
 gentity_t* G_TempEntity(vec3_t origin, int event);
 void G_Sound(gentity_t* ent, int channel, int soundIndex);
 void G_FreeEntity(gentity_t* e);
-qboolean G_EntitiesFree(void);
+bool G_EntitiesFree(void);
 
 void G_TouchTriggers(gentity_t* ent);
 
@@ -471,9 +471,9 @@ const char* BuildShaderStateConfig(void);
 //
 // g_combat.c
 //
-qboolean CanDamage(gentity_t* targ, vec3_t origin);
+bool CanDamage(gentity_t* targ, vec3_t origin);
 void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t dir, vec3_t point, int damage, int dflags, int mod);
-qboolean G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float radius, gentity_t* ignore, int mod);
+bool G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float radius, gentity_t* ignore, int mod);
 int G_InvulnerabilityEffect(gentity_t* targ, vec3_t dir, vec3_t point, vec3_t impactpoint, vec3_t bouncedir);
 void body_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int meansOfDeath);
 void TossClientItems(gentity_t* self);
@@ -529,10 +529,10 @@ void DropPortalDestination(gentity_t* ent);
 //
 // g_weapon.c
 //
-qboolean LogAccuracyHit(gentity_t* target, gentity_t* attacker);
+bool LogAccuracyHit(gentity_t* target, gentity_t* attacker);
 void CalcMuzzlePoint(gentity_t* ent, vec3_t forward, vec3_t right, vec3_t up, vec3_t muzzlePoint);
 void SnapVectorTowards(vec3_t v, vec3_t to);
-qboolean CheckGauntletAttack(gentity_t* ent);
+bool CheckGauntletAttack(gentity_t* ent);
 void Weapon_HookFree(gentity_t* ent);
 void Weapon_HookThink(gentity_t* ent);
 
@@ -543,7 +543,7 @@ int TeamCount(int ignoreClientNum, team_t team);
 int TeamLeader(int team);
 team_t PickTeam(int ignoreClientNum);
 void SetClientViewAngle(gentity_t* ent, vec3_t angle);
-gentity_t* SelectSpawnPoint(vec3_t avoidPoint, vec3_t origin, vec3_t angles, qboolean isbot);
+gentity_t* SelectSpawnPoint(vec3_t avoidPoint, vec3_t origin, vec3_t angles, bool isbot);
 void CopyToBodyQue(gentity_t* ent);
 void ClientRespawn(gentity_t* ent);
 void BeginIntermission(void);
@@ -552,14 +552,14 @@ void ClientSpawn(gentity_t* ent);
 void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod);
 void AddScore(gentity_t* ent, vec3_t origin, int score);
 void CalculateRanks(void);
-qboolean SpotWouldTelefrag(gentity_t* spot);
+bool SpotWouldTelefrag(gentity_t* spot);
 
 //
 // g_svcmds.c
 //
-qboolean ConsoleCommand(void);
+bool ConsoleCommand(void);
 void G_ProcessIPBans(void);
-qboolean G_FilterPacket(char* from);
+bool G_FilterPacket(char* from);
 
 //
 // g_weapon.c
@@ -591,7 +591,7 @@ void QDECL G_Error(const char* fmt, ...) Q_NO_RETURN Q_PRINTF_FUNC(1, 2);
 //
 // g_client.c
 //
-char* ClientConnect(int clientNum, qboolean firstTime, qboolean isBot);
+char* ClientConnect(int clientNum, bool firstTime, bool isBot);
 void ClientUserinfoChanged(int clientNum);
 void ClientDisconnect(int clientNum);
 void ClientBegin(int clientNum);
@@ -607,9 +607,9 @@ void G_RunClient(gentity_t* ent);
 //
 // g_team.c
 //
-qboolean OnSameTeam(gentity_t* ent1, gentity_t* ent2);
+bool OnSameTeam(gentity_t* ent1, gentity_t* ent2);
 void Team_CheckDroppedItem(gentity_t* dropped);
-qboolean CheckObeliskAttack(gentity_t* obelisk, gentity_t* attacker);
+bool CheckObeliskAttack(gentity_t* obelisk, gentity_t* attacker);
 
 //
 // g_mem.c
@@ -637,12 +637,12 @@ void Svcmd_AbortPodium_f(void);
 //
 // g_bot.c
 //
-void G_InitBots(qboolean restart);
+void G_InitBots(bool restart);
 char* G_GetBotInfoByNumber(int num);
 char* G_GetBotInfoByName(const char* name);
 void G_CheckBotSpawn(void);
 void G_RemoveQueuedBotBegin(int clientNum);
-qboolean G_BotConnect(int clientNum, qboolean restart);
+bool G_BotConnect(int clientNum, bool restart);
 void Svcmd_AddBot_f(void);
 void Svcmd_BotList_f(void);
 void BotInterbreedEndMatch(void);
@@ -659,8 +659,8 @@ typedef struct bot_settings_s {
 int BotAISetup(int restart);
 int BotAIShutdown(int restart);
 int BotAILoadMap(int restart);
-int BotAISetupClient(int client, struct bot_settings_s* settings, qboolean restart);
-int BotAIShutdownClient(int client, qboolean restart);
+int BotAISetupClient(int client, struct bot_settings_s* settings, bool restart);
+int BotAIShutdownClient(int client, bool restart);
 int BotAIStartFrame(int time);
 void BotTestAAS(vec3_t origin);
 
@@ -732,18 +732,18 @@ void trap_GetServerinfo(char* buffer, int bufferSize);
 void trap_SetBrushModel(gentity_t* ent, const char* name);
 void trap_Trace(trace_t* results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask);
 int trap_PointContents(const vec3_t point, int passEntityNum);
-qboolean trap_InPVS(const vec3_t p1, const vec3_t p2);
-qboolean trap_InPVSIgnorePortals(const vec3_t p1, const vec3_t p2);
-void trap_AdjustAreaPortalState(gentity_t* ent, qboolean open);
-qboolean trap_AreasConnected(int area1, int area2);
+bool trap_InPVS(const vec3_t p1, const vec3_t p2);
+bool trap_InPVSIgnorePortals(const vec3_t p1, const vec3_t p2);
+void trap_AdjustAreaPortalState(gentity_t* ent, bool open);
+bool trap_AreasConnected(int area1, int area2);
 void trap_LinkEntity(gentity_t* ent);
 void trap_UnlinkEntity(gentity_t* ent);
 int trap_EntitiesInBox(const vec3_t mins, const vec3_t maxs, int* entityList, int maxcount);
-qboolean trap_EntityContact(const vec3_t mins, const vec3_t maxs, const gentity_t* ent);
+bool trap_EntityContact(const vec3_t mins, const vec3_t maxs, const gentity_t* ent);
 int trap_BotAllocateClient(void);
 void trap_BotFreeClient(int clientNum);
 void trap_GetUsercmd(int clientNum, usercmd_t* cmd);
-qboolean trap_GetEntityToken(char* buffer, int bufferSize);
+bool trap_GetEntityToken(char* buffer, int bufferSize);
 
 int trap_DebugPolygonCreate(int color, int numPoints, vec3_t* points);
 void trap_DebugPolygonDelete(int id);
@@ -785,40 +785,11 @@ int trap_AAS_AreaReachability(int areanum);
 
 int trap_AAS_AreaTravelTimeToGoalArea(int areanum, vec3_t origin, int goalareanum, int travelflags);
 int trap_AAS_EnableRoutingArea(int areanum, int enable);
-int trap_AAS_PredictRoute(void /*struct aas_predictroute_s*/* route,
-                          int areanum,
-                          vec3_t origin,
-                          int goalareanum,
-                          int travelflags,
-                          int maxareas,
-                          int maxtime,
-                          int stopevent,
-                          int stopcontents,
-                          int stoptfl,
-                          int stopareanum);
+int trap_AAS_PredictRoute(void /*struct aas_predictroute_s*/* route, int areanum, vec3_t origin, int goalareanum, int travelflags, int maxareas, int maxtime, int stopevent, int stopcontents, int stoptfl, int stopareanum);
 
-int trap_AAS_AlternativeRouteGoals(vec3_t start,
-                                   int startareanum,
-                                   vec3_t goal,
-                                   int goalareanum,
-                                   int travelflags,
-                                   void /*struct aas_altroutegoal_s*/* altroutegoals,
-                                   int maxaltroutegoals,
-                                   int type);
+int trap_AAS_AlternativeRouteGoals(vec3_t start, int startareanum, vec3_t goal, int goalareanum, int travelflags, void /*struct aas_altroutegoal_s*/* altroutegoals, int maxaltroutegoals, int type);
 int trap_AAS_Swimming(vec3_t origin);
-int trap_AAS_PredictClientMovement(void /* aas_clientmove_s */* move,
-                                   int entnum,
-                                   vec3_t origin,
-                                   int presencetype,
-                                   int onground,
-                                   vec3_t velocity,
-                                   vec3_t cmdmove,
-                                   int cmdframes,
-                                   int maxframes,
-                                   float frametime,
-                                   int stopevent,
-                                   int stopareanum,
-                                   int visualize);
+int trap_AAS_PredictClientMovement(void /* aas_clientmove_s */* move, int entnum, vec3_t origin, int presencetype, int onground, vec3_t velocity, vec3_t cmdmove, int cmdframes, int maxframes, float frametime, int stopevent, int stopareanum, int visualize);
 
 void trap_EA_Say(int client, char* str);
 void trap_EA_SayTeam(int client, char* str);
@@ -861,11 +832,9 @@ void trap_BotQueueConsoleMessage(int chatstate, int type, char* message);
 void trap_BotRemoveConsoleMessage(int chatstate, int handle);
 int trap_BotNextConsoleMessage(int chatstate, void /* struct bot_consolemessage_s */* cm);
 int trap_BotNumConsoleMessages(int chatstate);
-void trap_BotInitialChat(
-    int chatstate, char* type, int mcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7);
+void trap_BotInitialChat(int chatstate, char* type, int mcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7);
 int trap_BotNumInitialChats(int chatstate, char* type);
-int trap_BotReplyChat(
-    int chatstate, char* message, int mcontext, int vcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7);
+int trap_BotReplyChat(int chatstate, char* message, int mcontext, int vcontext, char* var0, char* var1, char* var2, char* var3, char* var4, char* var5, char* var6, char* var7);
 int trap_BotChatLength(int chatstate);
 void trap_BotEnterChat(int chatstate, int client, int sendto);
 void trap_BotGetChatMessage(int chatstate, char* buf, int size);

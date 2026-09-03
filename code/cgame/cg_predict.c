@@ -126,7 +126,7 @@ static void CG_ClipMoveToEntities(const vec3_t start, const vec3_t mins, const v
 			trace.entityNum = ent->number;
 			*tr = trace;
 		} else if(trace.startsolid) {
-			tr->startsolid = qtrue;
+			tr->startsolid = true;
 		}
 		if(tr->allsolid) {
 			return;
@@ -196,7 +196,7 @@ Generates cg.predictedPlayerState by interpolating between
 cg.snap->player_state and cg.nextFrame->player_state
 ========================
 */
-static void CG_InterpolatePlayerState(qboolean grabAngles) {
+static void CG_InterpolatePlayerState(bool grabAngles) {
 	float f;
 	int i;
 	playerState_t* out;
@@ -316,7 +316,7 @@ static void CG_TouchTriggerPrediction(void) {
 	entityState_t* ent;
 	clipHandle_t cmodel;
 	centity_t* cent;
-	qboolean spectator;
+	bool spectator;
 
 	// dead clients don't activate triggers
 	if(cg.predictedPlayerState.stats[STAT_HEALTH] <= 0) {
@@ -354,7 +354,7 @@ static void CG_TouchTriggerPrediction(void) {
 		}
 
 		if(ent->eType == ET_TELEPORT_TRIGGER) {
-			cg.hyperspace = qtrue;
+			cg.hyperspace = true;
 		} else if(ent->eType == ET_PUSH_TRIGGER) {
 			BG_TouchJumpPad(&cg.predictedPlayerState, ent);
 		}
@@ -396,29 +396,29 @@ to ease the jerk.
 void CG_PredictPlayerState(void) {
 	int cmdNum, current;
 	playerState_t oldPlayerState;
-	qboolean moved;
+	bool moved;
 	usercmd_t oldestCmd;
 	usercmd_t latestCmd;
 
-	cg.hyperspace = qfalse;  // will be set if touching a trigger_teleport
+	cg.hyperspace = false;  // will be set if touching a trigger_teleport
 
 	// if this is the first frame we must guarantee
 	// predictedPlayerState is valid even if there is some
 	// other error condition
 	if(!cg.validPPS) {
-		cg.validPPS = qtrue;
+		cg.validPPS = true;
 		cg.predictedPlayerState = cg.snap->ps;
 	}
 
 	// demo playback just copies the moves
 	if(cg.demoPlayback || (cg.snap->ps.pm_flags & PMF_FOLLOW)) {
-		CG_InterpolatePlayerState(qfalse);
+		CG_InterpolatePlayerState(false);
 		return;
 	}
 
 	// non-predicting local movement will grab the latest angles
 	if(cg_nopredict.integer || cg_synchronousClients.integer) {
-		CG_InterpolatePlayerState(qtrue);
+		CG_InterpolatePlayerState(true);
 		return;
 	}
 
@@ -469,7 +469,7 @@ void CG_PredictPlayerState(void) {
 	}
 
 	// run cmds
-	moved = qfalse;
+	moved = false;
 	for(cmdNum = current - CMD_BACKUP + 1; cmdNum <= current; cmdNum++) {
 		// get the command
 		trap_GetUserCmd(cmdNum, &cg_pmove.cmd);
@@ -499,16 +499,10 @@ void CG_PredictPlayerState(void) {
 				if(cg_showmiss.integer) {
 					CG_Printf("PredictionTeleport\n");
 				}
-				cg.thisFrameTeleport = qfalse;
+				cg.thisFrameTeleport = false;
 			} else {
 				vec3_t adjusted, new_angles;
-				CG_AdjustPositionForMover(cg.predictedPlayerState.origin,
-				                          cg.predictedPlayerState.groundEntityNum,
-				                          cg.physicsTime,
-				                          cg.oldTime,
-				                          adjusted,
-				                          cg.predictedPlayerState.viewangles,
-				                          new_angles);
+				CG_AdjustPositionForMover(cg.predictedPlayerState.origin, cg.predictedPlayerState.groundEntityNum, cg.physicsTime, cg.oldTime, adjusted, cg.predictedPlayerState.viewangles, new_angles);
 
 				if(cg_showmiss.integer) {
 					if(!VectorCompare(oldPlayerState.origin, adjusted)) {
@@ -545,11 +539,11 @@ void CG_PredictPlayerState(void) {
 
 		// don't predict gauntlet firing, which is only supposed to happen
 		// when it actually inflicts damage
-		cg_pmove.gauntletHit = qfalse;
+		cg_pmove.gauntletHit = false;
 
 		Pmove(&cg_pmove);
 
-		moved = qtrue;
+		moved = true;
 
 		// add push trigger movement effects
 		CG_TouchTriggerPrediction();
@@ -570,13 +564,7 @@ void CG_PredictPlayerState(void) {
 	}
 
 	// adjust for the movement of the groundentity
-	CG_AdjustPositionForMover(cg.predictedPlayerState.origin,
-	                          cg.predictedPlayerState.groundEntityNum,
-	                          cg.physicsTime,
-	                          cg.time,
-	                          cg.predictedPlayerState.origin,
-	                          cg.predictedPlayerState.viewangles,
-	                          cg.predictedPlayerState.viewangles);
+	CG_AdjustPositionForMover(cg.predictedPlayerState.origin, cg.predictedPlayerState.groundEntityNum, cg.physicsTime, cg.time, cg.predictedPlayerState.origin, cg.predictedPlayerState.viewangles, cg.predictedPlayerState.viewangles);
 
 	if(cg_showmiss.integer) {
 		if(cg.predictedPlayerState.eventSequence > oldPlayerState.eventSequence + MAX_PS_EVENTS) {

@@ -126,14 +126,10 @@ char* Sys_SteamPath(void) {
 
 	HKEY steamRegKey;
 	DWORD pathLen = MAX_OSPATH;
-	qboolean finishPath = qfalse;
+	bool finishPath = false;
 
 	// Assuming Steam is a 32-bit app
-	if(!steamPath[0] && !RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-	                                  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App " STEAMPATH_APPID,
-	                                  0,
-	                                  KEY_QUERY_VALUE | KEY_WOW64_32KEY,
-	                                  &steamRegKey)) {
+	if(!steamPath[0] && !RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App " STEAMPATH_APPID, 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &steamRegKey)) {
 		pathLen = MAX_OSPATH;
 		if(RegQueryValueEx(steamRegKey, "InstallLocation", NULL, NULL, (LPBYTE)steamPath, &pathLen)) steamPath[0] = '\0';
 
@@ -145,7 +141,7 @@ char* Sys_SteamPath(void) {
 		if(RegQueryValueEx(steamRegKey, "SteamPath", NULL, NULL, (LPBYTE)steamPath, &pathLen))
 			if(RegQueryValueEx(steamRegKey, "InstallPath", NULL, NULL, (LPBYTE)steamPath, &pathLen)) steamPath[0] = '\0';
 
-		if(steamPath[0]) finishPath = qtrue;
+		if(steamPath[0]) finishPath = true;
 
 		RegCloseKey(steamRegKey);
 	}
@@ -236,11 +232,11 @@ Sys_Milliseconds
 int sys_timeBase;
 int Sys_Milliseconds(void) {
 	int sys_curtime;
-	static qboolean initialized = qfalse;
+	static bool initialized = false;
 
 	if(!initialized) {
 		sys_timeBase = timeGetTime();
-		initialized = qtrue;
+		initialized = true;
 	}
 	sys_curtime = timeGetTime() - sys_timeBase;
 
@@ -252,19 +248,19 @@ int Sys_Milliseconds(void) {
 Sys_RandomBytes
 ================
 */
-qboolean Sys_RandomBytes(byte* string, int len) {
+bool Sys_RandomBytes(byte* string, int len) {
 	HCRYPTPROV prov;
 
 	if(!CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) {
-		return qfalse;
+		return false;
 	}
 
 	if(!CryptGenRandom(prov, len, (BYTE*)string)) {
 		CryptReleaseContext(prov, 0);
-		return qfalse;
+		return false;
 	}
 	CryptReleaseContext(prov, 0);
-	return qtrue;
+	return true;
 }
 
 /*
@@ -292,10 +288,10 @@ char* Sys_GetCurrentUser(void) {
 Sys_LowPhysicalMemory
 ==================
 */
-qboolean Sys_LowPhysicalMemory(void) {
+bool Sys_LowPhysicalMemory(void) {
 	MEMORYSTATUS stat;
 	GlobalMemoryStatus(&stat);
-	return (stat.dwTotalPhys <= MEM_THRESHOLD) ? qtrue : qfalse;
+	return (stat.dwTotalPhys <= MEM_THRESHOLD) ? true : false;
 }
 
 /*
@@ -365,12 +361,12 @@ FILE* Sys_FOpen(const char* ospath, const char* mode) {
 Sys_Mkdir
 ==============
 */
-qboolean Sys_Mkdir(const char* path) {
+bool Sys_Mkdir(const char* path) {
 	if(!CreateDirectory(path, NULL)) {
-		if(GetLastError() != ERROR_ALREADY_EXISTS) return qfalse;
+		if(GetLastError() != ERROR_ALREADY_EXISTS) return false;
 	}
 
-	return qtrue;
+	return true;
 }
 
 /*
@@ -467,7 +463,7 @@ void Sys_ListFilteredFiles(const char* basedir, char* subdirs, char* filter, cha
 			break;
 		}
 		Com_sprintf(filename, sizeof(filename), "%s\\%s", subdirs, findinfo.name);
-		if(!Com_FilterPath(filter, filename, qfalse)) continue;
+		if(!Com_FilterPath(filter, filename, false)) continue;
 		list[*numfiles] = CopyString(filename);
 		(*numfiles)++;
 	} while(_findnext(findhandle, &findinfo) != -1);
@@ -480,7 +476,7 @@ void Sys_ListFilteredFiles(const char* basedir, char* subdirs, char* filter, cha
 strgtr
 ==============
 */
-static qboolean strgtr(const char* s0, const char* s1) {
+static bool strgtr(const char* s0, const char* s1) {
 	int l0, l1, i;
 
 	l0 = strlen(s0);
@@ -492,13 +488,13 @@ static qboolean strgtr(const char* s0, const char* s1) {
 
 	for(i = 0; i < l0; i++) {
 		if(s1[i] > s0[i]) {
-			return qtrue;
+			return true;
 		}
 		if(s1[i] < s0[i]) {
-			return qfalse;
+			return false;
 		}
 	}
-	return qfalse;
+	return false;
 }
 
 /*
@@ -506,7 +502,7 @@ static qboolean strgtr(const char* s0, const char* s1) {
 Sys_ListFiles
 ==============
 */
-char** Sys_ListFiles(const char* directory, const char* extension, char* filter, int* numfiles, qboolean wantsubs) {
+char** Sys_ListFiles(const char* directory, const char* extension, char* filter, int* numfiles, bool wantsubs) {
 	char search[MAX_OSPATH];
 	int nfiles;
 	char** listCopy;
@@ -806,21 +802,21 @@ int Sys_PID(void) { return GetCurrentProcessId(); }
 Sys_PIDIsRunning
 ==============
 */
-qboolean Sys_PIDIsRunning(int pid) {
+bool Sys_PIDIsRunning(int pid) {
 	DWORD processes[1024];
 	DWORD numBytes, numProcesses;
 	int i;
 
-	if(!EnumProcesses(processes, sizeof(processes), &numBytes)) return qfalse;  // Assume it's not running
+	if(!EnumProcesses(processes, sizeof(processes), &numBytes)) return false;  // Assume it's not running
 
 	numProcesses = numBytes / sizeof(DWORD);
 
 	// Search for the pid
 	for(i = 0; i < numProcesses; i++) {
-		if((int)processes[i] == pid) return qtrue;
+		if((int)processes[i] == pid) return true;
 	}
 
-	return qfalse;
+	return false;
 }
 
 /*
@@ -830,18 +826,18 @@ Sys_DllExtension
 Check if filename should be allowed to be loaded as a DLL.
 =================
 */
-qboolean Sys_DllExtension(const char* name) { return COM_CompareExtension(name, DLL_EXT); }
+bool Sys_DllExtension(const char* name) { return COM_CompareExtension(name, DLL_EXT); }
 
 /*
 ==============
 Sys_OpenFolderInPlatformFileManager
 ==============
 */
-qboolean Sys_OpenFolderInPlatformFileManager(const char* path) { return ShellExecute(NULL, "explore", path, NULL, NULL, SW_SHOWDEFAULT) > (HINSTANCE)32; }
+bool Sys_OpenFolderInPlatformFileManager(const char* path) { return ShellExecute(NULL, "explore", path, NULL, NULL, SW_SHOWDEFAULT) > (HINSTANCE)32; }
 
 /*
 =================
 Sys_SetMaxFileLimit
 =================
 */
-qboolean Sys_SetMaxFileLimit(void) { return qtrue; }
+bool Sys_SetMaxFileLimit(void) { return true; }

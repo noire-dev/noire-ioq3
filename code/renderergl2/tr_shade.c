@@ -153,7 +153,7 @@ static void DrawNormals(shaderCommands_t* input) {
 	const float* floatNormals = (const float*)input->normal;
 
 	const vao_t* boundVao = glState.currentVao;
-	qboolean usePacked = qfalse;
+	bool usePacked = false;
 
 	if(boundVao) {
 		const vaoAttrib_t* a = &boundVao->attribs[ATTR_INDEX_NORMAL];
@@ -291,8 +291,8 @@ void RB_BeginSurface(shader_t* shader, int fogNum, int cubemapIndex) {
 	tess.xstages = state->stages;
 	tess.numPasses = state->numUnfoggedPasses;
 	tess.currentStageIteratorFunc = state->optimalStageIteratorFunc;
-	tess.useInternalVao = qtrue;
-	tess.useCacheVao = qfalse;
+	tess.useInternalVao = true;
+	tess.useCacheVao = false;
 
 	tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
 	if(tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime) {
@@ -314,7 +314,7 @@ static void ComputeTexMods(shaderStage_t* pStage, int bundleNum, vec4_t outMatri
 	float currentmatrix[6];
 	float turb[2];
 	textureBundle_t* bundle = &pStage->bundle[bundleNum];
-	qboolean hasTurb = qfalse;
+	bool hasTurb = false;
 
 	currentmatrix[0] = 1.0f;
 	currentmatrix[2] = 0.0f;
@@ -363,7 +363,7 @@ static void ComputeTexMods(shaderStage_t* pStage, int bundleNum, vec4_t outMatri
 				outMatrix[tm * 2 + 0][3] = turb[0];
 				outMatrix[tm * 2 + 1][3] = turb[1];
 
-				hasTurb = qtrue;
+				hasTurb = true;
 				break;
 
 			case TMOD_NONE:
@@ -544,10 +544,9 @@ static void ProjectDlightTexture(void) {
 }
 
 static void ComputeShaderColors(shaderStage_t* pStage, vec4_t baseColor, vec4_t vertColor, int blend) {
-	qboolean isBlend = ((blend & GLS_SRCBLEND_BITS) == GLS_SRCBLEND_DST_COLOR) || ((blend & GLS_SRCBLEND_BITS) == GLS_SRCBLEND_ONE_MINUS_DST_COLOR) ||
-	                   ((blend & GLS_DSTBLEND_BITS) == GLS_DSTBLEND_SRC_COLOR) || ((blend & GLS_DSTBLEND_BITS) == GLS_DSTBLEND_ONE_MINUS_SRC_COLOR);
+	bool isBlend = ((blend & GLS_SRCBLEND_BITS) == GLS_SRCBLEND_DST_COLOR) || ((blend & GLS_SRCBLEND_BITS) == GLS_SRCBLEND_ONE_MINUS_DST_COLOR) || ((blend & GLS_DSTBLEND_BITS) == GLS_DSTBLEND_SRC_COLOR) || ((blend & GLS_DSTBLEND_BITS) == GLS_DSTBLEND_ONE_MINUS_SRC_COLOR);
 
-	qboolean is2DDraw = backEnd.currentEntity == &backEnd.entity2D;
+	bool is2DDraw = backEnd.currentEntity == &backEnd.entity2D;
 
 	float overbright = (isBlend || is2DDraw) ? 1.0f : (float)(1 << tr.overbrightBits);
 
@@ -1039,7 +1038,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 	int deformGen;
 	vec5_t deformParams;
 
-	qboolean renderToCubemap = tr.renderCubeFbo && glState.currentFBO == tr.renderCubeFbo;
+	bool renderToCubemap = tr.renderCubeFbo && glState.currentFBO == tr.renderCubeFbo;
 
 	ComputeDeformValues(&deformGen, deformParams);
 
@@ -1294,8 +1293,8 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 						GL_BindToTMU(tr.whiteImage, i);
 				}
 			} else {
-				qboolean light = (pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK) != 0;
-				qboolean fastLight = !(r_normalMapping->integer || r_specularMapping->integer);
+				bool light = (pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK) != 0;
+				bool fastLight = !(r_normalMapping->integer || r_specularMapping->integer);
 
 				if(pStage->bundle[TB_DIFFUSEMAP].image[0]) R_BindAnimatedImageToTMU(&pStage->bundle[TB_DIFFUSEMAP], TB_DIFFUSEMAP);
 
@@ -1473,7 +1472,7 @@ void RB_StageIteratorGeneric(void) {
 	if(input->shader->cullType == CT_TWO_SIDED) {
 		GL_Cull(CT_TWO_SIDED);
 	} else {
-		qboolean cullFront = (input->shader->cullType == CT_FRONT_SIDED);
+		bool cullFront = (input->shader->cullType == CT_FRONT_SIDED);
 
 		if(backEnd.viewParms.flags & VPF_DEPTHSHADOW) cullFront = !cullFront;
 
@@ -1534,8 +1533,7 @@ void RB_StageIteratorGeneric(void) {
 	//
 	// pshadows!
 	//
-	if(glRefConfig.framebufferObject && r_shadows->integer == 4 && tess.pshadowBits && tess.shader->sort <= SS_OPAQUE &&
-	   !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY))) {
+	if(glRefConfig.framebufferObject && r_shadows->integer == 4 && tess.pshadowBits && tess.shader->sort <= SS_OPAQUE && !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY))) {
 		ProjectPshadowVBOGLSL();
 	}
 
@@ -1543,8 +1541,7 @@ void RB_StageIteratorGeneric(void) {
 	// now do any dynamic lighting needed
 	//
 	if(tess.dlightBits && tess.shader->sort <= SS_OPAQUE && r_lightmap->integer == 0 && !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY))) {
-		if(tess.shader->numUnfoggedPasses == 1 && tess.xstages[0]->glslShaderGroup == tr.lightallShader &&
-		   (tess.xstages[0]->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK) && r_dlightMode->integer) {
+		if(tess.shader->numUnfoggedPasses == 1 && tess.xstages[0]->glslShaderGroup == tr.lightallShader && (tess.xstages[0]->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK) && r_dlightMode->integer) {
 			ForwardDlight();
 		} else {
 			ProjectDlightTexture();
@@ -1626,8 +1623,8 @@ void RB_EndSurface(void) {
 	tess.numIndexes = 0;
 	tess.numVertexes = 0;
 	tess.firstIndex = 0;
-	tess.useCacheVao = qfalse;
-	tess.useInternalVao = qfalse;
+	tess.useCacheVao = false;
+	tess.useInternalVao = false;
 
 	GLimp_LogComment("----------\n");
 }

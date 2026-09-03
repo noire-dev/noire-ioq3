@@ -186,7 +186,7 @@ A respawn happened this snapshot
 */
 void CG_Respawn(void) {
 	// no error decay on player movement
-	cg.thisFrameTeleport = qtrue;
+	cg.thisFrameTeleport = true;
 
 	// display weapons available
 	cg.weaponSelectTime = cg.time;
@@ -332,10 +332,10 @@ void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
 	}
 
 	// reward sounds
-	reward = qfalse;
+	reward = false;
 	if(ps->persistant[PERS_CAPTURES] != ops->persistant[PERS_CAPTURES]) {
 		pushReward(cgs.media.captureAwardSound, cgs.media.medalCapture, ps->persistant[PERS_CAPTURES]);
-		reward = qtrue;
+		reward = true;
 		// Com_Printf("capture\n");
 	}
 	if(ps->persistant[PERS_IMPRESSIVE_COUNT] != ops->persistant[PERS_IMPRESSIVE_COUNT]) {
@@ -349,7 +349,7 @@ void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
 		sfx = cgs.media.impressiveSound;
 #endif
 		pushReward(sfx, cgs.media.medalImpressive, ps->persistant[PERS_IMPRESSIVE_COUNT]);
-		reward = qtrue;
+		reward = true;
 		// Com_Printf("impressive\n");
 	}
 	if(ps->persistant[PERS_EXCELLENT_COUNT] != ops->persistant[PERS_EXCELLENT_COUNT]) {
@@ -363,7 +363,7 @@ void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
 		sfx = cgs.media.excellentSound;
 #endif
 		pushReward(sfx, cgs.media.medalExcellent, ps->persistant[PERS_EXCELLENT_COUNT]);
-		reward = qtrue;
+		reward = true;
 		// Com_Printf("excellent\n");
 	}
 	if(ps->persistant[PERS_GAUNTLET_FRAG_COUNT] != ops->persistant[PERS_GAUNTLET_FRAG_COUNT]) {
@@ -377,17 +377,17 @@ void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
 		sfx = cgs.media.humiliationSound;
 #endif
 		pushReward(sfx, cgs.media.medalGauntlet, ps->persistant[PERS_GAUNTLET_FRAG_COUNT]);
-		reward = qtrue;
+		reward = true;
 		// Com_Printf("gauntlet frag\n");
 	}
 	if(ps->persistant[PERS_DEFEND_COUNT] != ops->persistant[PERS_DEFEND_COUNT]) {
 		pushReward(cgs.media.defendSound, cgs.media.medalDefend, ps->persistant[PERS_DEFEND_COUNT]);
-		reward = qtrue;
+		reward = true;
 		// Com_Printf("defend\n");
 	}
 	if(ps->persistant[PERS_ASSIST_COUNT] != ops->persistant[PERS_ASSIST_COUNT]) {
 		pushReward(cgs.media.assistSound, cgs.media.medalAssist, ps->persistant[PERS_ASSIST_COUNT]);
-		reward = qtrue;
+		reward = true;
 		// Com_Printf("assist\n");
 	}
 	// if any of the player event bits changed
@@ -399,14 +399,12 @@ void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
 		} else if((ps->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_HOLYSHIT) != (ops->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_HOLYSHIT)) {
 			trap_S_StartLocalSound(cgs.media.holyShitSound, CHAN_ANNOUNCER);
 		}
-		reward = qtrue;
+		reward = true;
 	}
 
 	// check for flag pickup
 	if(cgs.gametype > GT_TEAM) {
-		if((ps->powerups[PW_REDFLAG] != ops->powerups[PW_REDFLAG] && ps->powerups[PW_REDFLAG]) ||
-		   (ps->powerups[PW_BLUEFLAG] != ops->powerups[PW_BLUEFLAG] && ps->powerups[PW_BLUEFLAG]) ||
-		   (ps->powerups[PW_NEUTRALFLAG] != ops->powerups[PW_NEUTRALFLAG] && ps->powerups[PW_NEUTRALFLAG])) {
+		if((ps->powerups[PW_REDFLAG] != ops->powerups[PW_REDFLAG] && ps->powerups[PW_REDFLAG]) || (ps->powerups[PW_BLUEFLAG] != ops->powerups[PW_BLUEFLAG] && ps->powerups[PW_BLUEFLAG]) || (ps->powerups[PW_NEUTRALFLAG] != ops->powerups[PW_NEUTRALFLAG] && ps->powerups[PW_NEUTRALFLAG])) {
 			trap_S_StartLocalSound(cgs.media.youHaveFlagSound, CHAN_ANNOUNCER);
 		}
 	}
@@ -477,7 +475,7 @@ CG_TransitionPlayerState
 void CG_TransitionPlayerState(playerState_t* ps, playerState_t* ops) {
 	// check for changing follow mode
 	if(ps->clientNum != ops->clientNum) {
-		cg.thisFrameTeleport = qtrue;
+		cg.thisFrameTeleport = true;
 		// make sure we don't get any unwanted transition effects
 		*ops = *ps;
 	}
@@ -494,7 +492,7 @@ void CG_TransitionPlayerState(playerState_t* ps, playerState_t* ops) {
 
 	if(cg.mapRestart) {
 		CG_Respawn();
-		cg.mapRestart = qfalse;
+		cg.mapRestart = false;
 	}
 
 	if(cg.snap->ps.pm_type != PM_INTERMISSION && ps->persistant[PERS_TEAM] != TEAM_SPECTATOR) {

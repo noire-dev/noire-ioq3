@@ -25,10 +25,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 
-qboolean CL_HTTP_Init(void);
-qboolean CL_HTTP_Available(void);
+bool CL_HTTP_Init(void);
+bool CL_HTTP_Available(void);
 void CL_HTTP_Shutdown(void);
 void CL_HTTP_BeginDownload(const char* remoteURL);
-qboolean CL_HTTP_PerformDownload(void);
+bool CL_HTTP_PerformDownload(void);
 
 #endif  // __CL_HTTP_H__

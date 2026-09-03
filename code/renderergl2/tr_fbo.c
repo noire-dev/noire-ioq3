@@ -30,10 +30,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 R_CheckFBO
 =============
 */
-qboolean R_CheckFBO(const FBO_t* fbo) {
+bool R_CheckFBO(const FBO_t* fbo) {
 	GLenum code = qglCheckNamedFramebufferStatusEXT(fbo->frameBuffer, GL_FRAMEBUFFER);
 
-	if(code == GL_FRAMEBUFFER_COMPLETE) return qtrue;
+	if(code == GL_FRAMEBUFFER_COMPLETE) return true;
 
 	// an error occurred
 	switch(code) {
@@ -41,24 +41,18 @@ qboolean R_CheckFBO(const FBO_t* fbo) {
 
 		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: ri.Printf(PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete attachment\n", fbo->name); break;
 
-		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-			ri.Printf(PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete, missing attachment\n", fbo->name);
-			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ri.Printf(PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete, missing attachment\n", fbo->name); break;
 
-		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-			ri.Printf(PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete, missing draw buffer\n", fbo->name);
-			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: ri.Printf(PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete, missing draw buffer\n", fbo->name); break;
 
-		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-			ri.Printf(PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete, missing read buffer\n", fbo->name);
-			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: ri.Printf(PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete, missing read buffer\n", fbo->name); break;
 
 		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: ri.Printf(PRINT_WARNING, "R_CheckFBO: (%s) Framebuffer incomplete multisample\n", fbo->name); break;
 
 		default: ri.Printf(PRINT_WARNING, "R_CheckFBO: (%s) unknown error 0x%X\n", fbo->name, code); break;
 	}
 
-	return qfalse;
+	return false;
 }
 
 /*
@@ -104,7 +98,7 @@ FBO_CreateBuffer
 void FBO_CreateBuffer(FBO_t* fbo, int format, int index, int multisample) {
 	uint32_t* pRenderBuffer;
 	GLenum attachment;
-	qboolean absent;
+	bool absent;
 
 	switch(format) {
 		case GL_RGB:
@@ -416,14 +410,7 @@ void R_FBOList_f(void) {
 	ri.Printf(PRINT_ALL, " %i FBOs\n", tr.numFBOs);
 }
 
-void FBO_BlitFromTexture(struct image_s* src,
-                         vec4_t inSrcTexCorners,
-                         vec2_t inSrcTexScale,
-                         FBO_t* dst,
-                         ivec4_t inDstBox,
-                         struct shaderProgram_s* shaderProgram,
-                         vec4_t inColor,
-                         int blend) {
+void FBO_BlitFromTexture(struct image_s* src, vec4_t inSrcTexCorners, vec2_t inSrcTexScale, FBO_t* dst, ivec4_t inDstBox, struct shaderProgram_s* shaderProgram, vec4_t inColor, int blend) {
 	ivec4_t dstBox;
 	vec4_t color;
 	vec4_t quadVerts[4];
@@ -513,8 +500,7 @@ void FBO_BlitFromTexture(struct image_s* src,
 	FBO_Bind(oldFbo);
 }
 
-void FBO_Blit(
-    const FBO_t* src, ivec4_t inSrcBox, vec2_t srcTexScale, FBO_t* dst, ivec4_t dstBox, struct shaderProgram_s* shaderProgram, vec4_t color, int blend) {
+void FBO_Blit(const FBO_t* src, ivec4_t inSrcBox, vec2_t srcTexScale, FBO_t* dst, ivec4_t dstBox, struct shaderProgram_s* shaderProgram, vec4_t color, int blend) {
 	vec4_t srcTexCorners;
 
 	if(!src) {
@@ -584,16 +570,7 @@ void FBO_FastBlit(const FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox, 
 
 	GL_BindFramebuffer(GL_READ_FRAMEBUFFER, srcFb);
 	GL_BindFramebuffer(GL_DRAW_FRAMEBUFFER, dstFb);
-	qglBlitFramebuffer(srcBoxFinal[0],
-	                   srcBoxFinal[1],
-	                   srcBoxFinal[2],
-	                   srcBoxFinal[3],
-	                   dstBoxFinal[0],
-	                   dstBoxFinal[1],
-	                   dstBoxFinal[2],
-	                   dstBoxFinal[3],
-	                   buffers,
-	                   filter);
+	qglBlitFramebuffer(srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3], dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3], buffers, filter);
 
 	GL_BindFramebuffer(GL_FRAMEBUFFER, 0);
 	glState.currentFBO = NULL;

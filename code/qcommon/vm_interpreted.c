@@ -255,8 +255,7 @@ void VM_PrepareInterpreter(vm_t* vm, vmHeader_t* header) {
 			case OP_LEF:
 			case OP_GTF:
 			case OP_GEF:
-				if(codeBase[int_pc] < 0 || codeBase[int_pc] > vm->instructionCount)
-					Com_Error(ERR_DROP, "VM_PrepareInterpreter: Jump to invalid instruction number");
+				if(codeBase[int_pc] < 0 || codeBase[int_pc] > vm->instructionCount) Com_Error(ERR_DROP, "VM_PrepareInterpreter: Jump to invalid instruction number");
 
 				// codeBase[pc] is the instruction index. Convert that into an offset into
 				// the int-aligned codeBase[] by the lookup table.
@@ -320,7 +319,7 @@ int VM_CallInterpreted(vm_t* vm, int* args) {
 #endif
 
 	// interpret the code
-	vm->currentlyInterpreting = qtrue;
+	vm->currentlyInterpreting = true;
 
 	// we might be called recursively, so this might not be the very top
 	programStack = stackOnEntry = vm->programStack;
@@ -843,7 +842,7 @@ int VM_CallInterpreted(vm_t* vm, int* args) {
 	}
 
 done:
-	vm->currentlyInterpreting = qfalse;
+	vm->currentlyInterpreting = false;
 
 	if(opStackOfs != 1 || *opStack != 0xDEADBEEF) Com_Error(ERR_DROP, "Interpreter error: opStack[0] = %X, opStackOfs = %d", opStack[0], opStackOfs);
 

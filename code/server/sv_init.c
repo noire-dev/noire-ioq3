@@ -83,7 +83,7 @@ void SV_UpdateConfigstrings(client_t* client) {
 			continue;
 		}
 		SV_SendConfigstring(client, index);
-		client->csUpdated[index] = qfalse;
+		client->csUpdated[index] = false;
 	}
 }
 
@@ -120,7 +120,7 @@ void SV_SetConfigstring(int index, const char* val) {
 		// send the data to all relevant clients
 		for(i = 0, client = svs.clients; i < sv_maxclients->integer; i++, client++) {
 			if(client->state < CS_ACTIVE) {
-				if(client->state == CS_PRIMED) client->csUpdated[index] = qtrue;
+				if(client->state == CS_PRIMED) client->csUpdated[index] = true;
 				continue;
 			}
 			// do not always send server info to all clients
@@ -226,7 +226,7 @@ static void SV_BoundMaxClients(int minimum) {
 	// get the current maxclients value
 	Cvar_Get("sv_maxclients", "8", 0);
 
-	sv_maxclients->modified = qfalse;
+	sv_maxclients->modified = false;
 
 	if(sv_maxclients->integer < minimum) {
 		Cvar_Set("sv_maxclients", va("%i", minimum));
@@ -258,7 +258,7 @@ static void SV_Startup(void) {
 		// we don't need nearly as many when playing locally
 		svs.numSnapshotEntities = sv_maxclients->integer * 4 * MAX_SNAPSHOT_ENTITIES;
 	}
-	svs.initialized = qtrue;
+	svs.initialized = true;
 
 	// Don't respect sv_killserver unless a server is actually running
 	if(sv_killserver->integer) {
@@ -359,7 +359,7 @@ SV_TouchFile
 static void SV_TouchFile(const char* filename) {
 	fileHandle_t f;
 
-	FS_FOpenFileRead(filename, &f, qfalse);
+	FS_FOpenFileRead(filename, &f, false);
 	if(f) {
 		FS_FCloseFile(f);
 	}
@@ -374,10 +374,10 @@ clients along with it.
 This is NOT called for map_restart
 ================
 */
-void SV_SpawnServer(char* server, qboolean killBots) {
+void SV_SpawnServer(char* server, bool killBots) {
 	int i;
 	int checksum;
-	qboolean isBot;
+	bool isBot;
 	char systemInfo[16384];
 	const char* p;
 
@@ -392,7 +392,7 @@ void SV_SpawnServer(char* server, qboolean killBots) {
 	CL_MapLoading();
 
 	// make sure all the client stuff is unloaded
-	CL_ShutdownAll(qfalse);
+	CL_ShutdownAll(false);
 
 	// clear the whole hunk because we're (re)loading the server
 	Hunk_Clear();
@@ -446,7 +446,7 @@ void SV_SpawnServer(char* server, qboolean killBots) {
 	sv.checksumFeed = (((unsigned int)rand() << 16) ^ (unsigned int)rand()) ^ Com_Milliseconds();
 	FS_Restart(sv.checksumFeed);
 
-	CM_LoadMap(va("maps/%s.bsp", server), qfalse, &checksum);
+	CM_LoadMap(va("maps/%s.bsp", server), false, &checksum);
 
 	// set serverinfo visible name
 	Cvar_Set("mapname", server);
@@ -471,7 +471,7 @@ void SV_SpawnServer(char* server, qboolean killBots) {
 	SV_InitGameProgs();
 
 	// don't allow a map_restart if game is modified
-	sv_gametype->modified = qfalse;
+	sv_gametype->modified = false;
 
 	// run a few frames to allow everything to settle
 	for(i = 0; i < 3; i++) {
@@ -494,13 +494,13 @@ void SV_SpawnServer(char* server, qboolean killBots) {
 					SV_DropClient(&svs.clients[i], "");
 					continue;
 				}
-				isBot = qtrue;
+				isBot = true;
 			} else {
-				isBot = qfalse;
+				isBot = false;
 			}
 
 			// connect the client again
-			denied = VM_ExplicitArgPtr(gvm, VM_Call(gvm, GAME_CLIENT_CONNECT, i, qfalse, isBot));  // firstTime = qfalse
+			denied = VM_ExplicitArgPtr(gvm, VM_Call(gvm, GAME_CLIENT_CONNECT, i, false, isBot));  // firstTime = false
 			if(denied) {
 				// this generally shouldn't happen, because the client
 				// was connected before the level change
@@ -584,7 +584,7 @@ void SV_SpawnServer(char* server, qboolean killBots) {
 	if(com_dedicated->integer) {
 		// restart renderer in order to show console for dedicated servers
 		// launched through the regular binary
-		CL_StartHunkUsers(qtrue);
+		CL_StartHunkUsers(true);
 	}
 #endif
 
@@ -627,7 +627,7 @@ void SV_Init(void) {
 	sv_pure = Cvar_Get("sv_pure", "0", CVAR_SYSTEMINFO);
 #ifdef USE_VOIP
 	sv_voip = Cvar_Get("sv_voip", "1", CVAR_LATCH);
-	Cvar_CheckRange(sv_voip, 0, 1, qtrue);
+	Cvar_CheckRange(sv_voip, 0, 1, true);
 	sv_voipProtocol = Cvar_Get("sv_voipProtocol", sv_voip->integer ? "opus" : "", CVAR_SYSTEMINFO | CVAR_ROM);
 #endif
 	Cvar_Get("sv_paks", "", CVAR_SYSTEMINFO | CVAR_ROM);
@@ -746,5 +746,5 @@ void SV_Shutdown(char* finalmsg) {
 	Com_Printf("---------------------------\n");
 
 	// disconnect any local clients
-	if(sv_killserver->integer != 2) CL_Disconnect(qfalse);
+	if(sv_killserver->integer != 2) CL_Disconnect(false);
 }

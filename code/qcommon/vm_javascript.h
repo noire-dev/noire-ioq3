@@ -132,8 +132,7 @@ int JS_GetTool(int id);
 const char* JS_GetToolNameID(int id);
 const char* JS_GetToolName(int id);
 void JS_ToolInit(int id);
-void JS_ToolCall(
-    int id, int targetID, int playerID, char* arg1, char* arg2, char* arg3, char* arg4, char* arg5, char* arg6, char* arg7, char* arg8, char* arg9);
+void JS_ToolCall(int id, int targetID, int playerID, char* arg1, char* arg2, char* arg3, char* arg4, char* arg5, char* arg6, char* arg7, char* arg8, char* arg9);
 void JS_GameRunFrame(int levelTime);
 
 extern js_args_t vmargs;
@@ -143,9 +142,9 @@ extern js_result_t jsresult;
 
 // Engine Calls
 void VMContext(js_args_t* args, js_result_t* result);
-qboolean JSOpenFile(const char* filename);
+bool JSOpenFile(const char* filename);
 void JSLoadScripts(const char* path, const char* name);
-qboolean JSEval(const char* code, js_result_t* result);
-qboolean JSCall(int id, js_args_t* args, js_result_t* result);
+bool JSEval(const char* code, js_result_t* result);
+bool JSCall(int id, js_args_t* args, js_result_t* result);
 
 #endif

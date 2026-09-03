@@ -114,10 +114,10 @@ int time_backend;   // renderer backend time
 int com_frameTime;
 int com_frameNumber;
 
-qboolean com_errorEntered = qfalse;
-qboolean com_fullyInitialized = qfalse;
-qboolean com_gameRestarting = qfalse;
-qboolean com_gameClientRestarting = qfalse;
+bool com_errorEntered = false;
+bool com_fullyInitialized = false;
+bool com_gameRestarting = false;
+bool com_gameClientRestarting = false;
 
 char com_errorMessage[MAXPRINTMSG];
 
@@ -162,7 +162,7 @@ A raw string should NEVER be passed as fmt, because of "%f" type crashers.
 void QDECL Com_Printf(const char* fmt, ...) {
 	va_list argptr;
 	char msg[MAXPRINTMSG];
-	static qboolean opening_qconsole = qfalse;
+	static bool opening_qconsole = false;
 
 	va_start(argptr, fmt);
 	Q_vsnprintf(msg, sizeof(msg), fmt, argptr);
@@ -195,7 +195,7 @@ void QDECL Com_Printf(const char* fmt, ...) {
 			struct tm* newtime;
 			time_t aclock;
 
-			opening_qconsole = qtrue;
+			opening_qconsole = true;
 
 			time(&aclock);
 			newtime = localtime(&aclock);
@@ -215,7 +215,7 @@ void QDECL Com_Printf(const char* fmt, ...) {
 				Cvar_SetValue("logfile", 0);
 			}
 
-			opening_qconsole = qfalse;
+			opening_qconsole = false;
 		}
 		if(logfile && FS_Initialized()) {
 			FS_Write(msg, strlen(msg), logfile);
@@ -258,7 +258,7 @@ void QDECL Com_Error(int code, const char* fmt, ...) {
 	static int lastErrorTime;
 	static int errorCount;
 	int currentTime;
-	qboolean restartClient;
+	bool restartClient;
 
 	if(com_errorEntered && strlen(com_errorMessage)) {
 		Sys_Error("recursive error after: %s", com_errorMessage);
@@ -266,7 +266,7 @@ void QDECL Com_Error(int code, const char* fmt, ...) {
 		abort();
 	}
 
-	com_errorEntered = qtrue;
+	com_errorEntered = true;
 
 	Cvar_Set("com_errorCode", va("%i", code));
 
@@ -295,8 +295,8 @@ void QDECL Com_Error(int code, const char* fmt, ...) {
 
 	restartClient = com_gameClientRestarting && !(com_cl_running && com_cl_running->integer);
 
-	com_gameRestarting = qfalse;
-	com_gameClientRestarting = qfalse;
+	com_gameRestarting = false;
+	com_gameClientRestarting = false;
 
 	if(code == ERR_DISCONNECT || code == ERR_SERVERDISCONNECT) {
 		VM_Forced_Unload_Start();
@@ -304,12 +304,12 @@ void QDECL Com_Error(int code, const char* fmt, ...) {
 		if(restartClient) {
 			CL_Init();
 		}
-		CL_Disconnect(qtrue);
+		CL_Disconnect(true);
 		CL_FlushMemory();
 		VM_Forced_Unload_Done();
 		// make sure we can get at our local stuff
 		FS_PureServerSetLoadedPaks("", "");
-		com_errorEntered = qfalse;
+		com_errorEntered = false;
 		longjmp(abortframe, -1);
 	} else if(code == ERR_DROP) {
 		Com_Printf("********************\nERROR: %s\n********************\n", com_errorMessage);
@@ -318,11 +318,11 @@ void QDECL Com_Error(int code, const char* fmt, ...) {
 		if(restartClient) {
 			CL_Init();
 		}
-		CL_Disconnect(qtrue);
+		CL_Disconnect(true);
 		CL_FlushMemory();
 		VM_Forced_Unload_Done();
 		FS_PureServerSetLoadedPaks("", "");
-		com_errorEntered = qfalse;
+		com_errorEntered = false;
 		longjmp(abortframe, -1);
 	} else if(code == ERR_NEED_CD) {
 		VM_Forced_Unload_Start();
@@ -331,7 +331,7 @@ void QDECL Com_Error(int code, const char* fmt, ...) {
 			CL_Init();
 		}
 		if(com_cl_running && com_cl_running->integer) {
-			CL_Disconnect(qtrue);
+			CL_Disconnect(true);
 			CL_FlushMemory();
 			VM_Forced_Unload_Done();
 			CL_CDDialog();
@@ -342,11 +342,11 @@ void QDECL Com_Error(int code, const char* fmt, ...) {
 
 		FS_PureServerSetLoadedPaks("", "");
 
-		com_errorEntered = qfalse;
+		com_errorEntered = false;
 		longjmp(abortframe, -1);
 	} else {
 		VM_Forced_Unload_Start();
-		CL_Shutdown(va("Client fatal crashed: %s", com_errorMessage), qtrue, qtrue);
+		CL_Shutdown(va("Client fatal crashed: %s", com_errorMessage), true, true);
 		SV_Shutdown(va("Server fatal crashed: %s", com_errorMessage));
 		VM_Forced_Unload_Done();
 	}
@@ -374,10 +374,10 @@ void Com_Quit_f(void) {
 		// a corrupt call stack makes no difference
 		VM_Forced_Unload_Start();
 		SV_Shutdown(p[0] ? p : "Server quit");
-		CL_Shutdown(p[0] ? p : "Client quit", qtrue, qtrue);
+		CL_Shutdown(p[0] ? p : "Client quit", true, true);
 		VM_Forced_Unload_Done();
 		Com_Shutdown();
-		FS_Shutdown(qtrue);
+		FS_Shutdown(true);
 	}
 	Sys_Quit();
 }
@@ -441,17 +441,17 @@ Check for "safe" on the command line, which will
 skip loading of q3config.cfg
 ===================
 */
-qboolean Com_SafeMode(void) {
+bool Com_SafeMode(void) {
 	int i;
 
 	for(i = 0; i < com_numConsoleLines; i++) {
 		Cmd_TokenizeString(com_consoleLines[i]);
 		if(!Q_stricmp(Cmd_Argv(0), "safe") || !Q_stricmp(Cmd_Argv(0), "cvar_restart")) {
 			com_consoleLines[i][0] = 0;
-			return qtrue;
+			return true;
 		}
 	}
-	return qfalse;
+	return false;
 }
 
 /*
@@ -481,7 +481,7 @@ void Com_StartupVariable(const char* match) {
 			if(Cvar_Flags(s) == CVAR_NONEXISTENT)
 				Cvar_Get(s, Cmd_ArgsFrom(2), CVAR_USER_CREATED);
 			else
-				Cvar_Set2(s, Cmd_ArgsFrom(2), qfalse);
+				Cvar_Set2(s, Cmd_ArgsFrom(2), false);
 		}
 	}
 }
@@ -493,15 +493,15 @@ Com_AddStartupCommands
 Adds command line parameters as script statements
 Commands are separated by + signs
 
-Returns qtrue if any late commands were added, which
+Returns true if any late commands were added, which
 will keep the demoloop from immediately starting
 =================
 */
-qboolean Com_AddStartupCommands(void) {
+bool Com_AddStartupCommands(void) {
 	int i;
-	qboolean added;
+	bool added;
 
-	added = qfalse;
+	added = false;
 	// quote every token, so args with semicolons can work
 	for(i = 0; i < com_numConsoleLines; i++) {
 		if(!com_consoleLines[i] || !com_consoleLines[i][0]) {
@@ -513,7 +513,7 @@ qboolean Com_AddStartupCommands(void) {
 			continue;
 		}
 
-		added = qtrue;
+		added = true;
 		Cbuf_AddText(com_consoleLines[i]);
 		Cbuf_AddText("\n");
 	}
@@ -606,7 +606,7 @@ int Com_Filter(char* filter, char* name, int casesensitive) {
 			buf[i] = '\0';
 			if(strlen(buf)) {
 				ptr = Com_StringContains(name, buf, casesensitive);
-				if(!ptr) return qfalse;
+				if(!ptr) return false;
 				name = ptr + strlen(buf);
 			}
 		} else if(*filter == '?') {
@@ -616,26 +616,26 @@ int Com_Filter(char* filter, char* name, int casesensitive) {
 			filter++;
 		} else if(*filter == '[') {
 			filter++;
-			found = qfalse;
+			found = false;
 			while(*filter && !found) {
 				if(*filter == ']' && *(filter + 1) != ']') break;
 				if(*(filter + 1) == '-' && *(filter + 2) && (*(filter + 2) != ']' || *(filter + 3) == ']')) {
 					if(casesensitive) {
-						if(*name >= *filter && *name <= *(filter + 2)) found = qtrue;
+						if(*name >= *filter && *name <= *(filter + 2)) found = true;
 					} else {
-						if(toupper(*name) >= toupper(*filter) && toupper(*name) <= toupper(*(filter + 2))) found = qtrue;
+						if(toupper(*name) >= toupper(*filter) && toupper(*name) <= toupper(*(filter + 2))) found = true;
 					}
 					filter += 3;
 				} else {
 					if(casesensitive) {
-						if(*filter == *name) found = qtrue;
+						if(*filter == *name) found = true;
 					} else {
-						if(toupper(*filter) == toupper(*name)) found = qtrue;
+						if(toupper(*filter) == toupper(*name)) found = true;
 					}
 					filter++;
 				}
 			}
-			if(!found) return qfalse;
+			if(!found) return false;
 			while(*filter) {
 				if(*filter == ']' && *(filter + 1) != ']') break;
 				filter++;
@@ -644,15 +644,15 @@ int Com_Filter(char* filter, char* name, int casesensitive) {
 			name++;
 		} else {
 			if(casesensitive) {
-				if(*filter != *name) return qfalse;
+				if(*filter != *name) return false;
 			} else {
-				if(toupper(*filter) != toupper(*name)) return qfalse;
+				if(toupper(*filter) != toupper(*name)) return false;
 			}
 			filter++;
 			name++;
 		}
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -934,13 +934,7 @@ void* Z_TagMalloc(int size, int tag) {
 #ifdef ZONE_DEBUG
 			Z_LogHeap();
 
-			Com_Error(ERR_FATAL,
-			          "Z_Malloc: failed on allocation of %i bytes from the %s zone: %s, line: %d (%s)",
-			          size,
-			          zone == smallzone ? "small" : "main",
-			          file,
-			          line,
-			          label);
+			Com_Error(ERR_FATAL, "Z_Malloc: failed on allocation of %i bytes from the %s zone: %s, line: %d (%s)", size, zone == smallzone ? "small" : "main", file, line, label);
 #else
 			Com_Error(ERR_FATAL, "Z_Malloc: failed on allocation of %i bytes from the %s zone", size, zone == smallzone ? "small" : "main");
 #endif
@@ -1113,16 +1107,7 @@ typedef struct memstatic_s {
 } memstatic_t;
 
 memstatic_t emptystring = {{(sizeof(memblock_t) + 2 + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'\0', '\0'}};
-memstatic_t numberstring[] = {{{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'0', '\0'}},
-                              {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'1', '\0'}},
-                              {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'2', '\0'}},
-                              {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'3', '\0'}},
-                              {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'4', '\0'}},
-                              {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'5', '\0'}},
-                              {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'6', '\0'}},
-                              {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'7', '\0'}},
-                              {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'8', '\0'}},
-                              {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'9', '\0'}}};
+memstatic_t numberstring[] = {{{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'0', '\0'}}, {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'1', '\0'}}, {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'2', '\0'}}, {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'3', '\0'}}, {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'4', '\0'}}, {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'5', '\0'}}, {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'6', '\0'}}, {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'7', '\0'}}, {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'8', '\0'}}, {{(sizeof(memstatic_t) + 3) & ~3, TAG_STATIC, NULL, NULL, ZONEID}, {'9', '\0'}}};
 
 /*
 ========================
@@ -1435,7 +1420,7 @@ void Hunk_SmallLog(void) {
 
 	if(!logfile || !FS_Initialized()) return;
 	for(block = hunkblocks; block; block = block->next) {
-		block->printed = qfalse;
+		block->printed = false;
 	}
 	size = 0;
 	numBlocks = 0;
@@ -1455,7 +1440,7 @@ void Hunk_SmallLog(void) {
 			}
 			size += block2->size;
 			locsize += block2->size;
-			block2->printed = qtrue;
+			block2->printed = true;
 		}
 #ifdef HUNK_DEBUG
 		Com_sprintf(buf, sizeof(buf), "size = %8d: %s, line: %d (%s)\r\n", locsize, block->file, block->line, block->label);
@@ -1572,11 +1557,11 @@ void Hunk_ClearToMark(void) {
 Hunk_CheckMark
 =================
 */
-qboolean Hunk_CheckMark(void) {
+bool Hunk_CheckMark(void) {
 	if(hunk_low.mark || hunk_high.mark) {
-		return qtrue;
+		return true;
 	}
-	return qfalse;
+	return false;
 }
 
 void CL_ShutdownCGame(void);
@@ -1852,8 +1837,8 @@ void Com_InitJournaling(void) {
 		com_journalDataFile = FS_FOpenFileWrite_HomeState("journaldata.dat");
 	} else if(com_journal->integer == 2) {
 		Com_Printf("Replaying journaled events\n");
-		FS_FOpenFileRead("journal.dat", &com_journalFile, qtrue);
-		FS_FOpenFileRead("journaldata.dat", &com_journalDataFile, qtrue);
+		FS_FOpenFileRead("journal.dat", &com_journalFile, true);
+		FS_FOpenFileRead("journaldata.dat", &com_journalDataFile, true);
 	}
 
 	if(!com_journalFile || !com_journalDataFile) {
@@ -2040,7 +2025,7 @@ void Com_PushEvent(sysEvent_t* event) {
 	if(com_pushedEventsHead - com_pushedEventsTail >= MAX_PUSHED_EVENTS) {
 		// don't print the warning constantly, or it can give time for more...
 		if(!printedWarning) {
-			printedWarning = qtrue;
+			printedWarning = true;
 			Com_Printf("WARNING: Com_PushEvent overflow\n");
 		}
 
@@ -2049,7 +2034,7 @@ void Com_PushEvent(sysEvent_t* event) {
 		}
 		com_pushedEventsTail++;
 	} else {
-		printedWarning = qfalse;
+		printedWarning = false;
 	}
 
 	*ev = *event;
@@ -2280,25 +2265,25 @@ Change to a new mod properly with cleaning up cvars before switching.
 ==================
 */
 
-void Com_GameRestart(int checksumFeed, qboolean disconnect) {
+void Com_GameRestart(int checksumFeed, bool disconnect) {
 	// make sure no recursion can be triggered
 	if(!com_gameRestarting && com_fullyInitialized) {
-		com_gameRestarting = qtrue;
+		com_gameRestarting = true;
 		com_gameClientRestarting = com_cl_running->integer;
 
 		// Kill server if we have one
 		if(com_sv_running->integer) SV_Shutdown("Game directory changed");
 
 		if(com_gameClientRestarting) {
-			if(disconnect) CL_Disconnect(qfalse);
+			if(disconnect) CL_Disconnect(false);
 
-			CL_Shutdown("Game directory changed", disconnect, qfalse);
+			CL_Shutdown("Game directory changed", disconnect, false);
 		}
 
 		FS_Restart(checksumFeed);
 
 		// Clean out any user and VM created cvars
-		Cvar_Restart(qtrue);
+		Cvar_Restart(true);
 		Com_ExecuteCfg();
 
 		if(disconnect) {
@@ -2310,11 +2295,11 @@ void Com_GameRestart(int checksumFeed, qboolean disconnect) {
 
 		if(com_gameClientRestarting) {
 			CL_Init();
-			CL_StartHunkUsers(qfalse);
+			CL_StartHunkUsers(false);
 		}
 
-		com_gameRestarting = qfalse;
-		com_gameClientRestarting = qfalse;
+		com_gameRestarting = false;
+		com_gameClientRestarting = false;
 	}
 }
 
@@ -2329,7 +2314,7 @@ Expose possibility to change current running mod to the user
 void Com_GameRestart_f(void) {
 	Cvar_Set("fs_game", Cmd_Argv(1));
 
-	Com_GameRestart(0, qtrue);
+	Com_GameRestart(0, true);
 }
 
 #ifndef STANDALONE
@@ -2348,7 +2333,7 @@ char cl_cdkey[34] = "123456789";
 Com_ReadCDKey
 =================
 */
-qboolean CL_CDKeyValidate(const char* key, const char* checksum);
+bool CL_CDKeyValidate(const char* key, const char* checksum);
 void Com_ReadCDKey(const char* filename) {
 	fileHandle_t f;
 	char buffer[33];
@@ -2460,11 +2445,11 @@ out:
 static void Com_DetectAltivec(void) {
 	// Only detect if user hasn't forcibly disabled it.
 	if(com_altivec->integer) {
-		static qboolean altivec = qfalse;
-		static qboolean detected = qfalse;
+		static bool altivec = false;
+		static bool detected = false;
 		if(!detected) {
 			altivec = !!(Sys_GetProcessorFeatures() & CF_ALTIVEC);
-			detected = qtrue;
+			detected = true;
 		}
 
 		if(!altivec) {
@@ -2608,10 +2593,10 @@ void Com_Init(char* commandLine) {
 	// get dedicated here for proper hunk megs initialization
 #ifdef DEDICATED
 	com_dedicated = Cvar_Get("dedicated", "1", CVAR_INIT);
-	Cvar_CheckRange(com_dedicated, 1, 2, qtrue);
+	Cvar_CheckRange(com_dedicated, 1, 2, true);
 #else
 	com_dedicated = Cvar_Get("dedicated", "0", CVAR_LATCH);
-	Cvar_CheckRange(com_dedicated, 0, 2, qtrue);
+	Cvar_CheckRange(com_dedicated, 0, 2, true);
 #endif
 	// allocate the stack based hunk allocator
 	Com_InitHunkMemory();
@@ -2695,7 +2680,7 @@ void Com_Init(char* commandLine) {
 	VM_Init();
 	SV_Init();
 
-	com_dedicated->modified = qfalse;
+	com_dedicated->modified = false;
 #ifndef DEDICATED
 	CL_Init();
 #endif
@@ -2724,12 +2709,12 @@ void Com_Init(char* commandLine) {
 	// start in full screen ui mode
 	Cvar_Set("r_uiFullScreen", "1");
 
-	CL_StartHunkUsers(qfalse);
+	CL_StartHunkUsers(false);
 
 	// make sure single player is off by default
 	Cvar_Set("ui_singlePlayerActive", "0");
 
-	com_fullyInitialized = qtrue;
+	com_fullyInitialized = true;
 
 	// always set the cvar, but only print the info if it makes sense.
 	Com_DetectAltivec();
@@ -3023,7 +3008,7 @@ void Com_Frame(void) {
 
 	if(com_altivec->modified) {
 		Com_DetectAltivec();
-		com_altivec->modified = qfalse;
+		com_altivec->modified = false;
 	}
 
 	// mess with msec if needed
@@ -3045,7 +3030,7 @@ void Com_Frame(void) {
 	if(com_dedicated->modified) {
 		// get the latched value
 		Cvar_Get("dedicated", "0", 0);
-		com_dedicated->modified = qfalse;
+		com_dedicated->modified = false;
 		if(!com_dedicated->integer) {
 			SV_Shutdown("dedicated set to 0");
 			CL_FlushMemory();
@@ -3246,10 +3231,10 @@ static char* Field_FindFirstSeparator(char* s) {
 Field_Complete
 ===============
 */
-static qboolean Field_Complete(void) {
+static bool Field_Complete(void) {
 	int completionOffset;
 
-	if(matchCount == 0) return qtrue;
+	if(matchCount == 0) return true;
 
 	completionOffset = strlen(completionField->buffer) - strlen(completionString);
 
@@ -3260,12 +3245,12 @@ static qboolean Field_Complete(void) {
 	if(matchCount == 1) {
 		Q_strcat(completionField->buffer, sizeof(completionField->buffer), " ");
 		completionField->cursor++;
-		return qtrue;
+		return true;
 	}
 
 	Com_Printf("]%s\n", completionField->buffer);
 
-	return qfalse;
+	return false;
 }
 
 #ifndef DEDICATED
@@ -3289,7 +3274,7 @@ void Field_CompleteKeyname(void) {
 Field_CompleteFilename
 ===============
 */
-void Field_CompleteFilename(const char* dir, const char* ext, char* filter, qboolean stripExt, qboolean allowNonPureFilesOnDisk) {
+void Field_CompleteFilename(const char* dir, const char* ext, char* filter, bool stripExt, bool allowNonPureFilesOnDisk) {
 	matchCount = 0;
 	shortestMatch[0] = 0;
 
@@ -3303,7 +3288,7 @@ void Field_CompleteFilename(const char* dir, const char* ext, char* filter, qboo
 Field_CompleteCommand
 ===============
 */
-void Field_CompleteCommand(char* cmd, qboolean doCommands, qboolean doCvars) {
+void Field_CompleteCommand(char* cmd, bool doCommands, bool doCvars) {
 	int completionArgument = 0;
 
 	// Skip leading whitespace and quotes
@@ -3344,7 +3329,7 @@ void Field_CompleteCommand(char* cmd, qboolean doCommands, qboolean doCvars) {
 #endif
 
 		if((p = Field_FindFirstSeparator(cmd)))
-			Field_CompleteCommand(p + 1, qtrue, qtrue);  // Compound command
+			Field_CompleteCommand(p + 1, true, true);  // Compound command
 		else
 			Cmd_CompleteArgument(baseCmd, cmd, completionArgument);
 	} else {
@@ -3378,7 +3363,7 @@ Perform Tab expansion
 void Field_AutoComplete(field_t* field) {
 	completionField = field;
 
-	Field_CompleteCommand(completionField->buffer, qtrue, qtrue);
+	Field_CompleteCommand(completionField->buffer, true, true);
 }
 
 /*
@@ -3405,21 +3390,21 @@ Returns non-zero if given clientNum is enabled in voipTargets, zero otherwise.
 If clientNum is negative return if any bit is set.
 ==================
 */
-qboolean Com_IsVoipTarget(uint8_t* voipTargets, int voipTargetsSize, int clientNum) {
+bool Com_IsVoipTarget(uint8_t* voipTargets, int voipTargetsSize, int clientNum) {
 	int index;
 	if(clientNum < 0) {
 		for(index = 0; index < voipTargetsSize; index++) {
-			if(voipTargets[index]) return qtrue;
+			if(voipTargets[index]) return true;
 		}
 
-		return qfalse;
+		return false;
 	}
 
 	index = clientNum >> 3;
 
 	if(index < voipTargetsSize) return (voipTargets[index] & (1 << (clientNum & 0x07)));
 
-	return qfalse;
+	return false;
 }
 
 /*
@@ -3427,10 +3412,10 @@ qboolean Com_IsVoipTarget(uint8_t* voipTargets, int voipTargetsSize, int clientN
 Field_CompletePlayerName
 ===============
 */
-static qboolean Field_CompletePlayerNameFinal(qboolean whitespace) {
+static bool Field_CompletePlayerNameFinal(bool whitespace) {
 	int completionOffset;
 
-	if(matchCount == 0) return qtrue;
+	if(matchCount == 0) return true;
 
 	completionOffset = strlen(completionField->buffer) - strlen(completionString);
 
@@ -3441,10 +3426,10 @@ static qboolean Field_CompletePlayerNameFinal(qboolean whitespace) {
 	if(matchCount == 1 && whitespace) {
 		Q_strcat(completionField->buffer, sizeof(completionField->buffer), " ");
 		completionField->cursor++;
-		return qtrue;
+		return true;
 	}
 
-	return qfalse;
+	return false;
 }
 
 static void Name_PlayerNameCompletion(const char** names, int nameCount, void (*callback)(const char* s)) {
@@ -3455,14 +3440,14 @@ static void Name_PlayerNameCompletion(const char** names, int nameCount, void (*
 	}
 }
 
-qboolean Com_FieldStringToPlayerName(char* name, int length, const char* rawname) {
+bool Com_FieldStringToPlayerName(char* name, int length, const char* rawname) {
 	char hex[5];
 	int i;
 	int ch;
 
-	if(name == NULL || rawname == NULL) return qfalse;
+	if(name == NULL || rawname == NULL) return false;
 
-	if(length <= 0) return qtrue;
+	if(length <= 0) return true;
 
 	for(i = 0; *rawname && i + 1 <= length; rawname++, i++) {
 		if(*rawname == '\\') {
@@ -3480,17 +3465,17 @@ qboolean Com_FieldStringToPlayerName(char* name, int length, const char* rawname
 	}
 	name[i] = '\0';
 
-	return qtrue;
+	return true;
 }
 
-qboolean Com_PlayerNameToFieldString(char* str, int length, const char* name) {
+bool Com_PlayerNameToFieldString(char* str, int length, const char* name) {
 	const char* p;
 	int i;
 	int x1, x2;
 
-	if(str == NULL || name == NULL) return qfalse;
+	if(str == NULL || name == NULL) return false;
 
-	if(length <= 0) return qtrue;
+	if(length <= 0) return true;
 
 	*str = '\0';
 	p = name;
@@ -3517,11 +3502,11 @@ qboolean Com_PlayerNameToFieldString(char* str, int length, const char* name) {
 	}
 	str[i] = '\0';
 
-	return qtrue;
+	return true;
 }
 
 void Field_CompletePlayerName(const char** names, int nameCount) {
-	qboolean whitespace;
+	bool whitespace;
 
 	matchCount = 0;
 	shortestMatch[0] = 0;
@@ -3558,7 +3543,7 @@ void Field_CompletePlayerName(const char** names, int nameCount) {
 		Name_PlayerNameCompletion(names, nameCount, PrintMatches);
 	}
 
-	whitespace = nameCount == 1 ? qtrue : qfalse;
+	whitespace = nameCount == 1 ? true : false;
 	if(!Field_CompletePlayerNameFinal(whitespace)) {
 	}
 }

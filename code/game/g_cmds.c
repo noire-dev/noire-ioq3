@@ -70,23 +70,7 @@ void DeathmatchScoreboardMessage(gentity_t* ent) {
 		}
 		perfect = (cl->ps.persistant[PERS_RANK] == 0 && cl->ps.persistant[PERS_KILLED] == 0) ? 1 : 0;
 
-		Com_sprintf(entry,
-		            sizeof(entry),
-		            " %i %i %i %i %i %i %i %i %i %i %i %i %i %i",
-		            level.sortedClients[i],
-		            cl->ps.persistant[PERS_SCORE],
-		            ping,
-		            (level.time - cl->pers.enterTime) / 60000,
-		            scoreFlags,
-		            g_entities[level.sortedClients[i]].s.powerups,
-		            accuracy,
-		            cl->ps.persistant[PERS_IMPRESSIVE_COUNT],
-		            cl->ps.persistant[PERS_EXCELLENT_COUNT],
-		            cl->ps.persistant[PERS_GAUNTLET_FRAG_COUNT],
-		            cl->ps.persistant[PERS_DEFEND_COUNT],
-		            cl->ps.persistant[PERS_ASSIST_COUNT],
-		            perfect,
-		            cl->ps.persistant[PERS_CAPTURES]);
+		Com_sprintf(entry, sizeof(entry), " %i %i %i %i %i %i %i %i %i %i %i %i %i %i", level.sortedClients[i], cl->ps.persistant[PERS_SCORE], ping, (level.time - cl->pers.enterTime) / 60000, scoreFlags, g_entities[level.sortedClients[i]].s.powerups, accuracy, cl->ps.persistant[PERS_IMPRESSIVE_COUNT], cl->ps.persistant[PERS_EXCELLENT_COUNT], cl->ps.persistant[PERS_GAUNTLET_FRAG_COUNT], cl->ps.persistant[PERS_DEFEND_COUNT], cl->ps.persistant[PERS_ASSIST_COUNT], perfect, cl->ps.persistant[PERS_CAPTURES]);
 		j = strlen(entry);
 		if(stringlength + j >= sizeof(string)) break;
 		strcpy(string + stringlength, entry);
@@ -110,16 +94,16 @@ void Cmd_Score_f(gentity_t* ent) { DeathmatchScoreboardMessage(ent); }
 CheatsOk
 ==================
 */
-qboolean CheatsOk(gentity_t* ent) {
+bool CheatsOk(gentity_t* ent) {
 	if(!g_cheats.integer) {
 		trap_SendServerCommand(ent - g_entities, "print \"Cheats are not enabled on this server.\n\"");
-		return qfalse;
+		return false;
 	}
 	if(ent->health <= 0) {
 		trap_SendServerCommand(ent - g_entities, "print \"You must be alive to use this command.\n\"");
-		return qfalse;
+		return false;
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -159,20 +143,20 @@ char* ConcatArgs(int start) {
 StringIsInteger
 ==================
 */
-qboolean StringIsInteger(const char* s) {
+bool StringIsInteger(const char* s) {
 	int i;
 	int len;
-	qboolean foundDigit;
+	bool foundDigit;
 
 	len = strlen(s);
-	foundDigit = qfalse;
+	foundDigit = false;
 
 	for(i = 0; i < len; i++) {
 		if(!isdigit(s[i])) {
-			return qfalse;
+			return false;
 		}
 
-		foundDigit = qtrue;
+		foundDigit = true;
 	}
 
 	return foundDigit;
@@ -186,7 +170,7 @@ Returns a player number for either a number or name string
 Returns -1 if invalid
 ==================
 */
-int ClientNumberFromString(gentity_t* to, char* s, qboolean checkNums, qboolean checkNames) {
+int ClientNumberFromString(gentity_t* to, char* s, bool checkNums, bool checkNames) {
 	gclient_t* cl;
 	int idnum;
 	char cleanName[MAX_STRING_CHARS];
@@ -233,7 +217,7 @@ void Cmd_Give_f(gentity_t* ent) {
 	char* name;
 	gitem_t* it;
 	int i;
-	qboolean give_all;
+	bool give_all;
 	gentity_t* it_ent;
 	trace_t trace;
 
@@ -244,9 +228,9 @@ void Cmd_Give_f(gentity_t* ent) {
 	name = ConcatArgs(1);
 
 	if(Q_stricmp(name, "all") == 0)
-		give_all = qtrue;
+		give_all = true;
 	else
-		give_all = qfalse;
+		give_all = false;
 
 	if(give_all || Q_stricmp(name, "health") == 0) {
 		ent->health = ent->client->ps.stats[STAT_MAX_HEALTH];
@@ -584,7 +568,7 @@ void SetTeam(gentity_t* ent, const char* s) {
 	client->sess.spectatorState = specState;
 	client->sess.spectatorClient = specClient;
 
-	client->sess.teamLeader = qfalse;
+	client->sess.teamLeader = false;
 	if(team == TEAM_RED || team == TEAM_BLUE) {
 		teamLeader = TeamLeader(team);
 		// if there is no team leader or the team leader is a bot and this client is not a bot
@@ -688,7 +672,7 @@ void Cmd_Follow_f(gentity_t* ent) {
 	}
 
 	trap_Argv(1, arg, sizeof(arg));
-	i = ClientNumberFromString(ent, arg, qtrue, qtrue);
+	i = ClientNumberFromString(ent, arg, true, true);
 	if(i == -1) {
 		return;
 	}
@@ -840,8 +824,7 @@ void G_Say(gentity_t* ent, gentity_t* target, int mode, const char* chatText) {
 			color = COLOR_CYAN;
 			break;
 		case SAY_TELL:
-			if(target && target->inuse && target->client && g_gametype.integer >= GT_TEAM &&
-			   target->client->sess.sessionTeam == ent->client->sess.sessionTeam && Team_GetLocationMsg(ent, location, sizeof(location)))
+			if(target && target->inuse && target->client && g_gametype.integer >= GT_TEAM && target->client->sess.sessionTeam == ent->client->sess.sessionTeam && Team_GetLocationMsg(ent, location, sizeof(location)))
 				Com_sprintf(name, sizeof(name), EC "[%s%c%c" EC "] (%s)" EC ": ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE, location);
 			else
 				Com_sprintf(name, sizeof(name), EC "[%s%c%c" EC "]" EC ": ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE);
@@ -883,7 +866,7 @@ static void SanitizeChatText(char* text) {
 Cmd_Say_f
 ==================
 */
-static void Cmd_Say_f(gentity_t* ent, int mode, qboolean arg0) {
+static void Cmd_Say_f(gentity_t* ent, int mode, bool arg0) {
 	char* p;
 
 	if(trap_Argc() < 2 && !arg0) {
@@ -918,7 +901,7 @@ static void Cmd_Tell_f(gentity_t* ent) {
 	}
 
 	trap_Argv(1, arg, sizeof(arg));
-	targetNum = ClientNumberFromString(ent, arg, qtrue, qtrue);
+	targetNum = ClientNumberFromString(ent, arg, true, true);
 	if(targetNum == -1) {
 		return;
 	}
@@ -942,7 +925,7 @@ static void Cmd_Tell_f(gentity_t* ent) {
 }
 
 #ifdef MISSIONPACK
-static void G_VoiceTo(gentity_t* ent, gentity_t* other, int mode, const char* id, qboolean voiceonly) {
+static void G_VoiceTo(gentity_t* ent, gentity_t* other, int mode, const char* id, bool voiceonly) {
 	int color;
 	char* cmd;
 
@@ -977,7 +960,7 @@ static void G_VoiceTo(gentity_t* ent, gentity_t* other, int mode, const char* id
 	trap_SendServerCommand(other - g_entities, va("%s %d %d %d %s", cmd, voiceonly, ent->s.number, color, id));
 }
 
-void G_Voice(gentity_t* ent, gentity_t* target, int mode, const char* id, qboolean voiceonly) {
+void G_Voice(gentity_t* ent, gentity_t* target, int mode, const char* id, bool voiceonly) {
 	int j;
 	gentity_t* other;
 
@@ -1007,7 +990,7 @@ void G_Voice(gentity_t* ent, gentity_t* target, int mode, const char* id, qboole
 Cmd_Voice_f
 ==================
 */
-static void Cmd_Voice_f(gentity_t* ent, int mode, qboolean arg0, qboolean voiceonly) {
+static void Cmd_Voice_f(gentity_t* ent, int mode, bool arg0, bool voiceonly) {
 	char* p;
 
 	if(trap_Argc() < 2 && !arg0) {
@@ -1030,7 +1013,7 @@ static void Cmd_Voice_f(gentity_t* ent, int mode, qboolean arg0, qboolean voiceo
 Cmd_VoiceTell_f
 ==================
 */
-static void Cmd_VoiceTell_f(gentity_t* ent, qboolean voiceonly) {
+static void Cmd_VoiceTell_f(gentity_t* ent, bool voiceonly) {
 	int targetNum;
 	gentity_t* target;
 	char* id;
@@ -1042,7 +1025,7 @@ static void Cmd_VoiceTell_f(gentity_t* ent, qboolean voiceonly) {
 	}
 
 	trap_Argv(1, arg, sizeof(arg));
-	targetNum = ClientNumberFromString(ent, arg, qtrue, qtrue);
+	targetNum = ClientNumberFromString(ent, arg, true, true);
 	if(targetNum == -1) {
 		return;
 	}
@@ -1082,10 +1065,10 @@ static void Cmd_VoiceTaunt_f(gentity_t* ent) {
 	if(ent->enemy && ent->enemy->client && ent->enemy->client->lastkilled_client == ent->s.number) {
 		// i am a dead corpse
 		if(!(ent->enemy->r.svFlags & SVF_BOT)) {
-			G_Voice(ent, ent->enemy, SAY_TELL, VOICECHAT_DEATHINSULT, qfalse);
+			G_Voice(ent, ent->enemy, SAY_TELL, VOICECHAT_DEATHINSULT, false);
 		}
 		if(!(ent->r.svFlags & SVF_BOT)) {
-			G_Voice(ent, ent, SAY_TELL, VOICECHAT_DEATHINSULT, qfalse);
+			G_Voice(ent, ent, SAY_TELL, VOICECHAT_DEATHINSULT, false);
 		}
 		ent->enemy = NULL;
 		return;
@@ -1097,17 +1080,17 @@ static void Cmd_VoiceTaunt_f(gentity_t* ent) {
 			// who is the person I just killed
 			if(who->client->lasthurt_mod == MOD_GAUNTLET) {
 				if(!(who->r.svFlags & SVF_BOT)) {
-					G_Voice(ent, who, SAY_TELL, VOICECHAT_KILLGAUNTLET, qfalse);  // and I killed them with a gauntlet
+					G_Voice(ent, who, SAY_TELL, VOICECHAT_KILLGAUNTLET, false);  // and I killed them with a gauntlet
 				}
 				if(!(ent->r.svFlags & SVF_BOT)) {
-					G_Voice(ent, ent, SAY_TELL, VOICECHAT_KILLGAUNTLET, qfalse);
+					G_Voice(ent, ent, SAY_TELL, VOICECHAT_KILLGAUNTLET, false);
 				}
 			} else {
 				if(!(who->r.svFlags & SVF_BOT)) {
-					G_Voice(ent, who, SAY_TELL, VOICECHAT_KILLINSULT, qfalse);  // and I killed them with something else
+					G_Voice(ent, who, SAY_TELL, VOICECHAT_KILLINSULT, false);  // and I killed them with something else
 				}
 				if(!(ent->r.svFlags & SVF_BOT)) {
-					G_Voice(ent, ent, SAY_TELL, VOICECHAT_KILLINSULT, qfalse);
+					G_Voice(ent, ent, SAY_TELL, VOICECHAT_KILLINSULT, false);
 				}
 			}
 			ent->client->lastkilled_client = -1;
@@ -1122,10 +1105,10 @@ static void Cmd_VoiceTaunt_f(gentity_t* ent) {
 			if(who->client && who != ent && who->client->sess.sessionTeam == ent->client->sess.sessionTeam) {
 				if(who->client->rewardTime > level.time) {
 					if(!(who->r.svFlags & SVF_BOT)) {
-						G_Voice(ent, who, SAY_TELL, VOICECHAT_PRAISE, qfalse);
+						G_Voice(ent, who, SAY_TELL, VOICECHAT_PRAISE, false);
 					}
 					if(!(ent->r.svFlags & SVF_BOT)) {
-						G_Voice(ent, ent, SAY_TELL, VOICECHAT_PRAISE, qfalse);
+						G_Voice(ent, ent, SAY_TELL, VOICECHAT_PRAISE, false);
 					}
 					return;
 				}
@@ -1134,7 +1117,7 @@ static void Cmd_VoiceTaunt_f(gentity_t* ent) {
 	}
 
 	// just say something
-	G_Voice(ent, NULL, SAY_ALL, VOICECHAT_TAUNT, qfalse);
+	G_Voice(ent, NULL, SAY_ALL, VOICECHAT_TAUNT, false);
 }
 #endif
 
@@ -1162,7 +1145,7 @@ void Cmd_GameCommand_f(gentity_t* ent) {
 	}
 
 	trap_Argv(1, arg, sizeof(arg));
-	targetNum = ClientNumberFromString(ent, arg, qtrue, qtrue);
+	targetNum = ClientNumberFromString(ent, arg, true, true);
 	if(targetNum == -1) {
 		return;
 	}
@@ -1188,8 +1171,7 @@ Cmd_Where_f
 */
 void Cmd_Where_f(gentity_t* ent) { trap_SendServerCommand(ent - g_entities, va("print \"%s\n\"", vtos(ent->r.currentOrigin))); }
 
-static const char* gameNames[] =
-    {"Free For All", "Tournament", "Single Player", "Team Deathmatch", "Capture the Flag", "One Flag CTF", "Overload", "Harvester"};
+static const char* gameNames[] = {"Free For All", "Tournament", "Single Player", "Team Deathmatch", "Capture the Flag", "One Flag CTF", "Overload", "Harvester"};
 
 /*
 ==================
@@ -1624,11 +1606,11 @@ void ClientCommand(int clientNum) {
 	trap_Argv(0, cmd, sizeof(cmd));
 
 	if(Q_stricmp(cmd, "say") == 0) {
-		Cmd_Say_f(ent, SAY_ALL, qfalse);
+		Cmd_Say_f(ent, SAY_ALL, false);
 		return;
 	}
 	if(Q_stricmp(cmd, "say_team") == 0) {
-		Cmd_Say_f(ent, SAY_TEAM, qfalse);
+		Cmd_Say_f(ent, SAY_TEAM, false);
 		return;
 	}
 	if(Q_stricmp(cmd, "tell") == 0) {
@@ -1637,27 +1619,27 @@ void ClientCommand(int clientNum) {
 	}
 #ifdef MISSIONPACK
 	if(Q_stricmp(cmd, "vsay") == 0) {
-		Cmd_Voice_f(ent, SAY_ALL, qfalse, qfalse);
+		Cmd_Voice_f(ent, SAY_ALL, false, false);
 		return;
 	}
 	if(Q_stricmp(cmd, "vsay_team") == 0) {
-		Cmd_Voice_f(ent, SAY_TEAM, qfalse, qfalse);
+		Cmd_Voice_f(ent, SAY_TEAM, false, false);
 		return;
 	}
 	if(Q_stricmp(cmd, "vtell") == 0) {
-		Cmd_VoiceTell_f(ent, qfalse);
+		Cmd_VoiceTell_f(ent, false);
 		return;
 	}
 	if(Q_stricmp(cmd, "vosay") == 0) {
-		Cmd_Voice_f(ent, SAY_ALL, qfalse, qtrue);
+		Cmd_Voice_f(ent, SAY_ALL, false, true);
 		return;
 	}
 	if(Q_stricmp(cmd, "vosay_team") == 0) {
-		Cmd_Voice_f(ent, SAY_TEAM, qfalse, qtrue);
+		Cmd_Voice_f(ent, SAY_TEAM, false, true);
 		return;
 	}
 	if(Q_stricmp(cmd, "votell") == 0) {
-		Cmd_VoiceTell_f(ent, qtrue);
+		Cmd_VoiceTell_f(ent, true);
 		return;
 	}
 	if(Q_stricmp(cmd, "vtaunt") == 0) {
@@ -1672,7 +1654,7 @@ void ClientCommand(int clientNum) {
 
 	// ignore all other commands when at intermission
 	if(level.intermissiontime) {
-		Cmd_Say_f(ent, qfalse, qtrue);
+		Cmd_Say_f(ent, false, true);
 		return;
 	}
 

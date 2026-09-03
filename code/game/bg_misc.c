@@ -780,8 +780,7 @@ gitem_t* BG_FindItemForPowerup(powerup_t pw) {
 	int i;
 
 	for(i = 0; i < bg_numItems; i++) {
-		if((bg_itemlist[i].giType == IT_POWERUP || bg_itemlist[i].giType == IT_TEAM || bg_itemlist[i].giType == IT_PERSISTANT_POWERUP) &&
-		   bg_itemlist[i].giTag == pw) {
+		if((bg_itemlist[i].giType == IT_POWERUP || bg_itemlist[i].giType == IT_TEAM || bg_itemlist[i].giType == IT_PERSISTANT_POWERUP) && bg_itemlist[i].giTag == pw) {
 			return &bg_itemlist[i];
 		}
 	}
@@ -851,18 +850,17 @@ Items can be picked up without actually touching their physical bounds to make
 grabbing them easier
 ============
 */
-qboolean BG_PlayerTouchesItem(playerState_t* ps, entityState_t* item, int atTime) {
+bool BG_PlayerTouchesItem(playerState_t* ps, entityState_t* item, int atTime) {
 	vec3_t origin;
 
 	BG_EvaluateTrajectory(&item->pos, atTime, origin);
 
 	// we are ignoring ducked differences here
-	if(ps->origin[0] - origin[0] > 44 || ps->origin[0] - origin[0] < -50 || ps->origin[1] - origin[1] > 36 || ps->origin[1] - origin[1] < -36 ||
-	   ps->origin[2] - origin[2] > 36 || ps->origin[2] - origin[2] < -36) {
-		return qfalse;
+	if(ps->origin[0] - origin[0] > 44 || ps->origin[0] - origin[0] < -50 || ps->origin[1] - origin[1] > 36 || ps->origin[1] - origin[1] < -36 || ps->origin[2] - origin[2] > 36 || ps->origin[2] - origin[2] < -36) {
+		return false;
 	}
 
-	return qtrue;
+	return true;
 }
 
 /*
@@ -873,7 +871,7 @@ Returns false if the item should not be picked up.
 This needs to be the same for client side prediction and server use.
 ================
 */
-qboolean BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playerState_t* ps) {
+bool BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playerState_t* ps) {
 	gitem_t* item;
 #ifdef MISSIONPACK
 	int upperBound;
@@ -886,18 +884,18 @@ qboolean BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playe
 	item = &bg_itemlist[ent->modelindex];
 
 	switch(item->giType) {
-		case IT_WEAPON: return qtrue;  // weapons are always picked up
+		case IT_WEAPON: return true;  // weapons are always picked up
 
 		case IT_AMMO:
 			if(ps->ammo[item->giTag] >= 200) {
-				return qfalse;  // can't hold any more
+				return false;  // can't hold any more
 			}
-			return qtrue;
+			return true;
 
 		case IT_ARMOR:
 #ifdef MISSIONPACK
 			if(bg_itemlist[ps->stats[STAT_PERSISTANT_POWERUP]].giTag == PW_SCOUT) {
-				return qfalse;
+				return false;
 			}
 
 			// we also clamp armor to the maxhealth for handicapping
@@ -908,14 +906,14 @@ qboolean BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playe
 			}
 
 			if(ps->stats[STAT_ARMOR] >= upperBound) {
-				return qfalse;
+				return false;
 			}
 #else
 			if(ps->stats[STAT_ARMOR] >= ps->stats[STAT_MAX_HEALTH] * 2) {
-				return qfalse;
+				return false;
 			}
 #endif
-			return qtrue;
+			return true;
 
 		case IT_HEALTH:
 			// small and mega healths will go over the max, otherwise
@@ -926,34 +924,34 @@ qboolean BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playe
 #endif
 			    if(item->quantity == 5 || item->quantity == 100) {
 				if(ps->stats[STAT_HEALTH] >= ps->stats[STAT_MAX_HEALTH] * 2) {
-					return qfalse;
+					return false;
 				}
-				return qtrue;
+				return true;
 			}
 
 			if(ps->stats[STAT_HEALTH] >= ps->stats[STAT_MAX_HEALTH]) {
-				return qfalse;
+				return false;
 			}
-			return qtrue;
+			return true;
 
-		case IT_POWERUP: return qtrue;  // powerups are always picked up
+		case IT_POWERUP: return true;  // powerups are always picked up
 
 #ifdef MISSIONPACK
 		case IT_PERSISTANT_POWERUP:
 			// can only hold one item at a time
 			if(ps->stats[STAT_PERSISTANT_POWERUP]) {
-				return qfalse;
+				return false;
 			}
 
 			// check team only
 			if((ent->generic1 & 2) && (ps->persistant[PERS_TEAM] != TEAM_RED)) {
-				return qfalse;
+				return false;
 			}
 			if((ent->generic1 & 4) && (ps->persistant[PERS_TEAM] != TEAM_BLUE)) {
-				return qfalse;
+				return false;
 			}
 
-			return qtrue;
+			return true;
 #endif
 
 		case IT_TEAM:  // team items, such as flags
@@ -961,15 +959,15 @@ qboolean BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playe
 			if(gametype == GT_1FCTF) {
 				// neutral flag can always be picked up
 				if(item->giTag == PW_NEUTRALFLAG) {
-					return qtrue;
+					return true;
 				}
 				if(ps->persistant[PERS_TEAM] == TEAM_RED) {
 					if(item->giTag == PW_BLUEFLAG && ps->powerups[PW_NEUTRALFLAG]) {
-						return qtrue;
+						return true;
 					}
 				} else if(ps->persistant[PERS_TEAM] == TEAM_BLUE) {
 					if(item->giTag == PW_REDFLAG && ps->powerups[PW_NEUTRALFLAG]) {
-						return qtrue;
+						return true;
 					}
 				}
 			}
@@ -979,29 +977,25 @@ qboolean BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playe
 				// we need to know this because we can pick up our dropped flag (and return it)
 				// but we can't pick up our flag at base
 				if(ps->persistant[PERS_TEAM] == TEAM_RED) {
-					if(item->giTag == PW_BLUEFLAG || (item->giTag == PW_REDFLAG && ent->modelindex2) ||
-					   (item->giTag == PW_REDFLAG && ps->powerups[PW_BLUEFLAG]))
-						return qtrue;
+					if(item->giTag == PW_BLUEFLAG || (item->giTag == PW_REDFLAG && ent->modelindex2) || (item->giTag == PW_REDFLAG && ps->powerups[PW_BLUEFLAG])) return true;
 				} else if(ps->persistant[PERS_TEAM] == TEAM_BLUE) {
-					if(item->giTag == PW_REDFLAG || (item->giTag == PW_BLUEFLAG && ent->modelindex2) ||
-					   (item->giTag == PW_BLUEFLAG && ps->powerups[PW_REDFLAG]))
-						return qtrue;
+					if(item->giTag == PW_REDFLAG || (item->giTag == PW_BLUEFLAG && ent->modelindex2) || (item->giTag == PW_BLUEFLAG && ps->powerups[PW_REDFLAG])) return true;
 				}
 			}
 
 #ifdef MISSIONPACK
 			if(gametype == GT_HARVESTER) {
-				return qtrue;
+				return true;
 			}
 #endif
-			return qfalse;
+			return false;
 
 		case IT_HOLDABLE:
 			// can only hold one item at a time
 			if(ps->stats[STAT_HOLDABLE_ITEM]) {
-				return qfalse;
+				return false;
 			}
-			return qtrue;
+			return true;
 
 		case IT_BAD: Com_Error(ERR_DROP, "BG_CanItemBeGrabbed: IT_BAD");
 		default:
@@ -1013,7 +1007,7 @@ qboolean BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playe
 			break;
 	}
 
-	return qfalse;
+	return false;
 }
 
 //======================================================================
@@ -1219,17 +1213,9 @@ void BG_AddPredictableEventToPlayerstate(int newEvent, int eventParm, playerStat
 		trap_Cvar_VariableStringBuffer("showevents", buf, sizeof(buf));
 		if(atof(buf) != 0) {
 #ifdef GAME
-			Com_Printf(" game event svt %5d -> %5d: num = %20s parm %d\n",
-			           ps->pmove_framecount /*ps->commandTime*/,
-			           ps->eventSequence,
-			           eventnames[newEvent],
-			           eventParm);
+			Com_Printf(" game event svt %5d -> %5d: num = %20s parm %d\n", ps->pmove_framecount /*ps->commandTime*/, ps->eventSequence, eventnames[newEvent], eventParm);
 #else
-			Com_Printf("Cgame event svt %5d -> %5d: num = %20s parm %d\n",
-			           ps->pmove_framecount /*ps->commandTime*/,
-			           ps->eventSequence,
-			           eventnames[newEvent],
-			           eventParm);
+			Com_Printf("Cgame event svt %5d -> %5d: num = %20s parm %d\n", ps->pmove_framecount /*ps->commandTime*/, ps->eventSequence, eventnames[newEvent], eventParm);
 #endif
 		}
 	}
@@ -1286,7 +1272,7 @@ This is done after each set of usercmd_t on the server,
 and after local prediction on the client
 ========================
 */
-void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, qboolean snap) {
+void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, bool snap) {
 	int i;
 
 	if(ps->pm_type == PM_INTERMISSION || ps->pm_type == PM_SPECTATOR) {
@@ -1362,7 +1348,7 @@ This is done after each set of usercmd_t on the server,
 and after local prediction on the client
 ========================
 */
-void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s, int time, qboolean snap) {
+void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s, int time, bool snap) {
 	int i;
 
 	if(ps->pm_type == PM_INTERMISSION || ps->pm_type == PM_SPECTATOR) {

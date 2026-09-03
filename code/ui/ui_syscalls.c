@@ -52,29 +52,23 @@ void trap_R_AddRefEntityToScene(const refEntity_t* re) { syscall(UI_R_ADDREFENTI
 
 void trap_R_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts) { syscall(UI_R_ADDPOLYTOSCENE, hShader, numVerts, verts); }
 
-void trap_R_AddLightToScene(const vec3_t org, float intensity, float r, float g, float b) {
-	syscall(UI_R_ADDLIGHTTOSCENE, org, PASSFLOAT(intensity), PASSFLOAT(r), PASSFLOAT(g), PASSFLOAT(b));
-}
+void trap_R_AddLightToScene(const vec3_t org, float intensity, float r, float g, float b) { syscall(UI_R_ADDLIGHTTOSCENE, org, PASSFLOAT(intensity), PASSFLOAT(r), PASSFLOAT(g), PASSFLOAT(b)); }
 
 void trap_R_RenderScene(const refdef_t* fd) { syscall(UI_R_RENDERSCENE, fd); }
 
 void trap_R_SetColor(const float* rgba) { syscall(UI_R_SETCOLOR, rgba); }
 
-void trap_R_DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader) {
-	syscall(UI_R_DRAWSTRETCHPIC, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(w), PASSFLOAT(h), PASSFLOAT(s1), PASSFLOAT(t1), PASSFLOAT(s2), PASSFLOAT(t2), hShader);
-}
+void trap_R_DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader) { syscall(UI_R_DRAWSTRETCHPIC, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(w), PASSFLOAT(h), PASSFLOAT(s1), PASSFLOAT(t1), PASSFLOAT(s2), PASSFLOAT(t2), hShader); }
 
 void trap_R_ModelBounds(clipHandle_t model, vec3_t mins, vec3_t maxs) { syscall(UI_R_MODELBOUNDS, model, mins, maxs); }
 
 void trap_UpdateScreen(void) { syscall(UI_UPDATESCREEN); }
 
-int trap_CM_LerpTag(orientation_t* tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char* tagName) {
-	return syscall(UI_CM_LERPTAG, tag, mod, startFrame, endFrame, PASSFLOAT(frac), tagName);
-}
+int trap_CM_LerpTag(orientation_t* tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char* tagName) { return syscall(UI_CM_LERPTAG, tag, mod, startFrame, endFrame, PASSFLOAT(frac), tagName); }
 
 void trap_S_StartLocalSound(sfxHandle_t sfx, int channelNum) { syscall(UI_S_STARTLOCALSOUND, sfx, channelNum); }
 
-sfxHandle_t trap_S_RegisterSound(const char* sample, qboolean compressed) { return syscall(UI_S_REGISTERSOUND, sample, compressed); }
+sfxHandle_t trap_S_RegisterSound(const char* sample, bool compressed) { return syscall(UI_S_REGISTERSOUND, sample, compressed); }
 
 void trap_Key_KeynumToStringBuf(int keynum, char* buf, int buflen) { syscall(UI_KEY_KEYNUMTOSTRINGBUF, keynum, buf, buflen); }
 
@@ -82,11 +76,11 @@ void trap_Key_GetBindingBuf(int keynum, char* buf, int buflen) { syscall(UI_KEY_
 
 void trap_Key_SetBinding(int keynum, const char* binding) { syscall(UI_KEY_SETBINDING, keynum, binding); }
 
-qboolean trap_Key_IsDown(int keynum) { return syscall(UI_KEY_ISDOWN, keynum); }
+bool trap_Key_IsDown(int keynum) { return syscall(UI_KEY_ISDOWN, keynum); }
 
-qboolean trap_Key_GetOverstrikeMode(void) { return syscall(UI_KEY_GETOVERSTRIKEMODE); }
+bool trap_Key_GetOverstrikeMode(void) { return syscall(UI_KEY_GETOVERSTRIKEMODE); }
 
-void trap_Key_SetOverstrikeMode(qboolean state) { syscall(UI_KEY_SETOVERSTRIKEMODE, state); }
+void trap_Key_SetOverstrikeMode(bool state) { syscall(UI_KEY_SETOVERSTRIKEMODE, state); }
 
 void trap_Key_ClearStates(void) { syscall(UI_KEY_CLEARSTATES); }
 
@@ -112,9 +106,7 @@ int trap_LAN_GetServerPing(int source, int n) { return syscall(UI_LAN_GETSERVERP
 
 int trap_LAN_GetPingQueueCount(void) { return syscall(UI_LAN_GETPINGQUEUECOUNT); }
 
-int trap_LAN_ServerStatus(const char* serverAddress, char* serverStatus, int maxLen) {
-	return syscall(UI_LAN_SERVERSTATUS, serverAddress, serverStatus, maxLen);
-}
+int trap_LAN_ServerStatus(const char* serverAddress, char* serverStatus, int maxLen) { return syscall(UI_LAN_SERVERSTATUS, serverAddress, serverStatus, maxLen); }
 
 void trap_LAN_SaveCachedServers(void) { syscall(UI_LAN_SAVECACHEDSERVERS); }
 
@@ -128,11 +120,11 @@ void trap_LAN_GetPing(int n, char* buf, int buflen, int* pingtime) { syscall(UI_
 
 void trap_LAN_GetPingInfo(int n, char* buf, int buflen) { syscall(UI_LAN_GETPINGINFO, n, buf, buflen); }
 
-void trap_LAN_MarkServerVisible(int source, int n, qboolean visible) { syscall(UI_LAN_MARKSERVERVISIBLE, source, n, visible); }
+void trap_LAN_MarkServerVisible(int source, int n, bool visible) { syscall(UI_LAN_MARKSERVERVISIBLE, source, n, visible); }
 
 int trap_LAN_ServerIsVisible(int source, int n) { return syscall(UI_LAN_SERVERISVISIBLE, source, n); }
 
-qboolean trap_LAN_UpdateVisiblePings(int source) { return syscall(UI_LAN_UPDATEVISIBLEPINGS, source); }
+bool trap_LAN_UpdateVisiblePings(int source) { return syscall(UI_LAN_UPDATEVISIBLEPINGS, source); }
 
 int trap_LAN_AddServer(int source, const char* name, const char* addr) { return syscall(UI_LAN_ADDSERVER, source, name, addr); }
 
@@ -160,10 +152,8 @@ void trap_S_StopBackgroundTrack(void) { syscall(UI_S_STOPBACKGROUNDTRACK); }
 
 void trap_S_StartBackgroundTrack(const char* intro, const char* loop) { syscall(UI_S_STARTBACKGROUNDTRACK, intro, loop); }
 
-// this returns a handle.  arg0 is the name in the format "idlogo.roq", set arg1 to NULL, alteredstates to qfalse (do not alter gamestate)
-int trap_CIN_PlayCinematic(const char* arg0, int xpos, int ypos, int width, int height, int bits) {
-	return syscall(UI_CIN_PLAYCINEMATIC, arg0, xpos, ypos, width, height, bits);
-}
+// this returns a handle.  arg0 is the name in the format "idlogo.roq", set arg1 to NULL, alteredstates to false (do not alter gamestate)
+int trap_CIN_PlayCinematic(const char* arg0, int xpos, int ypos, int width, int height, int bits) { return syscall(UI_CIN_PLAYCINEMATIC, arg0, xpos, ypos, width, height, bits); }
 
 // stops playing the cinematic and ends it.  should always return FMV_EOF
 // cinematics must be stopped in reverse order of when they are started
@@ -180,7 +170,7 @@ void trap_CIN_SetExtents(int handle, int x, int y, int w, int h) { syscall(UI_CI
 
 void trap_R_RemapShader(const char* oldShader, const char* newShader, const char* timeOffset) { syscall(UI_R_REMAP_SHADER, oldShader, newShader, timeOffset); }
 
-qboolean trap_VerifyCDKey(const char* key, const char* chksum) { return syscall(UI_VERIFY_CDKEY, key, chksum); }
+bool trap_VerifyCDKey(const char* key, const char* chksum) { return syscall(UI_VERIFY_CDKEY, key, chksum); }
 
 void trap_SetPbClStatus(int status) { syscall(UI_SET_PBCLSTATUS, status); }
 

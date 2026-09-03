@@ -140,10 +140,10 @@ int BotGetAirGoal(bot_state_t* bs, bot_goal_t* goal) {
 			goal->number = 0;
 			goal->iteminfo = 0;
 			goal->entitynum = 0;
-			return qtrue;
+			return true;
 		}
 	}
-	return qfalse;
+	return false;
 }
 
 /*
@@ -163,21 +163,21 @@ int BotGoForAir(bot_state_t* bs, int tfl, bot_goal_t* ltg, float range) {
         // if we can find an air goal
 		if(BotGetAirGoal(bs, &goal)) {
 			trap_BotPushGoal(bs->gs, &goal);
-			return qtrue;
+			return true;
 		} else {
 			// get a nearby goal outside the water
 			while(trap_BotChooseNBGItem(bs->gs, bs->origin, bs->inventory, tfl, ltg, range)) {
 				trap_BotGetTopGoal(bs->gs, &goal);
 				// if the goal is not in water
 				if(!(trap_AAS_PointContents(goal.origin) & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA))) {
-					return qtrue;
+					return true;
 				}
 				trap_BotPopGoal(bs->gs);
 			}
 			trap_BotResetAvoidGoals(bs->gs);
 		}
 	}
-	return qfalse;
+	return false;
 }
 
 /*
@@ -189,7 +189,7 @@ int BotNearbyGoal(bot_state_t* bs, int tfl, bot_goal_t* ltg, float range) {
 	int ret;
 
 	// check if the bot should go for air
-	if(BotGoForAir(bs, tfl, ltg, range)) return qtrue;
+	if(BotGoForAir(bs, tfl, ltg, range)) return true;
 	// if the bot is carrying a flag or cubes
 	if(BotCTFCarryingFlag(bs)
 #ifdef MISSIONPACK
@@ -229,7 +229,7 @@ int BotReachedGoal(bot_state_t* bs, bot_goal_t* goal) {
 			if(!(goal->flags & GFL_DROPPED)) {
 				trap_BotSetAvoidGoalTime(bs->gs, goal->number, -1);
 			}
-			return qtrue;
+			return true;
 		}
 		// if the goal isn't there
 		if(trap_BotItemGoalInVisButNotVisible(bs->entitynum, bs->eye, bs->viewangles, goal)) {
@@ -241,31 +241,31 @@ int BotReachedGoal(bot_state_t* bs, bot_goal_t* goal) {
 			if (avoidtime > 0) {
 			    t = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, goal->areanum, bs->tfl);
 			    if ((float) t * 0.009 < avoidtime)
-			        return qtrue;
+			        return true;
 			}
 			*/
-			return qtrue;
+			return true;
 		}
 		// if in the goal area and below or above the goal and not swimming
 		if(bs->areanum == goal->areanum) {
 			if(bs->origin[0] > goal->origin[0] + goal->mins[0] && bs->origin[0] < goal->origin[0] + goal->maxs[0]) {
 				if(bs->origin[1] > goal->origin[1] + goal->mins[1] && bs->origin[1] < goal->origin[1] + goal->maxs[1]) {
 					if(!trap_AAS_Swimming(bs->origin)) {
-						return qtrue;
+						return true;
 					}
 				}
 			}
 		}
 	} else if(goal->flags & GFL_AIR) {
 		// if touching the goal
-		if(trap_BotTouchingGoal(bs->origin, goal)) return qtrue;
+		if(trap_BotTouchingGoal(bs->origin, goal)) return true;
 		// if the bot got air
-		if(bs->lastair_time > FloatTime() - 1) return qtrue;
+		if(bs->lastair_time > FloatTime() - 1) return true;
 	} else {
 		// if touching the goal
-		if(trap_BotTouchingGoal(bs->origin, goal)) return qtrue;
+		if(trap_BotTouchingGoal(bs->origin, goal)) return true;
 	}
-	return qfalse;
+	return false;
 }
 
 /*
@@ -315,7 +315,7 @@ int BotGetItemLongTermGoal(bot_state_t* bs, int tfl, bot_goal_t* goal) {
 		// get the goal at the top of the stack
 		return trap_BotGetTopGoal(bs->gs, goal);
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -356,7 +356,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			VectorSubtract(entinfo.origin, bs->origin, dir);
 			if(VectorLengthSquared(dir) < Square(100)) {
 				trap_BotResetAvoidReach(bs->ms);
-				return qfalse;
+				return false;
 			}
 		} else {
 			// last time the bot was NOT visible
@@ -375,7 +375,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			}
 		}
 		memcpy(goal, &bs->teamgoal, sizeof(bot_goal_t));
-		return qtrue;
+		return true;
 	}
 	// if the bot accompanies someone
 	if(bs->ltgtype == LTG_TEAMACCOMPANY && !retreat) {
@@ -408,12 +408,9 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 				// if the followed client is not standing ontop of the bot
 				if(botinfo.origin[2] + botinfo.maxs[2] > entinfo.origin[2] + entinfo.mins[2]) {
 					// if the bounding boxes touch each other
-					if(botinfo.origin[0] + botinfo.maxs[0] > entinfo.origin[0] + entinfo.mins[0] - 4 &&
-					   botinfo.origin[0] + botinfo.mins[0] < entinfo.origin[0] + entinfo.maxs[0] + 4) {
-						if(botinfo.origin[1] + botinfo.maxs[1] > entinfo.origin[1] + entinfo.mins[1] - 4 &&
-						   botinfo.origin[1] + botinfo.mins[1] < entinfo.origin[1] + entinfo.maxs[1] + 4) {
-							if(botinfo.origin[2] + botinfo.maxs[2] > entinfo.origin[2] + entinfo.mins[2] - 4 &&
-							   botinfo.origin[2] + botinfo.mins[2] < entinfo.origin[2] + entinfo.maxs[2] + 4) {
+					if(botinfo.origin[0] + botinfo.maxs[0] > entinfo.origin[0] + entinfo.mins[0] - 4 && botinfo.origin[0] + botinfo.mins[0] < entinfo.origin[0] + entinfo.maxs[0] + 4) {
+						if(botinfo.origin[1] + botinfo.maxs[1] > entinfo.origin[1] + entinfo.mins[1] - 4 && botinfo.origin[1] + botinfo.mins[1] < entinfo.origin[1] + entinfo.maxs[1] + 4) {
+							if(botinfo.origin[2] + botinfo.maxs[2] > entinfo.origin[2] + entinfo.mins[2] - 4 && botinfo.origin[2] + botinfo.mins[2] < entinfo.origin[2] + entinfo.maxs[2] + 4) {
 								// if the followed client looks in the direction of this bot
 								AngleVectors(entinfo.angles, dir, NULL, NULL);
 								dir[2] = 0;
@@ -482,11 +479,11 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 					// time the bot gets to pick up the nearby goal item
 					bs->nbg_time = FloatTime() + 8;
 					AIEnter_Seek_NBG(bs, "BotLongTermGoal: go for air");
-					return qfalse;
+					return false;
 				}
 				//
 				trap_BotResetAvoidReach(bs->ms);
-				return qfalse;
+				return false;
 			}
 		}
 		// if the entity information is valid (entity in PVS)
@@ -511,7 +508,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			// just to make sure the bot won't spam this message
 			bs->teammatevisible_time = FloatTime();
 		}
-		return qtrue;
+		return true;
 	}
 	//
 	if(bs->ltgtype == LTG_DEFENDKEYAREA) {
@@ -549,7 +546,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 				bs->defendaway_range = 350;
 			}
 		}
-		return qtrue;
+		return true;
 	}
 	// going to kill someone
 	if(bs->ltgtype == LTG_KILL && !retreat) {
@@ -603,7 +600,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
 			bs->ltgtype = 0;
 		}
-		return qtrue;
+		return true;
 	}
 	// if camping somewhere
 	if((bs->ltgtype == LTG_CAMP || bs->ltgtype == LTG_CAMPORDER) && !retreat) {
@@ -676,9 +673,9 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			// FIXME: move around a bit
 			//
 			trap_BotResetAvoidReach(bs->ms);
-			return qfalse;
+			return false;
 		}
-		return qtrue;
+		return true;
 	}
 	// patrolling along several waypoints
 	if(bs->ltgtype == LTG_PATROL && !retreat) {
@@ -698,7 +695,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 		//
 		if(!bs->curpatrolpoint) {
 			bs->ltgtype = 0;
-			return qfalse;
+			return false;
 		}
 		// if the bot touches the current goal
 		if(trap_BotTouchingGoal(bs->origin, &bs->curpatrolpoint->goal)) {
@@ -726,10 +723,10 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 		}
 		if(!bs->curpatrolpoint) {
 			bs->ltgtype = 0;
-			return qfalse;
+			return false;
 		}
 		memcpy(goal, &bs->curpatrolpoint->goal, sizeof(bot_goal_t));
-		return qtrue;
+		return true;
 	}
 #ifdef CTF
 	if(gametype == GT_CTF) {
@@ -746,7 +743,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			switch(BotTeam(bs)) {
 				case TEAM_RED: memcpy(goal, &ctf_blueflag, sizeof(bot_goal_t)); break;
 				case TEAM_BLUE: memcpy(goal, &ctf_redflag, sizeof(bot_goal_t)); break;
-				default: bs->ltgtype = 0; return qfalse;
+				default: bs->ltgtype = 0; return false;
 			}
 			// if touching the flag
 			if(trap_BotTouchingGoal(bs->origin, goal)) {
@@ -762,14 +759,14 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 				bs->ltgtype = 0;
 			}
 			BotAlternateRoute(bs, goal);
-			return qtrue;
+			return true;
 		}
 		// if rushing to the base
 		if(bs->ltgtype == LTG_RUSHBASE && bs->rushbaseaway_time < FloatTime()) {
 			switch(BotTeam(bs)) {
 				case TEAM_RED: memcpy(goal, &ctf_redflag, sizeof(bot_goal_t)); break;
 				case TEAM_BLUE: memcpy(goal, &ctf_blueflag, sizeof(bot_goal_t)); break;
-				default: bs->ltgtype = 0; return qfalse;
+				default: bs->ltgtype = 0; return false;
 			}
 			// if not carrying the flag anymore
 			if(!BotCTFCarryingFlag(bs)) bs->ltgtype = 0;
@@ -788,7 +785,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 				}
 			}
 			BotAlternateRoute(bs, goal);
-			return qtrue;
+			return true;
 		}
 		// returning flag
 		if(bs->ltgtype == LTG_RETURNFLAG) {
@@ -803,7 +800,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			switch(BotTeam(bs)) {
 				case TEAM_RED: memcpy(goal, &ctf_blueflag, sizeof(bot_goal_t)); break;
 				case TEAM_BLUE: memcpy(goal, &ctf_redflag, sizeof(bot_goal_t)); break;
-				default: bs->ltgtype = 0; return qfalse;
+				default: bs->ltgtype = 0; return false;
 			}
 			// if touching the flag
 			if(trap_BotTouchingGoal(bs->origin, goal)) bs->ltgtype = 0;
@@ -812,7 +809,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 				bs->ltgtype = 0;
 			}
 			BotAlternateRoute(bs, goal);
-			return qtrue;
+			return true;
 		}
 	}
 #endif  // CTF
@@ -835,14 +832,14 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			if(bs->teamgoal_time < FloatTime()) {
 				bs->ltgtype = 0;
 			}
-			return qtrue;
+			return true;
 		}
 		// if rushing to the base
 		if(bs->ltgtype == LTG_RUSHBASE) {
 			switch(BotTeam(bs)) {
 				case TEAM_RED: memcpy(goal, &ctf_blueflag, sizeof(bot_goal_t)); break;
 				case TEAM_BLUE: memcpy(goal, &ctf_redflag, sizeof(bot_goal_t)); break;
-				default: bs->ltgtype = 0; return qfalse;
+				default: bs->ltgtype = 0; return false;
 			}
 			// if not carrying the flag anymore
 			if(!Bot1FCTFCarryingFlag(bs)) {
@@ -857,7 +854,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 				bs->ltgtype = 0;
 			}
 			BotAlternateRoute(bs, goal);
-			return qtrue;
+			return true;
 		}
 		// attack the enemy base
 		if(bs->ltgtype == LTG_ATTACKENEMYBASE && bs->attackaway_time < FloatTime()) {
@@ -871,7 +868,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			switch(BotTeam(bs)) {
 				case TEAM_RED: memcpy(goal, &ctf_blueflag, sizeof(bot_goal_t)); break;
 				case TEAM_BLUE: memcpy(goal, &ctf_redflag, sizeof(bot_goal_t)); break;
-				default: bs->ltgtype = 0; return qfalse;
+				default: bs->ltgtype = 0; return false;
 			}
 			// quit rushing after 2 minutes
 			if(bs->teamgoal_time < FloatTime()) {
@@ -881,7 +878,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			if(trap_BotTouchingGoal(bs->origin, goal)) {
 				bs->attackaway_time = FloatTime() + 2 + 5 * random();
 			}
-			return qtrue;
+			return true;
 		}
 		// returning flag
 		if(bs->ltgtype == LTG_RETURNFLAG) {
@@ -911,7 +908,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			switch(BotTeam(bs)) {
 				case TEAM_RED: memcpy(goal, &blueobelisk, sizeof(bot_goal_t)); break;
 				case TEAM_BLUE: memcpy(goal, &redobelisk, sizeof(bot_goal_t)); break;
-				default: bs->ltgtype = 0; return qfalse;
+				default: bs->ltgtype = 0; return false;
 			}
 			// if the bot no longer wants to attack the obelisk
 			if(BotFeelingBad(bs) > 50) {
@@ -932,7 +929,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			}
 			BotAlternateRoute(bs, goal);
 			// just move towards the obelisk
-			return qtrue;
+			return true;
 		}
 	} else if(gametype == GT_HARVESTER) {
 		// if rushing to the base
@@ -940,25 +937,25 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			switch(BotTeam(bs)) {
 				case TEAM_RED: memcpy(goal, &blueobelisk, sizeof(bot_goal_t)); break;
 				case TEAM_BLUE: memcpy(goal, &redobelisk, sizeof(bot_goal_t)); break;
-				default: BotGoHarvest(bs); return qfalse;
+				default: BotGoHarvest(bs); return false;
 			}
 			// if not carrying any cubes
 			if(!BotHarvesterCarryingCubes(bs)) {
 				BotGoHarvest(bs);
-				return qfalse;
+				return false;
 			}
 			// quit rushing after 2 minutes
 			if(bs->teamgoal_time < FloatTime()) {
 				BotGoHarvest(bs);
-				return qfalse;
+				return false;
 			}
 			// if touching the base flag the bot should loose the enemy flag
 			if(trap_BotTouchingGoal(bs->origin, goal)) {
 				BotGoHarvest(bs);
-				return qfalse;
+				return false;
 			}
 			BotAlternateRoute(bs, goal);
-			return qtrue;
+			return true;
 		}
 		// attack the enemy base
 		if(bs->ltgtype == LTG_ATTACKENEMYBASE && bs->attackaway_time < FloatTime()) {
@@ -972,7 +969,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			switch(BotTeam(bs)) {
 				case TEAM_RED: memcpy(goal, &blueobelisk, sizeof(bot_goal_t)); break;
 				case TEAM_BLUE: memcpy(goal, &redobelisk, sizeof(bot_goal_t)); break;
-				default: bs->ltgtype = 0; return qfalse;
+				default: bs->ltgtype = 0; return false;
 			}
 			// quit rushing after 2 minutes
 			if(bs->teamgoal_time < FloatTime()) {
@@ -982,7 +979,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			if(trap_BotTouchingGoal(bs->origin, goal)) {
 				bs->attackaway_time = FloatTime() + 2 + 5 * random();
 			}
-			return qtrue;
+			return true;
 		}
 		// harvest cubes
 		if(bs->ltgtype == LTG_HARVEST && bs->harvestaway_time < FloatTime()) {
@@ -1002,7 +999,7 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 			if(trap_BotTouchingGoal(bs->origin, goal)) {
 				bs->harvestaway_time = FloatTime() + 4 + 3 * random();
 			}
-			return qtrue;
+			return true;
 		}
 	}
 #endif
@@ -1076,7 +1073,7 @@ int BotLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) {
 			}
 			// the bot should go back to the team mate
 			memcpy(goal, &bs->lead_teamgoal, sizeof(bot_goal_t));
-			return qtrue;
+			return true;
 		} else {
 			// if quite distant from the team mate
 			if(squaredist > Square(500)) {
@@ -1090,7 +1087,7 @@ int BotLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) {
 				vectoangles(dir, bs->ideal_viewangles);
 				bs->ideal_viewangles[2] *= 0.5;
 				// just wait for the team mate
-				return qfalse;
+				return false;
 			}
 		}
 	}
@@ -1128,7 +1125,7 @@ int AINode_Intermission(bot_state_t* bs) {
 		}
 		AIEnter_Stand(bs, "intermission: chat");
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -1153,7 +1150,7 @@ int AINode_Observer(bot_state_t* bs) {
 	if(!BotIsObserver(bs)) {
 		AIEnter_Stand(bs, "observer: left observer");
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -1183,7 +1180,7 @@ int AINode_Stand(bot_state_t* bs) {
 	if(bs->standfindenemy_time < FloatTime()) {
 		if(BotFindEnemy(bs, -1)) {
 			AIEnter_Battle_Fight(bs, "stand: found enemy");
-			return qfalse;
+			return false;
 		}
 		bs->standfindenemy_time = FloatTime() + 1;
 	}
@@ -1193,10 +1190,10 @@ int AINode_Stand(bot_state_t* bs) {
 	if(bs->stand_time < FloatTime()) {
 		trap_BotEnterChat(bs->cs, 0, bs->chatto);
 		AIEnter_Seek_LTG(bs, "stand: time out");
-		return qfalse;
+		return false;
 	}
 	//
-	return qtrue;
+	return true;
 }
 
 /*
@@ -1220,7 +1217,7 @@ void AIEnter_Respawn(bot_state_t* bs, char* s) {
 		bs->respawnchat_time = 0;
 	}
 	// set respawn state
-	bs->respawn_wait = qfalse;
+	bs->respawn_wait = false;
 	bs->ainode = AINode_Respawn;
 }
 
@@ -1239,7 +1236,7 @@ int AINode_Respawn(bot_state_t* bs) {
 		}
 	} else if(bs->respawn_time < FloatTime()) {
 		// wait until respawned
-		bs->respawn_wait = qtrue;
+		bs->respawn_wait = true;
 		// elementary action respawn
 		trap_EA_Respawn(bs->client);
 		//
@@ -1252,7 +1249,7 @@ int AINode_Respawn(bot_state_t* bs) {
 		trap_EA_Talk(bs->client);
 	}
 	//
-	return qtrue;
+	return true;
 }
 
 /*
@@ -1424,19 +1421,19 @@ int AINode_Seek_ActivateEntity(bot_state_t* bs) {
 	if(BotIsObserver(bs)) {
 		BotClearActivateGoalStack(bs);
 		AIEnter_Observer(bs, "active entity: observer");
-		return qfalse;
+		return false;
 	}
 	// if in the intermission
 	if(BotIntermission(bs)) {
 		BotClearActivateGoalStack(bs);
 		AIEnter_Intermission(bs, "activate entity: intermission");
-		return qfalse;
+		return false;
 	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		BotClearActivateGoalStack(bs);
 		AIEnter_Respawn(bs, "activate entity: bot dead");
-		return qfalse;
+		return false;
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
@@ -1451,19 +1448,19 @@ int AINode_Seek_ActivateEntity(bot_state_t* bs) {
 	if(!bs->activatestack) {
 		BotClearActivateGoalStack(bs);
 		AIEnter_Seek_NBG(bs, "activate entity: no goal");
-		return qfalse;
+		return false;
 	}
 	//
 	goal = &bs->activatestack->goal;
 	// initialize target being visible to false
-	targetvisible = qfalse;
+	targetvisible = false;
 	// if the bot has to shoot at a target to activate something
 	if(bs->activatestack->shoot) {
 		//
 		BotAI_Trace(&bsptrace, bs->eye, NULL, NULL, bs->activatestack->target, bs->entitynum, MASK_SHOT);
 		// if the shootable entity is visible from the current position
 		if(bsptrace.fraction >= 1.0 || bsptrace.ent == goal->entitynum) {
-			targetvisible = qtrue;
+			targetvisible = true;
 			// if holding the right weapon
 			if(bs->cur_ps.weapon == bs->activatestack->weapon) {
 				VectorSubtract(bs->activatestack->target, bs->eye, dir);
@@ -1492,10 +1489,10 @@ int AINode_Seek_ActivateEntity(bot_state_t* bs) {
 			// if there are more activate goals on the stack
 			if(bs->activatestack) {
 				bs->activatestack->time = FloatTime() + 10;
-				return qfalse;
+				return false;
 			}
 			AIEnter_Seek_NBG(bs, "activate entity: time out");
-			return qfalse;
+			return false;
 		}
 		memset(&moveresult, 0, sizeof(bot_moveresult_t));
 	} else {
@@ -1519,13 +1516,13 @@ int AINode_Seek_ActivateEntity(bot_state_t* bs) {
 			// if there are more activate goals on the stack
 			if(bs->activatestack) {
 				bs->activatestack->time = FloatTime() + 10;
-				return qfalse;
+				return false;
 			}
 			AIEnter_Seek_NBG(bs, "activate entity: activated");
-			return qfalse;
+			return false;
 		}
 		// predict obstacles
-		if(BotAIPredictObstacles(bs, goal)) return qfalse;
+		if(BotAIPredictObstacles(bs, goal)) return false;
 		// initialize the movement state
 		BotSetupForMovement(bs);
 		// move towards the goal
@@ -1538,7 +1535,7 @@ int AINode_Seek_ActivateEntity(bot_state_t* bs) {
 			bs->activatestack->time = 0;
 		}
 		// check if the bot is blocked
-		BotAIBlocked(bs, &moveresult, qtrue);
+		BotAIBlocked(bs, &moveresult, true);
 	}
 	//
 	BotClearPath(bs, &moveresult);
@@ -1599,7 +1596,7 @@ int AINode_Seek_ActivateEntity(bot_state_t* bs) {
 		}
 		BotClearActivateGoalStack(bs);
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -1632,17 +1629,17 @@ int AINode_Seek_NBG(bot_state_t* bs) {
 
 	if(BotIsObserver(bs)) {
 		AIEnter_Observer(bs, "seek nbg: observer");
-		return qfalse;
+		return false;
 	}
 	// if in the intermission
 	if(BotIntermission(bs)) {
 		AIEnter_Intermission(bs, "seek nbg: intermision");
-		return qfalse;
+		return false;
 	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "seek nbg: bot dead");
-		return qfalse;
+		return false;
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
@@ -1673,10 +1670,10 @@ int AINode_Seek_NBG(bot_state_t* bs) {
 		bs->check_time = FloatTime() + 0.05;
 		// go back to seek ltg
 		AIEnter_Seek_LTG(bs, "seek nbg: time out");
-		return qfalse;
+		return false;
 	}
 	// predict obstacles
-	if(BotAIPredictObstacles(bs, &goal)) return qfalse;
+	if(BotAIPredictObstacles(bs, &goal)) return false;
 	// initialize the movement state
 	BotSetupForMovement(bs);
 	// move towards the goal
@@ -1688,7 +1685,7 @@ int AINode_Seek_NBG(bot_state_t* bs) {
 		bs->nbg_time = 0;
 	}
 	// check if the bot is blocked
-	BotAIBlocked(bs, &moveresult, qtrue);
+	BotAIBlocked(bs, &moveresult, true);
 	//
 	BotClearPath(bs, &moveresult);
 	// if the viewangles are used for the movement
@@ -1729,7 +1726,7 @@ int AINode_Seek_NBG(bot_state_t* bs) {
 			AIEnter_Battle_Fight(bs, "seek nbg: found enemy");
 		}
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -1765,23 +1762,23 @@ int AINode_Seek_LTG(bot_state_t* bs) {
 
 	if(BotIsObserver(bs)) {
 		AIEnter_Observer(bs, "seek ltg: observer");
-		return qfalse;
+		return false;
 	}
 	// if in the intermission
 	if(BotIntermission(bs)) {
 		AIEnter_Intermission(bs, "seek ltg: intermission");
-		return qfalse;
+		return false;
 	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "seek ltg: bot dead");
-		return qfalse;
+		return false;
 	}
 	//
 	if(BotChat_Random(bs)) {
 		bs->stand_time = FloatTime() + BotChatTime(bs);
 		AIEnter_Stand(bs, "seek ltg: random chat");
-		return qfalse;
+		return false;
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
@@ -1807,21 +1804,21 @@ int AINode_Seek_LTG(bot_state_t* bs) {
 		if(BotWantsToRetreat(bs)) {
 			// keep the current long term goal and retreat
 			AIEnter_Battle_Retreat(bs, "seek ltg: found enemy");
-			return qfalse;
+			return false;
 		} else {
 			trap_BotResetLastAvoidReach(bs->ms);
 			// empty the goal stack
 			trap_BotEmptyGoalStack(bs->gs);
 			// go fight
 			AIEnter_Battle_Fight(bs, "seek ltg: found enemy");
-			return qfalse;
+			return false;
 		}
 	}
 	//
-	BotTeamGoals(bs, qfalse);
+	BotTeamGoals(bs, false);
 	// get the current long term goal
-	if(!BotLongTermGoal(bs, bs->tfl, qfalse, &goal)) {
-		return qtrue;
+	if(!BotLongTermGoal(bs, bs->tfl, false, &goal)) {
+		return true;
 	}
 	// check for nearby goals periodicly
 	if(bs->check_time < FloatTime()) {
@@ -1857,11 +1854,11 @@ int AINode_Seek_LTG(bot_state_t* bs) {
 			// time the bot gets to pick up the nearby goal item
 			bs->nbg_time = FloatTime() + 4 + range * 0.01;
 			AIEnter_Seek_NBG(bs, "ltg seek: nbg");
-			return qfalse;
+			return false;
 		}
 	}
 	// predict obstacles
-	if(BotAIPredictObstacles(bs, &goal)) return qfalse;
+	if(BotAIPredictObstacles(bs, &goal)) return false;
 	// initialize the movement state
 	BotSetupForMovement(bs);
 	// move towards the goal
@@ -1874,7 +1871,7 @@ int AINode_Seek_LTG(bot_state_t* bs) {
 		bs->ltg_time = 0;
 	}
 	//
-	BotAIBlocked(bs, &moveresult, qtrue);
+	BotAIBlocked(bs, &moveresult, true);
 	//
 	BotClearPath(bs, &moveresult);
 	// if the viewangles are used for the movement
@@ -1908,7 +1905,7 @@ int AINode_Seek_LTG(bot_state_t* bs) {
 	// if the weapon is used for the bot movement
 	if(moveresult.flags & MOVERESULT_MOVEMENTWEAPON) bs->weaponnum = moveresult.weapon;
 	//
-	return qtrue;
+	return true;
 }
 
 /*
@@ -1948,18 +1945,18 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 
 	if(BotIsObserver(bs)) {
 		AIEnter_Observer(bs, "battle fight: observer");
-		return qfalse;
+		return false;
 	}
 
 	// if in the intermission
 	if(BotIntermission(bs)) {
 		AIEnter_Intermission(bs, "battle fight: intermission");
-		return qfalse;
+		return false;
 	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "battle fight: bot dead");
-		return qfalse;
+		return false;
 	}
 	// if there is another better enemy
 	if(BotFindEnemy(bs, bs->enemy)) {
@@ -1970,7 +1967,7 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 	// if no enemy
 	if(bs->enemy < 0) {
 		AIEnter_Seek_LTG(bs, "battle fight: no enemy");
-		return qfalse;
+		return false;
 	}
 	//
 	BotEntityInfo(bs->enemy, &entinfo);
@@ -1988,7 +1985,7 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 				bs->ltg_time = 0;
 				AIEnter_Seek_LTG(bs, "battle fight: enemy dead");
 			}
-			return qfalse;
+			return false;
 		}
 	} else {
 		if(EntityIsDead(&entinfo)) {
@@ -1999,7 +1996,7 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 	if(EntityIsInvisible(&entinfo) && !EntityIsShooting(&entinfo)) {
 		if(random() < 0.2) {
 			AIEnter_Seek_LTG(bs, "battle fight: invisible");
-			return qfalse;
+			return false;
 		}
 	}
 	//
@@ -2026,7 +2023,7 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 		if(BotChat_HitNoDeath(bs)) {
 			bs->stand_time = FloatTime() + BotChatTime(bs);
 			AIEnter_Stand(bs, "battle fight: chat health decreased");
-			return qfalse;
+			return false;
 		}
 	}
 	// if the bot hit someone
@@ -2034,7 +2031,7 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 		if(BotChat_HitNoKill(bs)) {
 			bs->stand_time = FloatTime() + BotChatTime(bs);
 			AIEnter_Stand(bs, "battle fight: chat hit someone");
-			return qfalse;
+			return false;
 		}
 	}
 	// if the enemy is not visible
@@ -2042,15 +2039,15 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 #ifdef MISSIONPACK
 		if(bs->enemy == redobelisk.entitynum || bs->enemy == blueobelisk.entitynum) {
 			AIEnter_Battle_Chase(bs, "battle fight: obelisk out of sight");
-			return qfalse;
+			return false;
 		}
 #endif
 		if(BotWantsToChase(bs)) {
 			AIEnter_Battle_Chase(bs, "battle fight: enemy out of sight");
-			return qfalse;
+			return false;
 		} else {
 			AIEnter_Seek_LTG(bs, "battle fight: enemy out of sight");
-			return qfalse;
+			return false;
 		}
 	}
 	// use holdable items
@@ -2076,7 +2073,7 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 		bs->ltg_time = 0;
 	}
 	//
-	BotAIBlocked(bs, &moveresult, qfalse);
+	BotAIBlocked(bs, &moveresult, false);
 	// aim at the enemy
 	BotAimAtEnemy(bs);
 	// attack the enemy if possible
@@ -2085,10 +2082,10 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 	if(!(bs->flags & BFL_FIGHTSUICIDAL)) {
 		if(BotWantsToRetreat(bs)) {
 			AIEnter_Battle_Retreat(bs, "battle fight: wants to retreat");
-			return qtrue;
+			return true;
 		}
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -2115,37 +2112,37 @@ int AINode_Battle_Chase(bot_state_t* bs) {
 
 	if(BotIsObserver(bs)) {
 		AIEnter_Observer(bs, "battle chase: observer");
-		return qfalse;
+		return false;
 	}
 	// if in the intermission
 	if(BotIntermission(bs)) {
 		AIEnter_Intermission(bs, "battle chase: intermission");
-		return qfalse;
+		return false;
 	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "battle chase: bot dead");
-		return qfalse;
+		return false;
 	}
 	// if no enemy
 	if(bs->enemy < 0) {
 		AIEnter_Seek_LTG(bs, "battle chase: no enemy");
-		return qfalse;
+		return false;
 	}
 	// if the enemy is visible
 	if(BotEntityVisible(bs->entitynum, bs->eye, bs->viewangles, 360, bs->enemy)) {
 		AIEnter_Battle_Fight(bs, "battle chase");
-		return qfalse;
+		return false;
 	}
 	// if there is another enemy
 	if(BotFindEnemy(bs, -1)) {
 		AIEnter_Battle_Fight(bs, "battle chase: better enemy");
-		return qfalse;
+		return false;
 	}
 	// there is no last enemy area
 	if(!bs->lastenemyareanum) {
 		AIEnter_Seek_LTG(bs, "battle chase: no enemy area");
-		return qfalse;
+		return false;
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
@@ -2169,7 +2166,7 @@ int AINode_Battle_Chase(bot_state_t* bs) {
 	// if there's no chase time left
 	if(!bs->chase_time || bs->chase_time < FloatTime() - 10) {
 		AIEnter_Seek_LTG(bs, "battle chase: time out");
-		return qfalse;
+		return false;
 	}
 	// check for nearby goals periodicly
 	if(bs->check_time < FloatTime()) {
@@ -2181,7 +2178,7 @@ int AINode_Battle_Chase(bot_state_t* bs) {
 			bs->nbg_time = FloatTime() + 0.1 * range + 1;
 			trap_BotResetLastAvoidReach(bs->ms);
 			AIEnter_Battle_NBG(bs, "battle chase: nbg");
-			return qfalse;
+			return false;
 		}
 	}
 	//
@@ -2198,7 +2195,7 @@ int AINode_Battle_Chase(bot_state_t* bs) {
 		bs->ltg_time = 0;
 	}
 	//
-	BotAIBlocked(bs, &moveresult, qfalse);
+	BotAIBlocked(bs, &moveresult, false);
 	//
 	if(moveresult.flags & (MOVERESULT_MOVEMENTVIEWSET | MOVERESULT_MOVEMENTVIEW | MOVERESULT_SWIMVIEW)) {
 		VectorCopy(moveresult.ideal_viewangles, bs->ideal_viewangles);
@@ -2222,9 +2219,9 @@ int AINode_Battle_Chase(bot_state_t* bs) {
 	// if the bot wants to retreat (the bot could have been damage during the chase)
 	if(BotWantsToRetreat(bs)) {
 		AIEnter_Battle_Retreat(bs, "battle chase: wants to retreat");
-		return qtrue;
+		return true;
 	}
-	return qtrue;
+	return true;
 }
 
 /*
@@ -2252,28 +2249,28 @@ int AINode_Battle_Retreat(bot_state_t* bs) {
 
 	if(BotIsObserver(bs)) {
 		AIEnter_Observer(bs, "battle retreat: observer");
-		return qfalse;
+		return false;
 	}
 	// if in the intermission
 	if(BotIntermission(bs)) {
 		AIEnter_Intermission(bs, "battle retreat: intermission");
-		return qfalse;
+		return false;
 	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "battle retreat: bot dead");
-		return qfalse;
+		return false;
 	}
 	// if no enemy
 	if(bs->enemy < 0) {
 		AIEnter_Seek_LTG(bs, "battle retreat: no enemy");
-		return qfalse;
+		return false;
 	}
 	//
 	BotEntityInfo(bs->enemy, &entinfo);
 	if(EntityIsDead(&entinfo)) {
 		AIEnter_Seek_LTG(bs, "battle retreat: enemy dead");
-		return qfalse;
+		return false;
 	}
 	// if there is another better enemy
 	if(BotFindEnemy(bs, bs->enemy)) {
@@ -2296,7 +2293,7 @@ int AINode_Battle_Retreat(bot_state_t* bs) {
 		trap_BotEmptyGoalStack(bs->gs);
 		// go chase the enemy
 		AIEnter_Battle_Chase(bs, "battle retreat: wants to chase");
-		return qfalse;
+		return false;
 	}
 	// update the last time the enemy was visible
 	if(BotEntityVisible(bs->entitynum, bs->eye, bs->viewangles, 360, bs->enemy)) {
@@ -2321,24 +2318,24 @@ int AINode_Battle_Retreat(bot_state_t* bs) {
 	// if the enemy is NOT visible for 4 seconds
 	if(bs->enemyvisible_time < FloatTime() - 4) {
 		AIEnter_Seek_LTG(bs, "battle retreat: lost enemy");
-		return qfalse;
+		return false;
 	}
 	// else if the enemy is NOT visible
 	else if(bs->enemyvisible_time < FloatTime()) {
 		// if there is another enemy
 		if(BotFindEnemy(bs, -1)) {
 			AIEnter_Battle_Fight(bs, "battle retreat: another enemy");
-			return qfalse;
+			return false;
 		}
 	}
 	//
-	BotTeamGoals(bs, qtrue);
+	BotTeamGoals(bs, true);
 	// use holdable items
 	BotBattleUseItems(bs);
 	// get the current long term goal while retreating
-	if(!BotLongTermGoal(bs, bs->tfl, qtrue, &goal)) {
+	if(!BotLongTermGoal(bs, bs->tfl, true, &goal)) {
 		AIEnter_Battle_SuicidalFight(bs, "battle retreat: no way out");
-		return qfalse;
+		return false;
 	}
 	// check for nearby goals periodicly
 	if(bs->check_time < FloatTime()) {
@@ -2363,7 +2360,7 @@ int AINode_Battle_Retreat(bot_state_t* bs) {
 			// time the bot gets to pick up the nearby goal item
 			bs->nbg_time = FloatTime() + range / 100 + 1;
 			AIEnter_Battle_NBG(bs, "battle retreat: nbg");
-			return qfalse;
+			return false;
 		}
 	}
 	// initialize the movement state
@@ -2378,7 +2375,7 @@ int AINode_Battle_Retreat(bot_state_t* bs) {
 		bs->ltg_time = 0;
 	}
 	//
-	BotAIBlocked(bs, &moveresult, qfalse);
+	BotAIBlocked(bs, &moveresult, false);
 	// choose the best weapon to fight with
 	BotChooseWeapon(bs);
 	// if the view is fixed for the movement
@@ -2404,7 +2401,7 @@ int AINode_Battle_Retreat(bot_state_t* bs) {
 	// attack the enemy if possible
 	BotCheckAttack(bs);
 	//
-	return qtrue;
+	return true;
 }
 
 /*
@@ -2432,28 +2429,28 @@ int AINode_Battle_NBG(bot_state_t* bs) {
 
 	if(BotIsObserver(bs)) {
 		AIEnter_Observer(bs, "battle nbg: observer");
-		return qfalse;
+		return false;
 	}
 	// if in the intermission
 	if(BotIntermission(bs)) {
 		AIEnter_Intermission(bs, "battle nbg: intermission");
-		return qfalse;
+		return false;
 	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "battle nbg: bot dead");
-		return qfalse;
+		return false;
 	}
 	// if no enemy
 	if(bs->enemy < 0) {
 		AIEnter_Seek_NBG(bs, "battle nbg: no enemy");
-		return qfalse;
+		return false;
 	}
 	//
 	BotEntityInfo(bs->enemy, &entinfo);
 	if(EntityIsDead(&entinfo)) {
 		AIEnter_Seek_NBG(bs, "battle nbg: enemy dead");
-		return qfalse;
+		return false;
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
@@ -2502,7 +2499,7 @@ int AINode_Battle_NBG(bot_state_t* bs) {
 		else
 			AIEnter_Battle_Fight(bs, "battle nbg: time out");
 		//
-		return qfalse;
+		return false;
 	}
 	// initialize the movement state
 	BotSetupForMovement(bs);
@@ -2516,7 +2513,7 @@ int AINode_Battle_NBG(bot_state_t* bs) {
 		bs->nbg_time = 0;
 	}
 	//
-	BotAIBlocked(bs, &moveresult, qfalse);
+	BotAIBlocked(bs, &moveresult, false);
 	// update the attack inventory values
 	BotUpdateBattleInventory(bs, bs->enemy);
 	// choose the best weapon to fight with
@@ -2545,5 +2542,5 @@ int AINode_Battle_NBG(bot_state_t* bs) {
 	// attack the enemy if possible
 	BotCheckAttack(bs);
 	//
-	return qtrue;
+	return true;
 }

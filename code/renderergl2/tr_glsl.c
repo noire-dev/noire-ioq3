@@ -158,7 +158,7 @@ static uniformInfo_t uniformsInfo[] = {{"u_DiffuseMap", GLSL_INT},
 
 typedef enum { GLSL_PRINTLOG_PROGRAM_INFO, GLSL_PRINTLOG_SHADER_INFO, GLSL_PRINTLOG_SHADER_SOURCE } glslPrintLog_t;
 
-static void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean developerOnly) {
+static void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, bool developerOnly) {
 	char* msg;
 	static char msgPart[1024];
 	int maxLength = 0;
@@ -381,8 +381,8 @@ static int GLSL_CompileGPUShader(GLuint program, GLuint* prevShader, const GLcha
 	// check if shader compiled
 	qglGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
 	if(!compiled) {
-		GLSL_PrintLog(shader, GLSL_PRINTLOG_SHADER_SOURCE, qfalse);
-		GLSL_PrintLog(shader, GLSL_PRINTLOG_SHADER_INFO, qfalse);
+		GLSL_PrintLog(shader, GLSL_PRINTLOG_SHADER_SOURCE, false);
+		GLSL_PrintLog(shader, GLSL_PRINTLOG_SHADER_INFO, false);
 		ri.Error(ERR_DROP, "Couldn't compile shader");
 		return 0;
 	}
@@ -455,7 +455,7 @@ static void GLSL_LinkProgram(GLuint program) {
 
 	qglGetProgramiv(program, GL_LINK_STATUS, &linked);
 	if(!linked) {
-		GLSL_PrintLog(program, GLSL_PRINTLOG_PROGRAM_INFO, qfalse);
+		GLSL_PrintLog(program, GLSL_PRINTLOG_PROGRAM_INFO, false);
 		ri.Error(ERR_DROP, "shaders failed to link");
 	}
 }
@@ -539,14 +539,7 @@ static int GLSL_InitGPUShader2(shaderProgram_t* program, const char* name, int a
 	return 1;
 }
 
-static int GLSL_InitGPUShader(shaderProgram_t* program,
-                              const char* name,
-                              int attribs,
-                              qboolean fragmentShader,
-                              const GLchar* extra,
-                              qboolean addHeader,
-                              const char* fallback_vp,
-                              const char* fallback_fp) {
+static int GLSL_InitGPUShader(shaderProgram_t* program, const char* name, int attribs, bool fragmentShader, const GLchar* extra, bool addHeader, const char* fallback_vp, const char* fallback_fp) {
 	char vpCode[32000];
 	char fpCode[32000];
 	char* postHeader;
@@ -775,12 +768,7 @@ void GLSL_SetUniformMat4BoneMatrix(shaderProgram_t* program, int uniformNum, /*c
 	}
 
 	if(numMatricies > glRefConfig.glslMaxAnimatedBones) {
-		ri.Printf(PRINT_WARNING,
-		          "GLSL_SetUniformMat4BoneMatrix: too many matricies (%d/%d) for uniform %i in program %s\n",
-		          numMatricies,
-		          glRefConfig.glslMaxAnimatedBones,
-		          uniformNum,
-		          program->name);
+		ri.Printf(PRINT_WARNING, "GLSL_SetUniformMat4BoneMatrix: too many matricies (%d/%d) for uniform %i in program %s\n", numMatricies, glRefConfig.glslMaxAnimatedBones, uniformNum, program->name);
 		return;
 	}
 
@@ -831,10 +819,10 @@ void GLSL_InitGPUShaders(void) {
 	// OpenGL ES may not have enough attributes to fit ones used for vertex animation
 	if(glRefConfig.maxVertexAttribs > ATTR_INDEX_NORMAL2) {
 		ri.Printf(PRINT_ALL, "Using GPU vertex animation\n");
-		glRefConfig.gpuVertexAnimation = qtrue;
+		glRefConfig.gpuVertexAnimation = true;
 	} else {
 		ri.Printf(PRINT_ALL, "Using CPU vertex animation\n");
-		glRefConfig.gpuVertexAnimation = qfalse;
+		glRefConfig.gpuVertexAnimation = false;
 	}
 
 	for(i = 0; i < GENERICDEF_COUNT; i++) {
@@ -866,7 +854,7 @@ void GLSL_InitGPUShaders(void) {
 
 		if(i & GENERICDEF_USE_RGBAGEN) Q_strcat(extradefines, 1024, "#define USE_RGBAGEN\n");
 
-		if(!GLSL_InitGPUShader(&tr.genericShader[i], "generic", attribs, qtrue, extradefines, qtrue, fallbackShader_generic_vp, fallbackShader_generic_fp)) {
+		if(!GLSL_InitGPUShader(&tr.genericShader[i], "generic", attribs, true, extradefines, true, fallbackShader_generic_vp, fallbackShader_generic_fp)) {
 			ri.Error(ERR_FATAL, "Could not load generic shader!");
 		}
 
@@ -882,14 +870,7 @@ void GLSL_InitGPUShaders(void) {
 
 	attribs = ATTR_POSITION | ATTR_TEXCOORD;
 
-	if(!GLSL_InitGPUShader(&tr.textureColorShader,
-	                       "texturecolor",
-	                       attribs,
-	                       qtrue,
-	                       extradefines,
-	                       qtrue,
-	                       fallbackShader_texturecolor_vp,
-	                       fallbackShader_texturecolor_fp)) {
+	if(!GLSL_InitGPUShader(&tr.textureColorShader, "texturecolor", attribs, true, extradefines, true, fallbackShader_texturecolor_vp, fallbackShader_texturecolor_fp)) {
 		ri.Error(ERR_FATAL, "Could not load texturecolor shader!");
 	}
 
@@ -921,7 +902,7 @@ void GLSL_InitGPUShaders(void) {
 			attribs |= ATTR_BONE_INDEXES | ATTR_BONE_WEIGHTS;
 		}
 
-		if(!GLSL_InitGPUShader(&tr.fogShader[i], "fogpass", attribs, qtrue, extradefines, qtrue, fallbackShader_fogpass_vp, fallbackShader_fogpass_fp)) {
+		if(!GLSL_InitGPUShader(&tr.fogShader[i], "fogpass", attribs, true, extradefines, true, fallbackShader_fogpass_vp, fallbackShader_fogpass_fp)) {
 			ri.Error(ERR_FATAL, "Could not load fogpass shader!");
 		}
 
@@ -939,7 +920,7 @@ void GLSL_InitGPUShaders(void) {
 			Q_strcat(extradefines, 1024, "#define USE_DEFORM_VERTEXES\n");
 		}
 
-		if(!GLSL_InitGPUShader(&tr.dlightShader[i], "dlight", attribs, qtrue, extradefines, qtrue, fallbackShader_dlight_vp, fallbackShader_dlight_fp)) {
+		if(!GLSL_InitGPUShader(&tr.dlightShader[i], "dlight", attribs, true, extradefines, true, fallbackShader_dlight_vp, fallbackShader_dlight_fp)) {
 			ri.Error(ERR_FATAL, "Could not load dlight shader!");
 		}
 
@@ -954,7 +935,7 @@ void GLSL_InitGPUShaders(void) {
 
 	for(i = 0; i < LIGHTDEF_COUNT; i++) {
 		int lightType = i & LIGHTDEF_LIGHTTYPE_MASK;
-		qboolean fastLight = !(r_normalMapping->integer || r_specularMapping->integer);
+		bool fastLight = !(r_normalMapping->integer || r_specularMapping->integer);
 
 		// skip impossible combos
 		if((i & LIGHTDEF_USE_PARALLAXMAP) && !r_parallaxMapping->integer) continue;
@@ -997,8 +978,7 @@ void GLSL_InitGPUShaders(void) {
 
 				attribs |= ATTR_TANGENT;
 
-				if((i & LIGHTDEF_USE_PARALLAXMAP) && !(i & LIGHTDEF_ENTITY_VERTEX_ANIMATION) && !(i & LIGHTDEF_ENTITY_BONE_ANIMATION) &&
-				   r_parallaxMapping->integer) {
+				if((i & LIGHTDEF_USE_PARALLAXMAP) && !(i & LIGHTDEF_ENTITY_VERTEX_ANIMATION) && !(i & LIGHTDEF_ENTITY_BONE_ANIMATION) && r_parallaxMapping->integer) {
 					Q_strcat(extradefines, 1024, "#define USE_PARALLAXMAP\n");
 					if(r_parallaxMapping->integer > 1) Q_strcat(extradefines, 1024, "#define USE_RELIEFMAP\n");
 
@@ -1057,14 +1037,7 @@ void GLSL_InitGPUShaders(void) {
 			attribs |= ATTR_BONE_INDEXES | ATTR_BONE_WEIGHTS;
 		}
 
-		if(!GLSL_InitGPUShader(&tr.lightallShader[i],
-		                       "lightall",
-		                       attribs,
-		                       qtrue,
-		                       extradefines,
-		                       qtrue,
-		                       fallbackShader_lightall_vp,
-		                       fallbackShader_lightall_fp)) {
+		if(!GLSL_InitGPUShader(&tr.lightallShader[i], "lightall", attribs, true, extradefines, true, fallbackShader_lightall_vp, fallbackShader_lightall_fp)) {
 			ri.Error(ERR_FATAL, "Could not load lightall shader!");
 		}
 
@@ -1104,14 +1077,7 @@ void GLSL_InitGPUShaders(void) {
 			attribs |= ATTR_BONE_INDEXES | ATTR_BONE_WEIGHTS;
 		}
 
-		if(!GLSL_InitGPUShader(&tr.shadowmapShader[i],
-		                       "shadowfill",
-		                       attribs,
-		                       qtrue,
-		                       extradefines,
-		                       qtrue,
-		                       fallbackShader_shadowfill_vp,
-		                       fallbackShader_shadowfill_fp)) {
+		if(!GLSL_InitGPUShader(&tr.shadowmapShader[i], "shadowfill", attribs, true, extradefines, true, fallbackShader_shadowfill_vp, fallbackShader_shadowfill_fp)) {
 			ri.Error(ERR_FATAL, "Could not load shadowfill shader!");
 		}
 
@@ -1126,7 +1092,7 @@ void GLSL_InitGPUShaders(void) {
 
 	Q_strcat(extradefines, 1024, "#define USE_PCF\n#define USE_DISCARD\n");
 
-	if(!GLSL_InitGPUShader(&tr.pshadowShader, "pshadow", attribs, qtrue, extradefines, qtrue, fallbackShader_pshadow_vp, fallbackShader_pshadow_fp)) {
+	if(!GLSL_InitGPUShader(&tr.pshadowShader, "pshadow", attribs, true, extradefines, true, fallbackShader_pshadow_vp, fallbackShader_pshadow_fp)) {
 		ri.Error(ERR_FATAL, "Could not load pshadow shader!");
 	}
 
@@ -1141,7 +1107,7 @@ void GLSL_InitGPUShaders(void) {
 	attribs = ATTR_POSITION | ATTR_TEXCOORD;
 	extradefines[0] = '\0';
 
-	if(!GLSL_InitGPUShader(&tr.down4xShader, "down4x", attribs, qtrue, extradefines, qtrue, fallbackShader_down4x_vp, fallbackShader_down4x_fp)) {
+	if(!GLSL_InitGPUShader(&tr.down4xShader, "down4x", attribs, true, extradefines, true, fallbackShader_down4x_vp, fallbackShader_down4x_fp)) {
 		ri.Error(ERR_FATAL, "Could not load down4x shader!");
 	}
 
@@ -1156,7 +1122,7 @@ void GLSL_InitGPUShaders(void) {
 	attribs = ATTR_POSITION | ATTR_TEXCOORD;
 	extradefines[0] = '\0';
 
-	if(!GLSL_InitGPUShader(&tr.bokehShader, "bokeh", attribs, qtrue, extradefines, qtrue, fallbackShader_bokeh_vp, fallbackShader_bokeh_fp)) {
+	if(!GLSL_InitGPUShader(&tr.bokehShader, "bokeh", attribs, true, extradefines, true, fallbackShader_bokeh_vp, fallbackShader_bokeh_fp)) {
 		ri.Error(ERR_FATAL, "Could not load bokeh shader!");
 	}
 
@@ -1171,7 +1137,7 @@ void GLSL_InitGPUShaders(void) {
 	attribs = ATTR_POSITION | ATTR_TEXCOORD;
 	extradefines[0] = '\0';
 
-	if(!GLSL_InitGPUShader(&tr.tonemapShader, "tonemap", attribs, qtrue, extradefines, qtrue, fallbackShader_tonemap_vp, fallbackShader_tonemap_fp)) {
+	if(!GLSL_InitGPUShader(&tr.tonemapShader, "tonemap", attribs, true, extradefines, true, fallbackShader_tonemap_vp, fallbackShader_tonemap_fp)) {
 		ri.Error(ERR_FATAL, "Could not load tonemap shader!");
 	}
 
@@ -1190,14 +1156,7 @@ void GLSL_InitGPUShaders(void) {
 
 		if(!i) Q_strcat(extradefines, 1024, "#define FIRST_PASS\n");
 
-		if(!GLSL_InitGPUShader(&tr.calclevels4xShader[i],
-		                       "calclevels4x",
-		                       attribs,
-		                       qtrue,
-		                       extradefines,
-		                       qtrue,
-		                       fallbackShader_calclevels4x_vp,
-		                       fallbackShader_calclevels4x_fp)) {
+		if(!GLSL_InitGPUShader(&tr.calclevels4xShader[i], "calclevels4x", attribs, true, extradefines, true, fallbackShader_calclevels4x_vp, fallbackShader_calclevels4x_fp)) {
 			ri.Error(ERR_FATAL, "Could not load calclevels4x shader!");
 		}
 
@@ -1228,14 +1187,7 @@ void GLSL_InitGPUShaders(void) {
 		Q_strcat(extradefines, 1024, va("#define r_shadowMapSize %f\n", r_shadowMapSize->value));
 		Q_strcat(extradefines, 1024, va("#define r_shadowCascadeZFar %f\n", r_shadowCascadeZFar->value));
 
-		if(!GLSL_InitGPUShader(&tr.shadowmaskShader,
-		                       "shadowmask",
-		                       attribs,
-		                       qtrue,
-		                       extradefines,
-		                       qtrue,
-		                       fallbackShader_shadowmask_vp,
-		                       fallbackShader_shadowmask_fp)) {
+		if(!GLSL_InitGPUShader(&tr.shadowmaskShader, "shadowmask", attribs, true, extradefines, true, fallbackShader_shadowmask_vp, fallbackShader_shadowmask_fp)) {
 			ri.Error(ERR_FATAL, "Could not load shadowmask shader!");
 		}
 
@@ -1252,7 +1204,7 @@ void GLSL_InitGPUShaders(void) {
 		numEtcShaders++;
 	}
 
-	if(!GLSL_InitGPUShader(&tr.greyscaleShader, "greyscale", attribs, qtrue, extradefines, qtrue, fallbackShader_greyscale_vp, fallbackShader_greyscale_fp)) {
+	if(!GLSL_InitGPUShader(&tr.greyscaleShader, "greyscale", attribs, true, extradefines, true, fallbackShader_greyscale_vp, fallbackShader_greyscale_fp)) {
 		ri.Error(ERR_FATAL, "Unable to load greyscale shader");
 	}
 
@@ -1271,7 +1223,7 @@ void GLSL_InitGPUShaders(void) {
 			Q_strcat(extradefines, 1024, "#extension GL_OES_standard_derivatives : enable\n");
 		}
 
-		if(!GLSL_InitGPUShader(&tr.ssaoShader, "ssao", attribs, qtrue, extradefines, qtrue, fallbackShader_ssao_vp, fallbackShader_ssao_fp)) {
+		if(!GLSL_InitGPUShader(&tr.ssaoShader, "ssao", attribs, true, extradefines, true, fallbackShader_ssao_vp, fallbackShader_ssao_fp)) {
 			ri.Error(ERR_FATAL, "Could not load ssao shader!");
 		}
 
@@ -1298,14 +1250,7 @@ void GLSL_InitGPUShaders(void) {
 
 			if(!(i & 2)) Q_strcat(extradefines, 1024, "#define USE_DEPTH\n");
 
-			if(!GLSL_InitGPUShader(&tr.depthBlurShader[i],
-			                       "depthBlur",
-			                       attribs,
-			                       qtrue,
-			                       extradefines,
-			                       qtrue,
-			                       fallbackShader_depthblur_vp,
-			                       fallbackShader_depthblur_fp)) {
+			if(!GLSL_InitGPUShader(&tr.depthBlurShader[i], "depthBlur", attribs, true, extradefines, true, fallbackShader_depthblur_vp, fallbackShader_depthblur_fp)) {
 				ri.Error(ERR_FATAL, "Could not load depthBlur shader!");
 			}
 
@@ -1324,7 +1269,7 @@ void GLSL_InitGPUShaders(void) {
 	attribs = ATTR_POSITION | ATTR_TEXCOORD;
 	extradefines[0] = '\0';
 
-	if (!GLSL_InitGPUShader(&tr.testcubeShader, "testcube", attribs, qtrue, extradefines, qtrue, NULL, NULL))
+	if (!GLSL_InitGPUShader(&tr.testcubeShader, "testcube", attribs, true, extradefines, true, NULL, NULL))
 	{
 		ri.Error(ERR_FATAL, "Could not load testcube shader!");
 	}
@@ -1340,13 +1285,7 @@ void GLSL_InitGPUShaders(void) {
 
 	endTime = ri.Milliseconds();
 
-	ri.Printf(PRINT_ALL,
-	          "loaded %i GLSL shaders (%i gen %i light %i etc) in %5.2f seconds\n",
-	          numGenShaders + numLightShaders + numEtcShaders,
-	          numGenShaders,
-	          numLightShaders,
-	          numEtcShaders,
-	          (endTime - startTime) / 1000.0);
+	ri.Printf(PRINT_ALL, "loaded %i GLSL shaders (%i gen %i light %i etc) in %5.2f seconds\n", numGenShaders + numLightShaders + numEtcShaders, numGenShaders, numLightShaders, numEtcShaders, (endTime - startTime) / 1000.0);
 }
 
 void GLSL_ShutdownGPUShaders(void) {
