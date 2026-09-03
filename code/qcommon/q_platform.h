@@ -94,7 +94,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #undef idx64
 #define idx64 1
 #define ARCH_STRING "x86_64"
-#define HAVE_VM_COMPILED
 #elif defined(__aarch64__) || defined(__ARM64__) || defined(_M_ARM64)
 #define ARCH_STRING "arm64"
 #endif
@@ -122,7 +121,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #if defined(_M_IX86) || defined(__i386__)
 #define ARCH_STRING "x86"
-#define HAVE_VM_COMPILED
 #elif defined(__arm__) || defined(_M_ARM)
 #define ARCH_STRING "arm"
 #endif
@@ -144,17 +142,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifdef __ppc__
 #define ARCH_STRING "ppc"
 #define Q3_BIG_ENDIAN
-#define HAVE_VM_COMPILED
 #elif defined __i386__
 #define ARCH_STRING "x86"
 #define Q3_LITTLE_ENDIAN
-#define HAVE_VM_COMPILED
 #elif defined __x86_64__
 #undef idx64
 #define idx64 1
 #define ARCH_STRING "x86_64"
 #define Q3_LITTLE_ENDIAN
-#define HAVE_VM_COMPILED
 #elif defined __aarch64__
 #define ARCH_STRING "arm64"
 #define Q3_LITTLE_ENDIAN
@@ -184,21 +179,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #if defined(__x86_64__) || defined(__amd64__)
 #define ARCH_STRING "x86_64"
-#define HAVE_VM_COMPILED
 #elif defined(__i386__)
 #define ARCH_STRING "x86"
-#define HAVE_VM_COMPILED
 #elif defined(__aarch64__)
 #define ARCH_STRING "arm64"
 #elif defined(__arm__)
 #define ARCH_STRING "arm"
-#define HAVE_VM_COMPILED
 #elif defined(__powerpc64__) || defined(__ppc64__)
 #define ARCH_STRING "ppc64"
-#define HAVE_VM_COMPILED
 #elif defined(__powerpc__) || defined(__ppc__)
 #define ARCH_STRING "ppc"
-#define HAVE_VM_COMPILED
 #elif defined(__alpha__)
 #define ARCH_STRING "alpha"
 #endif
@@ -242,12 +232,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef __i386__
 #define ARCH_STRING "x86"
-#define HAVE_VM_COMPILED
 #elif defined __amd64__
 #undef idx64
 #define idx64 1
 #define ARCH_STRING "x86_64"
-#define HAVE_VM_COMPILED
 #elif defined __axp__
 #define ARCH_STRING "alpha"
 #endif
@@ -275,10 +263,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef __i386__
 #define ARCH_STRING "x86"
-#define HAVE_VM_COMPILED
 #elif defined __sparc
 #define ARCH_STRING "sparc"
-#define HAVE_VM_COMPILED
 #endif
 
 #if defined(_BIG_ENDIAN)

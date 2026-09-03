@@ -326,14 +326,14 @@ typedef enum { VMI_NATIVE, VMI_BYTECODE, VMI_COMPILED } vmInterpret_t;
 typedef intptr_t(QDECL* vmMainProc)(int callNum, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
 
 void VM_Init(void);
-vm_t* VM_Create(const char* module, intptr_t (*systemCalls)(intptr_t*), vmInterpret_t interpret);
+vm_t* VM_Create(const char* module, intptr_t (*systemCalls)(intptr_t*));
 // module should be bare: "cgame", not "cgame.dll" or "vm/cgame.qvm"
 
 void VM_Free(vm_t* vm);
 void VM_Clear(void);
 void VM_Forced_Unload_Start(void);
 void VM_Forced_Unload_Done(void);
-vm_t* VM_Restart(vm_t* vm, bool unpure);
+vm_t* VM_Restart(vm_t* vm);
 
 intptr_t QDECL VM_Call(vm_t* vm, int callNum, ...);
 

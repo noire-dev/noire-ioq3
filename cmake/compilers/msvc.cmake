@@ -15,13 +15,6 @@ if(ARCH MATCHES "x86" OR ARCH MATCHES "x86_64")
     )
 endif()
 
-if(ARCH MATCHES "x86_64")
-    list(APPEND ASM_SOURCES ${SOURCE_DIR}/asm/vm_x86_64.asm)
-    set_source_files_properties(
-        ${ASM_SOURCES}
-        PROPERTIES COMPILE_DEFINITIONS "idx64")
-endif()
-
 # Baseline warnings
 add_compile_options("$<$<COMPILE_LANGUAGE:C>:/W4>")
 

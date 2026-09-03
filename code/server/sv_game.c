@@ -574,10 +574,8 @@ void SV_RestartGameProgs(void) {
 	VM_Call(gvm, GAME_SHUTDOWN, true);
 
 	// do a restart instead of a free
-	gvm = VM_Restart(gvm, true);
-	if(!gvm) {
-		Com_Error(ERR_FATAL, "VM_Restart on game failed");
-	}
+	gvm = VM_Restart(gvm);
+	if(!gvm) Com_Error(ERR_FATAL, "VM_Restart on game failed");
 
 	SV_InitGameVM(true);
 }
@@ -602,10 +600,8 @@ void SV_InitGameProgs(void) {
 	}
 
 	// load the dll or bytecode
-	gvm = VM_Create("game", SV_GameSystemCalls, Cvar_VariableValue("vm_game"));
-	if(!gvm) {
-		Com_Error(ERR_FATAL, "VM_Create on game failed");
-	}
+	gvm = VM_Create("game", SV_GameSystemCalls);
+	if(!gvm) Com_Error(ERR_FATAL, "VM_Create on game failed");
 
 	SV_InitGameVM(false);
 }
