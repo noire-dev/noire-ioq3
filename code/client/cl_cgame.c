@@ -475,8 +475,6 @@ intptr_t CL_CgameSystemCalls(intptr_t* args) {
 
 		case CG_S_STOPBACKGROUNDTRACK: S_StopBackgroundTrack(); return 0;
 
-		case CG_SNAPVECTOR: Q_SnapVector(VMA(1)); return 0;
-
 		case CG_CIN_PLAYCINEMATIC: return CIN_PlayCinematic(VMA(1), args[2], args[3], args[4], args[5], args[6]);
 
 		case CG_CIN_STOPCINEMATIC: return CIN_StopCinematic(args[1]);

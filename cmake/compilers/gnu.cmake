@@ -4,13 +4,6 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_C_COMPILER_ID MATCHES "^
     return()
 endif()
 
-enable_language(ASM)
-
-set(ASM_SOURCES
-    ${SOURCE_DIR}/asm/ftola.c
-    ${SOURCE_DIR}/asm/snapvector.c
-)
-
 add_compile_options(-Wall -Wimplicit -Wshadow
     -Wstrict-prototypes -Wformat=2  -Wformat-security
     -Wstrict-aliasing=2 -Wmissing-format-attribute

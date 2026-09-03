@@ -416,13 +416,6 @@ https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=543
 */
 char* Cmd_Cmd(void) { return cmd_cmd; }
 
-/*
-   Replace command separators with space to prevent interpretation
-   This is a hack to protect buggy qvms
-   https://bugzilla.icculus.org/show_bug.cgi?id=3593
-   https://bugzilla.icculus.org/show_bug.cgi?id=4769
-*/
-
 void Cmd_Args_Sanitize(void) {
 	int i;
 

@@ -22,12 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 #include "g_local.h"
 
-// this file is only included when building a dll
-// g_syscalls.asm is included instead when building a qvm
-#ifdef Q3_VM
-#error "Do not use in VM build"
-#endif
-
 static intptr_t(QDECL* syscall)(intptr_t arg, ...) = (intptr_t(QDECL*)(intptr_t, ...)) - 1;
 
 Q_EXPORT void dllEntry(intptr_t(QDECL* syscallptr)(intptr_t arg, ...)) { syscall = syscallptr; }
@@ -91,8 +85,6 @@ bool trap_GetEntityToken(char* buffer, int bufferSize) { return syscall(G_GET_EN
 int trap_DebugPolygonCreate(int color, int numPoints, vec3_t* points) { return syscall(G_DEBUG_POLYGON_CREATE, color, numPoints, points); }
 
 void trap_DebugPolygonDelete(int id) { syscall(G_DEBUG_POLYGON_DELETE, id); }
-
-void trap_SnapVector(float* v) { syscall(G_SNAPVECTOR, v); }
 
 // BotLib traps start here
 int trap_BotLibSetup(void) { return syscall(BOTLIB_SETUP); }

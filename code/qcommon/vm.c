@@ -66,8 +66,6 @@ intptr_t QDECL VM_DllSyscall(intptr_t arg, ...) {
 }
 
 vm_t* VM_Restart(vm_t* vm) {
-	vmHeader_t* header;
-
 	if(vm->dllHandle) {
 		char name[MAX_QPATH];
 		intptr_t (*systemCall)(intptr_t* parms);

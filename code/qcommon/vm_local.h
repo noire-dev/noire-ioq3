@@ -39,30 +39,8 @@ struct vm_s {
 	void* dllHandle;
 	vmMainProc entryPoint;
 	void (*destroy)(vm_t* self);
-
-	bool compiled;
-	byte* codeBase;
-	int entryOfs;
-	int codeLength;
-
-	intptr_t* instructionPointers;
-	int instructionCount;
-
 	byte* dataBase;
-	int dataMask;
-	int dataAlloc;  // actually allocated
-
-	int stackBottom;  // if programStack < stackBottom, error
-
-	int numSymbols;
-	struct vmSymbol_s* symbols;
-
-	int callLevel;      // counts recursive VM_Call
-	int breakFunction;  // increment breakCount on function entry to this
-	int breakCount;
-
-	byte* jumpTableTargets;
-	int numJumpTableTargets;
+	int callLevel;
 };
 
 extern vm_t* currentVM;

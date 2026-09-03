@@ -1557,8 +1557,6 @@ e_status trap_CIN_RunCinematic(int handle);
 void trap_CIN_DrawCinematic(int handle);
 void trap_CIN_SetExtents(int handle, int x, int y, int w, int h);
 
-void trap_SnapVector(float* v);
-
 bool trap_loadCamera(const char* name);
 void trap_startCamera(int time);
 bool trap_getCameraInfo(int time, vec3_t* origin, vec3_t* angles);

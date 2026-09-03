@@ -49,7 +49,7 @@ void SV_PhysicsInit(void);
 void SV_PhysicsStep(float dt);
 void SV_PhysicsShutdown(void);
 
-// QVM интеграция
+// VM интеграция
 void SV_CreateShape(int modelindex, const char* objPath);
 void SV_PhysicsCreateBox(int entityID, float x, float y, float z, float mass);
 void SV_PhysicsCreateModel(int entityID, int modelindex, float x, float y, float z, float mass);

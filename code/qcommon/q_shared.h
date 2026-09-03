@@ -134,22 +134,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define Q_EXPORT
 #endif
 
-/**********************************************************************
-  VM Considerations
-
-  The VM can not use the standard system headers because we aren't really
-  using the compiler they were meant for.  We use bg_lib.h which contains
-  prototypes for the functions we define for our own use in bg_lib.c.
-
-  When writing mods, please add needed headers HERE, do not start including
-  stuff like <stdio.h> in the various .c files that make up each of the VMs
-  since you will be including system headers files can will have issues.
-
-  Remember, if you use a C library function that is not defined in bg_lib.c,
-  you will have to add your own version for support in the VM.
-
- **********************************************************************/
-
 typedef enum { VM_BAD = -1, VM_GAME = 0, VM_CGAME, VM_UI, VM_COUNT } vmIndex_t;
 
 typedef enum {
@@ -197,14 +181,6 @@ typedef enum {
 	TRAP_TESTPRINTFLOAT
 } sharedTraps_t;
 
-#ifdef Q3_VM
-
-#include "../game/bg_lib.h"
-
-typedef int intptr_t;
-
-#else
-
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -216,6 +192,7 @@ typedef int intptr_t;
 #include <ctype.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef _WIN32
 // vsnprintf is ISO/IEC 9899:1999
@@ -225,9 +202,6 @@ int Q_vsnprintf(char* str, size_t size, const char* format, va_list ap) Q_PRINTF
 #define Q_vsnprintf vsnprintf
 #endif
 
-#endif
-
-#include <stdbool.h>
 #include "q_platform.h"
 
 //=============================================================
@@ -479,57 +453,6 @@ extern vec3_t axisDefault[3];
 
 int Q_isnan(float x);
 
-#if idx64
-extern long qftolsse(float f);
-extern int qvmftolsse(void);
-extern void qsnapvectorsse(vec3_t vec);
-
-#define Q_ftol qftolsse
-#define Q_SnapVector qsnapvectorsse
-
-extern int (*Q_VMftol)(void);
-#elif id386
-extern long QDECL qftolx87(float f);
-extern long QDECL qftolsse(float f);
-extern int QDECL qvmftolx87(void);
-extern int QDECL qvmftolsse(void);
-extern void QDECL qsnapvectorx87(vec3_t vec);
-extern void QDECL qsnapvectorsse(vec3_t vec);
-
-extern long(QDECL* Q_ftol)(float f);
-extern int(QDECL* Q_VMftol)(void);
-extern void(QDECL* Q_SnapVector)(vec3_t vec);
-#else
-// Q_ftol must expand to a function name so the pluggable renderer can take
-// its address
-#define Q_ftol lrintf
-#define Q_SnapVector(vec)               \
-	do {                                \
-		vec3_t* temp = (vec);           \
-                                        \
-		(*temp)[0] = round((*temp)[0]); \
-		(*temp)[1] = round((*temp)[1]); \
-		(*temp)[2] = round((*temp)[2]); \
-	} while(0)
-#endif
-/*
-// if your system does not have lrintf() and round() you can try this block. Please also open a bug report at bugzilla.icculus.org
-// or write a mail to the ioq3 mailing list.
-#else
-  #define Q_ftol(v) ((long) (v))
-  #define Q_round(v) do { if((v) < 0) (v) -= 0.5f; else (v) += 0.5f; (v) = Q_ftol((v)); } while(0)
-  #define Q_SnapVector(vec) \
-    do\
-    {\
-        vec3_t *temp = (vec);\
-        \
-        Q_round((*temp)[0]);\
-        Q_round((*temp)[1]);\
-        Q_round((*temp)[2]);\
-    } while(0)
-#endif
-*/
-
 #if idppc
 
 static ID_INLINE float Q_rsqrt(float number) {
@@ -568,36 +491,12 @@ signed short ClampShort(int i);
 int DirToByte(vec3_t dir);
 void ByteToDir(int b, vec3_t dir);
 
-#if 1
-
 #define DotProduct(x, y) ((x)[0] * (y)[0] + (x)[1] * (y)[1] + (x)[2] * (y)[2])
 #define VectorSubtract(a, b, c) ((c)[0] = (a)[0] - (b)[0], (c)[1] = (a)[1] - (b)[1], (c)[2] = (a)[2] - (b)[2])
 #define VectorAdd(a, b, c) ((c)[0] = (a)[0] + (b)[0], (c)[1] = (a)[1] + (b)[1], (c)[2] = (a)[2] + (b)[2])
 #define VectorCopy(a, b) ((b)[0] = (a)[0], (b)[1] = (a)[1], (b)[2] = (a)[2])
 #define VectorScale(v, s, o) ((o)[0] = (v)[0] * (s), (o)[1] = (v)[1] * (s), (o)[2] = (v)[2] * (s))
 #define VectorMA(v, s, b, o) ((o)[0] = (v)[0] + (b)[0] * (s), (o)[1] = (v)[1] + (b)[1] * (s), (o)[2] = (v)[2] + (b)[2] * (s))
-
-#else
-
-#define DotProduct(x, y) _DotProduct(x, y)
-#define VectorSubtract(a, b, c) _VectorSubtract(a, b, c)
-#define VectorAdd(a, b, c) _VectorAdd(a, b, c)
-#define VectorCopy(a, b) _VectorCopy(a, b)
-#define VectorScale(v, s, o) _VectorScale(v, s, o)
-#define VectorMA(v, s, b, o) _VectorMA(v, s, b, o)
-
-#endif
-
-#ifdef Q3_VM
-#ifdef VectorCopy
-#undef VectorCopy
-// this is a little hack to get more efficient copies in our interpreter
-typedef struct {
-	float v[3];
-} vec3struct_t;
-#define VectorCopy(a, b) (*(vec3struct_t*)b = *(vec3struct_t*)a)
-#endif
-#endif
 
 #define VectorClear(a) ((a)[0] = (a)[1] = (a)[2] = 0)
 #define VectorNegate(a, b) ((b)[0] = -(a)[0], (b)[1] = -(a)[1], (b)[2] = -(a)[2])
@@ -631,7 +530,6 @@ float RadiusFromBounds(const vec3_t mins, const vec3_t maxs);
 void ClearBounds(vec3_t mins, vec3_t maxs);
 void AddPointToBounds(const vec3_t v, vec3_t mins, vec3_t maxs);
 
-#if !defined(Q3_VM) || (defined(Q3_VM) && defined(__Q3_VM_MATH))
 static ID_INLINE int VectorCompare(const vec3_t v1, const vec3_t v2) {
 	if(v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) {
 		return 0;
@@ -681,25 +579,6 @@ static ID_INLINE void CrossProduct(const vec3_t v1, const vec3_t v2, vec3_t cros
 	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
 }
 
-#else
-int VectorCompare(const vec3_t v1, const vec3_t v2);
-
-vec_t VectorLength(const vec3_t v);
-
-vec_t VectorLengthSquared(const vec3_t v);
-
-vec_t Distance(const vec3_t p1, const vec3_t p2);
-
-vec_t DistanceSquared(const vec3_t p1, const vec3_t p2);
-
-void VectorNormalizeFast(vec3_t v);
-
-void VectorInverse(vec3_t v);
-
-void CrossProduct(const vec3_t v1, const vec3_t v2, vec3_t cross);
-
-#endif
-
 vec_t VectorNormalize(vec3_t v);  // returns vector length
 vec_t VectorNormalize2(const vec3_t v, vec3_t out);
 void Vector4Scale(const vec4_t in, vec_t scale, vec4_t out);
@@ -707,6 +586,8 @@ void VectorRotate(vec3_t in, vec3_t matrix[3], vec3_t out);
 int Q_log2(int val);
 
 float Q_acos(float c);
+
+void Q_SnapVector(float v[3]);
 
 int Q_rand(int* seed);
 float Q_random(int* seed);

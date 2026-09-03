@@ -6,15 +6,6 @@ endif()
 
 include(utils/arch)
 
-if(ARCH MATCHES "x86" OR ARCH MATCHES "x86_64")
-    enable_language(ASM_MASM)
-
-    set(ASM_SOURCES
-        ${SOURCE_DIR}/asm/snapvector.asm
-        ${SOURCE_DIR}/asm/ftola.asm
-    )
-endif()
-
 # Baseline warnings
 add_compile_options("$<$<COMPILE_LANGUAGE:C>:/W4>")
 

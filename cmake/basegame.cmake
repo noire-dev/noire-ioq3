@@ -9,7 +9,6 @@ set(CGAME_SOURCES
     ${SOURCE_DIR}/game/bg_misc.c
     ${SOURCE_DIR}/game/bg_pmove.c
     ${SOURCE_DIR}/game/bg_slidemove.c
-    ${SOURCE_DIR}/game/bg_lib.c
     ${SOURCE_DIR}/cgame/cg_consolecmds.c
     ${SOURCE_DIR}/cgame/cg_draw.c
     ${SOURCE_DIR}/cgame/cg_drawtools.c
@@ -31,7 +30,6 @@ set(CGAME_SOURCES
 )
 
 set(CGAME_BINARY_SOURCES ${SOURCE_DIR}/cgame/cg_syscalls.c)
-set(CGAME_QVM_SOURCES ${SOURCE_DIR}/cgame/cg_syscalls.asm)
 
 set(GAME_SOURCES
     ${SOURCE_DIR}/game/g_main.c
@@ -45,7 +43,6 @@ set(GAME_SOURCES
     ${SOURCE_DIR}/game/bg_misc.c
     ${SOURCE_DIR}/game/bg_pmove.c
     ${SOURCE_DIR}/game/bg_slidemove.c
-    ${SOURCE_DIR}/game/bg_lib.c
     ${SOURCE_DIR}/game/g_active.c
     ${SOURCE_DIR}/game/g_arenas.c
     ${SOURCE_DIR}/game/g_bot.c
@@ -68,12 +65,10 @@ set(GAME_SOURCES
 )
 
 set(GAME_BINARY_SOURCES ${SOURCE_DIR}/game/g_syscalls.c)
-set(GAME_QVM_SOURCES ${SOURCE_DIR}/game/g_syscalls.asm)
 
 set(UI_SOURCES
     ${SOURCE_DIR}/ui/ui_main.c
     ${SOURCE_DIR}/game/bg_misc.c
-    ${SOURCE_DIR}/game/bg_lib.c
     ${SOURCE_DIR}/qcommon/vm_javascript.c
     ${SOURCE_DIR}/qcommon/vm_javascript_core.c
     ${SOURCE_DIR}/qcommon/vm_javascript_func.c
@@ -81,7 +76,6 @@ set(UI_SOURCES
 )
 
 set(UI_BINARY_SOURCES ${SOURCE_DIR}/ui/ui_syscalls.c)
-set(UI_QVM_SOURCES ${SOURCE_DIR}/ui/ui_syscalls.asm)
 
 set(GAME_MODULE_SHARED_SOURCES
     ${SOURCE_DIR}/qcommon/q_math.c

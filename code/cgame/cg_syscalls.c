@@ -22,9 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // cg_syscalls.c -- this file is only included when building a dll
 // cg_syscalls.asm is included instead when building a qvm
-#ifdef Q3_VM
-#error "Do not use in VM build"
-#endif
 
 #include "cg_local.h"
 
@@ -169,8 +166,6 @@ int trap_PC_ReadToken(int handle, pc_token_t* pc_token) { return syscall(CG_PC_R
 int trap_PC_SourceFileAndLine(int handle, char* filename, int* line) { return syscall(CG_PC_SOURCE_FILE_AND_LINE, handle, filename, line); }
 
 void trap_S_StopBackgroundTrack(void) { syscall(CG_S_STOPBACKGROUNDTRACK); }
-
-void trap_SnapVector(float* v) { syscall(CG_SNAPVECTOR, v); }
 
 // this returns a handle.  arg0 is the name in the format "idlogo.roq", set arg1 to NULL, alteredstates to false (do not alter gamestate)
 int trap_CIN_PlayCinematic(const char* arg0, int xpos, int ypos, int width, int height, int bits) { return syscall(CG_CIN_PLAYCINEMATIC, arg0, xpos, ypos, width, height, bits); }

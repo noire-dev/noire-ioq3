@@ -22,13 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // q_math.c -- stateless support routines that are included in each code module
 
-// Some of the vector functions are static inline in q_shared.h. q3asm
-// doesn't understand static functions though, so we only want them in
-// one file. That's what this is about.
-#ifdef Q3_VM
-#define __Q3_VM_MATH
-#endif
-
 #include "q_shared.h"
 
 vec3_t vec3_origin = {0.0f, 0.0f, 0.0f};
@@ -341,9 +334,7 @@ void ProjectPointOnPlane(vec3_t dst, const vec3_t p, const vec3_t normal) {
 	float inv_denom;
 
 	inv_denom = DotProduct(normal, normal);
-#ifndef Q3_VM
 	assert(Q_fabs(inv_denom) != 0.0f);  // zero vectors get here
-#endif
 	inv_denom = 1.0f / inv_denom;
 
 	d = DotProduct(normal, p) * inv_denom;
@@ -831,32 +822,19 @@ int Q_isnan(float x) {
 
 	return (int)((unsigned int)fi.ui >> 31);
 }
-//------------------------------------------------------------------------
 
-#ifndef Q3_VM
 /*
 =====================
 Q_acos
-
-the msvc acos doesn't always return a value between -PI and PI:
-
-int i;
-i = 1065353246;
-acos(*(float*) &i) == -1.#IND0
-
 =====================
 */
 float Q_acos(float c) {
-	float angle;
-
-	angle = acos(c);
-
-	if(angle > M_PI) {
-		return (float)M_PI;
-	}
-	if(angle < -M_PI) {
-		return (float)M_PI;
-	}
-	return angle;
+	c = fminf(fmaxf(c, -1.0f), 1.0f);
+	return acosf(c);
 }
-#endif
+
+void Q_SnapVector(float v[3]) {
+	v[0] = roundf(v[0]);
+	v[1] = roundf(v[1]);
+	v[2] = roundf(v[2]);
+}

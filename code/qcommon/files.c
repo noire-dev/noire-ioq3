@@ -554,12 +554,12 @@ bool FS_CreatePath(const char* OSPath) {
 =================
 FS_CheckFilenameIsMutable
 
-ERR_FATAL if trying to maniuplate a file with the platform library, QVM, or pk3 extension
+ERR_FATAL if trying to maniuplate a file with the platform library, or pk3 extension
 =================
  */
 static void FS_CheckFilenameIsMutable(const char* filename, const char* function) {
-	// Check if the filename ends with the library, QVM, or pk3 extension
-	if(Sys_DllExtension(filename) || COM_CompareExtension(filename, ".qvm") || COM_CompareExtension(filename, ".pk3")) {
+	// Check if the filename ends with the library, or pk3 extension
+	if(Sys_DllExtension(filename) || COM_CompareExtension(filename, ".pk3")) {
 		Com_Error(ERR_FATAL,
 		          "%s: Not allowed to manipulate '%s' due "
 		          "to %s extension",
@@ -1121,13 +1121,10 @@ long FS_FOpenFileReadDir(const char* filename, searchpath_t* search, fileHandle_
 					len = strlen(filename);
 
 					if(!(pak->referenced & FS_GENERAL_REF)) {
-						if(!FS_IsExt(filename, ".shader", len) && !FS_IsExt(filename, ".txt", len) && !FS_IsExt(filename, ".cfg", len) && !FS_IsExt(filename, ".config", len) && !FS_IsExt(filename, ".bot", len) && !FS_IsExt(filename, ".arena", len) && !FS_IsExt(filename, ".menu", len) && Q_stricmp(filename, "vm/game.qvm") != 0 && !strstr(filename, "levelshots")) {
+						if(!FS_IsExt(filename, ".shader", len) && !FS_IsExt(filename, ".txt", len) && !FS_IsExt(filename, ".cfg", len) && !FS_IsExt(filename, ".config", len) && !FS_IsExt(filename, ".bot", len) && !FS_IsExt(filename, ".arena", len) && !FS_IsExt(filename, ".menu", len) && !strstr(filename, "levelshots")) {
 							pak->referenced |= FS_GENERAL_REF;
 						}
 					}
-
-					if(strstr(filename, "cgame.qvm")) pak->referenced |= FS_CGAME_REF;
-					if(strstr(filename, "ui.qvm")) pak->referenced |= FS_UI_REF;
 
 					if(uniqueFILE) {
 						// open a new file on the pakfile

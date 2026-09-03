@@ -316,11 +316,6 @@ intptr_t SV_GameSystemCalls(intptr_t* args) {
 
 		case G_DEBUG_POLYGON_CREATE: return BotImport_DebugPolygonCreate(args[1], args[2], VMA(3));
 		case G_DEBUG_POLYGON_DELETE: BotImport_DebugPolygonDelete(args[1]); return 0;
-		case G_SNAPVECTOR:
-			Q_SnapVector(VMA(1));
-			return 0;
-
-			//====================================
 
 		case BOTLIB_SETUP: return SV_BotLibSetup();
 		case BOTLIB_SHUTDOWN: return SV_BotLibShutdown();
