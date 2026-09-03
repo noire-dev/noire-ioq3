@@ -42,8 +42,7 @@ This is the only way control passes into the module.
 This must be the very first function compiled into the .q3vm file
 ================
 */
-Q_EXPORT intptr_t
-vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {
+Q_EXPORT intptr_t vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {
 	switch(command) {
 		case CG_INIT: CG_Init(arg0, arg1, arg2); return 0;
 		case CG_SHUTDOWN: CG_Shutdown(); return 0;
@@ -355,20 +354,6 @@ void CG_UpdateCvars(void) {
 
 	for(i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++) {
 		trap_Cvar_Update(cv->vmCvar);
-	}
-
-	// check for modications here
-
-	// If team overlay is on, ask for updates from the server.  If it's off,
-	// let the server know so we don't receive it
-	if(drawTeamOverlayModificationCount != cg_drawTeamOverlay.modificationCount) {
-		drawTeamOverlayModificationCount = cg_drawTeamOverlay.modificationCount;
-
-		if(cg_drawTeamOverlay.integer > 0) {
-			trap_Cvar_Set("teamoverlay", "1");
-		} else {
-			trap_Cvar_Set("teamoverlay", "0");
-		}
 	}
 
 	// if force model changed
@@ -1631,9 +1616,7 @@ static float CG_Cvar_Get(const char* cvar) {
 	return atof(buff);
 }
 
-void CG_Text_PaintWithCursor(float x, float y, float scale, vec4_t color, const char* text, int cursorPos, char cursor, int limit, int style) {
-	CG_Text_Paint(x, y, scale, color, text, 0, limit, style);
-}
+void CG_Text_PaintWithCursor(float x, float y, float scale, vec4_t color, const char* text, int cursorPos, char cursor, int limit, int style) { CG_Text_Paint(x, y, scale, color, text, 0, limit, style); }
 
 static int CG_OwnerDrawWidth(int ownerDraw, float scale) {
 	switch(ownerDraw) {

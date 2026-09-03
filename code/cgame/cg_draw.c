@@ -25,229 +25,32 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "cg_local.h"
 
-#ifdef MISSIONPACK
-#include "../ui/ui_shared.h"
+static queued3DString_t queued3DStrings[MAX_3D_STRING_QUEUE];
+static int queued3DStringCount = 0;
+void CG_Add3DString(float x, float y, float z, const char* str, int style, const vec4_t color, float fontSize, float min, float max, qboolean useTrace) {
+	queued3DString_t* q = &queued3DStrings[queued3DStringCount++];
 
-// used for scoreboard
-extern displayContextDef_t cgDC;
-menuDef_t* menuScoreboard = NULL;
-#else
-int drawTeamOverlayModificationCount = -1;
-#endif
-
-int sortedTeamPlayers[TEAM_MAXOVERLAY];
-int numSortedTeamPlayers;
-
-char systemChat[256];
-char teamChat1[256];
-char teamChat2[256];
-
-#ifdef MISSIONPACK
-
-int CG_Text_Width(const char* text, float scale, int limit) {
-	int count, len;
-	float out;
-	glyphInfo_t* glyph;
-	float useScale;
-	const char* s = text;
-	fontInfo_t* font = &cgDC.Assets.textFont;
-	if(scale <= cg_smallFont.value) {
-		font = &cgDC.Assets.smallFont;
-	} else if(scale > cg_bigFont.value) {
-		font = &cgDC.Assets.bigFont;
-	}
-	useScale = scale * font->glyphScale;
-	out = 0;
-	if(text) {
-		len = strlen(text);
-		if(limit > 0 && len > limit) {
-			len = limit;
-		}
-		count = 0;
-		while(s && *s && count < len) {
-			if(Q_IsColorString(s)) {
-				s += 2;
-				continue;
-			} else {
-				glyph = &font->glyphs[*s & 255];
-				out += glyph->xSkip;
-				s++;
-				count++;
-			}
-		}
-	}
-	return out * useScale;
+	if(queued3DStringCount >= MAX_3D_STRING_QUEUE) return;
+	q->x = x;
+	q->y = y;
+	q->z = z;
+	q->str = str;
+	q->style = style;
+	Vector4Copy(color, q->color);
+	q->fontSize = fontSize;
+	q->min = min;
+	q->max = max;
+	q->useTrace = useTrace;
 }
 
-int CG_Text_Height(const char* text, float scale, int limit) {
-	int len, count;
-	float max;
-	glyphInfo_t* glyph;
-	float useScale;
-	const char* s = text;
-	fontInfo_t* font = &cgDC.Assets.textFont;
-	if(scale <= cg_smallFont.value) {
-		font = &cgDC.Assets.smallFont;
-	} else if(scale > cg_bigFont.value) {
-		font = &cgDC.Assets.bigFont;
+static void CG_Draw3DStringQueue(void) {
+	int i;
+	for(i = 0; i < queued3DStringCount; i++) {
+		queued3DString_t* q = &queued3DStrings[i];
+		CG_Draw3DString(q->x, q->y, q->z, q->str, q->style, q->color, q->fontSize, q->min, q->max, q->useTrace);
 	}
-	useScale = scale * font->glyphScale;
-	max = 0;
-	if(text) {
-		len = strlen(text);
-		if(limit > 0 && len > limit) {
-			len = limit;
-		}
-		count = 0;
-		while(s && *s && count < len) {
-			if(Q_IsColorString(s)) {
-				s += 2;
-				continue;
-			} else {
-				glyph = &font->glyphs[*s & 255];
-				if(max < glyph->height) {
-					max = glyph->height;
-				}
-				s++;
-				count++;
-			}
-		}
-	}
-	return max * useScale;
+	queued3DStringCount = 0;
 }
-
-void CG_Text_PaintChar(float x, float y, float width, float height, float scale, float s, float t, float s2, float t2, qhandle_t hShader) {
-	float w, h;
-	w = width * scale;
-	h = height * scale;
-	CG_AdjustFrom640(&x, &y, &w, &h);
-	trap_R_DrawStretchPic(x, y, w, h, s, t, s2, t2, hShader);
-}
-
-void CG_Text_Paint(float x, float y, float scale, vec4_t color, const char* text, float adjust, int limit, int style) {
-	int len, count;
-	vec4_t newColor;
-	glyphInfo_t* glyph;
-	float useScale;
-	fontInfo_t* font = &cgDC.Assets.textFont;
-	if(scale <= cg_smallFont.value) {
-		font = &cgDC.Assets.smallFont;
-	} else if(scale > cg_bigFont.value) {
-		font = &cgDC.Assets.bigFont;
-	}
-	useScale = scale * font->glyphScale;
-	if(text) {
-		const char* s = text;
-		trap_R_SetColor(color);
-		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
-		len = strlen(text);
-		if(limit > 0 && len > limit) {
-			len = limit;
-		}
-		count = 0;
-		while(s && *s && count < len) {
-			glyph = &font->glyphs[*s & 255];
-			// int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
-			// float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
-			if(Q_IsColorString(s)) {
-				memcpy(newColor, g_color_table[ColorIndex(*(s + 1))], sizeof(newColor));
-				newColor[3] = color[3];
-				trap_R_SetColor(newColor);
-				s += 2;
-				continue;
-			} else {
-				float yadj = useScale * glyph->top;
-				if(style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
-					int ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
-					colorBlack[3] = newColor[3];
-					trap_R_SetColor(colorBlack);
-					CG_Text_PaintChar(x + ofs,
-					                  y - yadj + ofs,
-					                  glyph->imageWidth,
-					                  glyph->imageHeight,
-					                  useScale,
-					                  glyph->s,
-					                  glyph->t,
-					                  glyph->s2,
-					                  glyph->t2,
-					                  glyph->glyph);
-					colorBlack[3] = 1.0;
-					trap_R_SetColor(newColor);
-				}
-				CG_Text_PaintChar(x, y - yadj, glyph->imageWidth, glyph->imageHeight, useScale, glyph->s, glyph->t, glyph->s2, glyph->t2, glyph->glyph);
-				// CG_DrawPic(x, y - yadj, scale * cgDC.Assets.textFont.glyphs[text[i]].imageWidth, scale * cgDC.Assets.textFont.glyphs[text[i]].imageHeight,
-				// cgDC.Assets.textFont.glyphs[text[i]].glyph);
-				x += (glyph->xSkip * useScale) + adjust;
-				s++;
-				count++;
-			}
-		}
-		trap_R_SetColor(NULL);
-	}
-}
-
-#endif
-
-/*
-==============
-CG_DrawField
-
-Draws large numbers for status bar and powerups
-==============
-*/
-#ifndef MISSIONPACK
-static void CG_DrawField(int x, int y, int width, int value) {
-	char num[16], *ptr;
-	int l;
-	int frame;
-
-	if(width < 1) {
-		return;
-	}
-
-	// draw number string
-	if(width > 5) {
-		width = 5;
-	}
-
-	switch(width) {
-		case 1:
-			value = value > 9 ? 9 : value;
-			value = value < 0 ? 0 : value;
-			break;
-		case 2:
-			value = value > 99 ? 99 : value;
-			value = value < -9 ? -9 : value;
-			break;
-		case 3:
-			value = value > 999 ? 999 : value;
-			value = value < -99 ? -99 : value;
-			break;
-		case 4:
-			value = value > 9999 ? 9999 : value;
-			value = value < -999 ? -999 : value;
-			break;
-	}
-
-	Com_sprintf(num, sizeof(num), "%i", value);
-	l = strlen(num);
-	if(l > width) l = width;
-	x += 2 + CHAR_WIDTH * (width - l);
-
-	ptr = num;
-	while(*ptr && l) {
-		if(*ptr == '-')
-			frame = STAT_MINUS;
-		else
-			frame = *ptr - '0';
-
-		CG_DrawPic(x, y, CHAR_WIDTH, CHAR_HEIGHT, cgs.media.numberShaders[frame]);
-		x += CHAR_WIDTH;
-		ptr++;
-		l--;
-	}
-}
-#endif  // MISSIONPACK
 
 /*
 ================
@@ -502,7 +305,6 @@ CG_DrawStatusBar
 
 ================
 */
-#ifndef MISSIONPACK
 static void CG_DrawStatusBar(void) {
 	int color;
 	centity_t* cent;
@@ -623,7 +425,6 @@ static void CG_DrawStatusBar(void) {
 		}
 	}
 }
-#endif
 
 /*
 ===========================================================================================
@@ -1347,15 +1148,7 @@ static void CG_DrawTeamInfo(void) {
 		hcolor[3] = 1.0f;
 
 		for(i = cgs.teamChatPos - 1; i >= cgs.teamLastChatPos; i--) {
-			CG_DrawStringExt(CHATLOC_X + TINYCHAR_WIDTH,
-			                 CHATLOC_Y - (cgs.teamChatPos - i) * TINYCHAR_HEIGHT,
-			                 cgs.teamChatMsgs[i % chatHeight],
-			                 hcolor,
-			                 qfalse,
-			                 qfalse,
-			                 TINYCHAR_WIDTH,
-			                 TINYCHAR_HEIGHT,
-			                 0);
+			CG_DrawStringExt(CHATLOC_X + TINYCHAR_WIDTH, CHATLOC_Y - (cgs.teamChatPos - i) * TINYCHAR_HEIGHT, cgs.teamChatMsgs[i % chatHeight], hcolor, qfalse, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0);
 		}
 	}
 }

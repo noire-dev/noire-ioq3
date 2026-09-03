@@ -92,6 +92,25 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define DEFAULT_REDTEAM_NAME "Stroggs"
 #define DEFAULT_BLUETEAM_NAME "Pagans"
 
+#define NOTIFY_NONE 0
+#define NOTIFY_INFO 1
+#define NOTIFY_UNDO 2
+#define NOTIFY_ITEM 3
+#define NOTIFY_KILL 4
+#define NOTIFY_CUSTOM 5
+
+#define MAX_3D_STRING_QUEUE 8192
+
+typedef struct {
+	float x, y, z;
+	const char* str;
+	int style;
+	vec4_t color;
+	float fontSize;
+	float min, max;
+	qboolean useScale, useFade, useTrace;
+} queued3DString_t;
+
 typedef enum {
 	FOOTSTEP_NORMAL,
 	FOOTSTEP_BOOT,
@@ -1202,16 +1221,15 @@ void CG_AddBufferedSound(sfxHandle_t sfx);
 
 void CG_DrawActiveFrame(int serverTime, stereoFrame_t stereoView, qboolean demoPlayback);
 
-//
 // cg_drawtools.c
-//
+void CG_DrawProgressBar(float x, float y, float width, float height, float progress, float segmentWidth, const float* barColor, const float* bgColor);
+void CG_Draw3DString(float x, float y, float z, const char* str, int style, vec4_t color, float fontSize, float min, float max, qboolean useTrace);
 void CG_AdjustFrom640(float* x, float* y, float* w, float* h);
 void CG_FillRect(float x, float y, float width, float height, const float* color);
 void CG_DrawPic(float x, float y, float width, float height, qhandle_t hShader);
 void CG_DrawString(float x, float y, const char* string, float charWidth, float charHeight, const float* modulate);
 
-void CG_DrawStringExt(
-    int x, int y, const char* string, const float* setColor, qboolean forceColor, qboolean shadow, int charWidth, int charHeight, int maxChars);
+void CG_DrawStringExt(int x, int y, const char* string, const float* setColor, qboolean forceColor, qboolean shadow, int charWidth, int charHeight, int maxChars);
 void CG_DrawBigString(int x, int y, const char* s, float alpha);
 void CG_DrawBigStringColor(int x, int y, const char* s, vec4_t color);
 void CG_DrawSmallString(int x, int y, const char* s, float alpha);
@@ -1230,16 +1248,7 @@ void CG_DrawRect(float x, float y, float width, float height, float size, const 
 void CG_DrawSides(float x, float y, float w, float h, float size);
 void CG_DrawTopBottom(float x, float y, float w, float h, float size);
 
-//
-// cg_draw.c, cg_newDraw.c
-//
-extern int sortedTeamPlayers[TEAM_MAXOVERLAY];
-extern int numSortedTeamPlayers;
-extern int drawTeamOverlayModificationCount;
-extern char systemChat[256];
-extern char teamChat1[256];
-extern char teamChat2[256];
-
+// cg_draw.c
 void CG_AddLagometerFrameInfo(void);
 void CG_AddLagometerSnapshotInfo(snapshot_t* snap);
 void CG_CenterPrint(const char* str, int y, int charWidth);
@@ -1247,20 +1256,7 @@ void CG_DrawHead(float x, float y, float w, float h, int clientNum, vec3_t headA
 void CG_DrawActive(stereoFrame_t stereoView);
 void CG_DrawFlagModel(float x, float y, float w, float h, int team, qboolean force2D);
 void CG_DrawTeamBackground(int x, int y, int w, int h, float alpha, int team);
-void CG_OwnerDraw(float x,
-                  float y,
-                  float w,
-                  float h,
-                  float text_x,
-                  float text_y,
-                  int ownerDraw,
-                  int ownerDrawFlags,
-                  int align,
-                  float special,
-                  float scale,
-                  vec4_t color,
-                  qhandle_t shader,
-                  int textStyle);
+void CG_OwnerDraw(float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, float special, float scale, vec4_t color, qhandle_t shader, int textStyle);
 void CG_Text_Paint(float x, float y, float scale, vec4_t color, const char* text, float adjust, int limit, int style);
 int CG_Text_Width(const char* text, float scale, int limit);
 int CG_Text_Height(const char* text, float scale, int limit);
@@ -1349,17 +1345,7 @@ void CG_OutOfAmmoChange(void);  // should this be in pmove?
 //
 void CG_InitMarkPolys(void);
 void CG_AddMarks(void);
-void CG_ImpactMark(qhandle_t markShader,
-                   const vec3_t origin,
-                   const vec3_t dir,
-                   float orientation,
-                   float r,
-                   float g,
-                   float b,
-                   float a,
-                   qboolean alphaFade,
-                   float radius,
-                   qboolean temporary);
+void CG_ImpactMark(qhandle_t markShader, const vec3_t origin, const vec3_t dir, float orientation, float r, float g, float b, float a, qboolean alphaFade, float radius, qboolean temporary);
 
 //
 // cg_localents.c
@@ -1371,18 +1357,7 @@ void CG_AddLocalEntities(void);
 //
 // cg_effects.c
 //
-localEntity_t* CG_SmokePuff(const vec3_t p,
-                            const vec3_t vel,
-                            float radius,
-                            float r,
-                            float g,
-                            float b,
-                            float a,
-                            float duration,
-                            int startTime,
-                            int fadeInTime,
-                            int leFlags,
-                            qhandle_t hShader);
+localEntity_t* CG_SmokePuff(const vec3_t p, const vec3_t vel, float radius, float r, float g, float b, float a, float duration, int startTime, int fadeInTime, int leFlags, qhandle_t hShader);
 void CG_BubbleTrail(vec3_t start, vec3_t end, float spacing);
 void CG_SpawnEffect(vec3_t org);
 #ifdef MISSIONPACK
@@ -1474,28 +1449,11 @@ int trap_CM_PointContents(const vec3_t p, clipHandle_t model);
 int trap_CM_TransformedPointContents(const vec3_t p, clipHandle_t model, const vec3_t origin, const vec3_t angles);
 void trap_CM_BoxTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask);
 void trap_CM_CapsuleTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask);
-void trap_CM_TransformedBoxTrace(trace_t* results,
-                                 const vec3_t start,
-                                 const vec3_t end,
-                                 const vec3_t mins,
-                                 const vec3_t maxs,
-                                 clipHandle_t model,
-                                 int brushmask,
-                                 const vec3_t origin,
-                                 const vec3_t angles);
-void trap_CM_TransformedCapsuleTrace(trace_t* results,
-                                     const vec3_t start,
-                                     const vec3_t end,
-                                     const vec3_t mins,
-                                     const vec3_t maxs,
-                                     clipHandle_t model,
-                                     int brushmask,
-                                     const vec3_t origin,
-                                     const vec3_t angles);
+void trap_CM_TransformedBoxTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask, const vec3_t origin, const vec3_t angles);
+void trap_CM_TransformedCapsuleTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask, const vec3_t origin, const vec3_t angles);
 
 // Returns the projection of a polygon onto the solid brushes in the world
-int trap_CM_MarkFragments(
-    int numPoints, const vec3_t* points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t* fragmentBuffer);
+int trap_CM_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t* fragmentBuffer);
 
 // normal sounds will have their volume dynamically changed as their entity
 // moves and the listener moves
