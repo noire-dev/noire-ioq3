@@ -1,0 +1,23 @@
+spawnlist.model = "props/musicbox";
+spawnlist.classname = "none";
+spawnlist.private = 0;
+spawnlist.colsize = 25;
+spawnlist.grid = 15;
+spawnlist.spawnflags = 0;
+spawnlist.material = 0;
+spawnlist.phys = 1;
+spawnlist.coll = 1;
+spawnlist.sound = "music/oa14";
+spawnlist.health = -1;
+spawnlist.lightred = 0;
+spawnlist.lightgreen = 0;
+spawnlist.lightblue = 0;
+spawnlist.lightradius = 0;
+spawnlist.scalex = 0.60;
+spawnlist.scaley = 0.60;
+spawnlist.scalez = 0.60;
+spawnlist.type = 1;
+spawnlist.bounce = 0.40;
+spawnlist.mass = 1.00;
+
+qvm.cmd(qvm.ui, EXEC.INSERT , "sl prop " + spawnlist.model + " " + spawnlist.classname + " " + spawnlist.private + " " + spawnlist.colsize + " " + spawnlist.grid + " " + spawnlist.spawnflags + " " + spawnlist.material + " " + spawnlist.phys + " " + spawnlist.coll + " " + spawnlist.sound + " " + spawnlist.health + " " + spawnlist.lightred + " " + spawnlist.lightgreen + " " + spawnlist.lightblue + " " + spawnlist.lightradius + " " + spawnlist.scalex + " " + spawnlist.scaley + " " + spawnlist.scalez + " " + spawnlist.type + " " + spawnlist.bounce + " " + spawnlist.mass);

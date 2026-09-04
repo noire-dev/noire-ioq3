@@ -450,10 +450,7 @@ intptr_t CL_CgameSystemCalls(intptr_t* args) {
 		case CG_MEMORY_REMAINING: return Hunk_MemoryRemaining();
 		case CG_KEY_ISDOWN: return Key_IsDown(args[1]);
 		case CG_KEY_GETCATCHER: return Key_GetCatcher();
-		case CG_KEY_SETCATCHER:
-			// Don't allow the cgame module to close the console
-			Key_SetCatcher(args[1] | (Key_GetCatcher() & KEYCATCH_CONSOLE));
-			return 0;
+		case CG_KEY_SETCATCHER: Key_SetCatcher(args[1] | (Key_GetCatcher() & KEYCATCH_CONSOLE)); return 0;
 		case CG_KEY_GETKEY: return Key_GetKey(VMA(1));
 
 		case CG_MEMSET: Com_Memset(VMA(1), args[2], args[3]); return 0;

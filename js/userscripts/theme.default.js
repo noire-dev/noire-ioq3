@@ -1,0 +1,17 @@
+cvar.set("sbt_color0_0", "0.00");
+cvar.set("sbt_color0_1", "0.00");
+cvar.set("sbt_color0_2", "0.00");
+cvar.set("sbt_color0_3", "0.45");
+cvar.set("sbt_color1_0", "0.25");
+cvar.set("sbt_color1_1", "0.25");
+cvar.set("sbt_color1_2", "0.25");
+cvar.set("sbt_color1_3", "0.45");
+cvar.set("sbt_color2_0", "0.30");
+cvar.set("sbt_color2_1", "0.10");
+cvar.set("sbt_color2_2", "0.90");
+cvar.set("sbt_color2_3", "0.90");
+cvar.set("sbt_color3_0", "0.90");
+cvar.set("sbt_color3_1", "1.00");
+cvar.set("sbt_color3_2", "1.00");
+cvar.set("sbt_color3_3", "1.00");
+cvar.set("sbt_wallpaper", "trans");
