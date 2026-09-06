@@ -177,7 +177,7 @@ extern shell_s shell;
 // Функции вызываемые из движка
 int UI_Init(void);
 int UI_Shutdown(void);
-int UI_KeyEvent(int key, int down, int isChar);
+int UI_KeyEvent(int key, bool down, bool isChar);
 int UI_MouseEvent(int dx, int dy);
 int UI_Refresh(void);
 int UI_IsFullscreen(void);

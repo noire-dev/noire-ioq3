@@ -6,13 +6,12 @@
 
 shell_s shell;
 
-Q_EXPORT intptr_t vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10,
-                         int arg11) {  // Точка входа движка (функция должна быть первой)
+Q_EXPORT intptr_t vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11) {  // Точка входа движка (функция должна быть первой)
 	switch(command) {
 		case UI_GETAPIVERSION: return UI_API_VERSION;
 		case UI_INIT: return UI_Init();
 		case UI_SHUTDOWN: return UI_Shutdown();
-		case UI_KEY_EVENT: return UI_KeyEvent(arg0, arg1, arg2);
+		case UI_KEY_EVENT: return UI_KeyEvent(arg0, (bool)arg1, (bool)arg2);
 		case UI_MOUSE_EVENT: return UI_MouseEvent(arg0, arg1);
 		case UI_REFRESH: return UI_Refresh();
 		case UI_IS_FULLSCREEN: return UI_IsFullscreen();
@@ -735,7 +734,7 @@ void UI_Move3DWindow(int windowID, float distance) {  // 3D окна в коор
 	window->worldZ = worldOrg[2];
 }
 
-int UI_KeyEvent(int key, int isDown, int isChar) {  // [SAFE] Обработка событий ввода UI
+int UI_KeyEvent(int key, bool isDown, bool isChar) {  // [SAFE] Обработка событий ввода UI
 	element_s* element = NULL;
 	window_s* activeWindow = NULL;
 	window_s* focusedWindow = NULL;
@@ -887,9 +886,7 @@ int UI_KeyEvent(int key, int isDown, int isChar) {  // [SAFE] Обработка
 	}
 
 	if(activeWindow != NULL) {
-		if((key == K_SPACE && !isChar) || (key != K_SPACE)) {
-			JS_ShellKey(key, activeWindow->id);
-		}
+		if(!isChar) JS_ShellKey(key, activeWindow->id);
 	}
 
 	if(element != NULL) {  // Обработка нажатий по элементам

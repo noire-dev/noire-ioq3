@@ -1121,7 +1121,7 @@ void CL_KeyDownEvent(int key, unsigned time) {
 			return;
 		}
 
-		VM_Call(uivm, UI_KEY_EVENT, key, true);
+		VM_Call(uivm, UI_KEY_EVENT, key, true, false);
 		return;
 	}
 
@@ -1133,7 +1133,7 @@ void CL_KeyDownEvent(int key, unsigned time) {
 		Console_Key(key);
 	} else if(Key_GetCatcher() & KEYCATCH_UI) {
 		if(uivm) {
-			VM_Call(uivm, UI_KEY_EVENT, key, true);
+			VM_Call(uivm, UI_KEY_EVENT, key, true, false);
 		}
 	} else if(Key_GetCatcher() & KEYCATCH_CGAME) {
 		if(cgvm) {
@@ -1174,7 +1174,7 @@ void CL_KeyUpEvent(int key, unsigned time) {
 	CL_ParseBinding(key, false, time);
 
 	if(Key_GetCatcher() & KEYCATCH_UI && uivm) {
-		VM_Call(uivm, UI_KEY_EVENT, key, false);
+		VM_Call(uivm, UI_KEY_EVENT, key, false, false);
 	} else if(Key_GetCatcher() & KEYCATCH_CGAME && cgvm) {
 		VM_Call(cgvm, CG_KEY_EVENT, key, false);
 	}
@@ -1212,7 +1212,7 @@ void CL_CharEvent(int key) {
 	if(Key_GetCatcher() & KEYCATCH_CONSOLE) {
 		Field_CharEvent(&g_consoleField, key);
 	} else if(Key_GetCatcher() & KEYCATCH_UI) {
-		VM_Call(uivm, UI_KEY_EVENT, key | K_CHAR_FLAG, true);
+		VM_Call(uivm, UI_KEY_EVENT, key, true, true);
 	} else if(Key_GetCatcher() & KEYCATCH_MESSAGE) {
 		Field_CharEvent(&chatField, key);
 	} else if(clc.state == CA_DISCONNECTED) {
