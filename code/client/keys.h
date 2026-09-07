@@ -27,7 +27,6 @@ typedef struct {
 	char* binding;
 } qkey_t;
 
-extern bool key_overstrikeMode;
 extern qkey_t keys[MAX_KEYS];
 
 // NOTE TTimo the declaration of field_t and Field_Clear is now in qcommon/qcommon.h
@@ -47,7 +46,5 @@ void Key_WriteBindings(fileHandle_t f);
 void Key_SetBinding(int keynum, const char* binding);
 char* Key_GetBinding(int keynum);
 bool Key_IsDown(int keynum);
-bool Key_GetOverstrikeMode(void);
-void Key_SetOverstrikeMode(bool state);
 void Key_ClearStates(void);
 int Key_GetKey(const char* binding);

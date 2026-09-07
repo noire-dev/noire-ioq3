@@ -72,10 +72,6 @@ void trap_Key_SetBinding(int keynum, const char* binding) { syscall(UI_KEY_SETBI
 
 bool trap_Key_IsDown(int keynum) { return syscall(UI_KEY_ISDOWN, keynum); }
 
-bool trap_Key_GetOverstrikeMode(void) { return syscall(UI_KEY_GETOVERSTRIKEMODE); }
-
-void trap_Key_SetOverstrikeMode(bool state) { syscall(UI_KEY_SETOVERSTRIKEMODE, state); }
-
 void trap_Key_ClearStates(void) { syscall(UI_KEY_CLEARSTATES); }
 
 int trap_Key_GetCatcher(void) { return syscall(UI_KEY_GETCATCHER); }

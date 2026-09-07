@@ -340,8 +340,6 @@ typedef struct {
 	float (*getCVarValue)(const char* cvar);
 	void (*setCVar)(const char* cvar, const char* value);
 	void (*drawTextWithCursor)(float x, float y, float scale, vec4_t color, const char* text, int cursorPos, char cursor, int limit, int style);
-	void (*setOverstrikeMode)(bool b);
-	bool (*getOverstrikeMode)(void);
 	void (*startLocalSound)(sfxHandle_t sfx, int channelNum);
 	bool (*ownerDrawHandleKey)(int ownerDraw, int flags, float* special, int key);
 	int (*feederCount)(float feederID);

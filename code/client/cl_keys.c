@@ -39,8 +39,6 @@ bool chat_team;
 
 int chat_playerNum;
 
-bool key_overstrikeMode;
-
 int anykeydown;
 qkey_t keys[MAX_KEYS];
 
@@ -375,28 +373,32 @@ void Field_KeyDownEvent(field_t* edit, int key) {
 
 	switch(key) {
 		case K_DEL:
-			if(edit->cursor < len) {
-				memmove(edit->buffer + edit->cursor, edit->buffer + edit->cursor + 1, len - edit->cursor);
+			Field_KeyDownEvent(edit, K_RIGHTARROW);
+			if(edit->cursor > 0) {
+				int start = edit->cursor - 1;
+				while(start > 0 && (edit->buffer[start] & 0xC0) == 0x80) start--;
+				memmove(edit->buffer + start, edit->buffer + edit->cursor, len - edit->cursor + 1);
+				edit->cursor = start;
 			}
 			break;
 
 		case K_RIGHTARROW:
 			if(edit->cursor < len) {
 				edit->cursor++;
+				while(edit->cursor < len && (edit->buffer[edit->cursor] & 0xC0) == 0x80) edit->cursor++;
 			}
 			break;
 
 		case K_LEFTARROW:
 			if(edit->cursor > 0) {
 				edit->cursor--;
+				while(edit->cursor > 0 && (edit->buffer[edit->cursor] & 0xC0) == 0x80) edit->cursor--;
 			}
 			break;
 
 		case K_HOME: edit->cursor = 0; break;
 
 		case K_END: edit->cursor = len; break;
-
-		case K_INS: key_overstrikeMode = !key_overstrikeMode; break;
 
 		default: break;
 	}
@@ -431,11 +433,10 @@ void Field_CharEvent(field_t* edit, int ch) {
 
 	if(ch == 'h' - 'a' + 1) {  // ctrl-h is backspace
 		if(edit->cursor > 0) {
-			memmove(edit->buffer + edit->cursor - 1, edit->buffer + edit->cursor, len + 1 - edit->cursor);
-			edit->cursor--;
-			if(edit->cursor < edit->scroll) {
-				edit->scroll--;
-			}
+			int start = edit->cursor - 1;
+			while(start > 0 && (edit->buffer[start] & 0xC0) == 0x80) start--;
+			memmove(edit->buffer + start, edit->buffer + edit->cursor, len - edit->cursor + 1);
+			edit->cursor = start;
 		}
 		return;
 	}
@@ -452,30 +453,37 @@ void Field_CharEvent(field_t* edit, int ch) {
 		return;
 	}
 
-	//
-	// ignore any other non printable chars
-	//
-	if(ch < 32) {
-		return;
-	}
+	if((ch < 0 || ch >= 32) && ch != 127 && len < MAX_JS_STRINGSIZE - 1) {
+		char utf8[5] = {0};
+		int bytes = 0;
 
-	if(key_overstrikeMode) {
-		// - 2 to leave room for the leading slash and trailing \0
-		if(edit->cursor == MAX_EDIT_LINE - 2) return;
-		edit->buffer[edit->cursor] = ch;
-		edit->cursor++;
-	} else {  // insert mode
-		// - 2 to leave room for the leading slash and trailing \0
-		if(len == MAX_EDIT_LINE - 2) {
-			return;  // all full
+		if(ch < 0x80) {
+			utf8[0] = (char)ch;
+			bytes = 1;
+		} else if(ch < 0x800) {
+			utf8[0] = 0xC0 | (ch >> 6);
+			utf8[1] = 0x80 | (ch & 0x3F);
+			bytes = 2;
+		} else if(ch < 0x10000) {
+			utf8[0] = 0xE0 | (ch >> 12);
+			utf8[1] = 0x80 | ((ch >> 6) & 0x3F);
+			utf8[2] = 0x80 | (ch & 0x3F);
+			bytes = 3;
+		} else if(ch < 0x110000) {
+			utf8[0] = 0xF0 | (ch >> 18);
+			utf8[1] = 0x80 | ((ch >> 12) & 0x3F);
+			utf8[2] = 0x80 | ((ch >> 6) & 0x3F);
+			utf8[3] = 0x80 | (ch & 0x3F);
+			bytes = 4;
 		}
-		memmove(edit->buffer + edit->cursor + 1, edit->buffer + edit->cursor, len + 1 - edit->cursor);
-		edit->buffer[edit->cursor] = ch;
-		edit->cursor++;
-	}
 
-	if(edit->cursor >= edit->widthInChars) {
-		edit->scroll++;
+		if(edit->cursor < 0) edit->cursor = len;
+		if(edit->cursor <= len && len + bytes <= MAX_JS_STRINGSIZE - 1) {
+			memmove(edit->buffer + edit->cursor + bytes, edit->buffer + edit->cursor, len + 1 - edit->cursor);
+			memcpy(edit->buffer + edit->cursor, utf8, bytes);
+			edit->cursor += bytes;
+			edit->buffer[len + bytes] = '\0';
+		}
 	}
 
 	if(edit->cursor == len + 1) {
@@ -526,13 +534,12 @@ void Console_Key(int key) {
 			// other text will be chat messages
 			if(!g_consoleField.buffer[0]) {
 				return;  // empty lines just scroll the console without adding to history
+			} else if(g_consoleField.buffer[0] == '>') {
+				JSEval(g_consoleField.buffer + 1, true, false, NULL);  // JS code
 			} else {
-				if(con_autochat->integer) {
-					Cbuf_AddText("cmd say ");
-				}
-
+				if(con_autochat->integer) Cbuf_AddText("say \"");
 				Cbuf_AddText(g_consoleField.buffer);
-				Cbuf_AddText("\n");
+				Cbuf_AddText("\"\n");
 			}
 		}
 
@@ -554,14 +561,12 @@ void Console_Key(int key) {
 	}
 
 	// command completion
-
 	if(key == K_TAB) {
 		Field_AutoComplete(&g_consoleField);
 		return;
 	}
 
 	// command history (ctrl-p ctrl-n for unix style)
-
 	if((key == K_MWHEELUP && keys[K_SHIFT].down) || (key == K_UPARROW) || (key == K_KP_UPARROW) || ((tolower(key) == 'p') && keys[K_CTRL].down)) {
 		if(nextHistoryLine - historyLine < COMMAND_HISTORY && historyLine > 0) {
 			historyLine--;
@@ -666,12 +671,6 @@ void Message_Key(int key) {
 
 	Field_KeyDownEvent(&chatField, key);
 }
-
-//============================================================================
-
-bool Key_GetOverstrikeMode(void) { return key_overstrikeMode; }
-
-void Key_SetOverstrikeMode(bool state) { key_overstrikeMode = state; }
 
 /*
 ===================

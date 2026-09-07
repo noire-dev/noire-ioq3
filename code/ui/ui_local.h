@@ -227,8 +227,6 @@ void trap_Key_KeynumToStringBuf(int keynum, char* buf, int buflen);
 void trap_Key_GetBindingBuf(int keynum, char* buf, int buflen);
 void trap_Key_SetBinding(int keynum, const char* binding);
 bool trap_Key_IsDown(int keynum);
-bool trap_Key_GetOverstrikeMode(void);
-void trap_Key_SetOverstrikeMode(bool state);
 void trap_Key_ClearStates(void);
 int trap_Key_GetCatcher(void);
 void trap_Key_SetCatcher(int catcher);

@@ -715,10 +715,6 @@ intptr_t CL_UISystemCalls(intptr_t* args) {
 
 		case UI_KEY_ISDOWN: return Key_IsDown(args[1]);
 
-		case UI_KEY_GETOVERSTRIKEMODE: return Key_GetOverstrikeMode();
-
-		case UI_KEY_SETOVERSTRIKEMODE: Key_SetOverstrikeMode(args[1]); return 0;
-
 		case UI_KEY_CLEARSTATES: Key_ClearStates(); return 0;
 
 		case UI_KEY_GETCATCHER: return Key_GetCatcher();
