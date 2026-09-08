@@ -409,7 +409,7 @@ void drawModel(float x, float y, float w, float h, const char* model, float scal
 	origin[2] = 0;
 
 	angles[0] = 0;
-	angles[1] = (trap_Milliseconds() & 4095) * 360 / 4096.0;
+	angles[1] = (trap_Milliseconds() & 8191) * 360 / 8192.0;
 	angles[2] = 0;
 
 	trap_R_ClearScene();
@@ -417,13 +417,14 @@ void drawModel(float x, float y, float w, float h, const char* model, float scal
 	memset(&ent, 0, sizeof(ent));
 
 	AnglesToAxis(angles, ent.axis);
+	ent.nonNormalizedAxes = false;
 	ent.hModel = trap_R_RegisterModel(model);
 	ent.shaderRGBA[0] = 128;
 	ent.shaderRGBA[1] = 128;
 	ent.shaderRGBA[2] = 128;
 	ent.shaderRGBA[3] = 255;
 	VectorCopy(origin, ent.origin);
-	VectorCopy(origin, ent.lightingOrigin);
+	VectorCopy(vec3_origin, ent.lightingOrigin);
 	ent.renderfx = RF_LIGHTING_ORIGIN;
 	VectorCopy(ent.origin, ent.oldorigin);
 	ent.customSkin = trap_R_RegisterSkin(va("mtr/%s/%i.skin", model, 0));

@@ -1128,7 +1128,7 @@ static void UI_ListFiles_Draw(element_s* e) {
 					drawShaderInFolder((e->x + e->margin4[0]) + (e->itemW * j), (e->y + e->margin4[1]) + (e->itemH * i), e->itemW - (e->margin4[2] + e->margin4[0]), e->itemH - (e->margin4[3] + e->margin4[1]), va("%s%s", window->fileList[e->listID].drawDir, file));
 				} else {
 					if(e->listContent == LCONTENT_SHADER) drawShader((e->x + e->margin4[0]) + (e->itemW * j), (e->y + e->margin4[1]) + (e->itemH * i), e->itemW - (e->margin4[2] + e->margin4[0]), e->itemH - (e->margin4[3] + e->margin4[1]), va("%s%s", window->fileList[e->listID].drawDir, nameWithoutExt));
-					if(e->listContent == LCONTENT_MODEL) drawModel((e->x + e->margin4[0]) + (e->itemW * j), (e->y + e->margin4[1]) + (e->itemH * i), e->itemW - (e->margin4[2] + e->margin4[0]), e->itemH - (e->margin4[3] + e->margin4[1]), va("%s%s", window->fileList[e->listID].drawDir, nameWithoutExt), 75.0f);
+					if(e->listContent == LCONTENT_MODEL) drawModel((e->x + e->margin4[0]) + (e->itemW * j), (e->y + e->margin4[1]) + (e->itemH * i), e->itemW - (e->margin4[2] + e->margin4[0]), e->itemH - (e->margin4[3] + e->margin4[1]), va("%s%s", window->fileList[e->listID].drawDir, nameWithoutExt), 100.0f);
 				}
 				if(strcmp(window->fileList[e->listID].ext, "/"))
 					drawString((e->x + (e->itemW * 0.50)) + (e->itemW * j), e->y + (e->itemH * i) + (e->itemH * 0.85), nameWithoutExt, FONTSTYLE_CENTER | e->style, cgui.colors[e->colorText], e->scale, (e->itemW / ((FONT_SIZE * FONT_WIDTH) * e->scale)) - 1);
