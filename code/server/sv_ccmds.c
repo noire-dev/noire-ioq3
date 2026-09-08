@@ -1026,12 +1026,8 @@ static int SV_Strlen(const char* str) {
 	int count = 0;
 
 	while(*s) {
-		if(Q_IsColorString(s)) {
-			s += 2;
-		} else {
-			count++;
-			s++;
-		}
+		count++;
+		s++;
 	}
 
 	return count;

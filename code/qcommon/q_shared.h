@@ -404,28 +404,25 @@ extern vec4_t colorLtGrey;
 extern vec4_t colorMdGrey;
 extern vec4_t colorDkGrey;
 
-#define Q_COLOR_ESCAPE '^'
-bool Q_IsColorString(const char* p);  // ^[0-9a-zA-Z]
+#define Q_COLOR_ESCAPE '#'
 
-#define COLOR_BLACK '0'
-#define COLOR_RED '1'
-#define COLOR_GREEN '2'
-#define COLOR_YELLOW '3'
-#define COLOR_BLUE '4'
-#define COLOR_CYAN '5'
-#define COLOR_MAGENTA '6'
-#define COLOR_WHITE '7'
-#define ColorIndexForNumber(c) ((c) & 0x07)
-#define ColorIndex(c) (ColorIndexForNumber((c) - '0'))
+#define COLOR_BLACK "000"
+#define COLOR_RED "f55"
+#define COLOR_GREEN "5f5"
+#define COLOR_YELLOW "f55"
+#define COLOR_BLUE "55f"
+#define COLOR_CYAN "5ff"
+#define COLOR_MAGENTA "f5f"
+#define COLOR_WHITE "fff"
 
-#define S_COLOR_BLACK "^0"
-#define S_COLOR_RED "^1"
-#define S_COLOR_GREEN "^2"
-#define S_COLOR_YELLOW "^3"
-#define S_COLOR_BLUE "^4"
-#define S_COLOR_CYAN "^5"
-#define S_COLOR_MAGENTA "^6"
-#define S_COLOR_WHITE "^7"
+#define S_COLOR_BLACK "#000"
+#define S_COLOR_RED "#f55"
+#define S_COLOR_GREEN "#5f5"
+#define S_COLOR_YELLOW "#ff5"
+#define S_COLOR_BLUE "#55f"
+#define S_COLOR_CYAN "#5ff"
+#define S_COLOR_MAGENTA "#f5f"
+#define S_COLOR_WHITE "#fff"
 
 extern vec4_t g_color_table[8];
 

@@ -225,10 +225,6 @@ void CG_DrawStringExt(int x, int y, const char* string, const float* setColor, b
 		xx = x;
 		cnt = 0;
 		while(*s && cnt < maxChars) {
-			if(Q_IsColorString(s)) {
-				s += 2;
-				continue;
-			}
 			CG_DrawChar(xx + 2, y + 2, charWidth, charHeight, *s);
 			cnt++;
 			xx += charWidth;
@@ -242,15 +238,6 @@ void CG_DrawStringExt(int x, int y, const char* string, const float* setColor, b
 	cnt = 0;
 	trap_R_SetColor(setColor);
 	while(*s && cnt < maxChars) {
-		if(Q_IsColorString(s)) {
-			if(!forceColor) {
-				memcpy(color, g_color_table[ColorIndex(*(s + 1))], sizeof(color));
-				color[3] = setColor[3];
-				trap_R_SetColor(color);
-			}
-			s += 2;
-			continue;
-		}
 		CG_DrawChar(xx, y, charWidth, charHeight, *s);
 		xx += charWidth;
 		cnt++;
@@ -291,12 +278,8 @@ int CG_DrawStrlen(const char* str) {
 	int count = 0;
 
 	while(*s) {
-		if(Q_IsColorString(s)) {
-			s += 2;
-		} else {
-			count++;
-			s++;
-		}
+		count++;
+		s++;
 	}
 
 	return count;

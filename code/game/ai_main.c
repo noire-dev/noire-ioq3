@@ -918,10 +918,6 @@ void RemoveColorEscapeSequences(char* text) {
 
 	l = 0;
 	for(i = 0; text[i]; i++) {
-		if(Q_IsColorString(&text[i])) {
-			i++;
-			continue;
-		}
 		if(text[i] > 0x7E) continue;
 		text[l++] = text[i];
 	}

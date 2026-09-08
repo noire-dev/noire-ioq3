@@ -59,18 +59,8 @@ Convert Quake color character to Windows text attrib
 static WORD CON_ColorCharToAttrib(char color) {
 	WORD attrib;
 
-	if(color == COLOR_WHITE) {
-		// use console's foreground and background colors
-		attrib = qconsole_attrib;
-	} else {
-		float* rgba = g_color_table[ColorIndex(color)];
-
-		// set foreground color
-		attrib = (rgba[0] >= 0.5 ? FOREGROUND_RED : 0) | (rgba[1] >= 0.5 ? FOREGROUND_GREEN : 0) | (rgba[2] >= 0.5 ? FOREGROUND_BLUE : 0) | (rgba[3] >= 0.5 ? FOREGROUND_INTENSITY : 0);
-
-		// use console's background color
-		attrib |= qconsole_backgroundAttrib;
-	}
+	// use console's foreground and background colors
+	attrib = qconsole_attrib;
 
 	return attrib;
 }
@@ -188,7 +178,7 @@ static void CON_Show(void) {
 	// build a space-padded CHAR_INFO array
 	for(i = 0; i < MAX_EDIT_LINE; i++) {
 		if(i < qconsole_linelen) {
-			if(i + 1 < qconsole_linelen && Q_IsColorString(qconsole_line + i)) attrib = CON_ColorCharToAttrib(*(qconsole_line + i + 1));
+			if(i + 1 < qconsole_linelen) attrib = CON_ColorCharToAttrib(*(qconsole_line + i + 1));
 
 			line[i].Char.AsciiChar = qconsole_line[i];
 		} else
@@ -411,7 +401,7 @@ void CON_WindowsColorPrint(const char* msg) {
 	while(*msg) {
 		qconsole_drawinput = (*msg == '\n');
 
-		if(Q_IsColorString(msg) || *msg == '\n') {
+		if(*msg == '\n') {
 			// First empty the buffer
 			if(length > 0) {
 				buffer[length] = '\0';

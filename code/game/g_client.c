@@ -606,20 +606,6 @@ static void ClientCleanName(const char* in, char* out, int outSize) {
 			if(spaces > 2) continue;
 
 			spaces++;
-		} else if(outpos > 0 && out[outpos - 1] == Q_COLOR_ESCAPE) {
-			if(Q_IsColorString(&out[outpos - 1])) {
-				colorlessLen--;
-
-				if(ColorIndex(*in) == 0) {
-					// Disallow color black in names to prevent players
-					// from getting advantage playing in front of black backgrounds
-					outpos--;
-					continue;
-				}
-			} else {
-				spaces = 0;
-				colorlessLen++;
-			}
 		} else {
 			spaces = 0;
 			colorlessLen++;

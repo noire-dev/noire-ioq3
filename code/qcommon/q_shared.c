@@ -23,23 +23,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // q_shared.c -- stateless support routines that are included in each code dll
 #include "q_shared.h"
 
-// ^[0-9a-zA-Z]
-bool Q_IsColorString(const char* p) {
-	if(!p) return false;
-
-	if(p[0] != Q_COLOR_ESCAPE) return false;
-
-	if(p[1] == 0) return false;
-
-	// isalnum expects a signed integer in the range -1 (EOF) to 255, or it might assert on undefined behaviour
-	// a dereferenced char pointer has the range -128 to 127, so we just need to rangecheck the negative part
-	if(p[1] < 0) return false;
-
-	if(isalnum(p[1]) == 0) return false;
-
-	return true;
-}
-
 float Com_Clamp(float min, float max, float value) {
 	if(value < min) {
 		return min;
@@ -827,10 +810,6 @@ int Q_PrintStrlen(const char* string) {
 	len = 0;
 	p = string;
 	while(*p) {
-		if(Q_IsColorString(p)) {
-			p += 2;
-			continue;
-		}
 		p++;
 		len++;
 	}
@@ -846,9 +825,7 @@ char* Q_CleanStr(char* string) {
 	s = string;
 	d = string;
 	while((c = *s) != 0) {
-		if(Q_IsColorString(s)) {
-			s++;
-		} else if(c >= 0x20 && c <= 0x7E) {
+		if(c >= 0x20 && c <= 0x7E) {
 			*d++ = c;
 		}
 		s++;
@@ -1128,8 +1105,6 @@ bool Info_Validate(const char* s) {
 	const char* ch = s;
 
 	while(*ch != '\0') {
-		if(!Q_isprint(*ch)) return false;
-
 		if(*ch == '\"') return false;
 
 		if(*ch == ';') return false;

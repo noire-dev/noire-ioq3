@@ -348,7 +348,7 @@ void Sys_AnsiColorPrint(const char* msg) {
 	};
 
 	while(*msg) {
-		if(Q_IsColorString(msg) || *msg == '\n') {
+		if(*msg == '\n') {
 			// First empty the buffer
 			if(length > 0) {
 				buffer[length] = '\0';
@@ -362,7 +362,7 @@ void Sys_AnsiColorPrint(const char* msg) {
 				msg++;
 			} else {
 				// Print the color code (reset first to clear potential inverse (black))
-				Com_sprintf(buffer, sizeof(buffer), "\033[0m\033[%dm", q3ToAnsi[ColorIndex(*(msg + 1))]);
+				Com_sprintf(buffer, sizeof(buffer), "\033[0m\033[%dm", 0);
 				fputs(buffer, stderr);
 				msg += 2;
 			}

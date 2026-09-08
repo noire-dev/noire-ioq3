@@ -370,12 +370,6 @@ static void CG_AddToTeamChat(const char* str) {
 			ls = NULL;
 		}
 
-		if(Q_IsColorString(str)) {
-			*p++ = *str++;
-			lastcolor = *str;
-			*p++ = *str++;
-			continue;
-		}
 		if(*str == ' ') {
 			ls = p;
 		}
