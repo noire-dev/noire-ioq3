@@ -1248,7 +1248,6 @@ static void CG_DrawLagometer(void) {
 		if(v > 0) {
 			if(color != 1) {
 				color = 1;
-				// trap_R_SetColor(g_color_table[ColorIndex(COLOR_YELLOW)]);
 			}
 			if(v > range) {
 				v = range;
@@ -1257,7 +1256,6 @@ static void CG_DrawLagometer(void) {
 		} else if(v < 0) {
 			if(color != 2) {
 				color = 2;
-				// trap_R_SetColor(g_color_table[ColorIndex(COLOR_BLUE)]);
 			}
 			v = -v;
 			if(v > range) {
@@ -1278,12 +1276,10 @@ static void CG_DrawLagometer(void) {
 			if(lagometer.snapshotFlags[i] & SNAPFLAG_RATE_DELAYED) {
 				if(color != 5) {
 					color = 5;  // YELLOW for rate delay
-					            // trap_R_SetColor(g_color_table[ColorIndex(COLOR_YELLOW)]);
 				}
 			} else {
 				if(color != 3) {
 					color = 3;
-					// trap_R_SetColor(g_color_table[ColorIndex(COLOR_GREEN)]);
 				}
 			}
 			v = v * vscale;
@@ -1294,7 +1290,6 @@ static void CG_DrawLagometer(void) {
 		} else if(v < 0) {
 			if(color != 4) {
 				color = 4;  // RED for dropped snapshots
-				            // trap_R_SetColor(g_color_table[ColorIndex(COLOR_RED)]);
 			}
 			trap_R_DrawStretchPic(ax + aw - a, ay + ah - range, 1, range, 0, 0, 0, 0, cgs.media.whiteShader);
 		}

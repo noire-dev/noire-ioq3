@@ -424,8 +424,6 @@ extern vec4_t colorDkGrey;
 #define S_COLOR_MAGENTA "#f5f"
 #define S_COLOR_WHITE "#fff"
 
-extern vec4_t g_color_table[8];
-
 #define MAKERGB(v, r, g, b) \
 	v[0] = r;               \
 	v[1] = g;               \
