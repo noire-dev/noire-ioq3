@@ -868,12 +868,11 @@ varargs versions of all text functions.
 */
 char* QDECL va(char* format, ...) {
 	va_list argptr;
-	static char string[2][32000];  // in case va is called by nested functions
+	static char string[4096][4096];
 	static int index = 0;
-	char* buf;
 
-	buf = string[index & 1];
-	index++;
+	char* buf = string[index];
+	index = (index + 1) % 4096;
 
 	va_start(argptr, format);
 	Q_vsnprintf(buf, sizeof(*string), format, argptr);

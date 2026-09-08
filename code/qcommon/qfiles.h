@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
 // surface geometry should not exceed these limits
-#define SHADER_MAX_VERTEXES 1000
+#define SHADER_MAX_VERTEXES 65535
 #define SHADER_MAX_INDEXES (6 * SHADER_MAX_VERTEXES)
 
 // the maximum size of game relative pathnames
@@ -47,12 +47,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 // limits
 #define MD3_MAX_LODS 3
-#define MD3_MAX_TRIANGLES 8192  // per surface
-#define MD3_MAX_VERTS 4096      // per surface
-#define MD3_MAX_SHADERS 256     // per surface
-#define MD3_MAX_FRAMES 1024     // per model
-#define MD3_MAX_SURFACES 32     // per model
-#define MD3_MAX_TAGS 16         // per frame
+#define MD3_MAX_TRIANGLES 8192 * 8  // per surface for embedded importer
+#define MD3_MAX_VERTS 4096 * 8      // per surface for embedded importer
+#define MD3_MAX_SHADERS 256         // per surface for embedded importer
+#define MD3_MAX_FRAMES 1024         // per model
+#define MD3_MAX_SURFACES 4096       // per model for embedded importer
+#define MD3_MAX_TAGS 64             // per frame
 
 // vertex scales
 #define MD3_XYZ_SCALE (1.0 / 64)

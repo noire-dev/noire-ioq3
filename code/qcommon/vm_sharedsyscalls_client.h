@@ -1,0 +1,32 @@
+// Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
+
+void trap_UpdateScreen(void);
+void trap_GetGlconfig(glconfig_t* glconfig);
+qhandle_t trap_R_RegisterModel(const char* name);
+qhandle_t trap_R_RegisterSkin(const char* name);
+sfxHandle_t trap_S_RegisterSound(const char* sample, bool compressed);
+qhandle_t trap_R_RegisterShader(const char* name);
+qhandle_t trap_R_RegisterShaderNoMip(const char* name);
+void trap_R_ClearScene(void);
+void trap_R_AddRefEntityToScene(const refEntity_t* re);
+void trap_R_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts);
+void trap_R_AddLightToScene(const vec3_t org, float intensity, float r, float g, float b);
+void trap_R_RenderScene(const refdef_t* fd);
+void trap_R_SetColor(const float* rgba);
+void trap_R_DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader);
+void trap_R_RemapShader(const char* oldShader, const char* newShader, const char* timeOffset);
+void trap_R_ModelBounds(clipHandle_t model, vec3_t mins, vec3_t maxs);
+int trap_CM_LerpTag(orientation_t* tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char* tagName);
+int trap_CM_PointContents(const vec3_t p, clipHandle_t model);
+int trap_CM_TransformedPointContents(const vec3_t p, clipHandle_t model, const vec3_t origin, const vec3_t angles);
+void trap_CM_BoxTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask);
+void trap_CM_CapsuleTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask);
+void trap_CM_TransformedBoxTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask, const vec3_t origin, const vec3_t angles);
+void trap_CM_TransformedCapsuleTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask, const vec3_t origin, const vec3_t angles);
+void trap_S_StartLocalSound(sfxHandle_t sfx, int channelNum);
+void trap_Key_KeynumToStringBuf(int keynum, char* buf, int buflen);
+void trap_Key_GetBindingBuf(int keynum, char* buf, int buflen);
+bool trap_Key_IsDown(int keynum);
+int trap_Key_GetCatcher(void);
+int trap_Key_GetKey(const char* binding);
+void trap_ImportOBJ(const char* filename);

@@ -572,14 +572,14 @@ static void CL_GetClipboardData(char* buf, int buflen) {
 Key_KeynumToStringBuf
 ====================
 */
-static void Key_KeynumToStringBuf(int keynum, char* buf, int buflen) { Q_strncpyz(buf, Key_KeynumToString(keynum), buflen); }
+void Key_KeynumToStringBuf(int keynum, char* buf, int buflen) { Q_strncpyz(buf, Key_KeynumToString(keynum), buflen); }
 
 /*
 ====================
 Key_GetBindingBuf
 ====================
 */
-static void Key_GetBindingBuf(int keynum, char* buf, int buflen) {
+void Key_GetBindingBuf(int keynum, char* buf, int buflen) {
 	char* value;
 
 	value = Key_GetBinding(keynum);
@@ -677,153 +677,51 @@ The ui module is making a system call
 intptr_t CL_UISystemCalls(intptr_t* args) {
 	int qvmIndex = VM_UI;
 	switch(args[0]) {
-		case UI_R_REGISTERMODEL: return re.RegisterModel(VMA(1));
-
-		case UI_R_REGISTERSKIN: return re.RegisterSkin(VMA(1));
-
-		case UI_R_REGISTERSHADERNOMIP: return re.RegisterShaderNoMip(VMA(1));
-
-		case UI_R_CLEARSCENE: re.ClearScene(); return 0;
-
-		case UI_R_ADDREFENTITYTOSCENE: re.AddRefEntityToScene(VMA(1)); return 0;
-
-		case UI_R_ADDPOLYTOSCENE: re.AddPolyToScene(args[1], args[2], VMA(3), 1); return 0;
-
-		case UI_R_ADDLIGHTTOSCENE: re.AddLightToScene(VMA(1), VMF(2), VMF(3), VMF(4), VMF(5)); return 0;
-
-		case UI_R_RENDERSCENE: re.RenderScene(VMA(1)); return 0;
-
-		case UI_R_SETCOLOR: re.SetColor(VMA(1)); return 0;
-
-		case UI_R_DRAWSTRETCHPIC: re.DrawStretchPic(VMF(1), VMF(2), VMF(3), VMF(4), VMF(5), VMF(6), VMF(7), VMF(8), args[9]); return 0;
-
-		case UI_R_MODELBOUNDS: re.ModelBounds(args[1], VMA(2), VMA(3)); return 0;
-
-		case UI_UPDATESCREEN: SCR_UpdateScreen(); return 0;
-
-		case UI_CM_LERPTAG: re.LerpTag(VMA(1), args[2], args[3], args[4], VMF(5), VMA(6)); return 0;
-
-		case UI_S_REGISTERSOUND: return S_RegisterSound(VMA(1), args[2]);
-
-		case UI_S_STARTLOCALSOUND: S_StartLocalSound(args[1], args[2]); return 0;
-
-		case UI_KEY_KEYNUMTOSTRINGBUF: Key_KeynumToStringBuf(args[1], VMA(2), args[3]); return 0;
-
-		case UI_KEY_GETBINDINGBUF: Key_GetBindingBuf(args[1], VMA(2), args[3]); return 0;
-
 		case UI_KEY_SETBINDING: Key_SetBinding(args[1], VMA(2)); return 0;
-
-		case UI_KEY_ISDOWN: return Key_IsDown(args[1]);
-
 		case UI_KEY_CLEARSTATES: Key_ClearStates(); return 0;
-
-		case UI_KEY_GETCATCHER: return Key_GetCatcher();
-
-		case UI_KEY_SETCATCHER:
-			// Don't allow the ui module to close the console
-			Key_SetCatcher(args[1] | (Key_GetCatcher() & KEYCATCH_CONSOLE));
-			return 0;
-
+		case UI_KEY_SETCATCHER: Key_SetCatcher(args[1] | (Key_GetCatcher() & KEYCATCH_CONSOLE)); return 0;
 		case UI_GETCLIPBOARDDATA: CL_GetClipboardData(VMA(1), args[2]); return 0;
-
 		case UI_GETCLIENTSTATE: GetClientState(VMA(1)); return 0;
-
-		case UI_GETGLCONFIG: CL_GetGlconfig(VMA(1)); return 0;
-
 		case UI_GETCONFIGSTRING: return GetConfigString(args[1], VMA(2), args[3]);
-
 		case UI_LAN_LOADCACHEDSERVERS: LAN_LoadCachedServers(); return 0;
-
 		case UI_LAN_SAVECACHEDSERVERS: LAN_SaveServersToCache(); return 0;
-
 		case UI_LAN_ADDSERVER: return LAN_AddServer(args[1], VMA(2), VMA(3));
-
 		case UI_LAN_REMOVESERVER: LAN_RemoveServer(args[1], VMA(2)); return 0;
-
 		case UI_LAN_GETPINGQUEUECOUNT: return LAN_GetPingQueueCount();
-
 		case UI_LAN_CLEARPING: LAN_ClearPing(args[1]); return 0;
-
 		case UI_LAN_GETPING: LAN_GetPing(args[1], VMA(2), args[3], VMA(4)); return 0;
-
 		case UI_LAN_GETPINGINFO: LAN_GetPingInfo(args[1], VMA(2), args[3]); return 0;
-
 		case UI_LAN_GETSERVERCOUNT: return LAN_GetServerCount(args[1]);
-
 		case UI_LAN_GETSERVERADDRESSSTRING: LAN_GetServerAddressString(args[1], args[2], VMA(3), args[4]); return 0;
-
 		case UI_LAN_GETSERVERINFO: LAN_GetServerInfo(args[1], args[2], VMA(3), args[4]); return 0;
-
 		case UI_LAN_GETSERVERPING: return LAN_GetServerPing(args[1], args[2]);
-
 		case UI_LAN_MARKSERVERVISIBLE: LAN_MarkServerVisible(args[1], args[2], args[3]); return 0;
-
 		case UI_LAN_SERVERISVISIBLE: return LAN_ServerIsVisible(args[1], args[2]);
-
 		case UI_LAN_UPDATEVISIBLEPINGS: return LAN_UpdateVisiblePings(args[1]);
-
 		case UI_LAN_RESETPINGS: LAN_ResetPings(args[1]); return 0;
-
 		case UI_LAN_SERVERSTATUS: return LAN_GetServerStatus(VMA(1), VMA(2), args[3]);
-
 		case UI_LAN_COMPARESERVERS: return LAN_CompareServers(args[1], args[2], args[3], args[4], args[5]);
-
 		case UI_MEMORY_REMAINING: return Hunk_MemoryRemaining();
-
 		case UI_GET_CDKEY: CLUI_GetCDKey(VMA(1), args[2]); return 0;
-
-		case UI_SET_CDKEY:
-#ifndef STANDALONE
-			CLUI_SetCDKey(VMA(1));
-#endif
-			return 0;
-
+		case UI_SET_CDKEY: return 0;
 		case UI_SET_PBCLSTATUS: return 0;
-
 		case UI_R_REGISTERFONT: re.RegisterFont(VMA(1), args[2], VMA(3)); return 0;
-
-		case UI_MEMSET: Com_Memset(VMA(1), args[2], args[3]); return 0;
-
-		case UI_MEMCPY: Com_Memcpy(VMA(1), VMA(2), args[3]); return 0;
-
-		case UI_STRNCPY: strncpy(VMA(1), VMA(2), args[3]); return args[1];
-
-		case UI_SIN: return FloatAsInt(sin(VMF(1)));
-
-		case UI_COS: return FloatAsInt(cos(VMF(1)));
-
-		case UI_ATAN2: return FloatAsInt(atan2(VMF(1), VMF(2)));
-
-		case UI_SQRT: return FloatAsInt(sqrt(VMF(1)));
-
-		case UI_FLOOR: return FloatAsInt(floor(VMF(1)));
-
-		case UI_CEIL: return FloatAsInt(ceil(VMF(1)));
-
 		case UI_PC_ADD_GLOBAL_DEFINE: return botlib_export->PC_AddGlobalDefine(VMA(1));
 		case UI_PC_LOAD_SOURCE: return botlib_export->PC_LoadSourceHandle(VMA(1));
 		case UI_PC_FREE_SOURCE: return botlib_export->PC_FreeSourceHandle(args[1]);
 		case UI_PC_READ_TOKEN: return botlib_export->PC_ReadTokenHandle(args[1], VMA(2));
 		case UI_PC_SOURCE_FILE_AND_LINE: return botlib_export->PC_SourceFileAndLine(args[1], VMA(2), VMA(3));
-
 		case UI_S_STOPBACKGROUNDTRACK: S_StopBackgroundTrack(); return 0;
 		case UI_S_STARTBACKGROUNDTRACK: S_StartBackgroundTrack(VMA(1), VMA(2)); return 0;
-
 		case UI_CIN_PLAYCINEMATIC: Com_DPrintf("UI_CIN_PlayCinematic\n"); return CIN_PlayCinematic(VMA(1), args[2], args[3], args[4], args[5], args[6]);
-
 		case UI_CIN_STOPCINEMATIC: return CIN_StopCinematic(args[1]);
-
 		case UI_CIN_RUNCINEMATIC: return CIN_RunCinematic(args[1]);
-
 		case UI_CIN_DRAWCINEMATIC: CIN_DrawCinematic(args[1]); return 0;
-
 		case UI_CIN_SETEXTENTS: CIN_SetExtents(args[1], args[2], args[3], args[4], args[5]); return 0;
-
-		case UI_R_REMAP_SHADER: re.RemapShader(VMA(1), VMA(2), VMA(3)); return 0;
-
 		case UI_VERIFY_CDKEY: return CL_CDKeyValidate(VMA(1), VMA(2));
 
 #include "../q_sharedsyscalls.inc"
+#include "../q_sharedsyscalls_client.inc"
 
 		default: Com_Error(ERR_DROP, "Bad UI system trap: %ld", (long int)args[0]);
 	}

@@ -981,6 +981,8 @@ void CL_StartHunkUsers(bool rendererOnly);
 void CL_Snd_Shutdown(void);
 // Restart sound subsystem
 
+void CL_StartConvertOBJ(const char* name);
+
 void Key_KeynameCompletion(void (*callback)(const char* s));
 // for keyname autocompletion
 

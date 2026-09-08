@@ -664,7 +664,7 @@ static void CG_LoadClientInfo(int clientNum, clientInfo_t* ci) {
 	if(ci->torsoModel) {
 		orientation_t tag;
 		// if the torso model has the "tag_flag"
-		if(trap_R_LerpTag(&tag, ci->torsoModel, 0, 0, 1, "tag_flag")) {
+		if(trap_CM_LerpTag(&tag, ci->torsoModel, 0, 0, 1, "tag_flag")) {
 			ci->newAnims = true;
 		}
 	}

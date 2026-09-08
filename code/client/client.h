@@ -633,6 +633,8 @@ void CL_ShaderStateChanged(void);
 //
 // cl_ui.c
 //
+void Key_KeynumToStringBuf(int keynum, char* buf, int buflen);
+void Key_GetBindingBuf(int keynum, char* buf, int buflen);
 void CL_InitUI(void);
 void CL_ShutdownUI(void);
 int Key_GetCatcher(void);

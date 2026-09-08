@@ -1094,7 +1094,21 @@ static void CG_RegisterClients(void) {
 	CG_BuildSpectatorString();
 }
 
-//===========================================================================
+static char modelImporterStorage[65536];
+static void CG_ImportModelsOBJ(void) {
+	int numfiles = trap_FS_GetFileList("props", ".obj", modelImporterStorage, sizeof(modelImporterStorage));
+	int i;
+	char* file;
+
+	file = modelImporterStorage;
+	for(i = 0; i < numfiles; i++) {
+		char nameWithoutExt[256];
+		COM_StripExtension(va("props/%s", file), nameWithoutExt, 256);
+		trap_ImportOBJ(nameWithoutExt);
+		CG_LoadingString(va("import OBJ: %s", nameWithoutExt));
+		file += strlen(file) + 1;
+	}
+}
 
 /*
 =================
@@ -1113,7 +1127,6 @@ const char* CG_ConfigString(int index) {
 /*
 ======================
 CG_StartMusic
-
 ======================
 */
 void CG_StartMusic(void) {
@@ -1834,6 +1847,8 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 
 	// Make sure we have update values (scores)
 	CG_SetConfigValues();
+
+	CG_ImportModelsOBJ();
 
 	CG_StartMusic();
 

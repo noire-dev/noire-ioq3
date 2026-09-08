@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // cg_info.c -- display information while data is being loading
 
-#include "cg_local.h"
+#include "../qcommon/vm_javascript.h"
 
 #define MAX_LOADING_PLAYER_ICONS 16
 #define MAX_LOADING_ITEM_ICONS 26
@@ -173,7 +173,7 @@ void CG_DrawInformation(void) {
 	// the first 150 rows are reserved for the client connection
 	// screen to write into
 	if(cg.infoScreenText[0]) {
-		UI_DrawProportionalString(320, 128 - 32, va("Loading... %s", cg.infoScreenText), UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);
+		// drawStringAdjusted(320, 128 - 32, va("Loading... %s", cg.infoScreenText), FONTSTYLE_CENTER | FONTSTYLE_DROPSHADOW, colorWhite, 0.75, 256);
 	} else {
 		UI_DrawProportionalString(320, 128 - 32, "Awaiting snapshot...", UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);
 	}

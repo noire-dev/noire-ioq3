@@ -7,8 +7,9 @@
 #define MAX_JS_STRINGSIZE 256
 
 #include "../qcommon/q_shared.h"
-#include "../qcommon/vm_sharedsyscalls.h"
 #include "../renderercommon/tr_types.h"
+#include "../qcommon/vm_sharedsyscalls.h"
+#include "../qcommon/vm_sharedsyscalls_client.h"
 #include "ui_public.h"
 #include "../game/bg_public.h"
 
@@ -209,30 +210,11 @@ int UI_GetFileListCount(window_s* window, int listID);
 void UI_SetMargin(int windowID, int elementID, float x, float y, float w, float h);
 
 // Вызовы движка
-qhandle_t trap_R_RegisterModel(const char* name);
-qhandle_t trap_R_RegisterSkin(const char* name);
-qhandle_t trap_R_RegisterShaderNoMip(const char* name);
-void trap_R_ClearScene(void);
-void trap_R_AddRefEntityToScene(const refEntity_t* re);
-void trap_R_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts);
-void trap_R_AddLightToScene(const vec3_t org, float intensity, float r, float g, float b);
-void trap_R_RenderScene(const refdef_t* fd);
-void trap_R_SetColor(const float* rgba);
-void trap_R_DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader);
-void trap_UpdateScreen(void);
-int trap_CM_LerpTag(orientation_t* tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char* tagName);
-void trap_S_StartLocalSound(sfxHandle_t sfx, int channelNum);
-sfxHandle_t trap_S_RegisterSound(const char* sample, bool compressed);
-void trap_Key_KeynumToStringBuf(int keynum, char* buf, int buflen);
-void trap_Key_GetBindingBuf(int keynum, char* buf, int buflen);
 void trap_Key_SetBinding(int keynum, const char* binding);
-bool trap_Key_IsDown(int keynum);
 void trap_Key_ClearStates(void);
-int trap_Key_GetCatcher(void);
 void trap_Key_SetCatcher(int catcher);
 void trap_GetClipboardData(char* buf, int bufsize);
 void trap_GetClientState(uiClientState_t* state);
-void trap_GetGlconfig(glconfig_t* glconfig);
 int trap_GetConfigString(int index, char* buff, int buffsize);
 int trap_LAN_GetServerCount(int source);
 void trap_LAN_GetServerAddressString(int source, int n, char* buf, int buflen);
