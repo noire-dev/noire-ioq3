@@ -3259,7 +3259,7 @@ CL_ConvertOBJ
 
 typedef struct {
 	char newmtl[MAX_QPATH];
-	char map_Kd[MAX_QPATH * 2];
+	char map_Kd[MAX_QPATH];
 } md3Material_t;
 
 typedef struct {
@@ -3540,8 +3540,8 @@ void WriteMD3(const char* name, const md3SurfaceData_t* surfaces, int numSurface
 		return;
 	}
 
-	md3Header_t header = {.ident = MD3_IDENT, .version = MD3_VERSION, .numFrames = 1, .numTags = 0, .numSurfaces = numSurfaces, .numSkins = numShaders};
-	Q_strncpyz(header.name, name, sizeof(header.name));
+	md3Header_t header = {.ident = MD3_IDENT, .version = MD3_VERSION, .flags = 0, .numFrames = 1, .numTags = 0, .numSurfaces = numSurfaces, .numSkins = numShaders};
+	Q_strncpyz(header.name, "objModel", sizeof(header.name));
 
 	md3Frame_t frame = {0};
 	VectorSet(frame.bounds[0], 25, 25, 25);
@@ -3561,7 +3561,7 @@ void WriteMD3(const char* name, const md3SurfaceData_t* surfaces, int numSurface
 
 		md3Surface_t surface = {0};
 		surface.ident = MD3_IDENT;
-		Q_strncpyz(surface.name, surf->materialName, sizeof(surface.name));
+		Q_strncpyz(surface.name, va("surf%i", s), sizeof(surface.name));
 		surface.numFrames = 1;
 		surface.numShaders = 1;
 		surface.numVerts = surf->vertCount;
