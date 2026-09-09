@@ -13,6 +13,16 @@
 # Noire-ioq3 key features:
   * Bullet physics
   * JavaScript (duktape)
+  * Full unicode with emoji (network, input, output, UI, player names, messages etc)
+  * Text markup language with #rgb, &b, &i, &r, &o...
+  * Mp3 support (ported from spearmint engine by ZTM)
+  * JS UI by noire.dev instead q3_ui (apps architecture)
+  * OBJ support (build-in auto importer)
+  * Shared syscalls for client and three DLLs
+  * Real C bool instead qboolean
+  * New console, chat drawer
+  * Removed QVM support
+  * Removed all ASM code because compiler knows better
 
 # Compilation and installation
 For *nix,
