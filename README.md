@@ -81,6 +81,7 @@ The following CMake variables may be set, using `-D` on the command line.
   USE_HTTP                - enable http download support
   USE_CODEC_VORBIS        - enable Ogg Vorbis support
   USE_CODEC_OPUS          - enable Ogg Opus support
+  USE_CODEC_MP3           - enable Mp3 support
   USE_MUMBLE              - enable Mumble support
   USE_VOIP                - enable built-in VoIP support
   USE_FREETYPE            - enable FreeType support for rendering fonts
