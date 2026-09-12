@@ -343,7 +343,7 @@ extern glconfig_t glconfig;
 #define FONT_WIDTH_CJK 0.80
 #define DEFAULT_MAXCHARS 4096
 
-void CL_Init(void);
+void CL_UIInit(void);
 void adjustFrom640(float* x, float* y, float* w, float* h, float* corner, float* fontScale);
 void drawhShader(float x, float y, float w, float h, qhandle_t shaderID);
 void drawhShaderAdjusted(float x, float y, float w, float h, qhandle_t shaderID);

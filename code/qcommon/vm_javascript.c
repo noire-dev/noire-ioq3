@@ -267,8 +267,10 @@ void VMCall(int func_id) {
 #ifdef CGAME
 		case VM_APIHUD: API_HUD(vmargs.v[0].i, vmargs.v[2].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i); break;
 		case VM_APICLIENTPLAYER: API_ClientPlayer(vmargs.v[0].i, vmargs.v[2].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i); break;
-		case VM_HUDCOUNTER: CG_HUDCounter(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].s, vmargs.v[3].s); break;
-		case VM_NOTIFY: CG_AddNotify(vmargs.v[0].s, vmargs.v[1].i, vmargs.v[2].i, vmargs.v[3].s); break;
+		case VM_HUDCOUNTER:
+			CG_HUDCounter(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].s, vmargs.v[3].s);
+			break;
+			// case VM_NOTIFY: CG_AddNotify(vmargs.v[0].s, vmargs.v[1].i, vmargs.v[2].i, vmargs.v[3].s); break;
 #endif
 #ifdef UI
 		case VM_APISHELL: API_Shell(vmargs.v[0].i, vmargs.v[2].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i); break;

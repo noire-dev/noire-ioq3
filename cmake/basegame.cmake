@@ -27,6 +27,10 @@ set(CGAME_SOURCES
     ${SOURCE_DIR}/cgame/cg_snapshot.c
     ${SOURCE_DIR}/cgame/cg_view.c
     ${SOURCE_DIR}/cgame/cg_weapons.c
+    ${SOURCE_DIR}/qcommon/vm_javascript.c
+    ${SOURCE_DIR}/qcommon/vm_javascript_core.c
+    ${SOURCE_DIR}/qcommon/vm_javascript_func.c
+    ${SOURCE_DIR}/qcommon/vm_javascript_draw.c
 )
 
 set(CGAME_BINARY_SOURCES ${SOURCE_DIR}/cgame/cg_syscalls.c)

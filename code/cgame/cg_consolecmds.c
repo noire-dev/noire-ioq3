@@ -60,106 +60,25 @@ Keybinding command
 */
 static void CG_SizeDown_f(void) { trap_Cvar_Set("cg_viewsize", va("%i", (int)(cg_viewsize.integer - 10))); }
 
-/*
-=============
-CG_Viewpos_f
-
-Debugging command to print the current position
-=============
-*/
 static void CG_Viewpos_f(void) { CG_Printf("(%i %i %i) : %i\n", (int)cg.refdef.vieworg[0], (int)cg.refdef.vieworg[1], (int)cg.refdef.vieworg[2], (int)cg.refdefViewAngles[YAW]); }
 
 static void CG_ScoresDown_f(void) {
-#ifdef MISSIONPACK
-	CG_BuildSpectatorString();
-#endif
 	if(cg.scoresRequestTime + 2000 < cg.time) {
-		// the scores are more than two seconds out of data,
-		// so request new ones
 		cg.scoresRequestTime = cg.time;
 		trap_SendClientCommand("score");
 
-		// leave the current scores up if they were already
-		// displayed, but if this is the first hit, clear them out
 		if(!cg.showScores) {
 			cg.showScores = true;
 			cg.numScores = 0;
 		}
 	} else {
-		// show the cached contents even if they just pressed if it
-		// is within two seconds
 		cg.showScores = true;
 	}
 }
 
 static void CG_ScoresUp_f(void) {
-	if(cg.showScores) {
-		cg.showScores = false;
-		cg.scoreFadeTime = cg.time;
-	}
+	if(cg.showScores) cg.showScores = false;
 }
-
-#ifdef MISSIONPACK
-extern menuDef_t* menuScoreboard;
-void Menu_Reset(void);  // FIXME: add to right include file
-
-static void CG_LoadHud_f(void) {
-	char buff[1024];
-	const char* hudSet;
-	memset(buff, 0, sizeof(buff));
-
-	String_Init();
-	Menu_Reset();
-
-	trap_Cvar_VariableStringBuffer("cg_hudFiles", buff, sizeof(buff));
-	hudSet = buff;
-	if(hudSet[0] == '\0') {
-		hudSet = "ui/hud.txt";
-	}
-
-	CG_LoadMenus(hudSet);
-	menuScoreboard = NULL;
-}
-
-static void CG_scrollScoresDown_f(void) {
-	if(menuScoreboard && cg.scoreBoardShowing) {
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_SCOREBOARD, true);
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_REDTEAM_LIST, true);
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_BLUETEAM_LIST, true);
-	}
-}
-
-static void CG_scrollScoresUp_f(void) {
-	if(menuScoreboard && cg.scoreBoardShowing) {
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_SCOREBOARD, false);
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_REDTEAM_LIST, false);
-		Menu_ScrollFeeder(menuScoreboard, FEEDER_BLUETEAM_LIST, false);
-	}
-}
-
-static void CG_spWin_f(void) {
-	trap_Cvar_Set("cg_cameraOrbit", "2");
-	trap_Cvar_Set("cg_cameraOrbitDelay", "35");
-	trap_Cvar_Set("cg_thirdPerson", "1");
-	trap_Cvar_Set("cg_thirdPersonAngle", "0");
-	trap_Cvar_Set("cg_thirdPersonRange", "100");
-	CG_AddBufferedSound(cgs.media.winnerSound);
-	// trap_S_StartLocalSound(cgs.media.winnerSound, CHAN_ANNOUNCER);
-	CG_CenterPrint("YOU WIN!", SCREEN_HEIGHT * .30, 0);
-}
-
-static void CG_spLose_f(void) {
-	trap_Cvar_Set("cg_cameraOrbit", "2");
-	trap_Cvar_Set("cg_cameraOrbitDelay", "35");
-	trap_Cvar_Set("cg_thirdPerson", "1");
-	trap_Cvar_Set("cg_thirdPersonAngle", "0");
-	trap_Cvar_Set("cg_thirdPersonRange", "100");
-	CG_AddBufferedSound(cgs.media.loserSound);
-	// trap_S_StartLocalSound(cgs.media.loserSound, CHAN_ANNOUNCER);
-	CG_CenterPrint("YOU LOSE...", SCREEN_HEIGHT * .30, 0);
-}
-
-#endif
 
 static void CG_TellTarget_f(void) {
 	int clientNum;

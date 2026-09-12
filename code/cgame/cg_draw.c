@@ -23,7 +23,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_draw.c -- draw all of the graphical elements during
 // active (after loading) gameplay
 
-#include "cg_local.h"
+#include "../qcommon/vm_javascript.h"
+#include "../qcommon/vm_javascript_core.h"
 
 static queued3DString_t queued3DStrings[MAX_3D_STRING_QUEUE];
 static int queued3DStringCount = 0;
@@ -96,51 +97,11 @@ void CG_Draw3DModel(float x, float y, float w, float h, qhandle_t model, qhandle
 	trap_R_RenderScene(&refdef);
 }
 
-/*
-================
-CG_DrawHead
-
-Used for both the status bar and the scoreboard
-================
-*/
-void CG_DrawHead(float x, float y, float w, float h, int clientNum, vec3_t headAngles) {
-	clipHandle_t cm;
+void CG_DrawHead(float x, float y, float w, float h, int clientNum) {
 	clientInfo_t* ci;
-	float len;
-	vec3_t origin;
-	vec3_t mins, maxs;
 
 	ci = &cgs.clientinfo[clientNum];
-
-	if(cg_draw3dIcons.integer) {
-		cm = ci->headModel;
-		if(!cm) {
-			return;
-		}
-
-		// offset the origin y and z to center the head
-		trap_R_ModelBounds(cm, mins, maxs);
-
-		origin[2] = -0.5 * (mins[2] + maxs[2]);
-		origin[1] = 0.5 * (mins[1] + maxs[1]);
-
-		// calculate distance so the head nearly fills the box
-		// assume heads are taller than wide
-		len = 0.7 * (maxs[2] - mins[2]);
-		origin[0] = len / 0.268;  // len / tan( fov/2 )
-
-		// allow per-model tweaking
-		VectorAdd(origin, ci->headOffset, origin);
-
-		CG_Draw3DModel(x, y, w, h, ci->headModel, ci->headSkin, origin, headAngles);
-	} else if(cg_drawIcons.integer) {
-		CG_DrawPic(x, y, w, h, ci->modelIcon);
-	}
-
-	// if they are deferred, draw a cross out
-	if(ci->deferred) {
-		CG_DrawPic(x, y, w, h, cgs.media.deferShader);
-	}
+	drawhShaderAdjusted(x, y, w, h, ci->modelIcon);
 }
 
 /*
@@ -259,7 +220,7 @@ static void CG_DrawStatusBarHead(float x) {
 	angles[YAW] = cg.headStartYaw + (cg.headEndYaw - cg.headStartYaw) * frac;
 	angles[PITCH] = cg.headStartPitch + (cg.headEndPitch - cg.headStartPitch) * frac;
 
-	CG_DrawHead(x, 480 - size, size, size, cg.snap->ps.clientNum, angles);
+	// CG_DrawHead(x, 480 - size, size, size, cg.snap->ps.clientNum, angles);
 }
 #endif  // MISSIONPACK
 
@@ -477,7 +438,7 @@ static float CG_DrawAttacker(float y) {
 	angles[PITCH] = 0;
 	angles[YAW] = 180;
 	angles[ROLL] = 0;
-	CG_DrawHead(640 - size, y, size, size, clientNum, angles);
+	// CG_DrawHead(640 - size, y, size, size, clientNum, angles);
 
 	info = CG_ConfigString(CS_PLAYERS + clientNum);
 	name = Info_ValueForKey(info, "n");
@@ -1706,89 +1667,17 @@ static void CG_DrawTeamVote(void) {
 	CG_DrawSmallString(0, 90, s, 1.0F);
 }
 
-static bool CG_DrawScoreboard(void) {
-#ifdef MISSIONPACK
-	static bool firstTime = true;
-
-	if(menuScoreboard) {
-		menuScoreboard->window.flags &= ~WINDOW_FORCED;
-	}
-	if(cg_paused.integer) {
-		cg.deferredPlayerLoading = 0;
-		firstTime = true;
-		return false;
-	}
-
-	// should never happen in Team Arena
-	if(cgs.gametype == GT_SINGLE_PLAYER && cg.predictedPlayerState.pm_type == PM_INTERMISSION) {
-		cg.deferredPlayerLoading = 0;
-		firstTime = true;
-		return false;
-	}
-
-	// don't draw scoreboard during death while warmup up
-	if(cg.warmup && !cg.showScores) {
-		return false;
-	}
-
-	if(cg.showScores || cg.predictedPlayerState.pm_type == PM_DEAD || cg.predictedPlayerState.pm_type == PM_INTERMISSION) {
-	} else {
-		if(!CG_FadeColor(cg.scoreFadeTime, FADE_TIME)) {
-			// next time scoreboard comes up, don't print killer
-			cg.deferredPlayerLoading = 0;
-			cg.killerName[0] = 0;
-			firstTime = true;
-			return false;
-		}
-	}
-
-	if(menuScoreboard == NULL) {
-		if(cgs.gametype >= GT_TEAM) {
-			menuScoreboard = Menus_FindByName("teamscore_menu");
-		} else {
-			menuScoreboard = Menus_FindByName("score_menu");
-		}
-	}
-
-	if(menuScoreboard) {
-		if(firstTime) {
-			CG_SetScoreSelection(menuScoreboard);
-			firstTime = false;
-		}
-		Menu_Paint(menuScoreboard, true);
-	}
-
-	// load any models that have been deferred
-	if(++cg.deferredPlayerLoading > 10) {
-		CG_LoadDeferredPlayers();
-	}
-
-	return true;
-#else
-	return CG_DrawOldScoreboard();
-#endif
-}
-
 /*
 =================
 CG_DrawIntermission
 =================
 */
 static void CG_DrawIntermission(void) {
-//	int key;
-#ifdef MISSIONPACK
-	// if (cg_singlePlayer.integer) {
-	//	CG_DrawCenterString();
-	//	return;
-	// }
-#else
 	if(cgs.gametype == GT_SINGLE_PLAYER) {
 		CG_DrawCenterString();
 		return;
 	}
-#endif
-	cg.scoreFadeTime = cg.time;
-	cg.scoreBoardShowing = CG_DrawScoreboard();
+	CG_DrawScoreboard();
 }
 
 /*
@@ -2034,11 +1923,6 @@ CG_Draw2D
 =================
 */
 static void CG_Draw2D(stereoFrame_t stereoFrame) {
-#ifdef MISSIONPACK
-	if(cgs.orderPending && cg.time > cgs.orderTime) {
-		CG_CheckOrderPending();
-	}
-#endif
 	// if we are taking a levelshot for the menu, don't draw anything
 	if(cg.levelShot) {
 		return;
@@ -2053,11 +1937,6 @@ static void CG_Draw2D(stereoFrame_t stereoFrame) {
 		return;
 	}
 
-	/*
-	    if (cg.cameraMode) {
-	        return;
-	    }
-	*/
 	if(cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR) {
 		CG_DrawSpectator();
 
@@ -2067,37 +1946,21 @@ static void CG_Draw2D(stereoFrame_t stereoFrame) {
 	} else {
 		// don't draw any status if dead or the scoreboard is being explicitly shown
 		if(!cg.showScores && cg.snap->ps.stats[STAT_HEALTH] > 0) {
-#ifdef MISSIONPACK
-			if(cg_drawStatus.integer) {
-				Menu_PaintAll();
-				CG_DrawTimedMenus();
-			}
-#else
 			CG_DrawStatusBar();
-#endif
 
 			CG_DrawAmmoWarning();
 
-#ifdef MISSIONPACK
-			CG_DrawProxWarning();
-#endif
 			if(stereoFrame == STEREO_CENTER) CG_DrawCrosshair();
 			CG_DrawCrosshairNames();
 			CG_DrawWeaponSelect();
 
-#ifndef MISSIONPACK
 			CG_DrawHoldableItem();
-#else
-			// CG_DrawPersistantPowerup();
-#endif
 			CG_DrawReward();
 		}
 	}
 
 	if(cgs.gametype >= GT_TEAM) {
-#ifndef MISSIONPACK
 		CG_DrawTeamInfo();
-#endif
 	}
 
 	CG_DrawVote();
@@ -2105,26 +1968,18 @@ static void CG_Draw2D(stereoFrame_t stereoFrame) {
 
 	CG_DrawLagometer();
 
-#ifdef MISSIONPACK
-	if(!cg_paused.integer) {
-		CG_DrawUpperRight(stereoFrame);
-	}
-#else
 	CG_DrawUpperRight(stereoFrame);
-#endif
 
-#ifndef MISSIONPACK
 	CG_DrawLowerRight();
 	CG_DrawLowerLeft();
-#endif
 
 	if(!CG_DrawFollow()) {
 		CG_DrawWarmup();
 	}
 
 	// don't draw center string if scoreboard is up
-	cg.scoreBoardShowing = CG_DrawScoreboard();
-	if(!cg.scoreBoardShowing) {
+	CG_DrawScoreboard();
+	if(!cg.showScores) {
 		CG_DrawCenterString();
 	}
 }
@@ -2143,12 +1998,6 @@ void CG_DrawActive(stereoFrame_t stereoView) {
 		return;
 	}
 
-	// optionally draw the tournement scoreboard instead
-	if(cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR && (cg.snap->ps.pm_flags & PMF_SCOREBOARD)) {
-		CG_DrawTourneyScoreboard();
-		return;
-	}
-
 	// clear around the rendered view if sized down
 	CG_TileClear();
 
@@ -2156,6 +2005,9 @@ void CG_DrawActive(stereoFrame_t stereoView) {
 
 	// draw 3D view
 	trap_R_RenderScene(&cg.refdef);
+
+	// draw 3D text
+	CG_Draw3DStringQueue();
 
 	// draw status bar and other floating elements
 	CG_Draw2D(stereoView);

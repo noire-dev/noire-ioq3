@@ -26,7 +26,7 @@ static void getScreenProperties(void) {
 		cgui.wideoffset = 0.0;
 }
 
-void CL_Init(void) {
+void CL_UIInit(void) {
 	int i;
 
 	getScreenProperties();

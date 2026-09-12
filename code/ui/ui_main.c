@@ -2,7 +2,6 @@
 
 #include "../qcommon/vm_javascript.h"
 #include "../qcommon/vm_javascript_core.h"
-#include "../qcommon/q_shared.h"
 
 shell_s shell;
 
@@ -407,7 +406,7 @@ int UI_Init(void) {  // Инициализация UI и загрузка сос
 	int lastWindow = 0;
 
 	trap_Print("NMRE: init... \n");
-	CL_Init();
+	CL_UIInit();
 	UI_ShellInit();
 	UI_LoadApps();
 	UI_LoadTools();

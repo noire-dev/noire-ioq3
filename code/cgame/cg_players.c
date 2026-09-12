@@ -19,9 +19,9 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-//
 // cg_players.c -- handle the media and animation for player entities
-#include "cg_local.h"
+#include "../qcommon/vm_javascript.h"
+#include "../qcommon/vm_javascript_core.h"
 
 char* cg_customSoundNames[MAX_CUSTOM_SOUNDS] = {"*death1.wav", "*death2.wav", "*death3.wav", "*jump1.wav", "*pain25_1.wav", "*pain50_1.wav", "*pain75_1.wav", "*pain100_1.wav", "*falling1.wav", "*gasp.wav", "*drown.wav", "*fall1.wav", "*taunt.wav"};
 
@@ -435,28 +435,6 @@ CG_RegisterClientSkin
 static bool CG_RegisterClientSkin(clientInfo_t* ci, const char* teamName, const char* modelName, const char* skinName, const char* headModelName, const char* headSkinName) {
 	char filename[MAX_QPATH];
 
-	/*
-	Com_sprintf( filename, sizeof( filename ), "models/players/%s/%slower_%s.skin", modelName, teamName, skinName );
-	ci->legsSkin = trap_R_RegisterSkin( filename );
-	if (!ci->legsSkin) {
-	    Com_sprintf( filename, sizeof( filename ), "models/players/characters/%s/%slower_%s.skin", modelName, teamName, skinName );
-	    ci->legsSkin = trap_R_RegisterSkin( filename );
-	    if (!ci->legsSkin) {
-	        Com_Printf( "Leg skin load failure: %s\n", filename );
-	    }
-	}
-
-
-	Com_sprintf( filename, sizeof( filename ), "models/players/%s/%supper_%s.skin", modelName, teamName, skinName );
-	ci->torsoSkin = trap_R_RegisterSkin( filename );
-	if (!ci->torsoSkin) {
-	    Com_sprintf( filename, sizeof( filename ), "models/players/characters/%s/%supper_%s.skin", modelName, teamName, skinName );
-	    ci->torsoSkin = trap_R_RegisterSkin( filename );
-	    if (!ci->torsoSkin) {
-	        Com_Printf( "Torso skin load failure: %s\n", filename );
-	    }
-	}
-	*/
 	if(CG_FindClientModelFile(filename, sizeof(filename), ci, teamName, modelName, skinName, "lower", "skin")) {
 		ci->legsSkin = trap_R_RegisterSkin(filename);
 	}
@@ -2472,9 +2450,16 @@ void CG_Player(centity_t* cent) {
 	CG_DustTrail(cent);
 #endif
 
-	//
+	// add player name
+	if(cent->currentState.number != cg.snap->ps.clientNum) {
+		if(ci->team == cg.snap->ps.persistant[PERS_TEAM] && ci->team != TEAM_FREE) {
+			CG_Add3DString(cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2] + 48, ci->name, FONTSTYLE_DROPSHADOW, color_white, 0.50, 2048, 3072, false);
+		} else if(ci->team == TEAM_FREE) {
+			CG_Add3DString(cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2] + 48, ci->name, FONTSTYLE_DROPSHADOW, color_white, 0.50, 512, 1536, true);
+		}
+	}
+
 	// add the gun / barrel / flash
-	//
 	CG_AddPlayerWeapon(&torso, NULL, cent, ci->team);
 
 	// add powerups floating behind the player

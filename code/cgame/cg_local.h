@@ -63,7 +63,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define STAT_MINUS 10  // num frame for '-' stats digit
 
-#define ICON_SIZE 48
+#define ICON_SIZE 16
 #undef CHAR_WIDTH  // ignore define from libc
 #define CHAR_WIDTH 32
 #define CHAR_HEIGHT 48
@@ -532,8 +532,6 @@ typedef struct {
 	int teamScores[2];
 	score_t scores[MAX_CLIENTS];
 	bool showScores;
-	bool scoreBoardShowing;
-	int scoreFadeTime;
 	char killerName[MAX_NAME_LENGTH];
 	char spectatorList[MAX_STRING_CHARS];  // list of names
 	int spectatorLen;                      // length of list
@@ -1250,10 +1248,11 @@ void CG_DrawSides(float x, float y, float w, float h, float size);
 void CG_DrawTopBottom(float x, float y, float w, float h, float size);
 
 // cg_draw.c
+void CG_Add3DString(float x, float y, float z, const char* str, int style, const vec4_t color, float fontSize, float min, float max, bool useTrace);
 void CG_AddLagometerFrameInfo(void);
 void CG_AddLagometerSnapshotInfo(snapshot_t* snap);
 void CG_CenterPrint(const char* str, int y, int charWidth);
-void CG_DrawHead(float x, float y, float w, float h, int clientNum, vec3_t headAngles);
+void CG_DrawHead(float x, float y, float w, float h, int clientNum);
 void CG_DrawActive(stereoFrame_t stereoView);
 void CG_DrawFlagModel(float x, float y, float w, float h, int team, bool force2D);
 void CG_DrawTeamBackground(int x, int y, int w, int h, float alpha, int team);
@@ -1391,11 +1390,8 @@ void CG_LoadingItem(int itemNum);
 void CG_LoadingClient(int clientNum);
 void CG_DrawInformation(void);
 
-//
 // cg_scoreboard.c
-//
-bool CG_DrawOldScoreboard(void);
-void CG_DrawTourneyScoreboard(void);
+void CG_DrawScoreboard(void);
 
 //
 // cg_consolecmds.c
