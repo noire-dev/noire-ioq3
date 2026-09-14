@@ -60,7 +60,10 @@ Q_EXPORT intptr_t vmMain(int command, int arg0, int arg1, int arg2, int arg3, in
 			CG_MouseEvent(arg0, arg1);
 			return 0;
 		case CG_EVENT_HANDLING: CG_EventHandling(arg0); return 0;
-		default: CG_Error("vmMain: unknown command %i", command); break;
+
+		case GETVMCONTEXT: VMContext(&vmargs, &vmresult); return 0;
+		case VMCALL: VMCall(arg0); return 0;
+		default: trap_Error("ui.qvm: unknown command"); break;
 	}
 	return -1;
 }
@@ -88,12 +91,7 @@ vmCvar_t cg_draw3dIcons;
 vmCvar_t cg_drawIcons;
 vmCvar_t cg_drawAmmoWarning;
 vmCvar_t cg_drawCrosshair;
-vmCvar_t cg_drawCrosshairNames;
-vmCvar_t cg_drawRewards;
-vmCvar_t cg_crosshairSize;
-vmCvar_t cg_crosshairX;
-vmCvar_t cg_crosshairY;
-vmCvar_t cg_crosshairHealth;
+vmCvar_t cg_crosshairScale;
 vmCvar_t cg_draw2D;
 vmCvar_t cg_drawStatus;
 vmCvar_t cg_animSpeed;
@@ -124,7 +122,6 @@ vmCvar_t cg_zoomFov;
 vmCvar_t cg_thirdPerson;
 vmCvar_t cg_thirdPersonRange;
 vmCvar_t cg_thirdPersonAngle;
-vmCvar_t cg_lagometer;
 vmCvar_t cg_drawAttacker;
 vmCvar_t cg_synchronousClients;
 vmCvar_t cg_teamChatTime;
@@ -203,16 +200,10 @@ static cvarTable_t cvarTable[] = {{&cg_ignore, "cg_ignore", "0", 0},  // used fo
                                   {&cg_drawAmmoWarning, "cg_drawAmmoWarning", "1", CVAR_ARCHIVE},
                                   {&cg_drawAttacker, "cg_drawAttacker", "1", CVAR_ARCHIVE},
                                   {&cg_drawCrosshair, "cg_drawCrosshair", "4", CVAR_ARCHIVE},
-                                  {&cg_drawCrosshairNames, "cg_drawCrosshairNames", "1", CVAR_ARCHIVE},
-                                  {&cg_drawRewards, "cg_drawRewards", "1", CVAR_ARCHIVE},
-                                  {&cg_crosshairSize, "cg_crosshairSize", "24", CVAR_ARCHIVE},
-                                  {&cg_crosshairHealth, "cg_crosshairHealth", "1", CVAR_ARCHIVE},
-                                  {&cg_crosshairX, "cg_crosshairX", "0", CVAR_ARCHIVE},
-                                  {&cg_crosshairY, "cg_crosshairY", "0", CVAR_ARCHIVE},
+                                  {&cg_crosshairScale, "cg_crosshairScale", "24", CVAR_ARCHIVE},
                                   {&cg_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE},
                                   {&cg_simpleItems, "cg_simpleItems", "0", CVAR_ARCHIVE},
                                   {&cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE},
-                                  {&cg_lagometer, "cg_lagometer", "1", CVAR_ARCHIVE},
                                   {&cg_railTrailTime, "cg_railTrailTime", "400", CVAR_ARCHIVE},
                                   {&cg_gun_x, "cg_gunX", "0", CVAR_CHEAT},
                                   {&cg_gun_y, "cg_gunY", "0", CVAR_CHEAT},
@@ -807,7 +798,6 @@ static void CG_RegisterGraphics(void) {
 #endif
 	cgs.media.plasmaBallShader = trap_R_RegisterShader("sprites/plasma1");
 	cgs.media.bloodTrailShader = trap_R_RegisterShader("bloodTrail");
-	cgs.media.lagometerShader = trap_R_RegisterShader("lagometer");
 	cgs.media.connectionShader = trap_R_RegisterShader("disconnected");
 
 	cgs.media.waterBubbleShader = trap_R_RegisterShader("waterBubble");
@@ -956,6 +946,13 @@ static void CG_RegisterGraphics(void) {
 	cgs.media.medalDefend = trap_R_RegisterShaderNoMip("medal_defend");
 	cgs.media.medalAssist = trap_R_RegisterShaderNoMip("medal_assist");
 	cgs.media.medalCapture = trap_R_RegisterShaderNoMip("medal_capture");
+
+	// Assets Noire's Mod
+	cgs.media.errIcon = trap_R_RegisterShaderNoMip("menu/erricon");
+	cgs.media.notifyIcon = trap_R_RegisterShaderNoMip("menu/notifyicon");
+	cgs.media.undoIcon = trap_R_RegisterShaderNoMip("menu/undoicon");
+	cgs.media.notifySound = trap_S_RegisterSound("sound/notify.wav", false);
+	cgs.media.undoSound = trap_S_RegisterSound("sound/undo.wav", false);
 
 	memset(cg_items, 0, sizeof(cg_items));
 	memset(cg_weapons, 0, sizeof(cg_weapons));
@@ -1175,6 +1172,7 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 	CG_RegisterCvars();
 
 	CL_UIInit();
+	JS_HUDInit();
 
 	CG_InitConsoleCommands();
 

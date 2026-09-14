@@ -411,7 +411,6 @@ static void CG_MapRestart(void) {
 	cg.rewardTime = 0;
 	cg.rewardStack = 0;
 	cg.intermissionStarted = false;
-	cg.levelShot = false;
 
 	cgs.voteTime = 0;
 
@@ -1009,13 +1008,6 @@ static void CG_ServerCommand(void) {
 	// loaddeferred can be both a servercmd and a consolecmd
 	if(!strcmp(cmd, "loaddefered")) {  // FIXME: spelled wrong, but not changing for demo
 		CG_LoadDeferredPlayers();
-		return;
-	}
-
-	// clientLevelShot is sent before taking a special screenshot for
-	// the menu system during development
-	if(!strcmp(cmd, "clientLevelShot")) {
-		cg.levelShot = true;
 		return;
 	}
 

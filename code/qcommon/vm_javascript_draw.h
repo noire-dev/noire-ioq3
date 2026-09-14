@@ -383,6 +383,4 @@ typedef struct {
 } hud_s;
 extern hud_s hud;
 
-void CG_HUDInit(void);
-void CG_HUDDraw(void);
 void CG_HUDCounter(float x, float y, const char* value, const char* text);

@@ -93,6 +93,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define DEFAULT_REDTEAM_NAME "Stroggs"
 #define DEFAULT_BLUETEAM_NAME "Pagans"
 
+#define MAX_NOTIFICATIONS 18
+#define NOTIFICATION_FADE_TIME 500
+
 #define NOTIFY_NONE 0
 #define NOTIFY_INFO 1
 #define NOTIFY_UNDO 2
@@ -169,6 +172,16 @@ typedef struct {
 	int barrelTime;
 	bool barrelSpinning;
 } playerEntity_t;
+
+// Notifications
+typedef struct {
+	char text[256];
+	char picPath[256];
+	int type;
+	int number;
+	int startTime;
+	bool active;
+} notification_t;
 
 //=================================================
 
@@ -451,7 +464,6 @@ typedef struct {
 	int clientNum;
 
 	bool demoPlayback;
-	bool levelShot;  // taking a level menu screenshot
 	int deferredPlayerLoading;
 	bool loading;              // don't defer players at initial startup
 	bool intermissionStarted;  // don't play voice rewards, because game will end shortly
@@ -634,6 +646,7 @@ typedef struct {
 	char testModelName[MAX_QPATH];
 	bool testGun;
 
+	notification_t notifications[MAX_NOTIFICATIONS];
 } cg_t;
 
 // all of the model, shader, and sound references that are
@@ -721,7 +734,6 @@ typedef struct {
 	qhandle_t viewBloodShader;
 	qhandle_t tracerShader;
 	qhandle_t crosshairShader[NUM_CROSSHAIRS];
-	qhandle_t lagometerShader;
 	qhandle_t backTileShader;
 	qhandle_t noammoShader;
 
@@ -812,6 +824,13 @@ typedef struct {
 	qhandle_t medalDefend;
 	qhandle_t medalAssist;
 	qhandle_t medalCapture;
+
+	// Assets Noire's Mod
+	qhandle_t errIcon;
+	qhandle_t notifyIcon;
+	qhandle_t undoIcon;
+	sfxHandle_t notifySound;
+	sfxHandle_t undoSound;
 
 	// sounds
 	sfxHandle_t quadSound;
@@ -1092,14 +1111,9 @@ extern vmCvar_t cg_draw3dIcons;
 extern vmCvar_t cg_drawIcons;
 extern vmCvar_t cg_drawAmmoWarning;
 extern vmCvar_t cg_drawCrosshair;
-extern vmCvar_t cg_drawCrosshairNames;
-extern vmCvar_t cg_drawRewards;
 extern vmCvar_t cg_drawTeamOverlay;
 extern vmCvar_t cg_teamOverlayUserinfo;
-extern vmCvar_t cg_crosshairX;
-extern vmCvar_t cg_crosshairY;
-extern vmCvar_t cg_crosshairSize;
-extern vmCvar_t cg_crosshairHealth;
+extern vmCvar_t cg_crosshairScale;
 extern vmCvar_t cg_drawStatus;
 extern vmCvar_t cg_draw2D;
 extern vmCvar_t cg_animSpeed;
@@ -1131,7 +1145,6 @@ extern vmCvar_t cg_zoomFov;
 extern vmCvar_t cg_thirdPersonRange;
 extern vmCvar_t cg_thirdPersonAngle;
 extern vmCvar_t cg_thirdPerson;
-extern vmCvar_t cg_lagometer;
 extern vmCvar_t cg_drawAttacker;
 extern vmCvar_t cg_synchronousClients;
 extern vmCvar_t cg_teamChatTime;
@@ -1238,7 +1251,6 @@ int CG_DrawStrlen(const char* str);
 
 float* CG_FadeColor(int startMsec, int totalMsec);
 float* CG_TeamColor(int team);
-void CG_TileClear(void);
 void CG_ColorForHealth(vec4_t hcolor);
 void CG_GetColorForHealth(int health, int armor, vec4_t hcolor);
 
@@ -1249,10 +1261,9 @@ void CG_DrawTopBottom(float x, float y, float w, float h, float size);
 
 // cg_draw.c
 void CG_Add3DString(float x, float y, float z, const char* str, int style, const vec4_t color, float fontSize, float min, float max, bool useTrace);
-void CG_AddLagometerFrameInfo(void);
-void CG_AddLagometerSnapshotInfo(snapshot_t* snap);
 void CG_CenterPrint(const char* str, int y, int charWidth);
 void CG_DrawHead(float x, float y, float w, float h, int clientNum);
+void CG_AddNotify(const char* text, int type, int number, const char* picPath);
 void CG_DrawActive(stereoFrame_t stereoView);
 void CG_DrawFlagModel(float x, float y, float w, float h, int team, bool force2D);
 void CG_DrawTeamBackground(int x, int y, int w, int h, float alpha, int team);

@@ -372,34 +372,6 @@ void Cmd_Noclip_f(gentity_t* ent) {
 
 /*
 ==================
-Cmd_LevelShot_f
-
-This is just to help generate the level pictures
-for the menus.  It goes to the intermission immediately
-and sends over a command to the client to resize the view,
-hide the scoreboard, and take a special screenshot
-==================
-*/
-void Cmd_LevelShot_f(gentity_t* ent) {
-	if(!ent->client->pers.localClient) {
-		trap_SendServerCommand(ent - g_entities, "print \"The levelshot command must be executed by a local client\n\"");
-		return;
-	}
-
-	if(!CheatsOk(ent)) return;
-
-	// doesn't work in single player
-	if(g_gametype.integer == GT_SINGLE_PLAYER) {
-		trap_SendServerCommand(ent - g_entities, "print \"Must not be in singleplayer mode for levelshot\n\"");
-		return;
-	}
-
-	BeginIntermission();
-	trap_SendServerCommand(ent - g_entities, "clientLevelShot");
-}
-
-/*
-==================
 Cmd_TeamTask_f
 ==================
 */
@@ -1670,8 +1642,6 @@ void ClientCommand(int clientNum) {
 		Cmd_Kill_f(ent);
 	else if(Q_stricmp(cmd, "teamtask") == 0)
 		Cmd_TeamTask_f(ent);
-	else if(Q_stricmp(cmd, "levelshot") == 0)
-		Cmd_LevelShot_f(ent);
 	else if(Q_stricmp(cmd, "follow") == 0)
 		Cmd_Follow_f(ent);
 	else if(Q_stricmp(cmd, "follownext") == 0)

@@ -568,10 +568,6 @@ void drawOutline(float x, float y, float width, float height, float thickness, f
 	trap_R_SetColor(NULL);
 }
 
-void CG_HUDInit(void) { JS_HUDInit(); }
-
-void CG_HUDDraw(void) { JS_HUDDraw(); }
-
 void CG_HUDCounter(float x, float y, const char* value, const char* text) {
 	float textY = y + (hud.counterH - (FONT_SIZE * hud.counterTextScale)) * hud.counterTextY;
 	float valueY = y + (hud.counterH - (FONT_SIZE * hud.counterValueScale)) * hud.counterValueY;

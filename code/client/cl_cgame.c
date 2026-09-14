@@ -317,25 +317,6 @@ rescan:
 		return true;
 	}
 
-	// the clientLevelShot command is used during development
-	// to generate 128*128 screenshots from the intermission
-	// point of levels for the menu system to use
-	// we pass it along to the cgame to make appropriate adjustments,
-	// but we also clear the console and notify lines here
-	if(!strcmp(cmd, "clientLevelShot")) {
-		// don't do it if we aren't running the server locally,
-		// otherwise malicious remote servers could overwrite
-		// the existing thumbnails
-		if(!com_sv_running->integer) {
-			return false;
-		}
-		// close the console
-		Con_Close();
-		// take a special screenshot next frame
-		Cbuf_AddText("wait ; wait ; wait ; wait ; screenshot levelshot\n");
-		return true;
-	}
-
 	// we may want to put a "connect to other server" command here
 
 	// cgame can now act on the command
@@ -419,7 +400,7 @@ intptr_t CL_CgameSystemCalls(intptr_t* args) {
 		case CG_SETUSERCMDVALUE: CL_SetUserCmdValue(args[1], VMF(2)); return 0;
 		case CG_MEMORY_REMAINING: return Hunk_MemoryRemaining();
 		case CG_KEY_SETCATCHER: Key_SetCatcher(args[1] | (Key_GetCatcher() & KEYCATCH_CONSOLE)); return 0;
-		
+
 		case CG_PC_ADD_GLOBAL_DEFINE: return botlib_export->PC_AddGlobalDefine(VMA(1));
 		case CG_PC_LOAD_SOURCE: return botlib_export->PC_LoadSourceHandle(VMA(1));
 		case CG_PC_FREE_SOURCE: return botlib_export->PC_FreeSourceHandle(args[1]);

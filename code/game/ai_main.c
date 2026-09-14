@@ -984,8 +984,7 @@ int BotAI(int client, float thinktime) {
 			BotVoiceChatCommand(bs, SAY_TELL, args);
 		}
 #endif
-		else if(!Q_stricmp(buf, "scores")) {            /*FIXME: parse scores?*/
-		} else if(!Q_stricmp(buf, "clientLevelShot")) { /*ignore*/
+		else if(!Q_stricmp(buf, "scores")) { /*FIXME: parse scores?*/
 		}
 	}
 	// add the delta angles to the bot's current view angles
