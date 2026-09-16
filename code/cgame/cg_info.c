@@ -224,11 +224,6 @@ void CG_DrawInformation(void) {
 		case GT_FFA: s = "Free For All"; break;
 		case GT_TEAM: s = "Team Deathmatch"; break;
 		case GT_CTF: s = "Capture The Flag"; break;
-#ifdef MISSIONPACK
-		case GT_1FCTF: s = "One Flag CTF"; break;
-		case GT_OBELISK: s = "Overload"; break;
-		case GT_HARVESTER: s = "Harvester"; break;
-#endif
 		default: s = "Unknown Gametype"; break;
 	}
 	UI_DrawProportionalString(320, y, s, UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);

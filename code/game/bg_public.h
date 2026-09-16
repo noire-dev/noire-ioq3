@@ -202,9 +202,6 @@ void Pmove(pmove_t* pmove);
 typedef enum {
 	STAT_HEALTH,
 	STAT_HOLDABLE_ITEM,
-#ifdef MISSIONPACK
-	STAT_PERSISTANT_POWERUP,
-#endif
 	STAT_WEAPONS,  // 16 bit fields
 	STAT_ARMOR,
 	STAT_DEAD_YAW,       // look this direction when dead (FIXME: get rid of?)
@@ -236,10 +233,7 @@ typedef enum {
 } persEnum_t;
 
 // entityState_t->eFlags
-#define EF_DEAD 0x00000001  // don't draw a foe marker over players with EF_DEAD
-#ifdef MISSIONPACK
-#define EF_TICKING 0x00000002  // used to make players play the prox mine ticking sound
-#endif
+#define EF_DEAD 0x00000001             // don't draw a foe marker over players with EF_DEAD
 #define EF_TELEPORT_BIT 0x00000004     // toggled every time the origin abruptly changes
 #define EF_AWARD_EXCELLENT 0x00000008  // draw an excellent sprite
 #define EF_PLAYER_EVENT 0x00000010
@@ -310,11 +304,6 @@ typedef enum {
 	WP_PLASMAGUN,
 	WP_BFG,
 	WP_GRAPPLING_HOOK,
-#ifdef MISSIONPACK
-	WP_NAILGUN,
-	WP_PROX_LAUNCHER,
-	WP_CHAINGUN,
-#endif
 
 	WP_NUM_WEAPONS
 } weapon_t;
@@ -423,27 +412,9 @@ typedef enum {
 	EV_GIB_PLAYER,  // gib a previously living player
 	EV_SCOREPLUM,   // score plum
 
-	// #ifdef MISSIONPACK
-	EV_PROXIMITY_MINE_STICK,
-	EV_PROXIMITY_MINE_TRIGGER,
-	EV_KAMIKAZE,        // kamikaze explodes
-	EV_OBELISKEXPLODE,  // obelisk explodes
-	EV_OBELISKPAIN,     // obelisk is in pain
-	EV_INVUL_IMPACT,    // invulnerability sphere impact
-	EV_JUICED,          // invulnerability juiced effect
-	EV_LIGHTNINGBOLT,   // lightning bolt bounced of invulnerability sphere
-	                    // #endif
-
 	EV_DEBUG_LINE,
 	EV_STOPLOOPINGSOUND,
 	EV_TAUNT,
-	EV_TAUNT_YES,
-	EV_TAUNT_NO,
-	EV_TAUNT_FOLLOWME,
-	EV_TAUNT_GETFLAG,
-	EV_TAUNT_GUARDBASE,
-	EV_TAUNT_PATROL
-
 } entity_event_t;
 
 typedef enum { GTS_RED_CAPTURE, GTS_BLUE_CAPTURE, GTS_RED_RETURN, GTS_BLUE_RETURN, GTS_RED_TAKEN, GTS_BLUE_TAKEN, GTS_REDOBELISK_ATTACKED, GTS_BLUEOBELISK_ATTACKED, GTS_REDTEAM_SCORED, GTS_BLUETEAM_SCORED, GTS_REDTEAM_TOOK_LEAD, GTS_BLUETEAM_TOOK_LEAD, GTS_TEAMS_ARE_TIED, GTS_KAMIKAZE } global_team_sound_t;
@@ -536,39 +507,7 @@ typedef enum {
 typedef enum { TEAMTASK_NONE, TEAMTASK_OFFENSE, TEAMTASK_DEFENSE, TEAMTASK_PATROL, TEAMTASK_FOLLOW, TEAMTASK_RETRIEVE, TEAMTASK_ESCORT, TEAMTASK_CAMP } teamtask_t;
 
 // means of death
-typedef enum {
-	MOD_UNKNOWN,
-	MOD_SHOTGUN,
-	MOD_GAUNTLET,
-	MOD_MACHINEGUN,
-	MOD_GRENADE,
-	MOD_GRENADE_SPLASH,
-	MOD_ROCKET,
-	MOD_ROCKET_SPLASH,
-	MOD_PLASMA,
-	MOD_PLASMA_SPLASH,
-	MOD_RAILGUN,
-	MOD_LIGHTNING,
-	MOD_BFG,
-	MOD_BFG_SPLASH,
-	MOD_WATER,
-	MOD_SLIME,
-	MOD_LAVA,
-	MOD_CRUSH,
-	MOD_TELEFRAG,
-	MOD_FALLING,
-	MOD_SUICIDE,
-	MOD_TARGET_LASER,
-	MOD_TRIGGER_HURT,
-#ifdef MISSIONPACK
-	MOD_NAIL,
-	MOD_CHAINGUN,
-	MOD_PROXIMITY_MINE,
-	MOD_KAMIKAZE,
-	MOD_JUICED,
-#endif
-	MOD_GRAPPLE
-} meansOfDeath_t;
+typedef enum { MOD_UNKNOWN, MOD_SHOTGUN, MOD_GAUNTLET, MOD_MACHINEGUN, MOD_GRENADE, MOD_GRENADE_SPLASH, MOD_ROCKET, MOD_ROCKET_SPLASH, MOD_PLASMA, MOD_PLASMA_SPLASH, MOD_RAILGUN, MOD_LIGHTNING, MOD_BFG, MOD_BFG_SPLASH, MOD_WATER, MOD_SLIME, MOD_LAVA, MOD_CRUSH, MOD_TELEFRAG, MOD_FALLING, MOD_SUICIDE, MOD_TARGET_LASER, MOD_TRIGGER_HURT, MOD_GRAPPLE } meansOfDeath_t;
 
 //---------------------------------------------------------
 

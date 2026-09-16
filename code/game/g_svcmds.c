@@ -419,11 +419,6 @@ bool ConsoleCommand(void) {
 		return true;
 	}
 
-	if(Q_stricmp(cmd, "abort_podium") == 0) {
-		Svcmd_AbortPodium_f();
-		return true;
-	}
-
 	if(Q_stricmp(cmd, "addip") == 0) {
 		Svcmd_AddIP_f();
 		return true;
