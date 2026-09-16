@@ -77,7 +77,6 @@ vmCvar_t g_teamForceBalance;
 vmCvar_t g_banIPs;
 vmCvar_t g_filterBan;
 vmCvar_t g_smoothClients;
-vmCvar_t g_rankings;
 vmCvar_t g_listEntity;
 vmCvar_t g_localTeamPref;
 #ifdef MISSIONPACK
@@ -173,7 +172,6 @@ static cvarTable_t gameCvarTable[] = {
 #endif
     {&g_smoothClients, "g_smoothClients", "1", 0, 0, false},
 
-    {&g_rankings, "g_rankings", "0", 0, 0, false},
     {&g_localTeamPref, "g_localTeamPref", "", 0, 0, false}
 
 };
@@ -389,7 +387,7 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 
 	level.snd_fry = G_SoundIndex("sound/player/fry.wav");  // FIXME standing in lava / slime
 
-	if(g_gametype.integer != GT_SINGLE_PLAYER && g_logfile.string[0]) {
+	if(g_logfile.string[0]) {
 		if(g_logfileSync.integer) {
 			trap_FS_FOpenFile(g_logfile.string, &level.logFile, FS_APPEND_SYNC);
 		} else {
@@ -456,10 +454,6 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	SaveRegisteredItems();
 
 	G_Printf("-----------------------------------\n");
-
-	if(g_gametype.integer == GT_SINGLE_PLAYER || trap_Cvar_VariableIntegerValue("com_buildScript")) {
-		G_ModelIndex(SP_PODIUM_MODEL);
-	}
 
 	if(trap_Cvar_VariableIntegerValue("bot_enable")) {
 		BotAISetup(restart);
@@ -807,9 +801,6 @@ void CalculateRanks(void) {
 				level.clients[level.sortedClients[i]].ps.persistant[PERS_RANK] = rank | RANK_TIED_FLAG;
 			}
 			score = newScore;
-			if(g_gametype.integer == GT_SINGLE_PLAYER && level.numPlayingClients == 1) {
-				level.clients[level.sortedClients[i]].ps.persistant[PERS_RANK] = rank | RANK_TIED_FLAG;
-			}
 		}
 	}
 
@@ -940,11 +931,6 @@ void BeginIntermission(void) {
 		return;  // already active
 	}
 
-	// if in tournement mode, change the wins / losses
-	if(g_gametype.integer == GT_TOURNAMENT) {
-		AdjustTournamentScores();
-	}
-
 	level.intermissiontime = level.time;
 	// move all clients to the intermission point
 	for(i = 0; i < level.maxclients; i++) {
@@ -956,18 +942,6 @@ void BeginIntermission(void) {
 		}
 		MoveClientToIntermission(client);
 	}
-#ifdef MISSIONPACK
-	if(g_singlePlayer.integer) {
-		trap_Cvar_Set("ui_singlePlayerActive", "0");
-		UpdateTournamentInfo();
-	}
-#else
-	// if single player game
-	if(g_gametype.integer == GT_SINGLE_PLAYER) {
-		UpdateTournamentInfo();
-		SpawnModelsOnVictoryPads();
-	}
-#endif
 	// send the current scoring to all clients
 	SendScoreboardMessageToAllClients();
 }
@@ -989,19 +963,6 @@ void ExitLevel(void) {
 
 	// bot interbreeding
 	BotInterbreedEndMatch();
-
-	// if we are running a tournement map, kick the loser to spectator status,
-	// which will automatically grab the next spectator and restart
-	if(g_gametype.integer == GT_TOURNAMENT) {
-		if(!level.restarted) {
-			RemoveTournamentLoser();
-			trap_SendConsoleCommand(EXEC_APPEND, "map_restart 0\n");
-			level.restarted = true;
-			level.changemap = NULL;
-			level.intermissiontime = 0;
-		}
-		return;
-	}
 
 	trap_Cvar_VariableStringBuffer("nextmap", nextmap, sizeof(nextmap));
 	trap_Cvar_VariableStringBuffer("d1", d1, sizeof(d1));
@@ -1163,10 +1124,6 @@ void CheckIntermissionExit(void) {
 	int i;
 	gclient_t* cl;
 	int readyMask;
-
-	if(g_gametype.integer == GT_SINGLE_PLAYER) {
-		return;
-	}
 
 	// see which players are ready
 	ready = 0;
@@ -1394,56 +1351,7 @@ void CheckTournament(void) {
 		return;
 	}
 
-	if(g_gametype.integer == GT_TOURNAMENT) {
-		// pull in a spectator if needed
-		if(level.numPlayingClients < 2) {
-			AddTournamentPlayer();
-		}
-
-		// if we don't have two players, go back to "waiting for players"
-		if(level.numPlayingClients != 2) {
-			if(level.warmupTime != -1) {
-				level.warmupTime = -1;
-				trap_SetConfigstring(CS_WARMUP, va("%i", level.warmupTime));
-				G_LogPrintf("Warmup:\n");
-			}
-			return;
-		}
-
-		if(level.warmupTime == 0) {
-			return;
-		}
-
-		// if the warmup is changed at the console, restart it
-		if(g_warmup.modificationCount != level.warmupModificationCount) {
-			level.warmupModificationCount = g_warmup.modificationCount;
-			level.warmupTime = -1;
-		}
-
-		// if all players have arrived, start the countdown
-		if(level.warmupTime < 0) {
-			if(level.numPlayingClients == 2) {
-				// fudge by -1 to account for extra delays
-				if(g_warmup.integer > 1) {
-					level.warmupTime = level.time + (g_warmup.integer - 1) * 1000;
-				} else {
-					level.warmupTime = 0;
-				}
-
-				trap_SetConfigstring(CS_WARMUP, va("%i", level.warmupTime));
-			}
-			return;
-		}
-
-		// if the warmup time has counted down, restart
-		if(level.time > level.warmupTime) {
-			level.warmupTime += 10000;
-			trap_Cvar_Set("g_restarted", "1");
-			trap_SendConsoleCommand(EXEC_APPEND, "map_restart 0\n");
-			level.restarted = true;
-			return;
-		}
-	} else if(g_gametype.integer != GT_SINGLE_PLAYER && level.warmupTime != 0) {
+	if(level.warmupTime != 0) {
 		int counts[TEAM_NUM_TEAMS];
 		bool notEnough = false;
 

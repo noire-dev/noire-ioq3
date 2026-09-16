@@ -931,11 +931,8 @@ void ClientBegin(int clientNum) {
 	// locate ent at a spawn point
 	ClientSpawn(ent);
 
-	if(client->sess.sessionTeam != TEAM_SPECTATOR) {
-		if(g_gametype.integer != GT_TOURNAMENT) {
-			trap_SendServerCommand(-1, va("print \"%s" S_COLOR_WHITE " entered the game\n\"", client->pers.netname));
-		}
-	}
+	if(client->sess.sessionTeam != TEAM_SPECTATOR) trap_SendServerCommand(-1, va("print \"%s" S_COLOR_WHITE " entered the game\n\"", client->pers.netname));
+
 	G_LogPrintf("ClientBegin: %i\n", clientNum);
 
 	// count current clients and rank for scoreboard
@@ -1189,19 +1186,6 @@ void ClientDisconnect(int clientNum) {
 	}
 
 	G_LogPrintf("ClientDisconnect: %i\n", clientNum);
-
-	// if we are playing in tourney mode and losing, give a win to the other player
-	if((g_gametype.integer == GT_TOURNAMENT) && !level.intermissiontime && !level.warmupTime && level.sortedClients[1] == clientNum) {
-		level.clients[level.sortedClients[0]].sess.wins++;
-		ClientUserinfoChanged(level.sortedClients[0]);
-	}
-
-	if(g_gametype.integer == GT_TOURNAMENT && ent->client->sess.sessionTeam == TEAM_FREE && level.intermissiontime) {
-		trap_SendConsoleCommand(EXEC_APPEND, "map_restart 0\n");
-		level.restarted = true;
-		level.changemap = NULL;
-		level.intermissiontime = 0;
-	}
 
 	trap_UnlinkEntity(ent);
 	ent->s.modelindex = 0;

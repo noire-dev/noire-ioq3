@@ -384,16 +384,7 @@ void G_SpawnGEntityFromSpawnVars(void) {
 		G_ParseField(level.spawnVars[i][0], level.spawnVars[i][1], ent);
 	}
 
-	// check for "notsingle" flag
-	if(g_gametype.integer == GT_SINGLE_PLAYER) {
-		G_SpawnInt("notsingle", "0", &i);
-		if(i) {
-			ADJUST_AREAPORTAL();
-			G_FreeEntity(ent);
-			return;
-		}
-	}
-	// check for "notteam" flag (GT_FFA, GT_TOURNAMENT, GT_SINGLE_PLAYER)
+	// check for "notteam" flag (GT_FFA)
 	if(g_gametype.integer >= GT_TEAM) {
 		G_SpawnInt("notteam", "0", &i);
 		if(i) {

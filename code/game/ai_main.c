@@ -622,12 +622,6 @@ void BotInterbreeding(void) {
 
 	trap_Cvar_Update(&bot_interbreedchar);
 	if(!strlen(bot_interbreedchar.string)) return;
-	// make sure we are in tournament mode
-	if(gametype != GT_TOURNAMENT) {
-		trap_Cvar_Set("g_gametype", va("%d", GT_TOURNAMENT));
-		ExitLevel();
-		return;
-	}
 	// shutdown all the bots
 	for(i = 0; i < MAX_CLIENTS; i++) {
 		if(botstates[i] && botstates[i]->inuse) {

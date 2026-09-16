@@ -103,9 +103,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 typedef enum {
-	GT_FFA,            // free for all
-	GT_TOURNAMENT,     // one on one tournament
-	GT_SINGLE_PLAYER,  // single player ffa
+	GT_FFA,  // free for all
 
 	//-- team games go after this --
 
