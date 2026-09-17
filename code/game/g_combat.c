@@ -203,18 +203,10 @@ void CheckAlmostCapture(gentity_t* self, gentity_t* attacker) {
 	// if this player was carrying a flag
 	if(self->client->ps.powerups[PW_REDFLAG] || self->client->ps.powerups[PW_BLUEFLAG] || self->client->ps.powerups[PW_NEUTRALFLAG]) {
 		// get the goal flag this player should have been going for
-		if(g_gametype.integer == GT_CTF) {
-			if(self->client->sess.sessionTeam == TEAM_BLUE) {
-				classname = "team_CTF_blueflag";
-			} else {
-				classname = "team_CTF_redflag";
-			}
+		if(self->client->sess.sessionTeam == TEAM_BLUE) {
+			classname = "team_CTF_redflag";
 		} else {
-			if(self->client->sess.sessionTeam == TEAM_BLUE) {
-				classname = "team_CTF_redflag";
-			} else {
-				classname = "team_CTF_blueflag";
-			}
+			classname = "team_CTF_blueflag";
 		}
 		ent = NULL;
 		do {
@@ -718,11 +710,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 			VectorCopy(targ->r.currentOrigin, client->damage_from);
 			client->damage_fromWorld = true;
 		}
-	}
-
-	// See if it's the player hurting the emeny flag carrier
-	if(g_gametype.integer == GT_CTF) {
-		Team_CheckHurtCarrier(targ, attacker);
 	}
 
 	if(targ->client) {

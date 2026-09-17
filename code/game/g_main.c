@@ -1202,7 +1202,7 @@ void CheckExitRules(void) {
 		trap_Cvar_Update(&g_fraglimit);
 	}
 
-	if(g_gametype.integer < GT_CTF && g_fraglimit.integer) {
+	if(g_fraglimit.integer) {
 		if(level.teamScores[TEAM_RED] >= g_fraglimit.integer) {
 			trap_SendServerCommand(-1, "print \"Red hit the fraglimit.\n\"");
 			LogExit("Fraglimit hit.");
@@ -1236,20 +1236,6 @@ void CheckExitRules(void) {
 		G_Printf("capturelimit %i is out of range, defaulting to 0\n", g_capturelimit.integer);
 		trap_Cvar_Set("capturelimit", "0");
 		trap_Cvar_Update(&g_capturelimit);
-	}
-
-	if(g_gametype.integer >= GT_CTF && g_capturelimit.integer) {
-		if(level.teamScores[TEAM_RED] >= g_capturelimit.integer) {
-			trap_SendServerCommand(-1, "print \"Red hit the capturelimit.\n\"");
-			LogExit("Capturelimit hit.");
-			return;
-		}
-
-		if(level.teamScores[TEAM_BLUE] >= g_capturelimit.integer) {
-			trap_SendServerCommand(-1, "print \"Blue hit the capturelimit.\n\"");
-			LogExit("Capturelimit hit.");
-			return;
-		}
 	}
 }
 

@@ -447,17 +447,6 @@ static float CG_DrawScores(float y) {
 		}
 		CG_DrawBigString(x + 4, y, s, 1.0F);
 
-		if(cgs.gametype == GT_CTF) {
-			// Display flag status
-			item = BG_FindItemForPowerup(PW_BLUEFLAG);
-
-			if(item) {
-				y1 = y - BIGCHAR_HEIGHT - 8;
-				if(cgs.blueflag >= 0 && cgs.blueflag <= 2) {
-					CG_DrawPic(x, y1 - 4, w, BIGCHAR_HEIGHT + 8, cgs.media.blueFlagShader[cgs.blueflag]);
-				}
-			}
-		}
 		color[0] = 1.0f;
 		color[1] = 0.0f;
 		color[2] = 0.0f;
@@ -471,23 +460,8 @@ static float CG_DrawScores(float y) {
 		}
 		CG_DrawBigString(x + 4, y, s, 1.0F);
 
-		if(cgs.gametype == GT_CTF) {
-			// Display flag status
-			item = BG_FindItemForPowerup(PW_REDFLAG);
+		v = cgs.fraglimit;
 
-			if(item) {
-				y1 = y - BIGCHAR_HEIGHT - 8;
-				if(cgs.redflag >= 0 && cgs.redflag <= 2) {
-					CG_DrawPic(x, y1 - 4, w, BIGCHAR_HEIGHT + 8, cgs.media.redFlagShader[cgs.redflag]);
-				}
-			}
-		}
-
-		if(cgs.gametype >= GT_CTF) {
-			v = cgs.capturelimit;
-		} else {
-			v = cgs.fraglimit;
-		}
 		if(v) {
 			s = va("%2i", v);
 			w = CG_DrawStrlen(s) * BIGCHAR_WIDTH + 8;

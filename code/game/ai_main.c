@@ -279,14 +279,6 @@ void BotReportStatus(bot_state_t* bs) {
 		leader = " ";
 
 	strcpy(flagstatus, "  ");
-	if(gametype == GT_CTF) {
-		if(BotCTFCarryingFlag(bs)) {
-			if(BotTeam(bs) == TEAM_RED)
-				strcpy(flagstatus, S_COLOR_RED "F ");
-			else
-				strcpy(flagstatus, S_COLOR_BLUE "F ");
-		}
-	}
 
 	switch(bs->ltgtype) {
 		case LTG_TEAMHELP: {
@@ -406,11 +398,6 @@ void BotSetInfoConfigString(bot_state_t* bs) {
 		leader = " ";
 
 	strcpy(carrying, "  ");
-	if(gametype == GT_CTF) {
-		if(BotCTFCarryingFlag(bs)) {
-			strcpy(carrying, "F ");
-		}
-	}
 
 	switch(bs->ltgtype) {
 		case LTG_TEAMHELP: {

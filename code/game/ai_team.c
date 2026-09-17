@@ -127,12 +127,6 @@ int BotSortTeamMatesByBaseTravelTime(bot_state_t* bs, int* teammates, int maxtea
 	int traveltimes[MAX_CLIENTS];
 	bot_goal_t* goal = NULL;
 
-	if(gametype == GT_CTF) {
-		if(BotTeam(bs) == TEAM_RED)
-			goal = &ctf_redflag;
-		else
-			goal = &ctf_blueflag;
-	}
 	numteammates = 0;
 	for(i = 0; i < level.maxclients; i++) {
 		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
@@ -955,32 +949,6 @@ void BotTeamAI(bot_state_t* bs) {
 				BotTeamOrders(bs);
 				// give orders again after 120 seconds
 				bs->teamgiveorders_time = FloatTime() + 120;
-			}
-			break;
-		}
-		case GT_CTF: {
-			// if the number of team mates changed or the flag status changed
-			// or someone wants to know what to do
-			if(bs->numteammates != numteammates || bs->flagstatuschanged || bs->forceorders) {
-				bs->teamgiveorders_time = FloatTime();
-				bs->numteammates = numteammates;
-				bs->flagstatuschanged = false;
-				bs->forceorders = false;
-			}
-			// if there were no flag captures the last 3 minutes
-			if(bs->lastflagcapture_time < FloatTime() - 240) {
-				bs->lastflagcapture_time = FloatTime();
-				// randomly change the CTF strategy
-				if(random() < 0.4) {
-					bs->ctfstrategy ^= CTFS_AGRESSIVE;
-					bs->teamgiveorders_time = FloatTime();
-				}
-			}
-			// if it's time to give orders
-			if(bs->teamgiveorders_time && bs->teamgiveorders_time < FloatTime() - 3) {
-				BotCTFOrders(bs);
-				//
-				bs->teamgiveorders_time = 0;
 			}
 			break;
 		}

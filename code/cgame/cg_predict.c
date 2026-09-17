@@ -271,13 +271,6 @@ static void CG_TouchItem(centity_t* cent) {
 
 	item = &bg_itemlist[cent->currentState.modelindex];
 
-	// Special case for flags.
-	// We don't predict touching our own flag
-	if(cgs.gametype == GT_CTF) {
-		if(cg.predictedPlayerState.persistant[PERS_TEAM] == TEAM_RED && item->giType == IT_TEAM && item->giTag == PW_REDFLAG) return;
-		if(cg.predictedPlayerState.persistant[PERS_TEAM] == TEAM_BLUE && item->giType == IT_TEAM && item->giTag == PW_BLUEFLAG) return;
-	}
-
 	// grab it
 	BG_AddPredictableEventToPlayerstate(EV_ITEM_PICKUP, cent->currentState.modelindex, &cg.predictedPlayerState);
 

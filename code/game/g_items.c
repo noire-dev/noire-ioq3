@@ -459,7 +459,7 @@ gentity_t* LaunchItem(gitem_t* item, vec3_t origin, vec3_t velocity) {
 	VectorCopy(velocity, dropped->s.pos.trDelta);
 
 	dropped->s.eFlags |= EF_BOUNCE_HALF;
-	if(g_gametype.integer == GT_CTF && item->giType == IT_TEAM) {  // Special case for CTF flags
+	if(item->giType == IT_TEAM) {  // Special case for CTF flags
 		dropped->think = Team_DroppedFlagThink;
 		dropped->nextthink = level.time + 30000;
 		Team_CheckDroppedItem(dropped);
@@ -583,20 +583,6 @@ G_CheckTeamItems
 void G_CheckTeamItems(void) {
 	// Set up team stuff
 	Team_InitGame();
-
-	if(g_gametype.integer == GT_CTF) {
-		gitem_t* item;
-
-		// check for the two flags
-		item = BG_FindItem("Red Flag");
-		if(!item || !itemRegistered[item - bg_itemlist]) {
-			G_Printf(S_COLOR_YELLOW "WARNING: No team_CTF_redflag in map\n");
-		}
-		item = BG_FindItem("Blue Flag");
-		if(!item || !itemRegistered[item - bg_itemlist]) {
-			G_Printf(S_COLOR_YELLOW "WARNING: No team_CTF_blueflag in map\n");
-		}
-	}
 }
 
 /*

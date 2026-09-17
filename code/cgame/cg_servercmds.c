@@ -137,11 +137,6 @@ void CG_SetConfigValues(void) {
 	cgs.scores1 = atoi(CG_ConfigString(CS_SCORES1));
 	cgs.scores2 = atoi(CG_ConfigString(CS_SCORES2));
 	cgs.levelStartTime = atoi(CG_ConfigString(CS_LEVEL_START_TIME));
-	if(cgs.gametype == GT_CTF) {
-		s = CG_ConfigString(CS_FLAGSTATUS);
-		cgs.redflag = s[0] - '0';
-		cgs.blueflag = s[1] - '0';
-	}
 	cg.warmup = atoi(CG_ConfigString(CS_WARMUP));
 }
 
@@ -261,11 +256,6 @@ static void CG_ConfigStringModified(void) {
 		CG_NewClientInfo(num - CS_PLAYERS);
 		CG_BuildSpectatorString();
 	} else if(num == CS_FLAGSTATUS) {
-		if(cgs.gametype == GT_CTF) {
-			// format is rb where its red/blue, 0 is at base, 1 is taken, 2 is dropped
-			cgs.redflag = str[0] - '0';
-			cgs.blueflag = str[1] - '0';
-		}
 	} else if(num == CS_SHADERSTATE) {
 		CG_ShaderStateChanged();
 	}

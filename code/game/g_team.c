@@ -41,19 +41,7 @@ gentity_t* neutralObelisk;
 
 void Team_SetFlagStatus(int team, flagStatus_t status);
 
-void Team_InitGame(void) {
-	memset(&teamgame, 0, sizeof teamgame);
-
-	switch(g_gametype.integer) {
-		case GT_CTF:
-			teamgame.redStatus = -1;  // Invalid to force update
-			Team_SetFlagStatus(TEAM_RED, FLAG_ATBASE);
-			teamgame.blueStatus = -1;  // Invalid to force update
-			Team_SetFlagStatus(TEAM_BLUE, FLAG_ATBASE);
-			break;
-		default: break;
-	}
-}
+void Team_InitGame(void) { memset(&teamgame, 0, sizeof teamgame); }
 
 int OtherTeam(int team) {
 	if(team == TEAM_RED)
@@ -193,15 +181,6 @@ void Team_SetFlagStatus(int team, flagStatus_t status) {
 
 	if(modified) {
 		char st[4];
-
-		if(g_gametype.integer == GT_CTF) {
-			st[0] = ctfFlagStatusRemap[teamgame.redStatus];
-			st[1] = ctfFlagStatusRemap[teamgame.blueStatus];
-			st[2] = 0;
-		} else {  // GT_1FCTF
-			st[0] = oneFlagStatusRemap[teamgame.flagStatus];
-			st[1] = 0;
-		}
 
 		trap_SetConfigstring(CS_FLAGSTATUS, st);
 	}
@@ -434,12 +413,7 @@ gentity_t* Team_ResetFlag(int team) {
 	return rent;
 }
 
-void Team_ResetFlags(void) {
-	if(g_gametype.integer == GT_CTF) {
-		Team_ResetFlag(TEAM_RED);
-		Team_ResetFlag(TEAM_BLUE);
-	}
-}
+void Team_ResetFlags(void) {}
 
 void Team_ReturnFlagSound(gentity_t* ent, int team) {
 	gentity_t* te;
@@ -676,7 +650,7 @@ int Pickup_Team(gentity_t* ent, gentity_t* other) {
 		PrintMsg(other, "Don't know what team the flag is on.\n");
 		return 0;
 	}
-	// GT_CTF
+
 	if(team == cl->sess.sessionTeam) {
 		return Team_TouchOurFlag(ent, other, team);
 	}

@@ -108,10 +108,6 @@ typedef enum {
 	//-- team games go after this --
 
 	GT_TEAM,  // team deathmatch
-	GT_CTF,   // capture the flag
-	GT_1FCTF,
-	GT_OBELISK,
-	GT_HARVESTER,
 	GT_MAX_GAME_TYPE
 } gametype_t;
 

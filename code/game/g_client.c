@@ -931,9 +931,6 @@ void ClientSpawn(gentity_t* ent) {
 	// ranging doesn't count this client
 	if(client->sess.sessionTeam == TEAM_SPECTATOR) {
 		spawnPoint = SelectSpectatorSpawnPoint(spawn_origin, spawn_angles);
-	} else if(g_gametype.integer >= GT_CTF) {
-		// all base oriented team games use the CTF spawn points
-		spawnPoint = SelectCTFSpawnPoint(client->sess.sessionTeam, client->pers.teamState.state, spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
 	} else {
 		// the first spawn should be at a good looking spot
 		if(!client->pers.initialSpawn && client->pers.localClient) {

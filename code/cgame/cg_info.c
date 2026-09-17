@@ -223,7 +223,6 @@ void CG_DrawInformation(void) {
 	switch(cgs.gametype) {
 		case GT_FFA: s = "Free For All"; break;
 		case GT_TEAM: s = "Team Deathmatch"; break;
-		case GT_CTF: s = "Capture The Flag"; break;
 		default: s = "Unknown Gametype"; break;
 	}
 	UI_DrawProportionalString(320, y, s, UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);
@@ -235,18 +234,9 @@ void CG_DrawInformation(void) {
 		y += PROP_HEIGHT;
 	}
 
-	if(cgs.gametype < GT_CTF) {
-		value = atoi(Info_ValueForKey(info, "fraglimit"));
-		if(value) {
-			UI_DrawProportionalString(320, y, va("fraglimit %i", value), UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);
-			y += PROP_HEIGHT;
-		}
-	}
-
-	if(cgs.gametype >= GT_CTF) {
-		value = atoi(Info_ValueForKey(info, "capturelimit"));
-		if(value) {
-			UI_DrawProportionalString(320, y, va("capturelimit %i", value), UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);
-		}
+	value = atoi(Info_ValueForKey(info, "fraglimit"));
+	if(value) {
+		UI_DrawProportionalString(320, y, va("fraglimit %i", value), UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);
+		y += PROP_HEIGHT;
 	}
 }
