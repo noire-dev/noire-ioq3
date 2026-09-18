@@ -88,10 +88,7 @@ typedef struct campspot_s {
 
 // FIXME: these are game specific
 typedef enum {
-	GT_FFA,  // free for all
-
-	//-- team games go after this --
-
+	GT_FFA,   // free for all
 	GT_TEAM,  // team deathmatch
 	GT_MAX_GAME_TYPE
 } gametype_t;

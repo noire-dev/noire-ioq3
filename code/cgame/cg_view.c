@@ -743,7 +743,7 @@ void CG_DrawActiveFrame(int serverTime, stereoFrame_t stereoView, bool demoPlayb
 
 	// if we are only updating the screen as a loading
 	// pacifier, don't even try to read snapshots
-	if(cg.infoScreenText[0] != 0) {
+	if(cg.infoScreenValue < 0) {
 		CG_DrawInformation();
 		return;
 	}

@@ -103,10 +103,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 typedef enum {
-	GT_FFA,  // free for all
-
-	//-- team games go after this --
-
+	GT_FFA,   // free for all
 	GT_TEAM,  // team deathmatch
 	GT_MAX_GAME_TYPE
 } gametype_t;
