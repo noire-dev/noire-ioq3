@@ -572,10 +572,6 @@ bool LogAccuracyHit(gentity_t* target, gentity_t* attacker) {
 		return false;
 	}
 
-	if(OnSameTeam(target, attacker)) {
-		return false;
-	}
-
 	return true;
 }
 

@@ -412,7 +412,7 @@ G_Say
 ==================
 */
 
-static void G_SayTo(gentity_t* ent, gentity_t* other, int mode, char* color, const char* name, const char* message) {
+static void G_SayTo(gentity_t* ent, gentity_t* other, char* color, const char* name, const char* message) {
 	if(!other) {
 		return;
 	}
@@ -425,16 +425,13 @@ static void G_SayTo(gentity_t* ent, gentity_t* other, int mode, char* color, con
 	if(other->client->pers.connected != CON_CONNECTED) {
 		return;
 	}
-	if(mode == SAY_TEAM && !OnSameTeam(ent, other)) {
-		return;
-	}
 
-	trap_SendServerCommand(other - g_entities, va("%s \"%s%c%s%s\"", mode == SAY_TEAM ? "tchat" : "chat", name, Q_COLOR_ESCAPE, color, message));
+	trap_SendServerCommand(other - g_entities, va("%s \"%s%c%s%s\"", "chat", name, Q_COLOR_ESCAPE, color, message));
 }
 
 #define EC "\x19"
 
-void G_Say(gentity_t* ent, gentity_t* target, int mode, const char* chatText) {
+void G_Say(gentity_t* ent, gentity_t* target, const char* chatText) {
 	int j;
 	gentity_t* other;
 	char* color;
@@ -443,31 +440,13 @@ void G_Say(gentity_t* ent, gentity_t* target, int mode, const char* chatText) {
 	char text[MAX_SAY_TEXT];
 	char location[64];
 
-	mode = SAY_ALL;
-
-	switch(mode) {
-		default:
-		case SAY_ALL:
-			Com_sprintf(name, sizeof(name), "%s%c%s" EC ": ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE);
-			color = COLOR_GREEN;
-			break;
-		case SAY_TEAM:
-			if(Team_GetLocationMsg(ent, location, sizeof(location)))
-				Com_sprintf(name, sizeof(name), EC "(%s%c%s" EC ") (%s)" EC ": ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE, location);
-			else
-				Com_sprintf(name, sizeof(name), EC "(%s%c%s" EC ")" EC ": ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE);
-			color = COLOR_CYAN;
-			break;
-		case SAY_TELL:
-			Com_sprintf(name, sizeof(name), EC "[%s%c%s" EC "]" EC ": ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE);
-			color = COLOR_MAGENTA;
-			break;
-	}
+	Com_sprintf(name, sizeof(name), "%s%c%s" EC ": ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE);
+	color = COLOR_GREEN;
 
 	Q_strncpyz(text, chatText, sizeof(text));
 
 	if(target) {
-		G_SayTo(ent, target, mode, color, name, text);
+		G_SayTo(ent, target, color, name, text);
 		return;
 	}
 
@@ -479,7 +458,7 @@ void G_Say(gentity_t* ent, gentity_t* target, int mode, const char* chatText) {
 	// send it to all the appropriate clients
 	for(j = 0; j < level.maxclients; j++) {
 		other = &g_entities[j];
-		G_SayTo(ent, other, mode, color, name, text);
+		G_SayTo(ent, other, color, name, text);
 	}
 }
 
@@ -498,7 +477,7 @@ static void SanitizeChatText(char* text) {
 Cmd_Say_f
 ==================
 */
-static void Cmd_Say_f(gentity_t* ent, int mode, bool arg0) {
+static void Cmd_Say_f(gentity_t* ent, bool arg0) {
 	char* p;
 
 	if(trap_Argc() < 2 && !arg0) {
@@ -513,7 +492,7 @@ static void Cmd_Say_f(gentity_t* ent, int mode, bool arg0) {
 
 	SanitizeChatText(p);
 
-	G_Say(ent, NULL, mode, p);
+	G_Say(ent, NULL, p);
 }
 
 /*
@@ -568,7 +547,7 @@ void ClientCommand(int clientNum) {
 	trap_Argv(0, cmd, sizeof(cmd));
 
 	if(Q_stricmp(cmd, "say") == 0) {
-		Cmd_Say_f(ent, SAY_ALL, false);
+		Cmd_Say_f(ent, false);
 		return;
 	}
 	if(Q_stricmp(cmd, "score") == 0) {
@@ -578,7 +557,7 @@ void ClientCommand(int clientNum) {
 
 	// ignore all other commands when at intermission
 	if(level.intermissiontime) {
-		Cmd_Say_f(ent, false, true);
+		Cmd_Say_f(ent, true);
 		return;
 	}
 

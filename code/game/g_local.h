@@ -378,7 +378,6 @@ void Cmd_Score_f(gentity_t* ent);
 //
 // g_items.c
 //
-void G_CheckTeamItems(void);
 void G_RunItem(gentity_t* ent);
 void RespawnItem(gentity_t* ent);
 
@@ -543,13 +542,6 @@ void ClientCommand(int clientNum);
 void ClientThink(int clientNum);
 void ClientEndFrame(gentity_t* ent);
 void G_RunClient(gentity_t* ent);
-
-//
-// g_team.c
-//
-bool OnSameTeam(gentity_t* ent1, gentity_t* ent2);
-void Team_CheckDroppedItem(gentity_t* dropped);
-bool CheckObeliskAttack(gentity_t* obelisk, gentity_t* attacker);
 
 //
 // g_mem.c

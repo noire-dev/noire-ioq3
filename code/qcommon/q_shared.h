@@ -1328,10 +1328,6 @@ typedef enum _flag_status {
 #define MAX_PINGREQUESTS 32
 #define MAX_SERVERSTATUSREQUESTS 16
 
-#define SAY_ALL 0
-#define SAY_TEAM 1
-#define SAY_TELL 2
-
 #define CDKEY_LEN 16
 #define CDCHKSUM_LEN 2
 

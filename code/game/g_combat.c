@@ -321,44 +321,9 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 
 	if(attacker && attacker->client) {
 		attacker->client->lastkilled_client = self->s.number;
-
-		if(attacker == self || OnSameTeam(self, attacker)) {
-			AddScore(attacker, self->r.currentOrigin, -1);
-		} else {
-			AddScore(attacker, self->r.currentOrigin, 1);
-
-			if(meansOfDeath == MOD_GAUNTLET) {
-				// play humiliation on player
-				attacker->client->ps.persistant[PERS_GAUNTLET_FRAG_COUNT]++;
-
-				// add the sprite over the player's head
-				attacker->client->ps.eFlags &= ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP);
-				attacker->client->ps.eFlags |= EF_AWARD_GAUNTLET;
-				attacker->client->rewardTime = level.time + REWARD_SPRITE_TIME;
-
-				// also play humiliation on target
-				self->client->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_GAUNTLETREWARD;
-			}
-
-			// check for two kills in a short amount of time
-			// if this is close enough to the last kill, give a reward sound
-			if(level.time - attacker->client->lastKillTime < CARNAGE_REWARD_TIME) {
-				// play excellent on player
-				attacker->client->ps.persistant[PERS_EXCELLENT_COUNT]++;
-
-				// add the sprite over the player's head
-				attacker->client->ps.eFlags &= ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP);
-				attacker->client->ps.eFlags |= EF_AWARD_EXCELLENT;
-				attacker->client->rewardTime = level.time + REWARD_SPRITE_TIME;
-			}
-			attacker->client->lastKillTime = level.time;
-		}
 	} else {
 		AddScore(self, self->r.currentOrigin, -1);
 	}
-
-	// Add team bonuses
-	Team_FragBonuses(self, inflictor, attacker);
 
 	TossClientItems(self);
 
@@ -618,14 +583,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 
 	// check for completely getting out of the damage
 	if(!(dflags & DAMAGE_NO_PROTECTION)) {
-		// if TF_NO_FRIENDLY_FIRE is set, don't do damage to the target
-		// if the attacker was on the same team
-		if(targ != attacker && OnSameTeam(targ, attacker)) {
-			if(!g_friendlyFire.integer) {
-				return;
-			}
-		}
-
 		// check for godmode
 		if(targ->flags & FL_GODMODE) {
 			return;
@@ -644,11 +601,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 
 	// add to the attacker's hit counter (if the target isn't a general entity like a prox mine)
 	if(attacker->client && client && targ != attacker && targ->health > 0 && targ->s.eType != ET_MISSILE && targ->s.eType != ET_GENERAL) {
-		if(OnSameTeam(targ, attacker)) {
-			attacker->client->ps.persistant[PERS_HITS]--;
-		} else {
-			attacker->client->ps.persistant[PERS_HITS]++;
-		}
 		attacker->client->ps.persistant[PERS_ATTACKEE_ARMOR] = (targ->health << 8) | (client->ps.stats[STAT_ARMOR]);
 	}
 
