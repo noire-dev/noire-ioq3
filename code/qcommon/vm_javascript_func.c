@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2026 Noire's Mod [noire.dev] — GPLv2
+// Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
 
 #include "vm_javascript.h"
 
@@ -125,8 +125,7 @@ void JS_ToolInit(int id) {
 	JS_Function(JS_TOOLINIT);
 }
 
-void JS_ToolCall(
-    int id, int targetID, int playerID, char* arg1, char* arg2, char* arg3, char* arg4, char* arg5, char* arg6, char* arg7, char* arg8, char* arg9) {
+void JS_ToolCall(int id, int targetID, int playerID, char* arg1, char* arg2, char* arg3, char* arg4, char* arg5, char* arg6, char* arg7, char* arg8, char* arg9) {
 	JS_StackClean();
 	jsargs.t[0] = JS_TYPE_INT;
 	jsargs.v[0].i = id;

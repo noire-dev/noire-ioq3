@@ -62,4 +62,3 @@ void Team_FreeEntity(gentity_t* ent);
 gentity_t* SelectCTFSpawnPoint(team_t team, int teamstate, vec3_t origin, vec3_t angles, bool isbot);
 gentity_t* Team_GetLocation(gentity_t* ent);
 bool Team_GetLocationMsg(gentity_t* ent, char* loc, int loclen);
-void CheckTeamStatus(void);

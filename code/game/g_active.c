@@ -206,9 +206,6 @@ void ClientImpacts(gentity_t* ent, pmove_t* pm) {
 /*
 ============
 G_TouchTriggers
-
-Find all trigger entities that ent's current position touches.
-Spectators will only interact with teleporters.
 ============
 */
 void G_TouchTriggers(gentity_t* ent) {
@@ -247,16 +244,6 @@ void G_TouchTriggers(gentity_t* ent) {
 			continue;
 		}
 
-		// ignore most entities if a spectator
-		if(ent->client->sess.sessionTeam == TEAM_SPECTATOR) {
-			if(hit->s.eType != ET_TELEPORT_TRIGGER &&
-			   // this is ugly but adding a new ET_? type will
-			   // most likely cause network incompatibilities
-			   hit->touch != Touch_DoorTrigger) {
-				continue;
-			}
-		}
-
 		// use separate code for determining if an item is picked up
 		// so you don't have to actually contact its bounding box
 		if(hit->s.eType == ET_ITEM) {
@@ -284,56 +271,6 @@ void G_TouchTriggers(gentity_t* ent) {
 	if(ent->client->ps.jumppad_frame != ent->client->ps.pmove_framecount) {
 		ent->client->ps.jumppad_frame = 0;
 		ent->client->ps.jumppad_ent = 0;
-	}
-}
-
-/*
-=================
-SpectatorThink
-=================
-*/
-void SpectatorThink(gentity_t* ent, usercmd_t* ucmd) {
-	pmove_t pm;
-	gclient_t* client;
-
-	client = ent->client;
-
-	if(client->sess.spectatorState != SPECTATOR_FOLLOW || !(client->ps.pm_flags & PMF_FOLLOW)) {
-		if(client->sess.spectatorState == SPECTATOR_FREE) {
-			if(client->noclip) {
-				client->ps.pm_type = PM_NOCLIP;
-			} else {
-				client->ps.pm_type = PM_SPECTATOR;
-			}
-		} else {
-			client->ps.pm_type = PM_FREEZE;
-		}
-
-		client->ps.speed = 400;  // faster than normal
-
-		// set up for pmove
-		memset(&pm, 0, sizeof(pm));
-		pm.ps = &client->ps;
-		pm.cmd = *ucmd;
-		pm.tracemask = MASK_PLAYERSOLID & ~CONTENTS_BODY;  // spectators can fly through bodies
-		pm.trace = trap_Trace;
-		pm.pointcontents = trap_PointContents;
-
-		// perform a pmove
-		Pmove(&pm);
-		// save results of pmove
-		VectorCopy(client->ps.origin, ent->s.origin);
-
-		G_TouchTriggers(ent);
-		trap_UnlinkEntity(ent);
-	}
-
-	client->oldbuttons = client->buttons;
-	client->buttons = ucmd->buttons;
-
-	// attack button cycles through spectators
-	if((client->buttons & BUTTON_ATTACK) && !(client->oldbuttons & BUTTON_ATTACK)) {
-		Cmd_FollowCycle_f(ent, 1);
 	}
 }
 
@@ -609,15 +546,6 @@ void ClientThink_real(gentity_t* ent) {
 		return;
 	}
 
-	// spectators don't do much
-	if(client->sess.sessionTeam == TEAM_SPECTATOR) {
-		if(client->sess.spectatorState == SPECTATOR_SCOREBOARD) {
-			return;
-		}
-		SpectatorThink(ent, ucmd);
-		return;
-	}
-
 	// check for inactivity timer, but never drop the local client of a non-dedicated server
 	if(!ClientInactivityTimer(client)) {
 		return;
@@ -788,55 +716,6 @@ void G_RunClient(gentity_t* ent) {
 }
 
 /*
-==================
-SpectatorClientEndFrame
-
-==================
-*/
-void SpectatorClientEndFrame(gentity_t* ent) {
-	gclient_t* cl;
-
-	// if we are doing a chase cam or a remote view, grab the latest info
-	if(ent->client->sess.spectatorState == SPECTATOR_FOLLOW) {
-		int clientNum, flags;
-
-		clientNum = ent->client->sess.spectatorClient;
-
-		// team follow1 and team follow2 go to whatever clients are playing
-		if(clientNum == -1) {
-			clientNum = level.follow1;
-		} else if(clientNum == -2) {
-			clientNum = level.follow2;
-		}
-		if(clientNum >= 0) {
-			cl = &level.clients[clientNum];
-			if(cl->pers.connected == CON_CONNECTED && cl->sess.sessionTeam != TEAM_SPECTATOR) {
-				flags = (cl->ps.eFlags & ~(EF_VOTED | EF_TEAMVOTED)) | (ent->client->ps.eFlags & (EF_VOTED | EF_TEAMVOTED));
-				ent->client->ps = cl->ps;
-				ent->client->ps.pm_flags |= PMF_FOLLOW;
-				ent->client->ps.eFlags = flags;
-				return;
-			}
-		}
-
-		if(ent->client->ps.pm_flags & PMF_FOLLOW) {
-			// drop them to free spectators unless they are dedicated camera followers
-			if(ent->client->sess.spectatorClient >= 0) {
-				ent->client->sess.spectatorState = SPECTATOR_FREE;
-			}
-
-			ClientBegin(ent->client - level.clients);
-		}
-	}
-
-	if(ent->client->sess.spectatorState == SPECTATOR_SCOREBOARD) {
-		ent->client->ps.pm_flags |= PMF_SCOREBOARD;
-	} else {
-		ent->client->ps.pm_flags &= ~PMF_SCOREBOARD;
-	}
-}
-
-/*
 ==============
 ClientEndFrame
 
@@ -847,11 +726,6 @@ while a slow client may have multiple ClientEndFrame between ClientThink.
 */
 void ClientEndFrame(gentity_t* ent) {
 	int i;
-
-	if(ent->client->sess.sessionTeam == TEAM_SPECTATOR) {
-		SpectatorClientEndFrame(ent);
-		return;
-	}
 
 	// turn off any expired powerups
 	for(i = 0; i < MAX_POWERUPS; i++) {

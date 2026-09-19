@@ -757,44 +757,11 @@ void Blocked_Door(gentity_t* ent, gentity_t* other) {
 
 /*
 ================
-Touch_DoorTriggerSpectator
-================
-*/
-static void Touch_DoorTriggerSpectator(gentity_t* ent, gentity_t* other, trace_t* trace) {
-	int axis;
-	float doorMin, doorMax;
-	vec3_t origin;
-
-	axis = ent->count;
-	// the constants below relate to constants in Think_SpawnNewDoorTrigger()
-	doorMin = ent->r.absmin[axis] + 100;
-	doorMax = ent->r.absmax[axis] - 100;
-
-	VectorCopy(other->client->ps.origin, origin);
-
-	if(origin[axis] < doorMin || origin[axis] > doorMax) return;
-
-	if(fabs(origin[axis] - doorMax) < fabs(origin[axis] - doorMin)) {
-		origin[axis] = doorMin - 10;
-	} else {
-		origin[axis] = doorMax + 10;
-	}
-
-	TeleportPlayer(other, origin, tv(10000000.0, 0, 0));
-}
-
-/*
-================
 Touch_DoorTrigger
 ================
 */
 void Touch_DoorTrigger(gentity_t* ent, gentity_t* other, trace_t* trace) {
-	if(other->client && other->client->sess.sessionTeam == TEAM_SPECTATOR) {
-		// if the door is not open and not opening
-		if(ent->parent->moverState != MOVER_1TO2 && ent->parent->moverState != MOVER_POS2) {
-			Touch_DoorTriggerSpectator(ent, other, trace);
-		}
-	} else if(ent->parent->moverState != MOVER_1TO2) {
+	if(ent->parent->moverState != MOVER_1TO2) {
 		Use_BinaryMover(ent->parent, ent, other);
 	}
 }

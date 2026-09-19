@@ -130,19 +130,6 @@ static void CG_StartOrbit_f(void) {
 	}
 }
 
-/*
-static void CG_Camera_f( void ) {
-    char name[1024];
-    trap_Argv( 1, name, sizeof(name));
-    if (trap_loadCamera(name)) {
-        cg.cameraMode = true;
-        trap_startCamera(cg.time);
-    } else {
-        CG_Printf ("Unable to load camera %s\n",name);
-    }
-}
-*/
-
 typedef struct {
 	char* cmd;
 	void (*function)(void);
@@ -216,24 +203,13 @@ void CG_InitConsoleCommands(void) {
 	//
 	trap_AddCommand("kill");
 	trap_AddCommand("say");
-	trap_AddCommand("say_team");
-	trap_AddCommand("tell");
 	trap_AddCommand("give");
 	trap_AddCommand("god");
 	trap_AddCommand("notarget");
 	trap_AddCommand("noclip");
 	trap_AddCommand("where");
-	trap_AddCommand("team");
-	trap_AddCommand("follow");
-	trap_AddCommand("follownext");
-	trap_AddCommand("followprev");
 	trap_AddCommand("addbot");
 	trap_AddCommand("setviewpos");
-	trap_AddCommand("callvote");
-	trap_AddCommand("vote");
-	trap_AddCommand("callteamvote");
-	trap_AddCommand("teamvote");
 	trap_AddCommand("stats");
-	trap_AddCommand("teamtask");
 	trap_AddCommand("loaddefered");  // spelled wrong, but not changing for demo
 }
