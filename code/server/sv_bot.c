@@ -485,10 +485,6 @@ void SV_BotInitCvars(void) {
 	Cvar_Get("bot_rocketjump", "1", 0);                  // enable rocket jumping
 	Cvar_Get("bot_challenge", "0", 0);                   // challenging bot
 	Cvar_Get("bot_minplayers", "0", 0);                  // minimum players in a team or the game
-	Cvar_Get("bot_interbreedchar", "", CVAR_CHEAT);      // bot character used for interbreeding
-	Cvar_Get("bot_interbreedbots", "10", CVAR_CHEAT);    // number of bots used for interbreeding
-	Cvar_Get("bot_interbreedcycle", "20", CVAR_CHEAT);   // bot interbreeding cycle
-	Cvar_Get("bot_interbreedwrite", "", CVAR_CHEAT);     // write interbreeded bots to this file
 }
 
 /*

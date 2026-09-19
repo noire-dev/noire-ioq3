@@ -305,12 +305,6 @@ BotRefuseOrder
 */
 void BotRefuseOrder(bot_state_t* bs) {
 	if(!bs->ordered) return;
-	// if the bot was ordered to do something
-	if(bs->order_time && bs->order_time > FloatTime() - 10) {
-		trap_EA_Action(bs->client, ACTION_NEGATIVE);
-		BotVoiceChat(bs, bs->decisionmaker, VOICECHAT_NO);
-		bs->order_time = 0;
-	}
 }
 
 /*
@@ -349,7 +343,6 @@ void BotCTFSeekGoals(bot_state_t* bs) {
 				bs->altroutegoal.areanum = 0;
 			}
 			BotSetUserInfo(bs, "teamtask", va("%d", TEAMTASK_OFFENSE));
-			BotVoiceChat(bs, -1, VOICECHAT_IHAVEFLAG);
 		} else if(bs->rushbaseaway_time > FloatTime()) {
 			if(BotTeam(bs) == TEAM_RED)
 				flagstatus = bs->redflagstatus;
@@ -399,8 +392,6 @@ void BotCTFSeekGoals(bot_state_t* bs) {
 					bs->teammessage_time = 0;
 					// no arrive message
 					bs->arrive_time = 1;
-					//
-					BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
 					// get the team goal time
 					bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 					bs->ltgtype = LTG_TEAMACCOMPANY;
@@ -468,8 +459,6 @@ void BotCTFSeekGoals(bot_state_t* bs) {
 					bs->teammessage_time = 0;
 					// no arrive message
 					bs->arrive_time = 1;
-					//
-					BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
 					// get the team goal time
 					bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 					bs->ltgtype = LTG_TEAMACCOMPANY;
@@ -3164,59 +3153,6 @@ void BotCheckConsoleMessages(bot_state_t* bs) {
 		// replace synonyms in the right context
 		context = BotSynonymContext(bs);
 		trap_BotReplaceSynonyms(ptr, context);
-		// if there's no match
-		if(!BotMatchMessage(bs, m.message)) {
-			// if it is a chat message
-			if(m.type == CMS_CHAT && !bot_nochat.integer) {
-				//
-				if(!trap_BotFindMatch(m.message, &match, MTCONTEXT_REPLYCHAT)) {
-					trap_BotRemoveConsoleMessage(bs->cs, handle);
-					continue;
-				}
-				// don't use eliza chats with team messages
-				if(match.subtype & ST_TEAM) {
-					trap_BotRemoveConsoleMessage(bs->cs, handle);
-					continue;
-				}
-				//
-				trap_BotMatchVariable(&match, NETNAME, netname, sizeof(netname));
-				trap_BotMatchVariable(&match, MESSAGE, message, sizeof(message));
-				// if this is a message from the bot self
-				if(bs->client == ClientFromName(netname)) {
-					trap_BotRemoveConsoleMessage(bs->cs, handle);
-					continue;
-				}
-				// unify the message
-				trap_UnifyWhiteSpaces(message);
-				//
-				trap_Cvar_Update(&bot_testrchat);
-				if(bot_testrchat.integer) {
-					//
-					trap_BotLibVarSet("bot_testrchat", "1");
-					// if bot replies with a chat message
-					if(trap_BotReplyChat(bs->cs, message, context, CONTEXT_REPLY, NULL, NULL, NULL, NULL, NULL, NULL, botname, netname)) {
-						BotAI_Print(PRT_MESSAGE, "------------------------\n");
-					} else {
-						BotAI_Print(PRT_MESSAGE, "**** no valid reply ****\n");
-					}
-				}
-				// if at a valid chat position and not chatting already and not in teamplay
-				else if(bs->ainode != AINode_Stand && BotValidChatPosition(bs) && !TeamPlayIsOn()) {
-					chat_reply = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_REPLY, 0, 1);
-					if(random() < 1.5 / (NumBots() + 1) && random() < chat_reply) {
-						// if bot replies with a chat message
-						if(trap_BotReplyChat(bs->cs, message, context, CONTEXT_REPLY, NULL, NULL, NULL, NULL, NULL, NULL, botname, netname)) {
-							// remove the console message
-							trap_BotRemoveConsoleMessage(bs->cs, handle);
-							bs->stand_time = FloatTime() + BotChatTime(bs);
-							AIEnter_Stand(bs, "BotCheckConsoleMessages: reply chat");
-							// EA_Say(bs->client, bs->cs.chatmessage);
-							break;
-						}
-					}
-				}
-			}
-		}
 		// remove the console message
 		trap_BotRemoveConsoleMessage(bs->cs, handle);
 	}
@@ -3541,23 +3477,11 @@ void BotDeathmatchAI(bot_state_t* bs, float thinktime) {
 	}
 	// check the console messages
 	BotCheckConsoleMessages(bs);
-	// if not in the intermission and not in observer mode
-	if(!BotIntermission(bs) && !BotIsObserver(bs)) {
-		// do team AI
-		BotTeamAI(bs);
-	}
 	// if the bot has no ai node
 	if(!bs->ainode) {
 		AIEnter_Seek_LTG(bs, "BotDeathmatchAI: no ai node");
 	}
-	// if the bot entered the game less than 8 seconds ago
-	if(!bs->entergamechat && bs->entergame_time > FloatTime() - 8) {
-		if(BotChat_EnterGame(bs)) {
-			bs->stand_time = FloatTime() + BotChatTime(bs);
-			AIEnter_Stand(bs, "BotDeathmatchAI: chat enter game");
-		}
-		bs->entergamechat = true;
-	}
+
 	// reset the node switches from the previous frame
 	BotResetNodeSwitches();
 	// execute AI nodes

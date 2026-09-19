@@ -62,10 +62,7 @@ int numbots;
 float floattime;
 // time to do a regular update
 float regularupdate_time;
-//
-int bot_interbreed;
-int bot_interbreedmatchcount;
-//
+
 vmCvar_t bot_thinktime;
 vmCvar_t bot_memorydump;
 vmCvar_t bot_saveroutingcache;
@@ -74,10 +71,6 @@ vmCvar_t bot_report;
 vmCvar_t bot_testsolid;
 vmCvar_t bot_testclusters;
 vmCvar_t bot_developer;
-vmCvar_t bot_interbreedchar;
-vmCvar_t bot_interbreedbots;
-vmCvar_t bot_interbreedcycle;
-vmCvar_t bot_interbreedwrite;
 
 /*
 ==================
@@ -546,53 +539,6 @@ void BotWriteInterbreeded(char* filename) {
 
 /*
 ==============
-BotInterbreedEndMatch
-==============
-*/
-void BotInterbreedEndMatch(void) {
-	if(!bot_interbreed) return;
-	bot_interbreedmatchcount++;
-	if(bot_interbreedmatchcount >= bot_interbreedcycle.integer) {
-		bot_interbreedmatchcount = 0;
-		//
-		trap_Cvar_Update(&bot_interbreedwrite);
-		if(strlen(bot_interbreedwrite.string)) {
-			BotWriteInterbreeded(bot_interbreedwrite.string);
-			trap_Cvar_Set("bot_interbreedwrite", "");
-		}
-		BotInterbreedBots();
-	}
-}
-
-/*
-==============
-BotInterbreeding
-==============
-*/
-void BotInterbreeding(void) {
-	int i;
-
-	trap_Cvar_Update(&bot_interbreedchar);
-	if(!strlen(bot_interbreedchar.string)) return;
-	// shutdown all the bots
-	for(i = 0; i < MAX_CLIENTS; i++) {
-		if(botstates[i] && botstates[i]->inuse) {
-			BotAIShutdownClient(botstates[i]->client, false);
-		}
-	}
-	// make sure all item weight configs are reloaded and Not shared
-	trap_BotLibVarSet("bot_reloadcharacters", "1");
-	// add a number of bots using the desired bot character
-	for(i = 0; i < bot_interbreedbots.integer; i++) {
-		trap_SendConsoleCommand(EXEC_INSERT, va("addbot %s 4 free %i %s%d\n", bot_interbreedchar.string, i * 50, bot_interbreedchar.string, i));
-	}
-	//
-	trap_Cvar_Set("bot_interbreedchar", "");
-	bot_interbreed = true;
-}
-
-/*
-==============
 BotEntityInfo
 ==============
 */
@@ -1055,16 +1001,8 @@ int BotAISetupClient(int client, struct bot_settings_s* settings, bool restart) 
 	bs->walker = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_WALKER, 0, 1);
 	numbots++;
 
-	if(trap_Cvar_VariableIntegerValue("bot_testichat")) {
-		trap_BotLibVarSet("bot_testichat", "1");
-		BotChatTest(bs);
-	}
 	// NOTE: reschedule the bot thinking
 	BotScheduleBotThink();
-	// if interbreeding start with a mutation
-	if(bot_interbreed) {
-		trap_BotMutateGoalFuzzyLogic(bs->gs, 1);
-	}
 	// bot has been setup successfully
 	return true;
 }
@@ -1081,10 +1019,6 @@ int BotAIShutdownClient(int client, bool restart) {
 	if(!bs || !bs->inuse) {
 		// BotAI_Print(PRT_ERROR, "BotAIShutdownClient: client %d already shutdown\n", client);
 		return false;
-	}
-
-	if(BotChat_ExitGame(bs)) {
-		trap_BotEnterChat(bs->cs, bs->client, CHAT_ALL);
 	}
 
 	trap_BotFreeMoveState(bs->ms);
@@ -1250,8 +1184,6 @@ int BotAIStartFrame(int time) {
 		trap_BotLibVarSet("saveroutingcache", "1");
 		trap_Cvar_Set("bot_saveroutingcache", "0");
 	}
-	// check if bot interbreeding is activated
-	BotInterbreeding();
 	// cap the bot think time
 	if(bot_thinktime.integer > 200) {
 		trap_Cvar_Set("bot_thinktime", "200");
@@ -1454,10 +1386,6 @@ int BotAISetup(int restart) {
 	trap_Cvar_Register(&bot_testsolid, "bot_testsolid", "0", CVAR_CHEAT);
 	trap_Cvar_Register(&bot_testclusters, "bot_testclusters", "0", CVAR_CHEAT);
 	trap_Cvar_Register(&bot_developer, "bot_developer", "0", CVAR_CHEAT);
-	trap_Cvar_Register(&bot_interbreedchar, "bot_interbreedchar", "", 0);
-	trap_Cvar_Register(&bot_interbreedbots, "bot_interbreedbots", "10", 0);
-	trap_Cvar_Register(&bot_interbreedcycle, "bot_interbreedcycle", "20", 0);
-	trap_Cvar_Register(&bot_interbreedwrite, "bot_interbreedwrite", "", 0);
 
 	// if the game is restarted for a tournament
 	if(restart) {

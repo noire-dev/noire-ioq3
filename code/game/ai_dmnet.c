@@ -321,14 +321,6 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 	bot_waypoint_t* wp;
 
 	if(bs->ltgtype == LTG_TEAMHELP && !retreat) {
-		// check for bot typing status message
-		if(bs->teammessage_time && bs->teammessage_time < FloatTime()) {
-			BotAI_BotInitialChat(bs, "help_start", EasyClientName(bs->teammate, netname, sizeof(netname)), NULL);
-			trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-			BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
-			trap_EA_Action(bs->client, ACTION_AFFIRMATIVE);
-			bs->teammessage_time = 0;
-		}
 		// if trying to help the team mate for more than a minute
 		if(bs->teamgoal_time < FloatTime()) bs->ltgtype = 0;
 		// if the team mate IS visible for quite some time
@@ -364,14 +356,6 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 	}
 	// if the bot accompanies someone
 	if(bs->ltgtype == LTG_TEAMACCOMPANY && !retreat) {
-		// check for bot typing status message
-		if(bs->teammessage_time && bs->teammessage_time < FloatTime()) {
-			BotAI_BotInitialChat(bs, "accompany_start", EasyClientName(bs->teammate, netname, sizeof(netname)), NULL);
-			trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-			BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
-			trap_EA_Action(bs->client, ACTION_AFFIRMATIVE);
-			bs->teammessage_time = 0;
-		}
 		// if accompanying the companion for 3 minutes
 		if(bs->teamgoal_time < FloatTime()) {
 			BotAI_BotInitialChat(bs, "accompany_stop", EasyClientName(bs->teammate, netname, sizeof(netname)), NULL);
@@ -503,14 +487,6 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 	}
 	// if defending a key area
 	if(bs->ltgtype == LTG_DEFENDKEYAREA && !retreat && bs->defendaway_time < FloatTime()) {
-		// check for bot typing status message
-		if(bs->teammessage_time && bs->teammessage_time < FloatTime()) {
-			trap_BotGoalName(bs->teamgoal.number, buf, sizeof(buf));
-			BotAI_BotInitialChat(bs, "defend_start", buf, NULL);
-			trap_BotEnterChat(bs->cs, 0, CHAT_TEAM);
-			BotVoiceChatOnly(bs, -1, VOICECHAT_ONDEFENSE);
-			bs->teammessage_time = 0;
-		}
 		// set the bot goal
 		memcpy(goal, &bs->teamgoal, sizeof(bot_goal_t));
 		// stop after 2 minutes
@@ -558,15 +534,6 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 	}
 	// get an item
 	if(bs->ltgtype == LTG_GETITEM && !retreat) {
-		// check for bot typing status message
-		if(bs->teammessage_time && bs->teammessage_time < FloatTime()) {
-			trap_BotGoalName(bs->teamgoal.number, buf, sizeof(buf));
-			BotAI_BotInitialChat(bs, "getitem_start", buf, NULL);
-			trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-			BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
-			trap_EA_Action(bs->client, ACTION_AFFIRMATIVE);
-			bs->teammessage_time = 0;
-		}
 		// set the bot goal
 		memcpy(goal, &bs->teamgoal, sizeof(bot_goal_t));
 		// stop after some time
@@ -589,16 +556,6 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 	}
 	// if camping somewhere
 	if((bs->ltgtype == LTG_CAMP || bs->ltgtype == LTG_CAMPORDER) && !retreat) {
-		// check for bot typing status message
-		if(bs->teammessage_time && bs->teammessage_time < FloatTime()) {
-			if(bs->ltgtype == LTG_CAMPORDER) {
-				BotAI_BotInitialChat(bs, "camp_start", EasyClientName(bs->teammate, netname, sizeof(netname)), NULL);
-				trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-				BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
-				trap_EA_Action(bs->client, ACTION_AFFIRMATIVE);
-			}
-			bs->teammessage_time = 0;
-		}
 		// set the bot goal
 		memcpy(goal, &bs->teamgoal, sizeof(bot_goal_t));
 		//
@@ -614,11 +571,6 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 		if(VectorLengthSquared(dir) < Square(60)) {
 			// if not arrived yet
 			if(!bs->arrive_time) {
-				if(bs->ltgtype == LTG_CAMPORDER) {
-					BotAI_BotInitialChat(bs, "camp_arrive", EasyClientName(bs->teammate, netname, sizeof(netname)), NULL);
-					trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-					BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_INPOSITION);
-				}
 				bs->arrive_time = FloatTime();
 			}
 			// look strategically around for enemies
@@ -671,11 +623,6 @@ int BotGetLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) 
 				strcat(buf, wp->name);
 				if(wp->next) strcat(buf, " to ");
 			}
-			BotAI_BotInitialChat(bs, "patrol_start", buf, NULL);
-			trap_BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-			BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
-			trap_EA_Action(bs->client, ACTION_AFFIRMATIVE);
-			bs->teammessage_time = 0;
 		}
 		//
 		if(!bs->curpatrolpoint) {
@@ -813,10 +760,6 @@ void AIEnter_Intermission(bot_state_t* bs, char* s) {
 	BotRecordNodeSwitch(bs, "intermission", "", s);
 	// reset the bot state
 	BotResetState(bs);
-	// check for end level chat
-	if(BotChat_EndLevel(bs)) {
-		trap_BotEnterChat(bs->cs, 0, bs->chatto);
-	}
 	bs->ainode = AINode_Intermission;
 }
 
@@ -828,11 +771,7 @@ AINode_Intermission
 int AINode_Intermission(bot_state_t* bs) {
 	// if the intermission ended
 	if(!BotIntermission(bs)) {
-		if(BotChat_StartLevel(bs)) {
-			bs->stand_time = FloatTime() + BotChatTime(bs);
-		} else {
-			bs->stand_time = FloatTime() + 2;
-		}
+		bs->stand_time = FloatTime() + 2;
 		AIEnter_Stand(bs, "intermission: chat");
 	}
 	return true;
@@ -882,10 +821,8 @@ AINode_Stand
 int AINode_Stand(bot_state_t* bs) {
 	// if the bot's health decreased
 	if(bs->lastframe_health > bs->inventory[INVENTORY_HEALTH]) {
-		if(BotChat_HitTalking(bs)) {
-			bs->standfindenemy_time = FloatTime() + BotChatTime(bs) + 0.1;
-			bs->stand_time = FloatTime() + BotChatTime(bs) + 0.1;
-		}
+		bs->standfindenemy_time = FloatTime() + 2;
+		bs->stand_time = FloatTime() + 2;
 	}
 	if(bs->standfindenemy_time < FloatTime()) {
 		if(BotFindEnemy(bs, -1)) {
@@ -898,7 +835,6 @@ int AINode_Stand(bot_state_t* bs) {
 	trap_EA_Talk(bs->client);
 	// when done standing
 	if(bs->stand_time < FloatTime()) {
-		trap_BotEnterChat(bs->cs, 0, bs->chatto);
 		AIEnter_Seek_LTG(bs, "stand: time out");
 		return false;
 	}
@@ -919,13 +855,8 @@ void AIEnter_Respawn(bot_state_t* bs, char* s) {
 	trap_BotResetAvoidGoals(bs->gs);
 	trap_BotResetAvoidReach(bs->ms);
 	// if the bot wants to chat
-	if(BotChat_Death(bs)) {
-		bs->respawn_time = FloatTime() + BotChatTime(bs);
-		bs->respawnchat_time = FloatTime();
-	} else {
-		bs->respawn_time = FloatTime() + 1 + random();
-		bs->respawnchat_time = 0;
-	}
+	bs->respawn_time = FloatTime() + 1 + random();
+	bs->respawnchat_time = 0;
 	// set respawn state
 	bs->respawn_wait = false;
 	bs->ainode = AINode_Respawn;
@@ -1476,13 +1407,7 @@ int AINode_Seek_LTG(bot_state_t* bs) {
 		AIEnter_Respawn(bs, "seek ltg: bot dead");
 		return false;
 	}
-	//
-	if(BotChat_Random(bs)) {
-		bs->stand_time = FloatTime() + BotChatTime(bs);
-		AIEnter_Stand(bs, "seek ltg: random chat");
-		return false;
-	}
-	//
+
 	bs->tfl = TFL_DEFAULT;
 	if(bot_grapple.integer) bs->tfl |= TFL_GRAPPLEHOOK;
 	// if in lava or slime the bot should be able to get out
@@ -1662,16 +1587,8 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 	if(bs->enemydeath_time) {
 		if(bs->enemydeath_time < FloatTime() - 1.0) {
 			bs->enemydeath_time = 0;
-			if(bs->enemysuicide) {
-				BotChat_EnemySuicide(bs);
-			}
-			if(bs->lastkilledplayer == bs->enemy && BotChat_Kill(bs)) {
-				bs->stand_time = FloatTime() + BotChatTime(bs);
-				AIEnter_Stand(bs, "battle fight: enemy dead");
-			} else {
-				bs->ltg_time = 0;
-				AIEnter_Seek_LTG(bs, "battle fight: enemy dead");
-			}
+			bs->ltg_time = 0;
+			AIEnter_Seek_LTG(bs, "battle fight: enemy dead");
 			return false;
 		}
 	} else {
@@ -1696,22 +1613,7 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 	}
 	// update the attack inventory values
 	BotUpdateBattleInventory(bs, bs->enemy);
-	// if the bot's health decreased
-	if(bs->lastframe_health > bs->inventory[INVENTORY_HEALTH]) {
-		if(BotChat_HitNoDeath(bs)) {
-			bs->stand_time = FloatTime() + BotChatTime(bs);
-			AIEnter_Stand(bs, "battle fight: chat health decreased");
-			return false;
-		}
-	}
-	// if the bot hit someone
-	if(bs->cur_ps.persistant[PERS_HITS] > bs->lasthitcount) {
-		if(BotChat_HitNoKill(bs)) {
-			bs->stand_time = FloatTime() + BotChatTime(bs);
-			AIEnter_Stand(bs, "battle fight: chat hit someone");
-			return false;
-		}
-	}
+
 	// if the enemy is not visible
 	if(!BotEntityVisible(bs->entitynum, bs->eye, bs->viewangles, 360, bs->enemy)) {
 		if(BotWantsToChase(bs)) {
