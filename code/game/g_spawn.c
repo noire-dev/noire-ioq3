@@ -364,8 +364,7 @@ level.spawnVars[], then call the class specific spawn function
 void G_SpawnGEntityFromSpawnVars(void) {
 	int i;
 	gentity_t* ent;
-	char *s, *value, *gametypeName;
-	static char* gametypeNames[] = {"ffa", "tournament", "single", "team", "ctf", "oneflag", "obelisk", "harvester"};
+	char *s, *value;
 
 	// get the next free entity
 	ent = G_Spawn();
@@ -374,41 +373,11 @@ void G_SpawnGEntityFromSpawnVars(void) {
 		G_ParseField(level.spawnVars[i][0], level.spawnVars[i][1], ent);
 	}
 
-	// check for "notteam" flag (GT_FFA)
-	if(g_gametype.integer >= GT_TEAM) {
-		G_SpawnInt("notteam", "0", &i);
-		if(i) {
-			ADJUST_AREAPORTAL();
-			G_FreeEntity(ent);
-			return;
-		}
-	} else {
-		G_SpawnInt("notfree", "0", &i);
-		if(i) {
-			ADJUST_AREAPORTAL();
-			G_FreeEntity(ent);
-			return;
-		}
-	}
-
-	G_SpawnInt("notq3a", "0", &i);
+	G_SpawnInt("notfree", "0", &i);
 	if(i) {
 		ADJUST_AREAPORTAL();
 		G_FreeEntity(ent);
 		return;
-	}
-
-	if(G_SpawnString("gametype", NULL, &value)) {
-		if(g_gametype.integer >= GT_FFA && g_gametype.integer < GT_MAX_GAME_TYPE) {
-			gametypeName = gametypeNames[g_gametype.integer];
-
-			s = strstr(value, gametypeName);
-			if(!s) {
-				ADJUST_AREAPORTAL();
-				G_FreeEntity(ent);
-				return;
-			}
-		}
 	}
 
 	// move editor origin to pos
@@ -552,7 +521,6 @@ void SP_worldspawn(void) {
 	} else if(g_doWarmup.integer) {  // Turn it on
 		level.warmupTime = -1;
 		trap_SetConfigstring(CS_WARMUP, va("%i", level.warmupTime));
-		G_LogPrintf("Warmup:\n");
 	}
 }
 

@@ -636,13 +636,7 @@ void FireWeapon(gentity_t* ent) {
 		case WP_GAUNTLET: Weapon_Gauntlet(ent); break;
 		case WP_LIGHTNING: Weapon_LightningFire(ent); break;
 		case WP_SHOTGUN: weapon_supershotgun_fire(ent); break;
-		case WP_MACHINEGUN:
-			if(g_gametype.integer != GT_TEAM) {
-				Bullet_Fire(ent, MACHINEGUN_SPREAD, MACHINEGUN_DAMAGE, MOD_MACHINEGUN);
-			} else {
-				Bullet_Fire(ent, MACHINEGUN_SPREAD, MACHINEGUN_TEAM_DAMAGE, MOD_MACHINEGUN);
-			}
-			break;
+		case WP_MACHINEGUN: Bullet_Fire(ent, MACHINEGUN_SPREAD, MACHINEGUN_DAMAGE, MOD_MACHINEGUN); break;
 		case WP_GRENADE_LAUNCHER: weapon_grenadelauncher_fire(ent); break;
 		case WP_ROCKET_LAUNCHER: Weapon_RocketLauncher_Fire(ent); break;
 		case WP_PLASMAGUN: Weapon_Plasmagun_Fire(ent); break;

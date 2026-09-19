@@ -79,8 +79,6 @@ vmCvar_t bot_interbreedbots;
 vmCvar_t bot_interbreedcycle;
 vmCvar_t bot_interbreedwrite;
 
-void ExitLevel(void);
-
 /*
 ==================
 BotAI_Print
@@ -549,8 +547,6 @@ void BotWriteInterbreeded(char* filename) {
 /*
 ==============
 BotInterbreedEndMatch
-
-add link back into ExitLevel?
 ==============
 */
 void BotInterbreedEndMatch(void) {
@@ -976,82 +972,6 @@ void BotScheduleBotThink(void) {
 
 /*
 ==============
-BotWriteSessionData
-==============
-*/
-void BotWriteSessionData(bot_state_t* bs) {
-	const char* s;
-	const char* var;
-
-	s = va("%i %i %i %i %i %i %i %i"
-	       " %f %f %f"
-	       " %f %f %f"
-	       " %f %f %f"
-	       " %f",
-	       bs->lastgoal_decisionmaker,
-	       bs->lastgoal_ltgtype,
-	       bs->lastgoal_teammate,
-	       bs->lastgoal_teamgoal.areanum,
-	       bs->lastgoal_teamgoal.entitynum,
-	       bs->lastgoal_teamgoal.flags,
-	       bs->lastgoal_teamgoal.iteminfo,
-	       bs->lastgoal_teamgoal.number,
-	       bs->lastgoal_teamgoal.origin[0],
-	       bs->lastgoal_teamgoal.origin[1],
-	       bs->lastgoal_teamgoal.origin[2],
-	       bs->lastgoal_teamgoal.mins[0],
-	       bs->lastgoal_teamgoal.mins[1],
-	       bs->lastgoal_teamgoal.mins[2],
-	       bs->lastgoal_teamgoal.maxs[0],
-	       bs->lastgoal_teamgoal.maxs[1],
-	       bs->lastgoal_teamgoal.maxs[2],
-	       bs->formation_dist);
-
-	var = va("botsession%i", bs->client);
-
-	trap_Cvar_Set(var, s);
-}
-
-/*
-==============
-BotReadSessionData
-==============
-*/
-void BotReadSessionData(bot_state_t* bs) {
-	char s[MAX_STRING_CHARS];
-	const char* var;
-
-	var = va("botsession%i", bs->client);
-	trap_Cvar_VariableStringBuffer(var, s, sizeof(s));
-
-	sscanf(s,
-	       "%i %i %i %i %i %i %i %i"
-	       " %f %f %f"
-	       " %f %f %f"
-	       " %f %f %f"
-	       " %f",
-	       &bs->lastgoal_decisionmaker,
-	       &bs->lastgoal_ltgtype,
-	       &bs->lastgoal_teammate,
-	       &bs->lastgoal_teamgoal.areanum,
-	       &bs->lastgoal_teamgoal.entitynum,
-	       &bs->lastgoal_teamgoal.flags,
-	       &bs->lastgoal_teamgoal.iteminfo,
-	       &bs->lastgoal_teamgoal.number,
-	       &bs->lastgoal_teamgoal.origin[0],
-	       &bs->lastgoal_teamgoal.origin[1],
-	       &bs->lastgoal_teamgoal.origin[2],
-	       &bs->lastgoal_teamgoal.mins[0],
-	       &bs->lastgoal_teamgoal.mins[1],
-	       &bs->lastgoal_teamgoal.mins[2],
-	       &bs->lastgoal_teamgoal.maxs[0],
-	       &bs->lastgoal_teamgoal.maxs[1],
-	       &bs->lastgoal_teamgoal.maxs[2],
-	       &bs->formation_dist);
-}
-
-/*
-==============
 BotAISetupClient
 ==============
 */
@@ -1145,10 +1065,6 @@ int BotAISetupClient(int client, struct bot_settings_s* settings, bool restart) 
 	if(bot_interbreed) {
 		trap_BotMutateGoalFuzzyLogic(bs->gs, 1);
 	}
-	// if we kept the bot client
-	if(restart) {
-		BotReadSessionData(bs);
-	}
 	// bot has been setup successfully
 	return true;
 }
@@ -1165,10 +1081,6 @@ int BotAIShutdownClient(int client, bool restart) {
 	if(!bs || !bs->inuse) {
 		// BotAI_Print(PRT_ERROR, "BotAIShutdownClient: client %d already shutdown\n", client);
 		return false;
-	}
-
-	if(restart) {
-		BotWriteSessionData(bs);
 	}
 
 	if(BotChat_ExitGame(bs)) {
@@ -1487,10 +1399,6 @@ int BotInitLibrary(void) {
 	// maximum number of items in a level
 	trap_Cvar_VariableStringBuffer("max_levelitems", buf, sizeof(buf));
 	if(strlen(buf)) trap_BotLibVarSet("max_levelitems", buf);
-	// game type
-	trap_Cvar_VariableStringBuffer("g_gametype", buf, sizeof(buf));
-	if(!strlen(buf)) strcpy(buf, "0");
-	trap_BotLibVarSet("g_gametype", buf);
 	// bot developer mode and log file
 	trap_BotLibVarSet("bot_developer", bot_developer.string);
 	trap_Cvar_VariableStringBuffer("logfile", buf, sizeof(buf));

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2026 Noire's Mod [noire.dev] — GPLv2
+// Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
 
 #define MAX_JS_ARGS 16
 #define MAX_JS_STRINGSIZE 256

@@ -92,9 +92,6 @@ static Q_PRINTF_FUNC(2, 3) void QDECL PrintMsg(gentity_t* ent, const char* fmt, 
 /*
 ==============
 AddTeamScore
-
- used for gametype > GT_TEAM
- for gametype GT_TEAM the level.teamScores is updated in AddScore in g_combat.c
 ==============
 */
 void AddTeamScore(vec3_t origin, int team, int score) {
@@ -137,14 +134,6 @@ OnSameTeam
 bool OnSameTeam(gentity_t* ent1, gentity_t* ent2) {
 	if(!ent1->client || !ent2->client) {
 		return false;
-	}
-
-	if(g_gametype.integer < GT_TEAM) {
-		return false;
-	}
-
-	if(ent1->client->sess.sessionTeam == ent2->client->sess.sessionTeam) {
-		return true;
 	}
 
 	return false;
@@ -615,8 +604,6 @@ int Team_TouchOurFlag(gentity_t* ent, gentity_t* other, int team) {
 	}
 	Team_ResetFlags();
 
-	CalculateRanks();
-
 	return 0;  // Do not respawn this automatically
 }
 
@@ -768,41 +755,6 @@ gentity_t* SelectCTFSpawnPoint(team_t team, int teamstate, vec3_t origin, vec3_t
 	VectorCopy(spot->s.angles, angles);
 
 	return spot;
-}
-
-/*---------------------------------------------------------------------------*/
-
-void CheckTeamStatus(void) {
-	int i;
-	gentity_t *loc, *ent;
-
-	if(level.time - level.lastTeamLocationTime > TEAM_LOCATION_UPDATE_TIME) {
-		level.lastTeamLocationTime = level.time;
-
-		for(i = 0; i < g_maxclients.integer; i++) {
-			ent = g_entities + i;
-
-			if(ent->client->pers.connected != CON_CONNECTED) {
-				continue;
-			}
-
-			if(ent->inuse && (ent->client->sess.sessionTeam == TEAM_RED || ent->client->sess.sessionTeam == TEAM_BLUE)) {
-				loc = Team_GetLocation(ent);
-				if(loc)
-					ent->client->pers.teamState.location = loc->health;
-				else
-					ent->client->pers.teamState.location = 0;
-			}
-		}
-
-		for(i = 0; i < g_maxclients.integer; i++) {
-			ent = g_entities + i;
-
-			if(ent->client->pers.connected != CON_CONNECTED) {
-				continue;
-			}
-		}
-	}
 }
 
 /*-----------------------------------------------------------------*/

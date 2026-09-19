@@ -414,40 +414,16 @@ void G_CheckMinimumPlayers(void) {
 	minplayers = bot_minplayers.integer;
 	if(minplayers <= 0) return;
 
-	if(g_gametype.integer >= GT_TEAM) {
-		if(minplayers >= g_maxclients.integer / 2) {
-			minplayers = (g_maxclients.integer / 2) - 1;
-		}
-
-		humanplayers = G_CountHumanPlayers(TEAM_RED);
-		botplayers = G_CountBotPlayers(TEAM_RED);
-		//
-		if(humanplayers + botplayers < minplayers) {
-			G_AddRandomBot(TEAM_RED);
-		} else if(humanplayers + botplayers > minplayers && botplayers) {
-			G_RemoveRandomBot(TEAM_RED);
-		}
-		//
-		humanplayers = G_CountHumanPlayers(TEAM_BLUE);
-		botplayers = G_CountBotPlayers(TEAM_BLUE);
-		//
-		if(humanplayers + botplayers < minplayers) {
-			G_AddRandomBot(TEAM_BLUE);
-		} else if(humanplayers + botplayers > minplayers && botplayers) {
-			G_RemoveRandomBot(TEAM_BLUE);
-		}
-	} else if(g_gametype.integer == GT_FFA) {
-		if(minplayers >= g_maxclients.integer) {
-			minplayers = g_maxclients.integer - 1;
-		}
-		humanplayers = G_CountHumanPlayers(TEAM_FREE);
-		botplayers = G_CountBotPlayers(TEAM_FREE);
-		//
-		if(humanplayers + botplayers < minplayers) {
-			G_AddRandomBot(TEAM_FREE);
-		} else if(humanplayers + botplayers > minplayers && botplayers) {
-			G_RemoveRandomBot(TEAM_FREE);
-		}
+	if(minplayers >= g_maxclients.integer) {
+		minplayers = g_maxclients.integer - 1;
+	}
+	humanplayers = G_CountHumanPlayers(TEAM_FREE);
+	botplayers = G_CountBotPlayers(TEAM_FREE);
+	//
+	if(humanplayers + botplayers < minplayers) {
+		G_AddRandomBot(TEAM_FREE);
+	} else if(humanplayers + botplayers > minplayers && botplayers) {
+		G_RemoveRandomBot(TEAM_FREE);
 	}
 }
 
@@ -562,15 +538,7 @@ static void G_AddBot(const char* name, float skill, const char* team, int delay,
 
 	// set default team
 	if(!team || !*team) {
-		if(g_gametype.integer >= GT_TEAM) {
-			if(PickTeam(clientNum) == TEAM_RED) {
-				team = "red";
-			} else {
-				team = "blue";
-			}
-		} else {
-			team = "free";
-		}
+		team = "free";
 	}
 
 	// get the botinfo from bots.txt

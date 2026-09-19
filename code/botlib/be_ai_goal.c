@@ -86,13 +86,6 @@ typedef struct campspot_s {
 	struct campspot_s* next;
 } campspot_t;
 
-// FIXME: these are game specific
-typedef enum {
-	GT_FFA,   // free for all
-	GT_TEAM,  // team deathmatch
-	GT_MAX_GAME_TYPE
-} gametype_t;
-
 typedef struct levelitem_s {
 	int number;         // number of the level item
 	int iteminfo;       // index into the item info
@@ -157,8 +150,6 @@ int numlevelitems = 0;
 maplocation_t* maplocations = NULL;
 // camp spots
 campspot_t* campspots = NULL;
-// the game type
-int g_gametype = 0;
 // additional dropped item weight
 libvar_t* droppedweight = NULL;
 
@@ -757,12 +748,7 @@ int BotGetLevelItemGoal(int index, char* name, bot_goal_t* goal) {
 		}  // end for
 	}  // end for
 	for(; li; li = li->next) {
-		//
-		if(g_gametype >= GT_TEAM) {
-			if(li->flags & IFL_NOTTEAM) continue;
-		} else {
-			if(li->flags & IFL_NOTFREE) continue;
-		}
+		if(li->flags & IFL_NOTFREE) continue;
 		if(li->flags & IFL_NOTBOT) continue;
 		//
 		if(!Q_stricmp(name, itemconfig->iteminfo[li->iteminfo].name)) {
@@ -942,11 +928,7 @@ void BotUpdateEntityItems(void) {
 			// if this level item is already linked
 			if(li->entitynum) continue;
 			//
-			if(g_gametype >= GT_TEAM) {
-				if(li->flags & IFL_NOTTEAM) continue;
-			} else {
-				if(li->flags & IFL_NOTFREE) continue;
-			}
+			if(li->flags & IFL_NOTFREE) continue;
 			// if the model of the level item and the entity are the same
 			if(ic->iteminfo[li->iteminfo].modelindex == modelindex) {
 				// check if the entity is very close
@@ -1144,11 +1126,7 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 	Com_Memset(&goal, 0, sizeof(bot_goal_t));
 	// go through the items in the level
 	for(li = levelitems; li; li = li->next) {
-		if(g_gametype >= GT_TEAM) {
-			if(li->flags & IFL_NOTTEAM) continue;
-		} else {
-			if(li->flags & IFL_NOTFREE) continue;
-		}
+		if(li->flags & IFL_NOTFREE) continue;
 		if(li->flags & IFL_NOTBOT) continue;
 		// if the item is not in a possible goal area
 		if(!li->goalareanum) continue;
@@ -1286,11 +1264,7 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int* inventory, int travelfla
 	Com_Memset(&goal, 0, sizeof(bot_goal_t));
 	// go through the items in the level
 	for(li = levelitems; li; li = li->next) {
-		if(g_gametype >= GT_TEAM) {
-			if(li->flags & IFL_NOTTEAM) continue;
-		} else {
-			if(li->flags & IFL_NOTFREE) continue;
-		}
+		if(li->flags & IFL_NOTFREE) continue;
 		if(li->flags & IFL_NOTBOT) continue;
 		// if the item is in a possible goal area
 		if(!li->goalareanum) continue;
@@ -1528,8 +1502,6 @@ void BotFreeGoalState(int handle) {
 int BotSetupGoalAI(void) {
 	char* filename;
 
-	// check if teamplay is on
-	g_gametype = LibVarValue("g_gametype", "0");
 	// item configuration file
 	filename = LibVarString("itemconfig", "items.c");
 	// load the item configuration

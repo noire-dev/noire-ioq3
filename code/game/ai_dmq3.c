@@ -69,9 +69,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 bot_waypoint_t botai_waypoints[MAX_WAYPOINTS];
 bot_waypoint_t* botai_freewaypoints;
 
-// NOTE: not using a cvars which can be updated because the game should be reloaded anyway
-int gametype;  // game type
-
 vmCvar_t bot_grapple;
 vmCvar_t bot_rocketjump;
 vmCvar_t bot_fastchat;
@@ -1048,7 +1045,7 @@ void BotInitWaypoints(void) {
 TeamPlayIsOn
 ==================
 */
-int TeamPlayIsOn(void) { return (gametype >= GT_TEAM); }
+int TeamPlayIsOn(void) { return false; }
 
 /*
 ==================
@@ -1526,10 +1523,6 @@ int BotSameTeam(bot_state_t* bs, int entnum) {
 
 	if(entnum < 0 || entnum >= MAX_CLIENTS) {
 		return false;
-	}
-
-	if(gametype >= GT_TEAM) {
-		if(level.clients[bs->client].sess.sessionTeam == level.clients[entnum].sess.sessionTeam) return true;
 	}
 
 	return false;
@@ -3705,8 +3698,6 @@ BotSetupDeathmatchAI
 void BotSetupDeathmatchAI(void) {
 	int ent, modelnum;
 	char model[128];
-
-	gametype = trap_Cvar_VariableIntegerValue("g_gametype");
 
 	trap_Cvar_Register(&bot_rocketjump, "bot_rocketjump", "1", 0);
 	trap_Cvar_Register(&bot_grapple, "bot_grapple", "0", 0);

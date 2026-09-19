@@ -506,28 +506,6 @@ gitem_t bg_itemlist[] = {{NULL,
 
 int bg_numItems = ARRAY_LEN(bg_itemlist) - 1;
 
-char* gametypes_names[] = {
-    "Free for All",
-    "Tournament",
-    "Single Player",
-    "Team Deathmatch",
-    "Capture the Flag",
-    "One Flag Capture",
-    "Overload",
-    "Harvester",
-};
-
-char* gametypes_mapnames[] = {
-    "ffa",
-    "tourney",
-    "single",
-    "team",
-    "ctf",
-    "oneflag",
-    "overload",
-    "harvester",
-};
-
 /*
 ==============
 BG_FindItemForPowerup
@@ -628,7 +606,7 @@ Returns false if the item should not be picked up.
 This needs to be the same for client side prediction and server use.
 ================
 */
-bool BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playerState_t* ps) {
+bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps) {
 	gitem_t* item;
 
 	if(ent->modelindex < 1 || ent->modelindex >= bg_numItems) {

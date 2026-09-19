@@ -44,10 +44,7 @@ static void CG_DrawClientScore(int y, score_t* score) {
 		float hcolor[4];
 		int rank;
 
-		if(cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR || cgs.gametype >= GT_TEAM)
-			rank = -1;
-		else
-			rank = cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG;
+		rank = cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG;
 
 		drawRoundedRectAdjusted(SCOREB_X, y, SCOREB_WIDTH - 4, ICON_SIZE, 3, scoreboardFieldBG, NO_TOP_LEFT | NO_BOTTOM_LEFT);
 	}
@@ -56,13 +53,8 @@ static void CG_DrawClientScore(int y, score_t* score) {
 	CG_DrawHead(SCOREB_X + 4, y, ICON_SIZE, ICON_SIZE, score->client);
 
 	// draw the score line
-	if(ci->team == TEAM_SPECTATOR) {
-		Com_sprintf(nameText, sizeof(nameText), "%s", ci->name);
-		Com_sprintf(scoreText, sizeof(scoreText), "SPECT");
-	} else {
-		Com_sprintf(nameText, sizeof(nameText), "%s", ci->name);
-		Com_sprintf(scoreText, sizeof(scoreText), "⇄ %i ▶ %i", score->ping, score->score);
-	}
+	Com_sprintf(nameText, sizeof(nameText), "%s", ci->name);
+	Com_sprintf(scoreText, sizeof(scoreText), "⇄ %i ▶ %i", score->ping, score->score);
 
 	drawStringAdjusted(SCOREB_X + 8 + ICON_SIZE, y + 2, nameText, FONTSTYLE_LEFT | FONTSTYLE_DROPSHADOW, color_white, 0.56, 256);
 	drawStringAdjusted((SCOREB_X + 8 + ICON_SIZE) + ((FONT_SIZE * FONT_WIDTH) * 54) * 0.56, y + 2, scoreText, FONTSTYLE_RIGHT | FONTSTYLE_DROPSHADOW, color_white, 0.56, 256);
@@ -103,23 +95,9 @@ void CG_DrawScoreboard(void) {
 
 	y = 50;
 	lineHeight = SB_INTER_HEIGHT;
-	if(cgs.gametype >= GT_TEAM) {
-		maxClients = 24;
-		y -= 5;
-		y += lineHeight / 2;
-		n1 = CG_TeamScoreboard(y, TEAM_BLUE, maxClients, lineHeight);
-		y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
-		maxClients -= n1;
-		n2 = CG_TeamScoreboard(y, TEAM_RED, maxClients, lineHeight);
-		y += (n2 * lineHeight) + BIGCHAR_HEIGHT;
-		maxClients -= n2;
-		n1 = CG_TeamScoreboard(y, TEAM_SPECTATOR, maxClients, lineHeight);
-		y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
-	} else {
-		maxClients = 25;
-		n1 = CG_TeamScoreboard(y, TEAM_FREE, maxClients, lineHeight);
-		y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
-		n2 = CG_TeamScoreboard(y, TEAM_SPECTATOR, maxClients - n1, lineHeight);
-		y += (n2 * lineHeight) + BIGCHAR_HEIGHT;
-	}
+	maxClients = 25;
+	n1 = CG_TeamScoreboard(y, TEAM_FREE, maxClients, lineHeight);
+	y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
+	n2 = CG_TeamScoreboard(y, TEAM_SPECTATOR, maxClients - n1, lineHeight);
+	y += (n2 * lineHeight) + BIGCHAR_HEIGHT;
 }

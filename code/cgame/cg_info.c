@@ -94,11 +94,5 @@ void CG_DrawInformation(void) {
 	drawStringAdjusted(110 - cgui.wideoffset, y, buf, FONTSTYLE_LEFT, color_white, 0.75, 256);
 	y += 25;
 
-	switch(cgs.gametype) {
-		case GT_FFA: s = "Free For All"; break;
-		case GT_TEAM: s = "Team Deathmatch"; break;
-		default: s = "Unknown Gametype"; break;
-	}
-
 	drawStringAdjusted(110 - cgui.wideoffset, y, s, FONTSTYLE_LEFT, color_white, 0.75, 256);
 }

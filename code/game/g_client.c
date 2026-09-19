@@ -306,21 +306,6 @@ gentity_t* SelectInitialSpawnPoint(vec3_t origin, vec3_t angles, bool isbot) {
 }
 
 /*
-===========
-SelectSpectatorSpawnPoint
-
-============
-*/
-gentity_t* SelectSpectatorSpawnPoint(vec3_t origin, vec3_t angles) {
-	FindIntermissionPoint();
-
-	VectorCopy(level.intermission_origin, origin);
-	VectorCopy(level.intermission_angle, angles);
-
-	return NULL;
-}
-
-/*
 =======================================================================
 
 BODYQUE
@@ -672,34 +657,8 @@ void ClientUserinfoChanged(int clientNum) {
 	client->ps.stats[STAT_MAX_HEALTH] = client->pers.maxHealth;
 
 	// set model
-	if(g_gametype.integer >= GT_TEAM) {
-		Q_strncpyz(model, Info_ValueForKey(userinfo, "team_model"), sizeof(model));
-		Q_strncpyz(headModel, Info_ValueForKey(userinfo, "team_headmodel"), sizeof(headModel));
-	} else {
-		Q_strncpyz(model, Info_ValueForKey(userinfo, "model"), sizeof(model));
-		Q_strncpyz(headModel, Info_ValueForKey(userinfo, "headmodel"), sizeof(headModel));
-	}
-
-	/*	NOTE: all client side now
-
-	    // team
-	    switch( team ) {
-	    case TEAM_RED:
-	        ForceClientSkin(client, model, "red");
-	//		ForceClientSkin(client, headModel, "red");
-	        break;
-	    case TEAM_BLUE:
-	        ForceClientSkin(client, model, "blue");
-	//		ForceClientSkin(client, headModel, "blue");
-	        break;
-	    }
-	    // don't ever use a default skin in teamplay, it would just waste memory
-	    // however bots will always join a team but they spawn in as spectator
-	    if ( g_gametype.integer >= GT_TEAM && team == TEAM_SPECTATOR) {
-	        ForceClientSkin(client, model, "red");
-	//		ForceClientSkin(client, headModel, "red");
-	    }
-	*/
+	Q_strncpyz(model, Info_ValueForKey(userinfo, "model"), sizeof(model));
+	Q_strncpyz(headModel, Info_ValueForKey(userinfo, "headmodel"), sizeof(headModel));
 
 	// teamInfo
 	s = Info_ValueForKey(userinfo, "teamoverlay");
@@ -730,9 +689,6 @@ void ClientUserinfoChanged(int clientNum) {
 	}
 
 	trap_SetConfigstring(CS_PLAYERS + clientNum, s);
-
-	// this is not the userinfo, more like the configstring actually
-	G_LogPrintf("ClientUserinfoChanged: %i %s\n", clientNum, s);
 }
 
 /*
@@ -787,7 +743,6 @@ char* ClientConnect(int clientNum, bool firstTime, bool isBot) {
 	}
 	// if a player reconnects quickly after a disconnect, the client disconnect may never be called, thus flag can get lost in the ether
 	if(ent->inuse) {
-		G_LogPrintf("Forcing disconnect on active client: %i\n", clientNum);
 		// so lets just fix up anything that should happen on a disconnect
 		ClientDisconnect(clientNum);
 	}
@@ -815,32 +770,13 @@ char* ClientConnect(int clientNum, bool firstTime, bool isBot) {
 		}
 	}
 
-	// read or initialize the session data
-	if(firstTime || level.newSession) {
-		G_InitSessionData(client, userinfo);
-	}
-	G_ReadSessionData(client);
-
 	// get and distribute relevant parameters
-	G_LogPrintf("ClientConnect: %i\n", clientNum);
 	ClientUserinfoChanged(clientNum);
 
 	// don't do the "xxx connected" messages if they were caried over from previous level
 	if(firstTime) {
 		trap_SendServerCommand(-1, va("print \"%s" S_COLOR_WHITE " connected\n\"", client->pers.netname));
 	}
-
-	if(g_gametype.integer >= GT_TEAM && client->sess.sessionTeam != TEAM_SPECTATOR) {
-		BroadcastTeamChange(client, -1);
-	}
-
-	// count current clients and rank for scoreboard
-	CalculateRanks();
-
-	// for statistics
-	//	client->areabits = areabits;
-	//	if ( !client->areabits )
-	//		client->areabits = G_Alloc( (trap_AAS_PointReachabilityAreaIndex( NULL ) + 7) / 8 );
 
 	return NULL;
 }
@@ -888,11 +824,6 @@ void ClientBegin(int clientNum) {
 	ClientSpawn(ent);
 
 	if(client->sess.sessionTeam != TEAM_SPECTATOR) trap_SendServerCommand(-1, va("print \"%s" S_COLOR_WHITE " entered the game\n\"", client->pers.netname));
-
-	G_LogPrintf("ClientBegin: %i\n", clientNum);
-
-	// count current clients and rank for scoreboard
-	CalculateRanks();
 }
 
 /*
@@ -929,17 +860,13 @@ void ClientSpawn(gentity_t* ent) {
 	// find a spawn point
 	// do it before setting health back up, so farthest
 	// ranging doesn't count this client
-	if(client->sess.sessionTeam == TEAM_SPECTATOR) {
-		spawnPoint = SelectSpectatorSpawnPoint(spawn_origin, spawn_angles);
+	// the first spawn should be at a good looking spot
+	if(!client->pers.initialSpawn && client->pers.localClient) {
+		client->pers.initialSpawn = true;
+		spawnPoint = SelectInitialSpawnPoint(spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
 	} else {
-		// the first spawn should be at a good looking spot
-		if(!client->pers.initialSpawn && client->pers.localClient) {
-			client->pers.initialSpawn = true;
-			spawnPoint = SelectInitialSpawnPoint(spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
-		} else {
-			// don't spawn near existing origin if possible
-			spawnPoint = SelectSpawnPoint(client->ps.origin, spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
-		}
+		// don't spawn near existing origin if possible
+		spawnPoint = SelectSpawnPoint(client->ps.origin, spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
 	}
 	client->pers.teamState.state = TEAM_ACTIVE;
 
@@ -952,7 +879,6 @@ void ClientSpawn(gentity_t* ent) {
 	flags ^= EF_TELEPORT_BIT;
 
 	// clear everything but the persistant data
-
 	saved = client->pers;
 	savedSess = client->sess;
 	savedPing = client->ps.ping;
@@ -1012,11 +938,7 @@ void ClientSpawn(gentity_t* ent) {
 	client->ps.clientNum = index;
 
 	client->ps.stats[STAT_WEAPONS] = (1 << WP_MACHINEGUN);
-	if(g_gametype.integer == GT_TEAM) {
-		client->ps.ammo[WP_MACHINEGUN] = 50;
-	} else {
-		client->ps.ammo[WP_MACHINEGUN] = 100;
-	}
+	client->ps.ammo[WP_MACHINEGUN] = 100;
 
 	client->ps.stats[STAT_WEAPONS] |= (1 << WP_GAUNTLET);
 	client->ps.ammo[WP_GAUNTLET] = -1;
@@ -1115,13 +1037,6 @@ void ClientDisconnect(int clientNum) {
 		return;
 	}
 
-	// stop any following clients
-	for(i = 0; i < level.maxclients; i++) {
-		if(level.clients[i].sess.sessionTeam == TEAM_SPECTATOR && level.clients[i].sess.spectatorState == SPECTATOR_FOLLOW && level.clients[i].sess.spectatorClient == clientNum) {
-			StopFollowing(&g_entities[i]);
-		}
-	}
-
 	// send effect if they were completely connected
 	if(ent->client->pers.connected == CON_CONNECTED && ent->client->sess.sessionTeam != TEAM_SPECTATOR) {
 		tent = G_TempEntity(ent->client->ps.origin, EV_PLAYER_TELEPORT_OUT);
@@ -1132,8 +1047,6 @@ void ClientDisconnect(int clientNum) {
 		TossClientItems(ent);
 	}
 
-	G_LogPrintf("ClientDisconnect: %i\n", clientNum);
-
 	trap_UnlinkEntity(ent);
 	ent->s.modelindex = 0;
 	ent->inuse = false;
@@ -1143,8 +1056,6 @@ void ClientDisconnect(int clientNum) {
 	ent->client->sess.sessionTeam = TEAM_FREE;
 
 	trap_SetConfigstring(CS_PLAYERS + clientNum, "");
-
-	CalculateRanks();
 
 	if(ent->r.svFlags & SVF_BOT) {
 		BotAIShutdownClient(clientNum, false);

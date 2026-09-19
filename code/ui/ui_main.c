@@ -297,8 +297,8 @@ static void UI_LoadPlayerModels(void) {
 
 static int UI_ListGetCount(int listType, int listSubtype) {
 	if(listType == LTYPE_APPS) return shell.appCount;
-	if(listType == LTYPE_MAPS) return UI_CountOfMaps(gametypes_mapnames[listSubtype]);
-	if(listType == LTYPE_BOTS) return UI_CountOfMaps(gametypes_mapnames[listSubtype]);
+	if(listType == LTYPE_MAPS) return UI_CountOfMaps("ffa");
+	if(listType == LTYPE_BOTS) return UI_CountOfMaps("ffa");
 	if(listType == LTYPE_PLAYERMODELS) return ui_numPlayerModels;
 	if(listType == LTYPE_GAMEITEMS) return bg_numItems - 1;
 	if(listType == LTYPE_TOOLS) return shell.toolCount;
@@ -307,8 +307,8 @@ static int UI_ListGetCount(int listType, int listSubtype) {
 
 static char* UI_ListGetCallbackName(int listType, int listSubtype, int index) {
 	if(listType == LTYPE_APPS) return shell.app[index].name;
-	if(listType == LTYPE_MAPS) return UI_MapForID(index, gametypes_mapnames[listSubtype]);
-	if(listType == LTYPE_BOTS) return UI_MapForID(index, gametypes_mapnames[listSubtype]);
+	if(listType == LTYPE_MAPS) return UI_MapForID(index, "ffa");
+	if(listType == LTYPE_BOTS) return UI_MapForID(index, "ffa");
 	if(listType == LTYPE_PLAYERMODELS) return ui_playerModelNames[index];
 	if(listType == LTYPE_GAMEITEMS) return bg_itemlist[index + 1].pickup_name;
 	if(listType == LTYPE_TOOLS) return shell.tool[index].nameID;
@@ -317,8 +317,8 @@ static char* UI_ListGetCallbackName(int listType, int listSubtype, int index) {
 
 static char* UI_ListGetName(int listType, int listSubtype, int index) {
 	if(listType == LTYPE_APPS) return shell.app[index].name;
-	if(listType == LTYPE_MAPS) return UI_MapForID(index, gametypes_mapnames[listSubtype]);
-	if(listType == LTYPE_BOTS) return UI_MapForID(index, gametypes_mapnames[listSubtype]);
+	if(listType == LTYPE_MAPS) return UI_MapForID(index, "ffa");
+	if(listType == LTYPE_BOTS) return UI_MapForID(index, "ffa");
 	if(listType == LTYPE_PLAYERMODELS) return ui_playerModelNames[index];
 	if(listType == LTYPE_GAMEITEMS) return bg_itemlist[index + 1].pickup_name;
 	if(listType == LTYPE_TOOLS) return shell.tool[index].name;
@@ -327,8 +327,8 @@ static char* UI_ListGetName(int listType, int listSubtype, int index) {
 
 static char* UI_ListGetIcon(int listType, int listSubtype, int index) {
 	if(listType == LTYPE_APPS) return shell.app[index].icon;
-	if(listType == LTYPE_MAPS) return va("levelshots/%s", UI_MapForID(index, gametypes_mapnames[listSubtype]));
-	if(listType == LTYPE_BOTS) return va("levelshots/%s", UI_MapForID(index, gametypes_mapnames[listSubtype]));
+	if(listType == LTYPE_MAPS) return va("levelshots/%s", UI_MapForID(index, "ffa"));
+	if(listType == LTYPE_BOTS) return va("levelshots/%s", UI_MapForID(index, "ffa"));
 	if(listType == LTYPE_PLAYERMODELS) return ui_playerModelIcons[index];
 	if(listType == LTYPE_GAMEITEMS) return bg_itemlist[index + 1].icon;
 	if(listType == LTYPE_TOOLS) return "";

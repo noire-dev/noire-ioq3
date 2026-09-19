@@ -81,12 +81,6 @@ int Pickup_Powerup(gentity_t* ent, gentity_t* other) {
 			continue;
 		}
 
-		// if same team in team game, no sound
-		// cannot use OnSameTeam as it expects to g_entities, not clients
-		if(g_gametype.integer >= GT_TEAM && other->client->sess.sessionTeam == client->sess.sessionTeam) {
-			continue;
-		}
-
 		// if too far away, no sound
 		VectorSubtract(ent->s.pos.trBase, client->ps.origin, delta);
 		len = VectorNormalize(delta);
@@ -160,7 +154,7 @@ int Pickup_Weapon(gentity_t* ent, gentity_t* other) {
 		}
 
 		// dropped items and teamplay weapons always have full ammo
-		if(!(ent->flags & FL_DROPPED_ITEM) && g_gametype.integer != GT_TEAM) {
+		if(!(ent->flags & FL_DROPPED_ITEM)) {
 			// respawning rules
 			// drop the quantity if the already have over the minimum
 			if(other->client->ps.ammo[ent->item->giTag] < quantity) {
@@ -177,11 +171,6 @@ int Pickup_Weapon(gentity_t* ent, gentity_t* other) {
 	Add_Ammo(other, ent->item->giTag, quantity);
 
 	if(ent->item->giTag == WP_GRAPPLING_HOOK) other->client->ps.ammo[ent->item->giTag] = -1;  // unlimited ammo
-
-	// team deathmatch has slow weapon respawns
-	if(g_gametype.integer == GT_TEAM) {
-		return g_weaponTeamRespawn.integer;
-	}
 
 	return g_weaponRespawn.integer;
 }
@@ -316,11 +305,9 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 	if(other->health < 1) return;  // dead people can't pickup
 
 	// the same pickup rules are used for client side and server side
-	if(!BG_CanItemBeGrabbed(g_gametype.integer, &ent->s, &other->client->ps)) {
+	if(!BG_CanItemBeGrabbed(&ent->s, &other->client->ps)) {
 		return;
 	}
-
-	G_LogPrintf("Item: %i %s\n", other->s.number, ent->item->classname);
 
 	predict = other->client->pers.predictItemPickup;
 

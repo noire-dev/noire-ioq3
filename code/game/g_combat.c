@@ -60,8 +60,6 @@ void AddScore(gentity_t* ent, vec3_t origin, int score) {
 	ScorePlum(ent, origin, score);
 	//
 	ent->client->ps.persistant[PERS_SCORE] += score;
-	if(g_gametype.integer == GT_TEAM) level.teamScores[ent->client->ps.persistant[PERS_TEAM]] += score;
-	CalculateRanks();
 }
 
 /*
@@ -103,22 +101,20 @@ void TossClientItems(gentity_t* self) {
 	}
 
 	// drop all the powerups if not in teamplay
-	if(g_gametype.integer != GT_TEAM) {
-		angle = 45;
-		for(i = 1; i < PW_NUM_POWERUPS; i++) {
-			if(self->client->ps.powerups[i] > level.time) {
-				item = BG_FindItemForPowerup(i);
-				if(!item) {
-					continue;
-				}
-				drop = Drop_Item(self, item, angle);
-				// decide how many seconds it has left
-				drop->count = (self->client->ps.powerups[i] - level.time) / 1000;
-				if(drop->count < 1) {
-					drop->count = 1;
-				}
-				angle += 45;
+	angle = 45;
+	for(i = 1; i < PW_NUM_POWERUPS; i++) {
+		if(self->client->ps.powerups[i] > level.time) {
+			item = BG_FindItemForPowerup(i);
+			if(!item) {
+				continue;
 			}
+			drop = Drop_Item(self, item, angle);
+			// decide how many seconds it has left
+			drop->count = (self->client->ps.powerups[i] - level.time) / 1000;
+			if(drop->count < 1) {
+				drop->count = 1;
+			}
+			angle += 45;
 		}
 	}
 }
@@ -311,8 +307,6 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 	} else {
 		obit = modNames[meansOfDeath];
 	}
-
-	G_LogPrintf("Kill: %i %i %i: %s killed %s by %s\n", killer, self->s.number, meansOfDeath, killerName, self->client->pers.netname, obit);
 
 	// broadcast the death event to everyone
 	ent = G_TempEntity(self->r.currentOrigin, EV_OBITUARY);

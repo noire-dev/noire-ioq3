@@ -437,29 +437,6 @@ static void CG_RegisterSounds(void) {
 	cgs.media.countFightSound = trap_S_RegisterSound("sound/feedback/fight.wav", true);
 	cgs.media.countPrepareSound = trap_S_RegisterSound("sound/feedback/prepare.wav", true);
 
-	if(cgs.gametype >= GT_TEAM || cg_buildScript.integer) {
-		cgs.media.captureAwardSound = trap_S_RegisterSound("sound/teamplay/flagcapture_yourteam.wav", true);
-		cgs.media.redLeadsSound = trap_S_RegisterSound("sound/feedback/redleads.wav", true);
-		cgs.media.blueLeadsSound = trap_S_RegisterSound("sound/feedback/blueleads.wav", true);
-		cgs.media.teamsTiedSound = trap_S_RegisterSound("sound/feedback/teamstied.wav", true);
-		cgs.media.hitTeamSound = trap_S_RegisterSound("sound/feedback/hit_teammate.wav", true);
-
-		cgs.media.redScoredSound = trap_S_RegisterSound("sound/teamplay/voc_red_scores.wav", true);
-		cgs.media.blueScoredSound = trap_S_RegisterSound("sound/teamplay/voc_blue_scores.wav", true);
-
-		cgs.media.captureYourTeamSound = trap_S_RegisterSound("sound/teamplay/flagcapture_yourteam.wav", true);
-		cgs.media.captureOpponentSound = trap_S_RegisterSound("sound/teamplay/flagcapture_opponent.wav", true);
-
-		cgs.media.returnYourTeamSound = trap_S_RegisterSound("sound/teamplay/flagreturn_yourteam.wav", true);
-		cgs.media.returnOpponentSound = trap_S_RegisterSound("sound/teamplay/flagreturn_opponent.wav", true);
-
-		cgs.media.takenYourTeamSound = trap_S_RegisterSound("sound/teamplay/flagtaken_yourteam.wav", true);
-		cgs.media.takenOpponentSound = trap_S_RegisterSound("sound/teamplay/flagtaken_opponent.wav", true);
-
-		cgs.media.youHaveFlagSound = trap_S_RegisterSound("sound/teamplay/voc_you_flag.wav", true);
-		cgs.media.holyShitSound = trap_S_RegisterSound("sound/feedback/voc_holyshit.wav", true);
-	}
-
 	cgs.media.tracerSound = trap_S_RegisterSound("sound/weapons/machinegun/buletby1.wav", false);
 	cgs.media.selectSound = trap_S_RegisterSound("sound/weapons/change.wav", false);
 	cgs.media.wearOffSound = trap_S_RegisterSound("sound/items/wearoff.wav", false);
@@ -642,12 +619,6 @@ static void CG_RegisterGraphics(void) {
 	cgs.media.regenShader = trap_R_RegisterShader("powerups/regen");
 	cgs.media.hastePuffShader = trap_R_RegisterShader("hasteSmokePuff");
 
-	if(cgs.gametype >= GT_TEAM || cg_buildScript.integer) {
-		cgs.media.friendShader = trap_R_RegisterShader("sprites/foe");
-		cgs.media.redQuadShader = trap_R_RegisterShader("powerups/blueflag");
-		cgs.media.teamStatusBar = trap_R_RegisterShader("gfx/2d/colorbar.tga");
-	}
-
 	cgs.media.armorModel = trap_R_RegisterModel("models/powerups/armor/armor_yel.md3");
 	cgs.media.armorIcon = trap_R_RegisterShaderNoMip("icons/iconr_yellow");
 
@@ -743,27 +714,6 @@ static void CG_RegisterGraphics(void) {
 }
 
 /*
-=======================
-CG_BuildSpectatorString
-
-=======================
-*/
-void CG_BuildSpectatorString(void) {
-	int i;
-	cg.spectatorList[0] = 0;
-	for(i = 0; i < MAX_CLIENTS; i++) {
-		if(cgs.clientinfo[i].infoValid && cgs.clientinfo[i].team == TEAM_SPECTATOR) {
-			Q_strcat(cg.spectatorList, sizeof(cg.spectatorList), va("%s     ", cgs.clientinfo[i].name));
-		}
-	}
-	i = strlen(cg.spectatorList);
-	if(i != cg.spectatorLen) {
-		cg.spectatorLen = i;
-		cg.spectatorWidth = -1;
-	}
-}
-
-/*
 ===================
 CG_RegisterClients
 ===================
@@ -788,7 +738,6 @@ static void CG_RegisterClients(void) {
 		CG_LoadingClient(i);
 		CG_NewClientInfo(i);
 	}
-	CG_BuildSpectatorString();
 }
 
 static char modelImporterStorage[65536];

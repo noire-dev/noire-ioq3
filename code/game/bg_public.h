@@ -102,15 +102,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #error overflow: (CS_MAX) > MAX_CONFIGSTRINGS
 #endif
 
-typedef enum {
-	GT_FFA,   // free for all
-	GT_TEAM,  // team deathmatch
-	GT_MAX_GAME_TYPE
-} gametype_t;
-
-extern char* gametypes_names[];
-extern char* gametypes_mapnames[];
-
 typedef enum { GENDER_MALE, GENDER_FEMALE, GENDER_NEUTER } gender_t;
 
 /*
@@ -546,7 +537,7 @@ gitem_t* BG_FindItemForPowerup(powerup_t pw);
 gitem_t* BG_FindItemForHoldable(holdable_t pw);
 #define ITEM_INDEX(x) ((x) - bg_itemlist)
 
-bool BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playerState_t* ps);
+bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps);
 
 // g_dmflags->integer flags
 #define DF_NO_FALLING 8

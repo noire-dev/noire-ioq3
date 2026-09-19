@@ -197,7 +197,7 @@ typedef struct {
 // client data that stays across multiple levels or tournament restarts
 // this is achieved by writing all the data to cvar strings at game shutdown
 // time and reading them back at connection time.  Anything added here
-// MUST be dealt with in G_InitSessionData() / G_ReadSessionData() / G_WriteSessionData()
+// MUST be dealt with
 typedef struct {
 	team_t sessionTeam;
 	int spectatorNum;  // for determining next-in-line to play
@@ -321,9 +321,6 @@ typedef struct {
 	int teamScores[TEAM_NUM_TEAMS];
 	int lastTeamLocationTime;  // last time of client team location update
 
-	bool newSession;  // don't use any old session data, because
-	                  // we changed gametype
-
 	bool restarted;  // waiting for a map_restart to fire
 
 	int numConnectedClients;
@@ -335,22 +332,6 @@ typedef struct {
 	int snd_fry;  // sound index for standing in lava
 
 	int warmupModificationCount;  // for detecting if g_warmup is changed
-
-	// voting state
-	char voteString[MAX_STRING_CHARS];
-	char voteDisplayString[MAX_STRING_CHARS];
-	int voteTime;         // level.time vote was called
-	int voteExecuteTime;  // time the vote is executed
-	int voteYes;
-	int voteNo;
-	int numVotingClients;  // set by CalculateRanks
-
-	// team voting state
-	char teamVoteString[2][MAX_STRING_CHARS];
-	int teamVoteTime[2];  // level.time vote was called
-	int teamVoteYes[2];
-	int teamVoteNo[2];
-	int numteamVotingClients[2];  // set by CalculateRanks
 
 	// spawn variables
 	bool spawning;  // the G_Spawn*() functions are valid
@@ -393,10 +374,6 @@ char* G_NewString(const char* string);
 // g_cmds.c
 //
 void Cmd_Score_f(gentity_t* ent);
-void StopFollowing(gentity_t* ent);
-void BroadcastTeamChange(gclient_t* client, int oldTeam);
-void SetTeam(gentity_t* ent, const char* s);
-void Cmd_FollowCycle_f(gentity_t* ent, int dir);
 
 //
 // g_items.c
@@ -522,7 +499,6 @@ void InitBodyQue(void);
 void ClientSpawn(gentity_t* ent);
 void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod);
 void AddScore(gentity_t* ent, vec3_t origin, int score);
-void CalculateRanks(void);
 bool SpotWouldTelefrag(gentity_t* spot);
 
 //
@@ -547,11 +523,7 @@ void DeathmatchScoreboardMessage(gentity_t* ent);
 //
 void MoveClientToIntermission(gentity_t* ent);
 void FindIntermissionPoint(void);
-void SetLeader(int team, int client);
-void CheckTeamLeader(int team);
 void G_RunThink(gentity_t* ent);
-void AddTournamentQueue(gclient_t* client);
-void QDECL G_LogPrintf(const char* fmt, ...) Q_PRINTF_FUNC(1, 2);
 void SendScoreboardMessageToAllClients(void);
 void QDECL G_Printf(const char* fmt, ...) Q_PRINTF_FUNC(1, 2);
 void QDECL G_Error(const char* fmt, ...) Q_NO_RETURN Q_PRINTF_FUNC(1, 2);
@@ -584,16 +556,6 @@ bool CheckObeliskAttack(gentity_t* obelisk, gentity_t* attacker);
 //
 void* G_Alloc(int size);
 void G_InitMemory(void);
-void Svcmd_GameMem_f(void);
-
-//
-// g_session.c
-//
-void G_ReadSessionData(gclient_t* client);
-void G_InitSessionData(gclient_t* client, char* userinfo);
-
-void G_InitWorldSession(void);
-void G_WriteSessionData(void);
 
 //
 // g_bot.c
@@ -632,7 +594,6 @@ extern gentity_t g_entities[MAX_GENTITIES];
 
 #define FOFS(x) ((size_t)&(((gentity_t*)0)->x))
 
-extern vmCvar_t g_gametype;
 extern vmCvar_t g_dedicated;
 extern vmCvar_t g_cheats;
 extern vmCvar_t g_maxclients;      // allow this many total, including spectators

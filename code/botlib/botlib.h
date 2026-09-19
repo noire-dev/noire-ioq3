@@ -472,7 +472,6 @@ name:						default:			module(s):			description:
 "bot_visualizejumppads"		"0"					be_aas_reach.c		visualize jump pads
 
 "bot_reloadcharacters"		"0"					-					reload bot character files
-"ai_gametype"				"0"					be_ai_goal.c		game type
 "droppedweight"				"1000"				be_ai_goal.c		additional dropped item weight
 "weapindex_rocketlauncher"	"5"					be_ai_move.c		rl weapon index for rocket jumping
 "weapindex_bfg10k"			"9"					be_ai_move.c		bfg weapon index for bfg jumping

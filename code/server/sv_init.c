@@ -470,9 +470,6 @@ void SV_SpawnServer(char* server, bool killBots) {
 	// load and spawn all other entities
 	SV_InitGameProgs();
 
-	// don't allow a map_restart if game is modified
-	sv_gametype->modified = false;
-
 	// run a few frames to allow everything to settle
 	for(i = 0; i < 3; i++) {
 		VM_Call(gvm, GAME_RUN_FRAME, sv.time);
@@ -601,7 +598,6 @@ void SV_Init(void) {
 	Cvar_Get("dmflags", "0", CVAR_SERVERINFO);
 	Cvar_Get("fraglimit", "20", CVAR_SERVERINFO);
 	Cvar_Get("timelimit", "0", CVAR_SERVERINFO);
-	sv_gametype = Cvar_Get("g_gametype", "0", CVAR_SERVERINFO | CVAR_LATCH);
 	Cvar_Get("sv_keywords", "", CVAR_SERVERINFO);
 	sv_mapname = Cvar_Get("mapname", "nomap", CVAR_SERVERINFO | CVAR_ROM);
 	sv_privateClients = Cvar_Get("sv_privateClients", "0", CVAR_SERVERINFO);

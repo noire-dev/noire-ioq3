@@ -84,8 +84,6 @@ void CG_ParseServerinfo(void) {
 	char* mapname;
 
 	info = CG_ConfigString(CS_SERVERINFO);
-	cgs.gametype = atoi(Info_ValueForKey(info, "g_gametype"));
-	trap_Cvar_Set("g_gametype", va("%i", cgs.gametype));
 	cgs.dmflags = atoi(Info_ValueForKey(info, "dmflags"));
 	cgs.teamflags = atoi(Info_ValueForKey(info, "teamflags"));
 	cgs.fraglimit = atoi(Info_ValueForKey(info, "fraglimit"));
@@ -254,7 +252,6 @@ static void CG_ConfigStringModified(void) {
 		}
 	} else if(num >= CS_PLAYERS && num < CS_PLAYERS + MAX_CLIENTS) {
 		CG_NewClientInfo(num - CS_PLAYERS);
-		CG_BuildSpectatorString();
 	} else if(num == CS_FLAGSTATUS) {
 	} else if(num == CS_SHADERSTATE) {
 		CG_ShaderStateChanged();
@@ -368,7 +365,7 @@ static void CG_MapRestart(void) {
 	// play the "fight" sound if this is a restart without warmup
 	if(cg.warmup == 0) {
 		trap_S_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
-		CG_CenterPrint("FIGHT!", 120, GIANTCHAR_WIDTH * 2);
+		// CG_CenterPrint("FIGHT!", 120, GIANTCHAR_WIDTH * 2);
 	}
 	trap_Cvar_Set("cg_thirdPerson", "0");
 }
@@ -409,7 +406,7 @@ static void CG_ServerCommand(void) {
 	}
 
 	if(!strcmp(cmd, "cp")) {
-		CG_CenterPrint(CG_Argv(1), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
+		// CG_CenterPrint(CG_Argv(1), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 		return;
 	}
 
@@ -424,10 +421,6 @@ static void CG_ServerCommand(void) {
 	}
 
 	if(!strcmp(cmd, "chat")) {
-		if(cgs.gametype >= GT_TEAM && cg_teamChatsOnly.integer) {
-			return;
-		}
-
 		trap_S_StartLocalSound(cgs.media.talkSound, CHAN_LOCAL_SOUND);
 		Q_strncpyz(text, CG_Argv(1), MAX_SAY_TEXT);
 		CG_RemoveChatEscapeChar(text);

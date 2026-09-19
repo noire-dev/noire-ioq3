@@ -172,13 +172,9 @@ static void CG_Obituary(entityState_t* ent) {
 	if(attacker == cg.snap->ps.clientNum) {
 		char* s;
 
-		if(cgs.gametype < GT_TEAM) {
-			s = va("You fragged %s\n%s place with %i", targetName, CG_PlaceString(cg.snap->ps.persistant[PERS_RANK] + 1), cg.snap->ps.persistant[PERS_SCORE]);
-		} else {
-			s = va("You fragged %s", targetName);
-		}
-		CG_CenterPrint(s, SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
-		// print the text message as well
+		s = va("You fragged %s\n%s place with %i", targetName, CG_PlaceString(cg.snap->ps.persistant[PERS_RANK] + 1), cg.snap->ps.persistant[PERS_SCORE]);
+		// CG_CenterPrint(s, SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
+		//  print the text message as well
 	}
 
 	// check for double client messages
@@ -271,10 +267,10 @@ static void CG_UseItem(centity_t* cent) {
 	// print a message if the local player
 	if(es->number == cg.snap->ps.clientNum) {
 		if(!itemNum) {
-			CG_CenterPrint("No item to use", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
+			// CG_CenterPrint("No item to use", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 		} else {
 			item = BG_FindItemForHoldable(itemNum);
-			CG_CenterPrint(va("Use %s", item->pickup_name), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
+			// CG_CenterPrint(va("Use %s", item->pickup_name), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 		}
 	}
 
