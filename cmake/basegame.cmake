@@ -59,7 +59,6 @@ set(GAME_SOURCES
     ${SOURCE_DIR}/game/g_mover.c
     ${SOURCE_DIR}/game/g_spawn.c
     ${SOURCE_DIR}/game/g_svcmds.c
-    ${SOURCE_DIR}/game/g_target.c
     ${SOURCE_DIR}/game/g_team.c
     ${SOURCE_DIR}/game/g_trigger.c
     ${SOURCE_DIR}/game/g_utils.c
