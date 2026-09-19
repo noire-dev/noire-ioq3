@@ -229,19 +229,6 @@ static void CG_Item(centity_t* cent) {
 	}
 
 	item = &bg_itemlist[es->modelindex];
-	if(cg_simpleItems.integer && item->giType != IT_TEAM) {
-		memset(&ent, 0, sizeof(ent));
-		ent.reType = RT_SPRITE;
-		VectorCopy(cent->lerpOrigin, ent.origin);
-		ent.radius = 14;
-		ent.customShader = cg_items[es->modelindex].icon;
-		ent.shaderRGBA[0] = 255;
-		ent.shaderRGBA[1] = 255;
-		ent.shaderRGBA[2] = 255;
-		ent.shaderRGBA[3] = 255;
-		trap_R_AddRefEntityToScene(&ent);
-		return;
-	}
 
 	// items bob up and down continuously
 	scale = 0.005 + cent->currentState.number * 0.00001;

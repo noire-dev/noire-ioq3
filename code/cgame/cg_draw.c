@@ -98,60 +98,6 @@ void CG_DrawHead(float x, float y, float w, float h, int clientNum) {
 	drawhShaderAdjusted(x, y, w, h, ci->modelIcon);
 }
 
-void CG_DrawFlagModel(float x, float y, float w, float h, int team, bool force2D) {
-	qhandle_t cm;
-	float len;
-	vec3_t origin, angles;
-	vec3_t mins, maxs;
-	qhandle_t handle;
-
-	if(!force2D && cg_draw3dIcons.integer) {
-		VectorClear(angles);
-
-		cm = cgs.media.redFlagModel;
-
-		// offset the origin y and z to center the flag
-		trap_R_ModelBounds(cm, mins, maxs);
-
-		origin[2] = -0.5 * (mins[2] + maxs[2]);
-		origin[1] = 0.5 * (mins[1] + maxs[1]);
-
-		// calculate distance so the flag nearly fills the box
-		// assume heads are taller than wide
-		len = 0.5 * (maxs[2] - mins[2]);
-		origin[0] = len / 0.268;  // len / tan( fov/2 )
-
-		angles[YAW] = 60 * sin(cg.time / 2000.0);
-		;
-
-		if(team == TEAM_RED) {
-			handle = cgs.media.redFlagModel;
-		} else if(team == TEAM_BLUE) {
-			handle = cgs.media.blueFlagModel;
-		} else if(team == TEAM_FREE) {
-			handle = cgs.media.neutralFlagModel;
-		} else {
-			return;
-		}
-		CG_Draw3DModel(x, y, w, h, handle, 0, origin, angles);
-	} else if(cg_drawIcons.integer) {
-		gitem_t* item;
-
-		if(team == TEAM_RED) {
-			item = BG_FindItemForPowerup(PW_REDFLAG);
-		} else if(team == TEAM_BLUE) {
-			item = BG_FindItemForPowerup(PW_BLUEFLAG);
-		} else if(team == TEAM_FREE) {
-			item = BG_FindItemForPowerup(PW_NEUTRALFLAG);
-		} else {
-			return;
-		}
-		if(item) {
-			CG_DrawPic(x, y, w, h, cg_items[ITEM_INDEX(item)].icon);
-		}
-	}
-}
-
 static void CG_DrawStatusBarHead(float x) {
 	vec3_t angles;
 	float size, stretch;
@@ -201,8 +147,6 @@ static void CG_DrawStatusBarHead(float x) {
 
 	// CG_DrawHead(x, 480 - size, size, size, cg.snap->ps.clientNum, angles);
 }
-
-static void CG_DrawStatusBarFlag(float x, int team) { CG_DrawFlagModel(x, 480 - ICON_SIZE, ICON_SIZE, ICON_SIZE, team, false); }
 
 void CG_DrawTeamBackground(int x, int y, int w, int h, float alpha, int team) {
 	vec4_t hcolor;
@@ -261,14 +205,6 @@ static void CG_DrawStatusBar(void) {
 	}
 
 	CG_DrawStatusBarHead(185 + CHAR_WIDTH * 3 + TEXT_ICON_SPACE);
-
-	if(cg.predictedPlayerState.powerups[PW_REDFLAG]) {
-		CG_DrawStatusBarFlag(185 + CHAR_WIDTH * 3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_RED);
-	} else if(cg.predictedPlayerState.powerups[PW_BLUEFLAG]) {
-		CG_DrawStatusBarFlag(185 + CHAR_WIDTH * 3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_BLUE);
-	} else if(cg.predictedPlayerState.powerups[PW_NEUTRALFLAG]) {
-		CG_DrawStatusBarFlag(185 + CHAR_WIDTH * 3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_FREE);
-	}
 
 	if(ps->stats[STAT_ARMOR]) {
 		origin[0] = 90;
@@ -562,7 +498,6 @@ static float CG_DrawPowerups(float y) {
 		}
 
 		// ZOID--don't draw if the power up has unlimited time
-		// This is true of the CTF flags
 		if(ps->powerups[i] == INT_MAX) {
 			continue;
 		}

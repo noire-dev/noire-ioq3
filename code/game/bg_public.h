@@ -507,16 +507,14 @@ typedef enum { MOD_UNKNOWN, MOD_SHOTGUN, MOD_GAUNTLET, MOD_MACHINEGUN, MOD_GRENA
 // gitem_t->type
 typedef enum {
 	IT_BAD,
-	IT_WEAPON,    // EFX: rotate + upscale + minlight
-	IT_AMMO,      // EFX: rotate
-	IT_ARMOR,     // EFX: rotate + minlight
-	IT_HEALTH,    // EFX: static external sphere + rotating internal
-	IT_POWERUP,   // instant on, timer based
-	              // EFX: rotate + external ring that rotates
-	IT_HOLDABLE,  // single use, holdable item
-	              // EFX: rotate + bob
-	IT_PERSISTANT_POWERUP,
-	IT_TEAM
+	IT_WEAPON,   // EFX: rotate + upscale + minlight
+	IT_AMMO,     // EFX: rotate
+	IT_ARMOR,    // EFX: rotate + minlight
+	IT_HEALTH,   // EFX: static external sphere + rotating internal
+	IT_POWERUP,  // instant on, timer based
+	             // EFX: rotate + external ring that rotates
+	IT_HOLDABLE  // single use, holdable item
+	             // EFX: rotate + bob
 } itemType_t;
 
 #define MAX_ITEM_MODELS 4

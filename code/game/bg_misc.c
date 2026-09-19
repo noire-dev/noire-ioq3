@@ -501,34 +501,6 @@ gitem_t bg_itemlist[] = {{NULL,
                           /* precache */ "",
                           /* sounds */ "sound/items/flight.wav"},
 
-                         /*QUAKED team_CTF_redflag (1 0 0) (-16 -16 -16) (16 16 16)
-                         Only in CTF games
-                         */
-                         {"team_CTF_redflag",
-                          NULL,
-                          {"models/flags/r_flag.md3", NULL, NULL, NULL},
-                          /* icon */ "icons/iconf_red1",
-                          /* pickup */ "Red Flag",
-                          0,
-                          IT_TEAM,
-                          PW_REDFLAG,
-                          /* precache */ "",
-                          /* sounds */ ""},
-
-                         /*QUAKED team_CTF_blueflag (0 0 1) (-16 -16 -16) (16 16 16)
-                         Only in CTF games
-                         */
-                         {"team_CTF_blueflag",
-                          NULL,
-                          {"models/flags/b_flag.md3", NULL, NULL, NULL},
-                          /* icon */ "icons/iconf_blu1",
-                          /* pickup */ "Blue Flag",
-                          0,
-                          IT_TEAM,
-                          PW_BLUEFLAG,
-                          /* precache */ "",
-                          /* sounds */ ""},
-
                          // end of list marker
                          {NULL}};
 
@@ -565,7 +537,7 @@ gitem_t* BG_FindItemForPowerup(powerup_t pw) {
 	int i;
 
 	for(i = 0; i < bg_numItems; i++) {
-		if((bg_itemlist[i].giType == IT_POWERUP || bg_itemlist[i].giType == IT_TEAM || bg_itemlist[i].giType == IT_PERSISTANT_POWERUP) && bg_itemlist[i].giTag == pw) {
+		if((bg_itemlist[i].giType == IT_POWERUP) && bg_itemlist[i].giTag == pw) {
 			return &bg_itemlist[i];
 		}
 	}
@@ -694,9 +666,6 @@ bool BG_CanItemBeGrabbed(int gametype, const entityState_t* ent, const playerSta
 			return true;
 
 		case IT_POWERUP: return true;  // powerups are always picked up
-
-		case IT_TEAM:  // team items, such as flags
-			return false;
 
 		case IT_HOLDABLE:
 			// can only hold one item at a time

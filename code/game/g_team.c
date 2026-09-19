@@ -637,26 +637,6 @@ int Team_TouchEnemyFlag(gentity_t* ent, gentity_t* other, int team) {
 	return -1;  // Do not respawn this automatically, but do delete it if it was FL_DROPPED
 }
 
-int Pickup_Team(gentity_t* ent, gentity_t* other) {
-	int team;
-	gclient_t* cl = other->client;
-
-	// figure out what team this flag is
-	if(strcmp(ent->classname, "team_CTF_redflag") == 0) {
-		team = TEAM_RED;
-	} else if(strcmp(ent->classname, "team_CTF_blueflag") == 0) {
-		team = TEAM_BLUE;
-	} else {
-		PrintMsg(other, "Don't know what team the flag is on.\n");
-		return 0;
-	}
-
-	if(team == cl->sess.sessionTeam) {
-		return Team_TouchOurFlag(ent, other, team);
-	}
-	return Team_TouchEnemyFlag(ent, other, team);
-}
-
 /*
 ===========
 Team_GetLocation

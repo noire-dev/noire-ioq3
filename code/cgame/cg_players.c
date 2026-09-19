@@ -1594,35 +1594,6 @@ static void CG_PlayerPowerups(centity_t* cent, refEntity_t* torso) {
 	}
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
-	// redflag
-	if(powerups & (1 << PW_REDFLAG)) {
-		if(ci->newAnims) {
-			CG_PlayerFlag(cent, cgs.media.redFlagFlapSkin, torso);
-		} else {
-			CG_TrailItem(cent, cgs.media.redFlagModel);
-		}
-		trap_R_AddLightToScene(cent->lerpOrigin, 200 + (rand() & 31), 1.0, 0.2f, 0.2f);
-	}
-
-	// blueflag
-	if(powerups & (1 << PW_BLUEFLAG)) {
-		if(ci->newAnims) {
-			CG_PlayerFlag(cent, cgs.media.blueFlagFlapSkin, torso);
-		} else {
-			CG_TrailItem(cent, cgs.media.blueFlagModel);
-		}
-		trap_R_AddLightToScene(cent->lerpOrigin, 200 + (rand() & 31), 0.2f, 0.2f, 1.0);
-	}
-
-	// neutralflag
-	if(powerups & (1 << PW_NEUTRALFLAG)) {
-		if(ci->newAnims) {
-			CG_PlayerFlag(cent, cgs.media.neutralFlagFlapSkin, torso);
-		} else {
-			CG_TrailItem(cent, cgs.media.neutralFlagModel);
-		}
-		trap_R_AddLightToScene(cent->lerpOrigin, 200 + (rand() & 31), 1.0, 1.0, 1.0);
-	}
 
 	// haste leaves smoke trails
 	if(powerups & (1 << PW_HASTE)) {

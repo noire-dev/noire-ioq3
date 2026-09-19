@@ -63,5 +63,3 @@ gentity_t* SelectCTFSpawnPoint(team_t team, int teamstate, vec3_t origin, vec3_t
 gentity_t* Team_GetLocation(gentity_t* ent);
 bool Team_GetLocationMsg(gentity_t* ent, char* loc, int loclen);
 void CheckTeamStatus(void);
-
-int Pickup_Team(gentity_t* ent, gentity_t* other);
