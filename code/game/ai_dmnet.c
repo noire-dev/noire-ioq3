@@ -187,14 +187,6 @@ int BotNearbyGoal(bot_state_t* bs, int tfl, bot_goal_t* ltg, float range) {
 
 	// check if the bot should go for air
 	if(BotGoForAir(bs, tfl, ltg, range)) return true;
-	// if the bot is carrying a flag or cubes
-	if(BotCTFCarryingFlag(bs)) {
-		// if the bot is just a few secs away from the base
-		if(trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, bs->teamgoal.areanum, TFL_DEFAULT) < 300) {
-			// make the range really small
-			range = 50;
-		}
-	}
 	ret = trap_BotChooseNBGItem(bs->gs, bs->origin, bs->inventory, tfl, ltg, range);
 	return ret;
 }
@@ -1025,7 +1017,6 @@ int AINode_Seek_ActivateEntity(bot_state_t* bs) {
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
-	if(bot_grapple.integer) bs->tfl |= TFL_GRAPPLEHOOK;
 	// if in lava or slime the bot should be able to get out
 	if(BotInLavaOrSlime(bs)) bs->tfl |= TFL_LAVA | TFL_SLIME;
 	// map specific code
@@ -1222,7 +1213,6 @@ int AINode_Seek_NBG(bot_state_t* bs) {
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
-	if(bot_grapple.integer) bs->tfl |= TFL_GRAPPLEHOOK;
 	// if in lava or slime the bot should be able to get out
 	if(BotInLavaOrSlime(bs)) bs->tfl |= TFL_LAVA | TFL_SLIME;
 	//
@@ -1344,7 +1334,6 @@ int AINode_Seek_LTG(bot_state_t* bs) {
 	}
 
 	bs->tfl = TFL_DEFAULT;
-	if(bot_grapple.integer) bs->tfl |= TFL_GRAPPLEHOOK;
 	// if in lava or slime the bot should be able to get out
 	if(BotInLavaOrSlime(bs)) bs->tfl |= TFL_LAVA | TFL_SLIME;
 	//
@@ -1551,7 +1540,6 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
-	if(bot_grapple.integer) bs->tfl |= TFL_GRAPPLEHOOK;
 	// if in lava or slime the bot should be able to get out
 	if(BotInLavaOrSlime(bs)) bs->tfl |= TFL_LAVA | TFL_SLIME;
 	//
@@ -1634,7 +1622,6 @@ int AINode_Battle_Chase(bot_state_t* bs) {
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
-	if(bot_grapple.integer) bs->tfl |= TFL_GRAPPLEHOOK;
 	// if in lava or slime the bot should be able to get out
 	if(BotInLavaOrSlime(bs)) bs->tfl |= TFL_LAVA | TFL_SLIME;
 	//
@@ -1759,7 +1746,6 @@ int AINode_Battle_Retreat(bot_state_t* bs) {
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
-	if(bot_grapple.integer) bs->tfl |= TFL_GRAPPLEHOOK;
 	// if in lava or slime the bot should be able to get out
 	if(BotInLavaOrSlime(bs)) bs->tfl |= TFL_LAVA | TFL_SLIME;
 	// map specific code
@@ -1899,7 +1885,6 @@ int AINode_Battle_NBG(bot_state_t* bs) {
 	}
 	//
 	bs->tfl = TFL_DEFAULT;
-	if(bot_grapple.integer) bs->tfl |= TFL_GRAPPLEHOOK;
 	// if in lava or slime the bot should be able to get out
 	if(BotInLavaOrSlime(bs)) bs->tfl |= TFL_LAVA | TFL_SLIME;
 	//

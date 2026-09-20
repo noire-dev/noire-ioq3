@@ -214,27 +214,6 @@ static void PlayerIntroSound(const char* modelAndSkin) {
 
 /*
 ===============
-G_CheckBotSpawn
-===============
-*/
-void G_CheckBotSpawn(void) {
-	int n;
-	char userinfo[MAX_INFO_VALUE];
-
-	for(n = 0; n < BOT_SPAWN_QUEUE_DEPTH; n++) {
-		if(!botSpawnQueue[n].spawnTime) {
-			continue;
-		}
-		if(botSpawnQueue[n].spawnTime > level.time) {
-			continue;
-		}
-		ClientBegin(botSpawnQueue[n].clientNum);
-		botSpawnQueue[n].spawnTime = 0;
-	}
-}
-
-/*
-===============
 AddBotToSpawnQueue
 ===============
 */
@@ -474,40 +453,6 @@ void Svcmd_AddBot_f(void) {
 	// go ahead and load the bot's media immediately
 	if(level.time - level.startTime > 1000 && trap_Cvar_VariableIntegerValue("cl_running")) {
 		trap_SendServerCommand(-1, "loaddefered\n");  // FIXME: spelled wrong, but not changing for demo
-	}
-}
-
-/*
-===============
-Svcmd_BotList_f
-===============
-*/
-void Svcmd_BotList_f(void) {
-	int i;
-	char name[MAX_TOKEN_CHARS];
-	char funname[MAX_TOKEN_CHARS];
-	char model[MAX_TOKEN_CHARS];
-	char aifile[MAX_TOKEN_CHARS];
-
-	trap_Print("^1name             model            aifile              funname\n");
-	for(i = 0; i < g_numBots; i++) {
-		Q_strncpyz(name, Info_ValueForKey(g_botInfos[i], "name"), sizeof(name));
-		if(!*name) {
-			strcpy(name, "UnnamedPlayer");
-		}
-		Q_strncpyz(funname, Info_ValueForKey(g_botInfos[i], "funname"), sizeof(funname));
-		if(!*funname) {
-			strcpy(funname, "");
-		}
-		Q_strncpyz(model, Info_ValueForKey(g_botInfos[i], "model"), sizeof(model));
-		if(!*model) {
-			strcpy(model, "visor/default");
-		}
-		Q_strncpyz(aifile, Info_ValueForKey(g_botInfos[i], "aifile"), sizeof(aifile));
-		if(!*aifile) {
-			strcpy(aifile, "bots/default_c.c");
-		}
-		trap_Print(va("%-16s %-16s %-20s %-20s\n", name, model, aifile, funname));
 	}
 }
 

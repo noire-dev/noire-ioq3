@@ -135,7 +135,6 @@ typedef enum { WEAPON_READY, WEAPON_RAISING, WEAPON_DROPPING, WEAPON_FIRING } we
 #define PMF_TIME_WATERJUMP 256  // pm_time is waterjump
 #define PMF_RESPAWNED 512       // clear after attack and jump buttons come up
 #define PMF_USE_ITEM_HELD 1024
-#define PMF_GRAPPLE_PULL 2048  // pull towards grapple location
 #define PMF_FOLLOW 4096        // spectate following another player
 #define PMF_SCOREBOARD 8192    // spectate as a scoreboard
 #define PMF_INVULEXPAND 16384  // invulnerability sphere set to full size
@@ -246,7 +245,6 @@ typedef enum {
 	WP_RAILGUN,
 	WP_PLASMAGUN,
 	WP_BFG,
-	WP_GRAPPLING_HOOK,
 
 	WEAPONS_NUM
 } weapon_t;
@@ -434,7 +432,31 @@ typedef enum {
 typedef enum { TEAMTASK_NONE, TEAMTASK_OFFENSE, TEAMTASK_DEFENSE, TEAMTASK_PATROL, TEAMTASK_FOLLOW, TEAMTASK_RETRIEVE, TEAMTASK_ESCORT, TEAMTASK_CAMP } teamtask_t;
 
 // means of death
-typedef enum { MOD_UNKNOWN, MOD_SHOTGUN, MOD_GAUNTLET, MOD_MACHINEGUN, MOD_GRENADE, MOD_GRENADE_SPLASH, MOD_ROCKET, MOD_ROCKET_SPLASH, MOD_PLASMA, MOD_PLASMA_SPLASH, MOD_RAILGUN, MOD_LIGHTNING, MOD_BFG, MOD_BFG_SPLASH, MOD_WATER, MOD_SLIME, MOD_LAVA, MOD_CRUSH, MOD_TELEFRAG, MOD_FALLING, MOD_SUICIDE, MOD_TARGET_LASER, MOD_TRIGGER_HURT, MOD_GRAPPLE } meansOfDeath_t;
+typedef enum {
+	MOD_UNKNOWN,
+	MOD_SHOTGUN,
+	MOD_GAUNTLET,
+	MOD_MACHINEGUN,
+	MOD_GRENADE,
+	MOD_GRENADE_SPLASH,
+	MOD_ROCKET,
+	MOD_ROCKET_SPLASH,
+	MOD_PLASMA,
+	MOD_PLASMA_SPLASH,
+	MOD_RAILGUN,
+	MOD_LIGHTNING,
+	MOD_BFG,
+	MOD_BFG_SPLASH,
+	MOD_WATER,
+	MOD_SLIME,
+	MOD_LAVA,
+	MOD_CRUSH,
+	MOD_TELEFRAG,
+	MOD_FALLING,
+	MOD_SUICIDE,
+	MOD_TARGET_LASER,
+	MOD_TRIGGER_HURT,
+} meansOfDeath_t;
 
 //---------------------------------------------------------
 
@@ -502,7 +524,6 @@ typedef enum {
 	ET_PUSH_TRIGGER,
 	ET_TELEPORT_TRIGGER,
 	ET_INVISIBLE,
-	ET_GRAPPLE,  // grapple hooked on wall
 	ET_TEAM,
 
 	ET_EVENTS  // any of the EV_* events can be added freestanding

@@ -66,7 +66,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 bot_waypoint_t botai_waypoints[MAX_WAYPOINTS];
 bot_waypoint_t* botai_freewaypoints;
 
-vmCvar_t bot_grapple;
 vmCvar_t bot_rocketjump;
 vmCvar_t bot_fastchat;
 vmCvar_t bot_nochat;
@@ -3077,7 +3076,6 @@ void BotSetupDeathmatchAI(void) {
 	char model[128];
 
 	trap_Cvar_Register(&bot_rocketjump, "bot_rocketjump", "1", 0);
-	trap_Cvar_Register(&bot_grapple, "bot_grapple", "0", 0);
 	trap_Cvar_Register(&bot_fastchat, "bot_fastchat", "0", 0);
 	trap_Cvar_Register(&bot_nochat, "bot_nochat", "0", 0);
 	trap_Cvar_Register(&bot_testrchat, "bot_testrchat", "0", 0);

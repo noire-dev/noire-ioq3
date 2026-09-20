@@ -619,7 +619,6 @@ restarts.
 */
 char* ClientConnect(int clientNum, bool firstTime, bool isBot) {
 	char* value;
-	//	char		*areabits;
 	gclient_t* client;
 	char userinfo[MAX_INFO_STRING];
 	gentity_t* ent;
@@ -628,14 +627,7 @@ char* ClientConnect(int clientNum, bool firstTime, bool isBot) {
 
 	trap_GetUserinfo(clientNum, userinfo, sizeof(userinfo));
 
-	// IP filtering
-	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=500
-	// recommanding PB based IP / GUID banning, the builtin system is pretty limited
-	// check to see if they are on the banned IP list
 	value = Info_ValueForKey(userinfo, "ip");
-	if(G_FilterPacket(value)) {
-		return "You are banned from this server.";
-	}
 
 	// we don't check password for bots and local client
 	// NOTE: local client <-> "ip" "localhost"

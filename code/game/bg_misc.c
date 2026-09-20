@@ -173,19 +173,6 @@ gitem_t bg_itemlist[] = {{NULL,
                           /* precache */ "",
                           /* sounds */ ""},
 
-                         /*QUAKED weapon_grapplinghook (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
-                          */
-                         {"weapon_grapplinghook",
-                          "sound/misc/w_pkup.wav",
-                          {"models/weapons2/grapple/grapple.md3", NULL, NULL, NULL},
-                          /* icon */ "icons/iconw_grapple",
-                          /* pickup */ "Grappling Hook",
-                          0,
-                          IT_WEAPON,
-                          WP_GRAPPLING_HOOK,
-                          /* precache */ "",
-                          /* sounds */ ""},
-
                          // end of list marker
                          {NULL}};
 

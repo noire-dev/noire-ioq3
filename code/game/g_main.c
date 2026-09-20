@@ -179,18 +179,7 @@ void QDECL G_Error(const char* fmt, ...) {
 	trap_Error(text);
 }
 
-/*
-================
-G_FindTeams
-
-Chain together all entities with a matching team field.
-Entity teams are used for item groups and multi-entity mover groups.
-
-All but the first will have the FL_TEAMMEMBER flag set and teammaster field set
-All but the last will have the teamchain field set to the next one
-================
-*/
-void G_FindTeams(void) {
+static void G_FindEntityTeams(void) {
 	gentity_t *e, *e2;
 	int i, j;
 	int c, c2;
@@ -229,11 +218,6 @@ void G_FindTeams(void) {
 
 void G_RemapTeamShaders(void) {}
 
-/*
-=================
-G_RegisterCvars
-=================
-*/
 void G_RegisterCvars(void) {
 	int i;
 	cvarTable_t* cv;
@@ -251,11 +235,6 @@ void G_RegisterCvars(void) {
 	if(remapped) G_RemapTeamShaders();
 }
 
-/*
-=================
-G_UpdateCvars
-=================
-*/
 void G_UpdateCvars(void) {
 	int i;
 	cvarTable_t* cv;
@@ -284,12 +263,6 @@ void G_UpdateCvars(void) {
 	}
 }
 
-/*
-============
-G_InitGame
-
-============
-*/
 void G_InitGame(int levelTime, int randomSeed, int restart) {
 	int i;
 
@@ -300,8 +273,6 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	srand(randomSeed);
 
 	G_RegisterCvars();
-
-	G_ProcessIPBans();
 
 	G_InitMemory();
 
@@ -362,7 +333,7 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	G_SpawnEntitiesFromString();
 
 	// general initialization
-	G_FindTeams();
+	G_FindEntityTeams();
 
 	G_Printf("-----------------------------------\n");
 

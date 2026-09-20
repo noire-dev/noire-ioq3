@@ -1085,8 +1085,6 @@ typedef struct playerState_s {
 	                  // when at rest, the value will remain unchanged
 	                  // used to twist the legs during strafing
 
-	vec3_t grapplePoint;  // location of grapple to pull towards if PMF_GRAPPLE_PULL
-
 	int eFlags;  // copied to entityState_t->eFlags
 
 	int eventSequence;  // pmove generated events

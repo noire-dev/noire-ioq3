@@ -431,42 +431,6 @@ static void CG_PlasmaTrail(centity_t* cent, const weaponInfo_t* wi) {
 	le->angles.trDelta[1] = 0.5;
 	le->angles.trDelta[2] = 0;
 }
-/*
-==========================
-CG_GrappleTrail
-==========================
-*/
-void CG_GrappleTrail(centity_t* ent, const weaponInfo_t* wi) {
-	vec3_t origin;
-	entityState_t* es;
-	vec3_t forward, up;
-	refEntity_t beam;
-
-	es = &ent->currentState;
-
-	BG_EvaluateTrajectory(&es->pos, cg.time, origin);
-	ent->trailTime = cg.time;
-
-	memset(&beam, 0, sizeof(beam));
-	// FIXME adjust for muzzle position
-	VectorCopy(cg_entities[ent->currentState.otherEntityNum].lerpOrigin, beam.origin);
-	beam.origin[2] += 26;
-	AngleVectors(cg_entities[ent->currentState.otherEntityNum].lerpAngles, forward, NULL, up);
-	VectorMA(beam.origin, -6, up, beam.origin);
-	VectorCopy(origin, beam.oldorigin);
-
-	if(Distance(beam.origin, beam.oldorigin) < 64) return;  // Don't draw if close
-
-	beam.reType = RT_LIGHTNING;
-	beam.customShader = cgs.media.lightningShader;
-
-	AxisClear(beam.axis);
-	beam.shaderRGBA[0] = 0xff;
-	beam.shaderRGBA[1] = 0xff;
-	beam.shaderRGBA[2] = 0xff;
-	beam.shaderRGBA[3] = 0xff;
-	trap_R_AddRefEntityToScene(&beam);
-}
 
 /*
 ==========================
@@ -548,17 +512,6 @@ void CG_RegisterWeapon(int weaponNum) {
 			cgs.media.sfx_lghit2 = trap_S_RegisterSound("sound/weapons/lightning/lg_hit2.wav", false);
 			cgs.media.sfx_lghit3 = trap_S_RegisterSound("sound/weapons/lightning/lg_hit3.wav", false);
 
-			break;
-
-		case WP_GRAPPLING_HOOK:
-			MAKERGB(weaponInfo->flashDlightColor, 0.6f, 0.6f, 1.0f);
-			weaponInfo->missileModel = trap_R_RegisterModel("models/ammo/rocket/rocket.md3");
-			weaponInfo->missileTrailFunc = CG_GrappleTrail;
-			weaponInfo->missileDlight = 200;
-			MAKERGB(weaponInfo->missileDlightColor, 1, 0.75f, 0);
-			weaponInfo->readySound = trap_S_RegisterSound("sound/weapons/melee/fsthum.wav", false);
-			weaponInfo->firingSound = trap_S_RegisterSound("sound/weapons/melee/fstrun.wav", false);
-			cgs.media.lightningShader = trap_R_RegisterShader("lightningBoltNew");
 			break;
 
 		case WP_MACHINEGUN:
@@ -990,7 +943,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 	}
 
 	// add the flash
-	if((weaponNum == WP_LIGHTNING || weaponNum == WP_GAUNTLET || weaponNum == WP_GRAPPLING_HOOK) && (nonPredictedCent->currentState.eFlags & EF_FIRING)) {
+	if((weaponNum == WP_LIGHTNING || weaponNum == WP_GAUNTLET) && (nonPredictedCent->currentState.eFlags & EF_FIRING)) {
 		// continuous flash
 	} else {
 		// impulse flash

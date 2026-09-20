@@ -470,11 +470,6 @@ void ClientThink_real(gentity_t* ent) {
 	// set speed
 	client->ps.speed = g_speed.value;
 
-	// Let go of the hook if we aren't firing
-	if(client->ps.weapon == WP_GRAPPLING_HOOK && client->hook && !(ucmd->buttons & BUTTON_ATTACK)) {
-		Weapon_HookFree(client->hook);
-	}
-
 	// set up for pmove
 	oldEventSequence = client->ps.eventSequence;
 
@@ -519,10 +514,6 @@ void ClientThink_real(gentity_t* ent) {
 		BG_PlayerStateToEntityState(&ent->client->ps, &ent->s, true);
 	}
 	SendPendingPredictableEvents(&ent->client->ps);
-
-	if(!(ent->client->ps.eFlags & EF_FIRING)) {
-		client->fireHeld = false;  // for grapple
-	}
 
 	// use the snapped origin for linking so it matches client predicted versions
 	VectorCopy(ent->s.pos.trBase, ent->r.currentOrigin);

@@ -192,7 +192,6 @@ static void CG_Obituary(entityState_t* ent) {
 
 	if(attacker != ENTITYNUM_WORLD) {
 		switch(mod) {
-			case MOD_GRAPPLE: message = "was caught by"; break;
 			case MOD_GAUNTLET: message = "was pummeled by"; break;
 			case MOD_MACHINEGUN: message = "was machinegunned by"; break;
 			case MOD_SHOTGUN: message = "was gunned down by"; break;
@@ -255,14 +254,6 @@ static void CG_ItemPickup(int itemNum) {
 	cg.itemPickup = itemNum;
 	cg.itemPickupTime = cg.time;
 	cg.itemPickupBlendTime = cg.time;
-	// see if it should be the grabbed weapon
-	if(bg_itemlist[itemNum].giType == IT_WEAPON) {
-		// select it immediately
-		if(cg_autoswitch.integer && bg_itemlist[itemNum].giTag != WP_MACHINEGUN) {
-			cg.weaponSelectTime = cg.time;
-			cg.weaponSelect = bg_itemlist[itemNum].giTag;
-		}
-	}
 }
 
 /*

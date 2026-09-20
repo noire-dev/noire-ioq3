@@ -513,49 +513,7 @@ static void PM_WaterMove(void) {
 
 /*
 ===================
-PM_FlyMove
-
-Only with the flight powerup
-===================
-*/
-static void PM_FlyMove(void) {
-	int i;
-	vec3_t wishvel;
-	float wishspeed;
-	vec3_t wishdir;
-	float scale;
-
-	// normal slowdown
-	PM_Friction();
-
-	scale = PM_CmdScale(&pm->cmd);
-	//
-	// user intentions
-	//
-	if(!scale) {
-		wishvel[0] = 0;
-		wishvel[1] = 0;
-		wishvel[2] = 0;
-	} else {
-		for(i = 0; i < 3; i++) {
-			wishvel[i] = scale * pml.forward[i] * pm->cmd.forwardmove + scale * pml.right[i] * pm->cmd.rightmove;
-		}
-
-		wishvel[2] += scale * pm->cmd.upmove;
-	}
-
-	VectorCopy(wishvel, wishdir);
-	wishspeed = VectorNormalize(wishdir);
-
-	PM_Accelerate(wishdir, wishspeed, pm_flyaccelerate);
-
-	PM_StepSlideMove(false);
-}
-
-/*
-===================
 PM_AirMove
-
 ===================
 */
 static void PM_AirMove(void) {
@@ -599,47 +557,9 @@ static void PM_AirMove(void) {
 	// we may have a ground plane that is very steep, even
 	// though we don't have a groundentity
 	// slide along the steep plane
-	if(pml.groundPlane) {
-		PM_ClipVelocity(pm->ps->velocity, pml.groundTrace.plane.normal, pm->ps->velocity, OVERCLIP);
-	}
-
-#if 0
-	//ZOID:  If we are on the grapple, try stair-stepping
-	//this allows a player to use the grapple to pull himself
-	//over a ledge
-	if (pm->ps->pm_flags & PMF_GRAPPLE_PULL)
-		PM_StepSlideMove ( true );
-	else
-		PM_SlideMove ( true );
-#endif
+	if(pml.groundPlane) PM_ClipVelocity(pm->ps->velocity, pml.groundTrace.plane.normal, pm->ps->velocity, OVERCLIP);
 
 	PM_StepSlideMove(true);
-}
-
-/*
-===================
-PM_GrappleMove
-
-===================
-*/
-static void PM_GrappleMove(void) {
-	vec3_t vel, v;
-	float vlen;
-
-	VectorScale(pml.forward, -16, v);
-	VectorAdd(pm->ps->grapplePoint, v, v);
-	VectorSubtract(v, pm->ps->origin, vel);
-	vlen = VectorLength(vel);
-	VectorNormalize(vel);
-
-	if(vlen <= 100)
-		VectorScale(vel, 10 * vlen, vel);
-	else
-		VectorScale(vel, 800, vel);
-
-	VectorCopy(vel, pm->ps->velocity);
-
-	pml.groundPlane = false;
 }
 
 /*
@@ -1521,7 +1441,6 @@ static void PM_Weapon(void) {
 		case WP_PLASMAGUN: addTime = 100; break;
 		case WP_RAILGUN: addTime = 1500; break;
 		case WP_BFG: addTime = 200; break;
-		case WP_GRAPPLING_HOOK: addTime = 400; break;
 	}
 
 	pm->ps->weaponTime += addTime;
@@ -1735,11 +1654,7 @@ void PmoveSingle(pmove_t* pmove) {
 
 	PM_DropTimers();
 
-	if(pm->ps->pm_flags & PMF_GRAPPLE_PULL) {
-		PM_GrappleMove();
-		// We can wiggle a bit
-		PM_AirMove();
-	} else if(pm->ps->pm_flags & PMF_TIME_WATERJUMP) {
+	if(pm->ps->pm_flags & PMF_TIME_WATERJUMP) {
 		PM_WaterJumpMove();
 	} else if(pm->waterlevel > 1) {
 		// swimming

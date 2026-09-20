@@ -273,9 +273,6 @@ struct gclient_s {
 
 	int lastKillTime;  // for multiple kill rewards
 
-	bool fireHeld;    // used for hook
-	gentity_t* hook;  // grapple hook if out
-
 	int switchTeamTime;  // time the player switched teams
 
 	// timeResidual is used to handle events that happen every second
@@ -428,7 +425,6 @@ gentity_t* fire_plasma(gentity_t* self, vec3_t start, vec3_t aimdir);
 gentity_t* fire_grenade(gentity_t* self, vec3_t start, vec3_t aimdir);
 gentity_t* fire_rocket(gentity_t* self, vec3_t start, vec3_t dir);
 gentity_t* fire_bfg(gentity_t* self, vec3_t start, vec3_t dir);
-gentity_t* fire_grapple(gentity_t* self, vec3_t start, vec3_t dir);
 
 //
 // g_mover.c
@@ -453,8 +449,6 @@ bool LogAccuracyHit(gentity_t* target, gentity_t* attacker);
 void CalcMuzzlePoint(gentity_t* ent, vec3_t forward, vec3_t right, vec3_t up, vec3_t muzzlePoint);
 void SnapVectorTowards(vec3_t v, vec3_t to);
 bool CheckGauntletAttack(gentity_t* ent);
-void Weapon_HookFree(gentity_t* ent);
-void Weapon_HookThink(gentity_t* ent);
 
 //
 // g_client.c
@@ -473,8 +467,6 @@ bool SpotWouldTelefrag(gentity_t* spot);
 // g_svcmds.c
 //
 bool ConsoleCommand(void);
-void G_ProcessIPBans(void);
-bool G_FilterPacket(char* from);
 
 //
 // g_weapon.c
@@ -527,11 +519,9 @@ void G_InitMemory(void);
 void G_InitBots(bool restart);
 char* G_GetBotInfoByNumber(int num);
 char* G_GetBotInfoByName(const char* name);
-void G_CheckBotSpawn(void);
 void G_RemoveQueuedBotBegin(int clientNum);
 bool G_BotConnect(int clientNum, bool restart);
 void Svcmd_AddBot_f(void);
-void Svcmd_BotList_f(void);
 void BotInterbreedEndMatch(void);
 
 // ai_main.c
