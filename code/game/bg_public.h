@@ -59,6 +59,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define DEAD_VIEWHEIGHT -16
 #define INVUL_RADIUS 42
 
+// weapon status
+#define WS_NONE 0
+#define WS_HAVE 1
+#define WS_NOAMMO 2
+
 //
 // config strings are a general means of communicating variable length strings
 // from the server to all connected clients.
@@ -68,7 +73,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CS_MUSIC 2
 #define CS_MESSAGE 3  // from the map worldspawn's message field
 #define CS_MOTD 4     // g_motd string for server message of the day
-#define CS_WARMUP 5   // server time when the match will be restarted
 #define CS_SCORES1 6
 #define CS_SCORES2 7
 #define CS_VOTE_TIME 8
@@ -289,7 +293,7 @@ typedef enum {
 	WP_BFG,
 	WP_GRAPPLING_HOOK,
 
-	WP_NUM_WEAPONS
+	WEAPONS_NUM
 } weapon_t;
 
 // reward sounds (stored in ps->persistant[PERS_PLAYEREVENTS])

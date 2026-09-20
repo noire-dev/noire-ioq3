@@ -507,6 +507,8 @@ typedef struct {
 
 	// input state sent to server
 	int weaponSelect;
+	int swep_listcl[WEAPONS_NUM];
+	int swep_spawncl[WEAPONS_NUM];  // stores spawn weapons
 
 	// auto rotating items
 	vec3_t autoAngles;
@@ -578,10 +580,6 @@ typedef struct {
 	int soundBufferOut;
 	int soundTime;
 	qhandle_t soundBuffer[MAX_SOUNDBUFFER];
-
-	// warmup countdown
-	int warmup;
-	int warmupCount;
 
 	//==========================
 
@@ -966,9 +964,7 @@ typedef struct {
 	int acceptLeader;
 	char acceptVoice[MAX_NAME_LENGTH];
 
-	console_t console;
 	console_t chat;
-	console_t teamChat;
 
 	// media
 	cgMedia_t media;
@@ -1120,6 +1116,7 @@ void CG_DrawTopBottom(float x, float y, float w, float h, float size);
 // cg_draw.c
 void CG_Add3DString(float x, float y, float z, const char* str, int style, const vec4_t color, float fontSize, float min, float max, bool useTrace);
 void CG_DrawHead(float x, float y, float w, float h, int clientNum);
+void CG_AddToGenericConsole(const char* str, console_t* console);
 void CG_AddNotify(const char* text, int type, int number, const char* picPath);
 void CG_DrawActive(stereoFrame_t stereoView);
 
@@ -1180,9 +1177,6 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end);
 void CG_GrappleTrail(centity_t* ent, const weaponInfo_t* wi);
 void CG_AddViewWeapon(playerState_t* ps);
 void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent, int team);
-void CG_DrawWeaponSelect(void);
-
-void CG_OutOfAmmoChange(void);  // should this be in pmove?
 
 //
 // cg_marks.c

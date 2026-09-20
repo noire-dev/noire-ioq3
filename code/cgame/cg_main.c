@@ -315,6 +315,8 @@ void QDECL CG_Printf(const char* msg, ...) {
 	Q_vsnprintf(text, sizeof(text), msg, argptr);
 	va_end(argptr);
 
+	CG_AddToGenericConsole(text, &cgs.chat);
+
 	trap_Print(text);
 }
 

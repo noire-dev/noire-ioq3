@@ -43,7 +43,7 @@ void CG_CheckAmmo(void) {
 	// see about how many seconds of ammo we have remaining
 	weapons = cg.snap->ps.stats[STAT_WEAPONS];
 	total = 0;
-	for(i = WP_MACHINEGUN; i < WP_NUM_WEAPONS; i++) {
+	for(i = WP_MACHINEGUN; i < WEAPONS_NUM; i++) {
 		if(!(weapons & (1 << i))) {
 			continue;
 		}
@@ -180,8 +180,12 @@ A respawn happened this snapshot
 ================
 */
 void CG_Respawn(void) {
+	int i;
+
 	// no error decay on player movement
 	cg.thisFrameTeleport = true;
+
+	for(i = 1; i < WEAPONS_NUM; i++) cg.swep_listcl[i] = cg.swep_spawncl[i];  // Noire's Mod weapon predict
 
 	// display weapons available
 	cg.weaponSelectTime = cg.time;
@@ -356,23 +360,6 @@ void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
 			trap_S_StartLocalSound(cgs.media.holyShitSound, CHAN_ANNOUNCER);
 		}
 		reward = true;
-	}
-
-	// lead changes
-	if(!reward) {
-		//
-		if(!cg.warmup) {
-			// never play lead changes during warmup
-			if(ps->persistant[PERS_RANK] != ops->persistant[PERS_RANK]) {
-				if(ps->persistant[PERS_RANK] == 0) {
-					CG_AddBufferedSound(cgs.media.takenLeadSound);
-				} else if(ps->persistant[PERS_RANK] == RANK_TIED_FLAG) {
-					CG_AddBufferedSound(cgs.media.tiedLeadSound);
-				} else if((ops->persistant[PERS_RANK] & ~RANK_TIED_FLAG) == 0) {
-					CG_AddBufferedSound(cgs.media.lostLeadSound);
-				}
-			}
-		}
 	}
 
 	// timelimit warnings

@@ -1252,225 +1252,70 @@ void CG_AddViewWeapon(playerState_t* ps) {
 	CG_AddPlayerWeapon(&hand, ps, &cg.predictedPlayerEntity, ps->persistant[PERS_TEAM]);
 }
 
-/*
-==============================================================================
-
-WEAPON SELECTION
-
-==============================================================================
-*/
-
-/*
-===================
-CG_DrawWeaponSelect
-===================
-*/
-void CG_DrawWeaponSelect(void) {
-	int i;
-	int bits;
-	int count;
-	int x, y, w;
-	char* name;
-	float* color;
-
-	// don't display if dead
-	if(cg.predictedPlayerState.stats[STAT_HEALTH] <= 0) {
-		return;
-	}
-
-	color = CG_FadeColor(cg.weaponSelectTime, WEAPON_SELECT_TIME);
-	if(!color) {
-		return;
-	}
-	trap_R_SetColor(color);
-
-	// showing weapon select clears pickup item display, but not the blend blob
-	cg.itemPickupTime = 0;
-
-	// count the number of weapons owned
-	bits = cg.snap->ps.stats[STAT_WEAPONS];
-	count = 0;
-	for(i = 1; i < MAX_WEAPONS; i++) {
-		if(bits & (1 << i)) {
-			count++;
-		}
-	}
-
-	x = 320 - count * 20;
-	y = 380;
-
-	for(i = 1; i < MAX_WEAPONS; i++) {
-		if(!(bits & (1 << i))) {
-			continue;
-		}
-
-		CG_RegisterWeapon(i);
-
-		// draw weapon icon
-		CG_DrawPic(x, y, 32, 32, cg_weapons[i].weaponIcon);
-
-		// draw selection marker
-		if(i == cg.weaponSelect) {
-			CG_DrawPic(x - 4, y - 4, 40, 40, cgs.media.selectShader);
-		}
-
-		// no ammo cross on top
-		if(!cg.snap->ps.ammo[i]) {
-			CG_DrawPic(x, y, 32, 32, cgs.media.noammoShader);
-		}
-
-		x += 40;
-	}
-
-	// draw the selected name
-	if(cg_weapons[cg.weaponSelect].item) {
-		name = cg_weapons[cg.weaponSelect].item->pickup_name;
-		if(name) {
-			w = CG_DrawStrlen(name) * BIGCHAR_WIDTH;
-			x = (SCREEN_WIDTH - w) / 2;
-			CG_DrawBigStringColor(x, y - 22, name, color);
-		}
-	}
-
-	trap_R_SetColor(NULL);
-}
-
-/*
-===============
-CG_WeaponSelectable
-===============
-*/
-static bool CG_WeaponSelectable(int i) {
-	if(!cg.snap->ps.ammo[i]) {
-		return false;
-	}
-	if(!(cg.snap->ps.stats[STAT_WEAPONS] & (1 << i))) {
-		return false;
-	}
-
-	return true;
-}
-
-/*
-===============
-CG_NextWeapon_f
-===============
-*/
 void CG_NextWeapon_f(void) {
-	int i;
-	int original;
+	bool weaponFound = false;
+	int original, i;
 
-	if(!cg.snap) {
-		return;
-	}
-	if(cg.snap->ps.pm_flags & PMF_FOLLOW) {
-		return;
-	}
+	if(!cg.snap || cg.snap->ps.pm_flags & PMF_FOLLOW) return;
+
+	// if(cg.snap->ps.weapon == WP_PHYSGUN && cg.snap->ps.eFlags & EF_FIRING) {
+	//	trap_Cmd(EXEC_INSERT, "physgun_dist 0\n");
+	//	return;
+	// }
 
 	cg.weaponSelectTime = cg.time;
 	original = cg.weaponSelect;
 
-	for(i = 0; i < MAX_WEAPONS; i++) {
+	for(i = 1; i < WEAPONS_NUM; i++) {
 		cg.weaponSelect++;
-		if(cg.weaponSelect == MAX_WEAPONS) {
-			cg.weaponSelect = 0;
-		}
-		if(cg.weaponSelect == WP_GAUNTLET) {
-			continue;  // never cycle to gauntlet
-		}
-		if(CG_WeaponSelectable(cg.weaponSelect)) {
+		if(cg.weaponSelect >= WEAPONS_NUM) cg.weaponSelect = 1;
+
+		if(cg.swep_listcl[cg.weaponSelect]) {
+			weaponFound = true;
 			break;
 		}
 	}
-	if(i == MAX_WEAPONS) {
-		cg.weaponSelect = original;
-	}
+
+	if(!weaponFound) cg.weaponSelect = original;
 }
 
-/*
-===============
-CG_PrevWeapon_f
-===============
-*/
 void CG_PrevWeapon_f(void) {
-	int i;
-	int original;
+	bool weaponFound = false;
+	int original, i;
 
-	if(!cg.snap) {
-		return;
-	}
-	if(cg.snap->ps.pm_flags & PMF_FOLLOW) {
-		return;
-	}
+	if(!cg.snap || cg.snap->ps.pm_flags & PMF_FOLLOW) return;
+
+	// if(cg.snap->ps.weapon == WP_PHYSGUN && cg.snap->ps.eFlags & EF_FIRING) {
+	//	trap_Cmd(EXEC_INSERT, "physgun_dist 1\n");
+	//	return;
+	// }
 
 	cg.weaponSelectTime = cg.time;
 	original = cg.weaponSelect;
 
-	for(i = 0; i < MAX_WEAPONS; i++) {
+	for(i = 1; i < WEAPONS_NUM; i++) {
 		cg.weaponSelect--;
-		if(cg.weaponSelect == -1) {
-			cg.weaponSelect = MAX_WEAPONS - 1;
-		}
-		if(cg.weaponSelect == WP_GAUNTLET) {
-			continue;  // never cycle to gauntlet
-		}
-		if(CG_WeaponSelectable(cg.weaponSelect)) {
+		if(cg.weaponSelect <= 0) cg.weaponSelect = WEAPONS_NUM;
+
+		if(cg.swep_listcl[cg.weaponSelect]) {
+			weaponFound = true;
 			break;
 		}
 	}
-	if(i == MAX_WEAPONS) {
-		cg.weaponSelect = original;
-	}
+
+	if(!weaponFound) cg.weaponSelect = original;
 }
 
-/*
-===============
-CG_Weapon_f
-===============
-*/
 void CG_Weapon_f(void) {
 	int num;
 
-	if(!cg.snap) {
-		return;
-	}
-	if(cg.snap->ps.pm_flags & PMF_FOLLOW) {
-		return;
-	}
+	if(!cg.snap || cg.snap->ps.pm_flags & PMF_FOLLOW) return;
 
 	num = atoi(CG_Argv(1));
 
-	if(num < 1 || num > MAX_WEAPONS - 1) {
-		return;
-	}
-
-	cg.weaponSelectTime = cg.time;
-
-	if(!(cg.snap->ps.stats[STAT_WEAPONS] & (1 << num))) {
-		return;  // don't have the weapon
-	}
+	if(!cg.swep_listcl[num]) return;
 
 	cg.weaponSelect = num;
-}
-
-/*
-===================
-CG_OutOfAmmoChange
-
-The current weapon has just run out of ammo
-===================
-*/
-void CG_OutOfAmmoChange(void) {
-	int i;
-
-	cg.weaponSelectTime = cg.time;
-
-	for(i = MAX_WEAPONS - 1; i > 0; i--) {
-		if(CG_WeaponSelectable(i)) {
-			cg.weaponSelect = i;
-			break;
-		}
-	}
 }
 
 /*
@@ -1497,8 +1342,8 @@ void CG_FireWeapon(centity_t* cent) {
 	if(ent->weapon == WP_NONE) {
 		return;
 	}
-	if(ent->weapon >= WP_NUM_WEAPONS) {
-		CG_Error("CG_FireWeapon: ent->weapon >= WP_NUM_WEAPONS");
+	if(ent->weapon >= WEAPONS_NUM) {
+		CG_Error("CG_FireWeapon: ent->weapon >= WEAPONS_NUM");
 		return;
 	}
 	weap = &cg_weapons[ent->weapon];

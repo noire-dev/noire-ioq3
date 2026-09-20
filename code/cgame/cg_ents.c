@@ -364,7 +364,7 @@ static void CG_Missile(centity_t* cent) {
 	//	int	col;
 
 	s1 = &cent->currentState;
-	if(s1->weapon >= WP_NUM_WEAPONS) {
+	if(s1->weapon >= WEAPONS_NUM) {
 		s1->weapon = 0;
 	}
 	weapon = &cg_weapons[s1->weapon];
@@ -457,7 +457,7 @@ static void CG_Grapple(centity_t* cent) {
 	const weaponInfo_t* weapon;
 
 	s1 = &cent->currentState;
-	if(s1->weapon >= WP_NUM_WEAPONS) {
+	if(s1->weapon >= WEAPONS_NUM) {
 		s1->weapon = 0;
 	}
 	weapon = &cg_weapons[s1->weapon];

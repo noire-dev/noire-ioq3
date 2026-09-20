@@ -37,6 +37,94 @@ void CG_DrawHead(float x, float y, float w, float h, int clientNum) {
 	drawhShaderAdjusted(x, y, w, h, ci->modelIcon);
 }
 
+#define WICON_SIDE 32 * 0.60
+#define WICON_SELECT 32 * 1.10
+#define WICON_SPACE 3
+#define WICONS_SIDES 12
+#define WEAPON_SELECT_TIME 1350
+#define WEAPON_SELECT_FADEOUT_TIME 350
+#define WEAPON_SELECT_FADEIN_TIME 300
+static void CG_DrawWeaponSelect(void) {
+	vec4_t weaponWhiteColor = {1.0f, 1.0f, 1.0f, 1.0f};
+	vec4_t weaponWhiteTextColor = {1.0f, 1.0f, 1.0f, 1.0f};
+	vec4_t weaponBlackColor = {0.0f, 0.0f, 0.0f, 1.0f};
+	float y, x, originalX = 320, originalY = 380;
+	int i, j;
+	float remaining, elapsed, alpha;
+
+	if(cg.predictedPlayerState.stats[STAT_HEALTH] <= 0) return;
+	if(!cg_draw2D.integer || cg.showScores) return;
+	if(cg.time > cg.weaponSelectTime + WEAPON_SELECT_TIME) return;
+
+	y = originalY + (WICON_SELECT * 0.25);
+	x = originalX + (WICON_SELECT / 2) + WICON_SPACE;
+
+	remaining = (float)(cg.weaponSelectTime + WEAPON_SELECT_TIME - cg.time);
+	if(remaining < WEAPON_SELECT_FADEOUT_TIME && remaining > 0) {
+		alpha = remaining / WEAPON_SELECT_FADEOUT_TIME;
+		if(alpha < 0.00) alpha = 1.00;
+		weaponWhiteColor[3] = alpha;
+		weaponWhiteTextColor[3] = alpha;
+		weaponBlackColor[3] = alpha;
+	}
+
+	elapsed = cg.time - cg.weaponSelectTime;
+	if(elapsed < WEAPON_SELECT_FADEIN_TIME) {
+		weaponWhiteTextColor[3] = elapsed / WEAPON_SELECT_FADEOUT_TIME;
+	}
+
+	drawStringAdjusted(320, 356, cg_weapons[cg.weaponSelect].item->pickup_name, FONTSTYLE_BOLD | FONTSTYLE_CENTER | FONTSTYLE_DROPSHADOW, weaponWhiteTextColor, 0.75, 256);
+
+	for(i = cg.weaponSelect + 1, j = 0; i <= WEAPONS_NUM; i++) {
+		if(j >= WICONS_SIDES) {
+			continue;
+		} else if(i >= WEAPONS_NUM) {
+			i = 1;
+		}
+
+		if(!cg.swep_listcl[i]) continue;
+
+		CG_RegisterWeapon(i);
+		trap_R_SetColor(weaponBlackColor);
+		drawhShaderAdjusted(x + 1, y + 1, WICON_SIDE, WICON_SIDE, cg_weapons[i].weaponIcon);
+		trap_R_SetColor(weaponWhiteColor);
+		drawhShaderAdjusted(x, y, WICON_SIDE, WICON_SIDE, cg_weapons[i].weaponIcon);
+
+		if(cg.swep_listcl[i] == WS_NOAMMO) drawhShaderAdjusted(x, y, WICON_SIDE, WICON_SIDE, cgs.media.noammoShader);
+
+		x += WICON_SIDE + WICON_SPACE;
+		j++;
+	}
+
+	x = originalX - (WICON_SELECT / 2) - (WICON_SIDE + WICON_SPACE);
+	for(i = cg.weaponSelect - 1, j = 0; i >= 0; i--) {
+		if(j >= WICONS_SIDES) {
+			continue;
+		} else if(i <= 0) {
+			i = WEAPONS_NUM - 1;
+		}
+
+		if(!cg.swep_listcl[i]) continue;
+
+		CG_RegisterWeapon(i);
+		trap_R_SetColor(weaponBlackColor);
+		drawhShaderAdjusted(x + 1, y + 1, WICON_SIDE, WICON_SIDE, cg_weapons[i].weaponIcon);
+		trap_R_SetColor(weaponWhiteColor);
+		drawhShaderAdjusted(x, y, WICON_SIDE, WICON_SIDE, cg_weapons[i].weaponIcon);
+
+		if(cg.swep_listcl[i] == WS_NOAMMO) drawhShaderAdjusted(x, y, WICON_SIDE, WICON_SIDE, cgs.media.noammoShader);
+
+		x -= WICON_SIDE + WICON_SPACE;
+		j++;
+	}
+
+	trap_R_SetColor(weaponBlackColor);
+	drawhShaderAdjusted((originalX - WICON_SELECT / 2) + 1, (originalY + 2) + 1, WICON_SELECT, WICON_SELECT, cg_weapons[cg.weaponSelect].weaponIcon);
+	trap_R_SetColor(weaponWhiteColor);
+	drawhShaderAdjusted(originalX - WICON_SELECT / 2, originalY + 2, WICON_SELECT, WICON_SELECT, cg_weapons[cg.weaponSelect].weaponIcon);
+	if(cg.swep_listcl[cg.weaponSelect] == WS_NOAMMO) drawhShaderAdjusted(originalX - WICON_SELECT / 2, originalY + 2, WICON_SELECT, WICON_SELECT, cgs.media.noammoShader);
+}
+
 static void CG_DrawCounterElement(float x, float y, const char* value, const char* text) {
 	drawRoundedRectAdjusted(x, y, 50, 15, 0, color_background, 0);
 	drawStringAdjusted(x + 4, y + 4, text, FONTSTYLE_LEFT | FONTSTYLE_DROPSHADOW, color_white, 0.35, 256);
@@ -371,14 +459,11 @@ static void CG_Draw2D(void) {
 
 	if(cg_draw2D.integer == 0) return;
 
-	if(!(catcher & KEYCATCH_MESSAGE)) CG_DrawGenericConsole(&cgs.console, 5, 10000, 0 - cgui.wideoffset, 0, 0.50);
-	if(!(catcher & KEYCATCH_UI)) {
-		CG_DrawGenericConsole(&cgs.teamChat, 5, 10000, 0 - cgui.wideoffset, 80, 0.50);
-		CG_DrawGenericConsole(&cgs.chat, 5, 10000, 0 - cgui.wideoffset, 350, 0.50);
-	}
+	CG_DrawGenericConsole(&cgs.chat, 5, 10000, 0 - cgui.wideoffset, 350, 0.50);
 
 	CG_DrawCrosshair();
 	CG_DrawCounters();
+
 	if(!(catcher & KEYCATCH_UI)) {
 		CG_ScanForCrosshairEntity();
 		CG_Notify();
@@ -390,9 +475,9 @@ static void CG_Draw2D(void) {
 		return;
 	}
 
-	if(!(catcher & KEYCATCH_UI)) {
-		CG_DrawScoreboard();
-	}
+	CG_DrawWeaponSelect();
+
+	if(!(catcher & KEYCATCH_UI)) CG_DrawScoreboard();
 }
 
 void CG_DrawActive(stereoFrame_t stereoView) {

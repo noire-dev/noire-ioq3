@@ -71,6 +71,46 @@ static void CG_ParseScores(void) {
 	}
 }
 
+static void CG_ParseSweps(void) {
+	int i;
+	int weaponIndex;
+	int numArgs = trap_Argc();
+
+	for(i = 0; i < WEAPONS_NUM; i++) cg.swep_listcl[i] = WS_NONE;
+
+	for(i = 1; i < numArgs; i++) {
+		weaponIndex = atoi(CG_Argv(i));
+
+		if(weaponIndex >= -WEAPONS_NUM && weaponIndex < WEAPONS_NUM) {
+			if(weaponIndex > 0) {
+				cg.swep_listcl[weaponIndex] = WS_HAVE;
+			} else if(weaponIndex < 0) {
+				cg.swep_listcl[-weaponIndex] = WS_NOAMMO;
+			}
+		}
+	}
+}
+
+static void CG_ParseSpawnSweps(void) {
+	int i;
+	int weaponIndex;
+	int numArgs = trap_Argc();
+
+	for(i = 0; i < WEAPONS_NUM; i++) cg.swep_spawncl[i] = WS_NONE;
+
+	for(i = 1; i < numArgs; i++) {
+		weaponIndex = atoi(CG_Argv(i));
+
+		if(weaponIndex >= -WEAPONS_NUM && weaponIndex < WEAPONS_NUM) {
+			if(weaponIndex > 0) {
+				cg.swep_spawncl[weaponIndex] = WS_HAVE;
+			} else if(weaponIndex < 0) {
+				cg.swep_spawncl[-weaponIndex] = WS_NOAMMO;
+			}
+		}
+	}
+}
+
 /*
 ================
 CG_ParseServerinfo
@@ -99,30 +139,6 @@ void CG_ParseServerinfo(void) {
 }
 
 /*
-==================
-CG_ParseWarmup
-==================
-*/
-static void CG_ParseWarmup(void) {
-	const char* info;
-	int warmup;
-
-	info = CG_ConfigString(CS_WARMUP);
-
-	warmup = atoi(info);
-	cg.warmupCount = -1;
-
-	if(warmup == 0 && cg.warmup) {
-	} else if(warmup > 0 && cg.warmup <= 0) {
-		{
-			trap_S_StartLocalSound(cgs.media.countPrepareSound, CHAN_ANNOUNCER);
-		}
-	}
-
-	cg.warmup = warmup;
-}
-
-/*
 ================
 CG_SetConfigValues
 
@@ -135,7 +151,6 @@ void CG_SetConfigValues(void) {
 	cgs.scores1 = atoi(CG_ConfigString(CS_SCORES1));
 	cgs.scores2 = atoi(CG_ConfigString(CS_SCORES2));
 	cgs.levelStartTime = atoi(CG_ConfigString(CS_LEVEL_START_TIME));
-	cg.warmup = atoi(CG_ConfigString(CS_WARMUP));
 }
 
 /*
@@ -212,8 +227,6 @@ static void CG_ConfigStringModified(void) {
 		CG_StartMusic();
 	} else if(num == CS_SERVERINFO) {
 		CG_ParseServerinfo();
-	} else if(num == CS_WARMUP) {
-		CG_ParseWarmup();
 	} else if(num == CS_SCORES1) {
 		cgs.scores1 = atoi(str);
 	} else if(num == CS_SCORES2) {
@@ -361,12 +374,6 @@ static void CG_MapRestart(void) {
 	trap_S_ClearLoopingSounds(true);
 
 	// we really should clear more parts of cg here and stop sounds
-
-	// play the "fight" sound if this is a restart without warmup
-	if(cg.warmup == 0) {
-		trap_S_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
-		// CG_CenterPrint("FIGHT!", 120, GIANTCHAR_WIDTH * 2);
-	}
 	trap_Cvar_Set("cg_thirdPerson", "0");
 }
 
@@ -428,17 +435,18 @@ static void CG_ServerCommand(void) {
 		return;
 	}
 
-	if(!strcmp(cmd, "tchat")) {
-		trap_S_StartLocalSound(cgs.media.talkSound, CHAN_LOCAL_SOUND);
-		Q_strncpyz(text, CG_Argv(1), MAX_SAY_TEXT);
-		CG_RemoveChatEscapeChar(text);
-		CG_AddToTeamChat(text);
-		CG_Printf("%s\n", text);
+	if(!strcmp(cmd, "scores")) {
+		CG_ParseScores();
 		return;
 	}
 
-	if(!strcmp(cmd, "scores")) {
-		CG_ParseScores();
+	if(!strcmp(cmd, "swep")) {
+		CG_ParseSweps();
+		return;
+	}
+
+	if(!strcmp(cmd, "sweps")) {
+		CG_ParseSpawnSweps();
 		return;
 	}
 

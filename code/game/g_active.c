@@ -345,6 +345,8 @@ void ClientTimerActions(gentity_t* ent, int msec) {
 		if(client->ps.stats[STAT_ARMOR] > client->ps.stats[STAT_MAX_HEALTH]) {
 			client->ps.stats[STAT_ARMOR]--;
 		}
+
+		G_SendSwepWeapons(ent);  // send sweps list to client for sync
 	}
 }
 

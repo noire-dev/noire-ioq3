@@ -228,9 +228,8 @@ static void SV_MapRestart_f(void) {
 	} else {
 		delay = 5;
 	}
-	if(delay && !Cvar_VariableValue("g_doWarmup")) {
+	if(delay) {
 		sv.restartTime = sv.time + delay * 1000;
-		SV_SetConfigstring(CS_WARMUP, va("%i", sv.restartTime));
 		return;
 	}
 

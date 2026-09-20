@@ -1393,7 +1393,7 @@ PM_BeginWeaponChange
 ===============
 */
 static void PM_BeginWeaponChange(int weapon) {
-	if(weapon <= WP_NONE || weapon >= WP_NUM_WEAPONS) {
+	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) {
 		return;
 	}
 
@@ -1420,7 +1420,7 @@ static void PM_FinishWeaponChange(void) {
 	int weapon;
 
 	weapon = pm->cmd.weapon;
-	if(weapon < WP_NONE || weapon >= WP_NUM_WEAPONS) {
+	if(weapon < WP_NONE || weapon >= WEAPONS_NUM) {
 		weapon = WP_NONE;
 	}
 

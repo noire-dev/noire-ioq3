@@ -52,10 +52,6 @@ void AddScore(gentity_t* ent, vec3_t origin, int score) {
 	if(!ent->client) {
 		return;
 	}
-	// no scoring during pre-match warmup
-	if(level.warmupTime) {
-		return;
-	}
 	// show score plum
 	ScorePlum(ent, origin, score);
 	//

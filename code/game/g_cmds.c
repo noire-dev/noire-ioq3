@@ -76,6 +76,63 @@ void DeathmatchScoreboardMessage(gentity_t* ent) {
 	trap_SendServerCommand(ent - g_entities, va("scores %i %i %i%s", i, level.teamScores[TEAM_RED], level.teamScores[TEAM_BLUE], string));
 }
 
+void G_SendSwepWeapons(gentity_t* ent) {
+	char string[4096] = "";
+	int i;
+	int len;
+
+	for(i = 1; i < WEAPONS_NUM; i++) {
+		if(ent->swep_list[i] >= WS_HAVE) {
+			if(ent->swep_ammo[i] > 0 || ent->swep_ammo[i] == -1) {
+				ent->swep_list[i] = WS_HAVE;  // we have weapon and ammo
+			} else {
+				ent->swep_list[i] = WS_NOAMMO;  // we have weapon only
+			}
+		}
+		if(ent->swep_list[i] == WS_HAVE) {
+			Q_strcat(string, sizeof(string), va("%i ", i));
+		}
+		if(ent->swep_list[i] == WS_NOAMMO) {
+			Q_strcat(string, sizeof(string), va("%i ", i * -1));  // use -id for send WS_NOAMMO
+		}
+	}
+	len = strlen(string);
+	if(len > 0 && string[len - 1] == ' ') {
+		string[len - 1] = '\0';
+	}
+
+	trap_SendServerCommand(ent - g_entities, va("swep %s", string));
+}
+
+void G_SendSpawnSwepWeapons(gentity_t* ent) {
+	char string[4096] = "";
+	int i;
+	int len;
+
+	for(i = 1; i < WEAPONS_NUM; i++) {
+		if(ent->swep_list[i] >= WS_HAVE) {
+			if(ent->swep_ammo[i] > 0 || ent->swep_ammo[i] == -1) {
+				ent->swep_list[i] = WS_HAVE;  // we have weapon and ammo
+			} else {
+				ent->swep_list[i] = WS_NOAMMO;  // we have weapon only
+			}
+		}
+		if(ent->swep_list[i] == WS_HAVE) {
+			Q_strcat(string, sizeof(string), va("%i ", i));
+		}
+		if(ent->swep_list[i] == WS_NOAMMO) {
+			Q_strcat(string, sizeof(string), va("%i ", i * -1));  // use -id for send WS_NOAMMO
+		}
+	}
+	len = strlen(string);
+	if(len > 0 && string[len - 1] == ' ') {
+		string[len - 1] = '\0';
+	}
+
+	trap_SendServerCommand(ent - g_entities, va("sweps %s", string));
+	ClientUserinfoChanged(ent->s.clientNum);
+}
+
 /*
 ==================
 Cmd_Score_f
@@ -234,7 +291,7 @@ void Cmd_Give_f(gentity_t* ent) {
 	}
 
 	if(give_all || Q_stricmp(name, "weapons") == 0) {
-		ent->client->ps.stats[STAT_WEAPONS] = (1 << WP_NUM_WEAPONS) - 1 - (1 << WP_GRAPPLING_HOOK) - (1 << WP_NONE);
+		ent->client->ps.stats[STAT_WEAPONS] = (1 << WEAPONS_NUM) - 1 - (1 << WP_GRAPPLING_HOOK) - (1 << WP_NONE);
 		if(!give_all) return;
 	}
 

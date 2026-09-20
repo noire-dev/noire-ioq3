@@ -940,6 +940,11 @@ void ClientSpawn(gentity_t* ent) {
 	client->ps.stats[STAT_WEAPONS] = (1 << WP_MACHINEGUN);
 	client->ps.ammo[WP_MACHINEGUN] = 100;
 
+	ent->swep_list[WP_MACHINEGUN] = WS_HAVE;
+	ent->swep_ammo[WP_MACHINEGUN] = 100;
+	ent->swep_list[WP_SHOTGUN] = WS_HAVE;
+	ent->swep_ammo[WP_SHOTGUN] = 100;
+
 	client->ps.stats[STAT_WEAPONS] |= (1 << WP_GAUNTLET);
 	client->ps.ammo[WP_GAUNTLET] = -1;
 	client->ps.ammo[WP_GRAPPLING_HOOK] = -1;
@@ -955,6 +960,9 @@ void ClientSpawn(gentity_t* ent) {
 
 	trap_GetUsercmd(client - level.clients, &ent->client->pers.cmd);
 	SetClientViewAngle(ent, spawn_angles);
+
+	G_SendSpawnSwepWeapons(ent);
+
 	// don't allow full run speed for a bit
 	client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
 	client->ps.pm_time = 100;
@@ -978,7 +986,7 @@ void ClientSpawn(gentity_t* ent) {
 			// select the highest weapon number available, after any spawn given items have fired
 			client->ps.weapon = 1;
 
-			for(i = WP_NUM_WEAPONS - 1; i > 0; i--) {
+			for(i = WEAPONS_NUM - 1; i > 0; i--) {
 				if(client->ps.stats[STAT_WEAPONS] & (1 << i)) {
 					client->ps.weapon = i;
 					break;

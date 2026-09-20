@@ -165,6 +165,9 @@ struct gentity_s {
 	float random;
 
 	gitem_t* item;  // for bonus items
+
+	int swep_list[WEAPONS_NUM];
+	int swep_ammo[WEAPONS_NUM];
 };
 
 typedef enum { CON_DISCONNECTED, CON_CONNECTING, CON_CONNECTED } clientConnected_t;
@@ -305,8 +308,6 @@ typedef struct {
 	int gentitySize;
 	int num_entities;  // MAX_CLIENTS <= num_entities <= ENTITYNUM_MAX_NORMAL
 
-	int warmupTime;  // restart match at this time
-
 	fileHandle_t logFile;
 
 	// store latched cvars here that we want to get at often
@@ -330,8 +331,6 @@ typedef struct {
 	int follow1, follow2;            // clientNums for auto-follow spectators
 
 	int snd_fry;  // sound index for standing in lava
-
-	int warmupModificationCount;  // for detecting if g_warmup is changed
 
 	// spawn variables
 	bool spawning;  // the G_Spawn*() functions are valid
@@ -515,6 +514,8 @@ void FireWeapon(gentity_t* ent);
 // g_cmds.c
 //
 void DeathmatchScoreboardMessage(gentity_t* ent);
+void G_SendSwepWeapons(gentity_t* ent);
+void G_SendSpawnSwepWeapons(gentity_t* ent);
 
 //
 // g_main.c
@@ -589,7 +590,6 @@ extern vmCvar_t g_dedicated;
 extern vmCvar_t g_cheats;
 extern vmCvar_t g_maxclients;      // allow this many total, including spectators
 extern vmCvar_t g_maxGameClients;  // allow this many active
-extern vmCvar_t g_restarted;
 
 extern vmCvar_t g_dmflags;
 extern vmCvar_t g_fraglimit;
@@ -611,12 +611,7 @@ extern vmCvar_t g_weaponRespawn;
 extern vmCvar_t g_weaponTeamRespawn;
 extern vmCvar_t g_synchronousClients;
 extern vmCvar_t g_motd;
-extern vmCvar_t g_warmup;
-extern vmCvar_t g_doWarmup;
 extern vmCvar_t g_blood;
-extern vmCvar_t g_allowVote;
-extern vmCvar_t g_teamAutoJoin;
-extern vmCvar_t g_teamForceBalance;
 extern vmCvar_t g_banIPs;
 extern vmCvar_t g_filterBan;
 extern vmCvar_t g_obeliskHealth;

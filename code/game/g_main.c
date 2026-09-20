@@ -62,17 +62,9 @@ vmCvar_t g_weaponRespawn;
 vmCvar_t g_weaponTeamRespawn;
 vmCvar_t g_motd;
 vmCvar_t g_synchronousClients;
-vmCvar_t g_warmup;
-vmCvar_t g_doWarmup;
-vmCvar_t g_restarted;
 vmCvar_t g_logfile;
 vmCvar_t g_logfileSync;
 vmCvar_t g_blood;
-vmCvar_t g_podiumDist;
-vmCvar_t g_podiumDrop;
-vmCvar_t g_allowVote;
-vmCvar_t g_teamAutoJoin;
-vmCvar_t g_teamForceBalance;
 vmCvar_t g_banIPs;
 vmCvar_t g_filterBan;
 vmCvar_t g_smoothClients;
@@ -86,7 +78,6 @@ static cvarTable_t gameCvarTable[] = {
     // noset vars
     {NULL, "gamename", GAMEVERSION, CVAR_SERVERINFO | CVAR_ROM, 0, false},
     {NULL, "gamedate", PRODUCT_DATE, CVAR_ROM, 0, false},
-    {&g_restarted, "g_restarted", "0", CVAR_ROM, 0, false},
 
     {&g_maxclients, "sv_maxclients", "8", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, false},
     {&g_maxGameClients, "g_maxGameClients", "0", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, false},
@@ -101,11 +92,6 @@ static cvarTable_t gameCvarTable[] = {
 
     {&g_friendlyFire, "g_friendlyFire", "0", CVAR_ARCHIVE, 0, true},
 
-    {&g_teamAutoJoin, "g_teamAutoJoin", "0", CVAR_ARCHIVE},
-    {&g_teamForceBalance, "g_teamForceBalance", "0", CVAR_ARCHIVE},
-
-    {&g_warmup, "g_warmup", "20", CVAR_ARCHIVE, 0, true},
-    {&g_doWarmup, "g_doWarmup", "0", CVAR_ARCHIVE, 0, true},
     {&g_logfile, "g_log", "games.log", CVAR_ARCHIVE, 0, false},
     {&g_logfileSync, "g_logsync", "0", CVAR_ARCHIVE, 0, false},
 
@@ -132,10 +118,6 @@ static cvarTable_t gameCvarTable[] = {
     {&g_motd, "g_motd", "", 0, 0, false},
     {&g_blood, "com_blood", "1", 0, 0, false},
 
-    {&g_podiumDist, "g_podiumDist", "80", 0, 0, false},
-    {&g_podiumDrop, "g_podiumDrop", "70", 0, 0, false},
-
-    {&g_allowVote, "g_allowVote", "1", CVAR_ARCHIVE, 0, false},
     {&g_listEntity, "g_listEntity", "0", 0, 0, false},
     {&g_smoothClients, "g_smoothClients", "1", 0, 0, false},
 
@@ -266,11 +248,7 @@ void G_RegisterCvars(void) {
 		}
 	}
 
-	if(remapped) {
-		G_RemapTeamShaders();
-	}
-
-	level.warmupModificationCount = g_warmup.modificationCount;
+	if(remapped) G_RemapTeamShaders();
 }
 
 /*
