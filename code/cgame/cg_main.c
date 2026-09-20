@@ -119,7 +119,6 @@ vmCvar_t cg_buildScript;
 vmCvar_t cg_forceModel;
 vmCvar_t cg_paused;
 vmCvar_t cg_blood;
-vmCvar_t cg_predictItems;
 vmCvar_t cg_deferPlayers;
 vmCvar_t cg_drawTeamOverlay;
 vmCvar_t cg_teamOverlayUserinfo;
@@ -198,7 +197,6 @@ static cvarTable_t cvarTable[] = {{&cg_ignore, "cg_ignore", "0", 0},  // used fo
                                   {&cg_teamChatTime, "cg_teamChatTime", "3000", CVAR_ARCHIVE},
                                   {&cg_teamChatHeight, "cg_teamChatHeight", "0", CVAR_ARCHIVE},
                                   {&cg_forceModel, "cg_forceModel", "0", CVAR_ARCHIVE},
-                                  {&cg_predictItems, "cg_predictItems", "1", CVAR_ARCHIVE},
                                   {&cg_deferPlayers, "cg_deferPlayers", "0", CVAR_ARCHIVE},
 
                                   {&cg_drawTeamOverlay, "cg_drawTeamOverlay", "0", CVAR_ARCHIVE},
@@ -499,13 +497,8 @@ static void CG_RegisterSounds(void) {
 		cgs.media.footsteps[FOOTSTEP_METAL][i] = trap_S_RegisterSound(name, false);
 	}
 
-	// only register the items that the server says we need
-	Q_strncpyz(items, CG_ConfigString(CS_ITEMS), sizeof(items));
-
 	for(i = 1; i < bg_numItems; i++) {
-		//		if ( items[ i ] == '1' || cg_buildScript.integer ) {
 		CG_RegisterItemSounds(i);
-		//		}
 	}
 
 	for(i = 1; i < MAX_SOUNDS; i++) {
@@ -667,14 +660,9 @@ static void CG_RegisterGraphics(void) {
 	memset(cg_items, 0, sizeof(cg_items));
 	memset(cg_weapons, 0, sizeof(cg_weapons));
 
-	// only register the items that the server says we need
-	Q_strncpyz(items, CG_ConfigString(CS_ITEMS), sizeof(items));
-
 	for(i = 1; i < bg_numItems; i++) {
-		if(items[i] == '1' || cg_buildScript.integer) {
-			CG_LoadingItem(i);
-			CG_RegisterItemVisuals(i);
-		}
+		CG_LoadingItem(i);
+		CG_RegisterItemVisuals(i);
 	}
 
 	// wall marks

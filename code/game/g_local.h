@@ -218,11 +218,10 @@ typedef struct {
 // on each level change or team change at ClientBegin()
 typedef struct {
 	clientConnected_t connected;
-	usercmd_t cmd;           // we would lose angles if not persistant
-	bool localClient;        // true if "ip" info key is "localhost"
-	bool initialSpawn;       // the first spawn should be at a cool location
-	bool predictItemPickup;  // based on cg_predictItems userinfo
-	bool pmoveFixed;         //
+	usercmd_t cmd;      // we would lose angles if not persistant
+	bool localClient;   // true if "ip" info key is "localhost"
+	bool initialSpawn;  // the first spawn should be at a cool location
+	bool pmoveFixed;    //
 	char netname[MAX_NETNAME];
 	int enterTime;                // level.time the client entered the game
 	playerTeamState_t teamState;  // status in teamplay games
@@ -380,7 +379,7 @@ void G_RunItem(gentity_t* ent);
 void RespawnItem(gentity_t* ent);
 
 void PrecacheItem(gitem_t* it);
-gentity_t* Drop_Item(gentity_t* ent, gitem_t* item, float angle);
+gentity_t* Drop_Item(gentity_t* ent, gitem_t* item);
 gentity_t* LaunchItem(gitem_t* item, vec3_t origin, vec3_t velocity);
 void SetRespawn(gentity_t* ent, float delay);
 void G_SpawnItem(gentity_t* ent, gitem_t* item);
@@ -389,10 +388,6 @@ void Think_Weapon(gentity_t* ent);
 int ArmorIndex(gentity_t* ent);
 void Add_Ammo(gentity_t* ent, int weapon, int count);
 void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace);
-
-void ClearRegisteredItems(void);
-void RegisterItem(gitem_t* item);
-void SaveRegisteredItems(void);
 
 //
 // g_utils.c
@@ -540,6 +535,9 @@ void ClientCommand(int clientNum);
 void ClientThink(int clientNum);
 void ClientEndFrame(gentity_t* ent);
 void G_RunClient(gentity_t* ent);
+bool G_CheckWeapon(int clientNum, int wp, int finish);
+int G_CheckWeaponAmmo(int clientNum, int wp);
+void PM_Add_SwepAmmo(int clientNum, int wp, int count);
 
 //
 // g_mem.c
@@ -576,8 +574,6 @@ int BotAISetupClient(int client, struct bot_settings_s* settings, bool restart);
 int BotAIShutdownClient(int client, bool restart);
 int BotAIStartFrame(int time);
 void BotTestAAS(vec3_t origin);
-
-#include "g_team.h"  // teamplay specific stuff
 
 extern level_locals_t level;
 extern gentity_t g_entities[MAX_GENTITIES];

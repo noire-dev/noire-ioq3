@@ -131,6 +131,18 @@ static void CG_DrawCounterElement(float x, float y, const char* value, const cha
 	drawStringAdjusted(x + 44, y + 2, value, FONTSTYLE_BOLD | FONTSTYLE_RIGHT | FONTSTYLE_DROPSHADOW, color_white, 0.50, 256);
 }
 
+static void CG_UpdateWeaponStatus(void) {
+	centity_t* cent = &cg_entities[cg.snap->ps.clientNum];
+	playerState_t* ps = &cg.snap->ps;
+
+	if(!cent->currentState.weapon) return;
+
+	if(ps->stats[STAT_AMMO] <= 0 && ps->stats[STAT_AMMO] != -1)  // Noire's Mod weapon predict
+		cg.swep_listcl[ps->weapon] = WS_NOAMMO;
+	else
+		cg.swep_listcl[ps->weapon] = WS_HAVE;
+}
+
 bool n_tip1 = false;
 bool n_tip2 = false;
 
@@ -473,6 +485,7 @@ static void CG_Draw2D(void) {
 		return;
 	}
 
+	CG_UpdateWeaponStatus();
 	CG_DrawWeaponSelect();
 
 	if(!(catcher & KEYCATCH_UI)) CG_DrawScoreboard();

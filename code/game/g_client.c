@@ -623,14 +623,6 @@ void ClientUserinfoChanged(int clientNum) {
 		trap_DropClient(clientNum, "Invalid userinfo");
 	}
 
-	// check the item prediction
-	s = Info_ValueForKey(userinfo, "cg_predictItems");
-	if(!atoi(s)) {
-		client->pers.predictItemPickup = false;
-	} else {
-		client->pers.predictItemPickup = true;
-	}
-
 	// set name
 	Q_strncpyz(oldname, client->pers.netname, sizeof(oldname));
 	s = Info_ValueForKey(userinfo, "name");
@@ -924,18 +916,6 @@ void ClientSpawn(gentity_t* ent) {
 
 	client->ps.clientNum = index;
 
-	client->ps.stats[STAT_WEAPONS] = (1 << WP_MACHINEGUN);
-	client->ps.ammo[WP_MACHINEGUN] = 100;
-
-	ent->swep_list[WP_MACHINEGUN] = WS_HAVE;
-	ent->swep_ammo[WP_MACHINEGUN] = 100;
-	ent->swep_list[WP_SHOTGUN] = WS_HAVE;
-	ent->swep_ammo[WP_SHOTGUN] = 100;
-
-	client->ps.stats[STAT_WEAPONS] |= (1 << WP_GAUNTLET);
-	client->ps.ammo[WP_GAUNTLET] = -1;
-	client->ps.ammo[WP_GRAPPLING_HOOK] = -1;
-
 	ent->health = client->ps.stats[STAT_HEALTH] = 100;
 
 	G_SetOrigin(ent, spawn_origin);
@@ -967,17 +947,20 @@ void ClientSpawn(gentity_t* ent) {
 			// force the base weapon up
 			client->ps.weapon = WP_MACHINEGUN;
 			client->ps.weaponstate = WEAPON_READY;
-			// fire the targets of the spawn point
-			G_UseTargets(spawnPoint, ent);
-			// select the highest weapon number available, after any spawn given items have fired
-			client->ps.weapon = 1;
-
-			for(i = WEAPONS_NUM - 1; i > 0; i--) {
-				if(client->ps.stats[STAT_WEAPONS] & (1 << i)) {
-					client->ps.weapon = i;
-					break;
-				}
+			for(i = 1; i < WEAPONS_NUM; i++) {
+				ent->swep_list[i] = WS_NONE;
+				ent->swep_ammo[i] = 0;
 			}
+
+			ent->swep_list[WP_MACHINEGUN] = WS_HAVE;
+			ent->swep_ammo[WP_MACHINEGUN] = 100;
+			ent->swep_list[WP_SHOTGUN] = WS_HAVE;
+			ent->swep_ammo[WP_SHOTGUN] = 100;
+
+			G_UseTargets(spawnPoint, ent);
+
+			client->ps.weapon = WP_SHOTGUN;
+
 			// positively link the client, even if the command times are weird
 			VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);
 

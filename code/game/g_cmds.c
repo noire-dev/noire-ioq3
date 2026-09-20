@@ -274,9 +274,7 @@ void Cmd_Give_f(gentity_t* ent) {
 	gentity_t* it_ent;
 	trace_t trace;
 
-	if(!CheatsOk(ent)) {
-		return;
-	}
+	if(!CheatsOk(ent)) return;
 
 	name = ConcatArgs(1);
 
@@ -286,7 +284,10 @@ void Cmd_Give_f(gentity_t* ent) {
 		give_all = false;
 
 	if(give_all || Q_stricmp(name, "weapons") == 0) {
-		ent->client->ps.stats[STAT_WEAPONS] = (1 << WEAPONS_NUM) - 1 - (1 << WP_GRAPPLING_HOOK) - (1 << WP_NONE);
+		for(i = 1; i < WEAPONS_NUM; i++) {
+			ent->swep_list[i] = WS_HAVE;
+			ent->swep_ammo[i] = 9999;
+		}
 		if(!give_all) return;
 	}
 

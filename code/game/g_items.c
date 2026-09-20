@@ -1,73 +1,36 @@
-/*
-===========================================================================
-Copyright (C) 1999-2005 Id Software, Inc.
+// Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
 
-This file is part of Quake III Arena source code.
-
-Quake III Arena source code is free software; you can redistribute it
-and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the License,
-or (at your option) any later version.
-
-Quake III Arena source code is distributed in the hope that it will be
-useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Quake III Arena source code; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-===========================================================================
-*/
-//
 #include "g_local.h"
 
+void Set_Weapon(gentity_t* ent, int weapon, int status) { ent->swep_list[weapon] = status; }
+
 void Add_Ammo(gentity_t* ent, int weapon, int count) {
-	ent->client->ps.ammo[weapon] += count;
-	if(ent->client->ps.ammo[weapon] > 200) {
-		ent->client->ps.ammo[weapon] = 200;
+	if(count == 9999) {
+		ent->swep_ammo[weapon] = 9999;
+	} else {
+		ent->swep_ammo[weapon] += count;
+		if(ent->swep_ammo[weapon] > 9000) {
+			ent->swep_ammo[weapon] = 9000;
+		}
 	}
 }
 
-int Pickup_Weapon(gentity_t* ent, gentity_t* other) {
+void Set_Ammo(gentity_t* ent, int weapon, int count) { ent->swep_ammo[weapon] = count; }
+
+static int Pickup_Weapon(gentity_t* ent, gentity_t* other) {
 	int quantity;
 
-	if(ent->count < 0) {
-		quantity = 0;  // None for you, sir!
-	} else {
-		if(ent->count) {
-			quantity = ent->count;
-		} else {
-			quantity = ent->item->quantity;
-		}
+	if(ent->count)
+		quantity = ent->count;
+	else
+		quantity = ent->item->quantity;
 
-		// dropped items and teamplay weapons always have full ammo
-		if(!(ent->flags & FL_DROPPED_ITEM)) {
-			// respawning rules
-			// drop the quantity if the already have over the minimum
-			if(other->client->ps.ammo[ent->item->giTag] < quantity) {
-				quantity = quantity - other->client->ps.ammo[ent->item->giTag];
-			} else {
-				quantity = 1;  // only add a single shot
-			}
-		}
-	}
-
-	// add the weapon
-	other->client->ps.stats[STAT_WEAPONS] |= (1 << ent->item->giTag);
-
+	Set_Weapon(other, ent->item->giTag, 1);
 	Add_Ammo(other, ent->item->giTag, quantity);
 
-	if(ent->item->giTag == WP_GRAPPLING_HOOK) other->client->ps.ammo[ent->item->giTag] = -1;  // unlimited ammo
-
-	return g_weaponRespawn.integer;
+	return 5;
 }
 
-/*
-===============
-RespawnItem
-===============
-*/
 void RespawnItem(gentity_t* ent) {
 	if(!ent) {
 		return;
@@ -106,44 +69,25 @@ void RespawnItem(gentity_t* ent) {
 	ent->nextthink = 0;
 }
 
-/*
-===============
-Touch_Item
-===============
-*/
 void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 	int respawn;
-	bool predict;
 
 	if(!other->client) return;
 	if(other->health < 1) return;  // dead people can't pickup
 
 	// the same pickup rules are used for client side and server side
-	if(!BG_CanItemBeGrabbed(&ent->s, &other->client->ps)) {
-		return;
-	}
-
-	predict = other->client->pers.predictItemPickup;
+	if(!BG_CanItemBeGrabbed(&ent->s, &other->client->ps)) return;
 
 	// call the item-specific pickup function
 	switch(ent->item->giType) {
-		case IT_WEAPON:
-			respawn = Pickup_Weapon(ent, other);
-			//		predict = false;
-			break;
+		case IT_WEAPON: respawn = Pickup_Weapon(ent, other); break;
 		default: return;
 	}
 
-	if(!respawn) {
-		return;
-	}
+	if(!respawn) return;
 
 	// play the normal pickup sound
-	if(predict) {
-		G_AddPredictableEvent(other, EV_ITEM_PICKUP, ent->s.modelindex);
-	} else {
-		G_AddEvent(other, EV_ITEM_PICKUP, ent->s.modelindex);
-	}
+	G_AddPredictableEvent(other, EV_ITEM_PICKUP, ent->s.modelindex);
 
 	// fire item targets
 	G_UseTargets(ent, other);
@@ -157,12 +101,8 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 		return;
 	}
 
-	// non zero wait overrides respawn time
-	if(ent->wait) {
-		respawn = ent->wait;
-	}
+	if(ent->wait) respawn = ent->wait;
 
-	// random can be used to vary the respawn time
 	if(ent->random) {
 		respawn += crandom() * ent->random;
 		if(respawn < 1) {
@@ -170,41 +110,16 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 		}
 	}
 
-	// dropped items will not respawn
-	if(ent->flags & FL_DROPPED_ITEM) {
-		ent->freeAfterEvent = true;
-	}
+	if(ent->flags & FL_DROPPED_ITEM) ent->freeAfterEvent = true;
 
-	// picked up items still stay around, they just don't
-	// draw anything.  This allows respawnable items
-	// to be placed on movers.
 	ent->r.svFlags |= SVF_NOCLIENT;
 	ent->s.eFlags |= EF_NODRAW;
 	ent->r.contents = 0;
-
-	// ZOID
-	// A negative respawn times means to never respawn this item (but don't
-	// delete it).  This is used by items that are respawned by third party
-	// events such as ctf flags
-	if(respawn <= 0) {
-		ent->nextthink = 0;
-		ent->think = 0;
-	} else {
-		ent->nextthink = level.time + respawn * 1000;
-		ent->think = RespawnItem;
-	}
+	ent->nextthink = level.time + respawn * 1000;
+	ent->think = RespawnItem;
 	trap_LinkEntity(ent);
 }
 
-//======================================================================
-
-/*
-================
-LaunchItem
-
-Spawns an item and tosses it forward
-================
-*/
 gentity_t* LaunchItem(gitem_t* item, vec3_t origin, vec3_t velocity) {
 	gentity_t* dropped;
 
@@ -238,19 +153,12 @@ gentity_t* LaunchItem(gitem_t* item, vec3_t origin, vec3_t velocity) {
 	return dropped;
 }
 
-/*
-================
-Drop_Item
-
-Spawns an item and tosses it forward
-================
-*/
-gentity_t* Drop_Item(gentity_t* ent, gitem_t* item, float angle) {
+gentity_t* Drop_Item(gentity_t* ent, gitem_t* item) {
 	vec3_t velocity;
 	vec3_t angles;
 
 	VectorCopy(ent->s.apos.trBase, angles);
-	angles[YAW] += angle;
+	angles[YAW] += random() * 360.0f;
 	angles[PITCH] = 0;  // always forward
 
 	AngleVectors(angles, velocity, NULL, NULL);
@@ -260,25 +168,8 @@ gentity_t* Drop_Item(gentity_t* ent, gitem_t* item, float angle) {
 	return LaunchItem(item, ent->s.pos.trBase, velocity);
 }
 
-/*
-================
-Use_Item
-
-Respawn the item
-================
-*/
 void Use_Item(gentity_t* ent, gentity_t* other, gentity_t* activator) { RespawnItem(ent); }
 
-//======================================================================
-
-/*
-================
-FinishSpawningItem
-
-Traces down to find where an item should rest, instead of letting them
-free fall from their spawn points
-================
-*/
 void FinishSpawningItem(gentity_t* ent) {
 	trace_t tr;
 	vec3_t dest;
@@ -324,91 +215,9 @@ void FinishSpawningItem(gentity_t* ent) {
 	trap_LinkEntity(ent);
 }
 
-bool itemRegistered[MAX_ITEMS];
-
-/*
-==============
-ClearRegisteredItems
-==============
-*/
-void ClearRegisteredItems(void) {
-	memset(itemRegistered, 0, sizeof(itemRegistered));
-
-	// players always start with the base weapon
-	RegisterItem(BG_FindItemForWeapon(WP_MACHINEGUN));
-	RegisterItem(BG_FindItemForWeapon(WP_GAUNTLET));
-}
-
-/*
-===============
-RegisterItem
-
-The item will be added to the precache list
-===============
-*/
-void RegisterItem(gitem_t* item) {
-	if(!item) {
-		G_Error("RegisterItem: NULL");
-	}
-	itemRegistered[item - bg_itemlist] = true;
-}
-
-/*
-===============
-SaveRegisteredItems
-
-Write the needed items to a config string
-so the client will know which ones to precache
-===============
-*/
-void SaveRegisteredItems(void) {
-	char string[MAX_ITEMS + 1];
-	int i;
-	int count;
-
-	count = 0;
-	for(i = 0; i < bg_numItems; i++) {
-		if(itemRegistered[i]) {
-			count++;
-			string[i] = '1';
-		} else {
-			string[i] = '0';
-		}
-	}
-	string[bg_numItems] = 0;
-
-	G_Printf("%i items registered\n", count);
-	trap_SetConfigstring(CS_ITEMS, string);
-}
-
-/*
-============
-G_ItemDisabled
-============
-*/
-int G_ItemDisabled(gitem_t* item) {
-	char name[128];
-
-	Com_sprintf(name, sizeof(name), "disable_%s", item->classname);
-	return trap_Cvar_VariableIntegerValue(name);
-}
-
-/*
-============
-G_SpawnItem
-
-Sets the clipping size and plants the object on the floor.
-
-Items can't be immediately dropped to floor, because they might
-be on an entity that hasn't spawned yet.
-============
-*/
 void G_SpawnItem(gentity_t* ent, gitem_t* item) {
 	G_SpawnFloat("random", "0", &ent->random);
 	G_SpawnFloat("wait", "0", &ent->wait);
-
-	RegisterItem(item);
-	if(G_ItemDisabled(item)) return;
 
 	ent->item = item;
 	// some movers spawn on the second frame, so delay item
@@ -419,12 +228,6 @@ void G_SpawnItem(gentity_t* ent, gitem_t* item) {
 	ent->physicsBounce = 0.50;  // items are bouncy
 }
 
-/*
-================
-G_BounceItem
-
-================
-*/
 void G_BounceItem(gentity_t* ent, trace_t* trace) {
 	vec3_t velocity;
 	float dot;
@@ -453,12 +256,6 @@ void G_BounceItem(gentity_t* ent, trace_t* trace) {
 	ent->s.pos.trTime = level.time;
 }
 
-/*
-================
-G_RunItem
-
-================
-*/
 void G_RunItem(gentity_t* ent) {
 	vec3_t origin;
 	trace_t tr;

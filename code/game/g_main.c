@@ -358,15 +358,11 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	// reserve some spots for dead player bodies
 	InitBodyQue();
 
-	ClearRegisteredItems();
-
 	// parse the key/value pairs and spawn gentities
 	G_SpawnEntitiesFromString();
 
 	// general initialization
 	G_FindTeams();
-
-	SaveRegisteredItems();
 
 	G_Printf("-----------------------------------\n");
 

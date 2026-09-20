@@ -19,11 +19,11 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-//
-// bg_public.h -- definitions shared by both the server game and client game modules
 
 #ifndef __BG_PUBLIC_H
 #define __BG_PUBLIC_H
+
+#define MAX_JS_STRINGSIZE 256
 
 // because games can change separately from the main system version, we need a
 // second version that must match between game and cgame
@@ -91,8 +91,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CS_FLAGSTATUS 23        // string indicating flag status in CTF
 #define CS_SHADERSTATE 24
 #define CS_BOTINFO 25
-
-#define CS_ITEMS 27  // string of 0's and 1's that tell which items are present
 
 #define CS_MODELS 32
 #define CS_SOUNDS (CS_MODELS + MAX_MODELS)
@@ -189,8 +187,8 @@ void Pmove(pmove_t* pmove);
 // NOTE: may not have more than 16
 typedef enum {
 	STAT_HEALTH,
-	STAT_WEAPONS,  // 16 bit fields
 	STAT_ARMOR,
+	STAT_AMMO,
 	STAT_DEAD_YAW,  // look this direction when dead (FIXME: get rid of?)
 	STAT_CLIENTS_READY
 } statIndex_t;
@@ -256,6 +254,10 @@ typedef enum {
 
 	WEAPONS_NUM
 } weapon_t;
+
+typedef struct {
+	char name[MAX_JS_STRINGSIZE];
+} weaponStorage_s;
 
 // reward sounds (stored in ps->persistant[PERS_PLAYEREVENTS])
 #define PLAYEREVENT_DENIEDREWARD 0x0001

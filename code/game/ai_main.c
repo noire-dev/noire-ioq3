@@ -44,10 +44,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 #include "ai_main.h"
 #include "ai_dmq3.h"
-#include "ai_chat.h"
-#include "ai_cmd.h"
 #include "ai_dmnet.h"
-#include "ai_vcmd.h"
 
 //
 #include "chars.h"

@@ -939,7 +939,6 @@ netField_t playerStateFields[] = {{PSF(commandTime), 32}, {PSF(origin[0]), 0}, {
 /*
 =============
 MSG_WriteDeltaPlayerstate
-
 =============
 */
 void MSG_WriteDeltaPlayerstate(msg_t* msg, struct playerState_s* from, struct playerState_s* to) {

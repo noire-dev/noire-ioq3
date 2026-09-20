@@ -253,9 +253,6 @@ CG_TouchItem
 static void CG_TouchItem(centity_t* cent) {
 	gitem_t* item;
 
-	if(!cg_predictItems.integer) {
-		return;
-	}
 	if(!BG_PlayerTouchesItem(&cg.predictedPlayerState, &cent->currentState, cg.time)) {
 		return;
 	}
@@ -279,14 +276,6 @@ static void CG_TouchItem(centity_t* cent) {
 
 	// don't touch it again this prediction
 	cent->miscTime = cg.time;
-
-	// if it's a weapon, give them some predicted ammo so the autoswitch will work
-	if(item->giType == IT_WEAPON) {
-		cg.predictedPlayerState.stats[STAT_WEAPONS] |= 1 << item->giTag;
-		if(!cg.predictedPlayerState.ammo[item->giTag]) {
-			cg.predictedPlayerState.ammo[item->giTag] = 1;
-		}
-	}
 }
 
 /*

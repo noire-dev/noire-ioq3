@@ -138,10 +138,6 @@ void SP_misc_model(gentity_t* ent);
 void SP_misc_portal_camera(gentity_t* ent);
 void SP_misc_portal_surface(gentity_t* ent);
 
-void SP_shooter_rocket(gentity_t* ent);
-void SP_shooter_plasma(gentity_t* ent);
-void SP_shooter_grenade(gentity_t* ent);
-
 void SP_item_botroam(gentity_t* ent) {}
 
 spawn_t spawns[] = {
@@ -183,10 +179,6 @@ spawn_t spawns[] = {
     {"misc_model", SP_misc_model},
     {"misc_portal_surface", SP_misc_portal_surface},
     {"misc_portal_camera", SP_misc_portal_camera},
-
-    {"shooter_rocket", SP_shooter_rocket},
-    {"shooter_grenade", SP_shooter_grenade},
-    {"shooter_plasma", SP_shooter_plasma},
 
     {"item_botroam", SP_item_botroam},
 

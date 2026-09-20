@@ -27,6 +27,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "bg_public.h"
 #include "bg_local.h"
 
+bool G_CheckWeapon(int clientNum, int wp, int finish);
+int G_CheckWeaponAmmo(int clientNum, int wp);
+void PM_Add_SwepAmmo(int clientNum, int wp, int count);
+
 pmove_t* pm;
 pml_t pml;
 
@@ -1366,23 +1370,9 @@ static void PM_WaterEvents(void) {  // FIXME?
 	}
 }
 
-/*
-===============
-PM_BeginWeaponChange
-===============
-*/
 static void PM_BeginWeaponChange(int weapon) {
-	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) {
-		return;
-	}
-
-	if(!(pm->ps->stats[STAT_WEAPONS] & (1 << weapon))) {
-		return;
-	}
-
-	if(pm->ps->weaponstate == WEAPON_DROPPING) {
-		return;
-	}
+	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	if(pm->ps->weaponstate == WEAPON_DROPPING) return;
 
 	PM_AddEvent(EV_CHANGE_WEAPON);
 	pm->ps->weaponstate = WEAPON_DROPPING;
@@ -1390,22 +1380,15 @@ static void PM_BeginWeaponChange(int weapon) {
 	PM_StartTorsoAnim(TORSO_DROP);
 }
 
-/*
-===============
-PM_FinishWeaponChange
-===============
-*/
 static void PM_FinishWeaponChange(void) {
 	int weapon;
 
 	weapon = pm->cmd.weapon;
-	if(weapon < WP_NONE || weapon >= WEAPONS_NUM) {
-		weapon = WP_NONE;
-	}
+	if(weapon < WP_NONE || weapon >= WEAPONS_NUM) weapon = WP_NONE;
 
-	if(!(pm->ps->stats[STAT_WEAPONS] & (1 << weapon))) {
-		weapon = WP_NONE;
-	}
+#ifdef GAME
+	if(!G_CheckWeapon(pm->ps->clientNum, weapon, 1)) weapon = WP_NONE;
+#endif
 
 	pm->ps->weapon = weapon;
 	pm->ps->weaponstate = WEAPON_RAISING;
@@ -1512,17 +1495,27 @@ static void PM_Weapon(void) {
 
 	pm->ps->weaponstate = WEAPON_FIRING;
 
-	// check for out of ammo
-	if(!pm->ps->ammo[pm->ps->weapon]) {
+#ifdef GAME
+	if(!G_CheckWeaponAmmo(pm->ps->clientNum, pm->ps->weapon)) {
 		PM_AddEvent(EV_NOAMMO);
 		pm->ps->weaponTime += 500;
 		return;
 	}
-
-	// take an ammo away if not infinite
-	if(pm->ps->ammo[pm->ps->weapon] != -1) {
-		pm->ps->ammo[pm->ps->weapon]--;
+#else
+	if(!pm->ps->stats[STAT_AMMO]) {
+		PM_AddEvent(EV_NOAMMO);
+		pm->ps->weaponTime += 500;
+		return;
 	}
+#endif
+
+#ifdef GAME
+	if(!(pm->ps->stats[STAT_AMMO] == -1 || pm->ps->stats[STAT_AMMO] >= 9999)) {
+		if(G_CheckWeaponAmmo(pm->ps->clientNum, pm->ps->weapon) > 0) {
+			PM_Add_SwepAmmo(pm->ps->clientNum, pm->ps->weapon, -1);
+		}
+	}
+#endif
 
 	// fire weapon
 	PM_AddEvent(EV_FIRE_WEAPON);
@@ -1664,7 +1657,7 @@ void PmoveSingle(pmove_t* pmove) {
 	}
 
 	// set the firing flag for continuous beam weapons
-	if(!(pm->ps->pm_flags & PMF_RESPAWNED) && pm->ps->pm_type != PM_INTERMISSION && pm->ps->pm_type != PM_NOCLIP && (pm->cmd.buttons & BUTTON_ATTACK) && pm->ps->ammo[pm->ps->weapon]) {
+	if(!(pm->ps->pm_flags & PMF_RESPAWNED) && pm->ps->pm_type != PM_INTERMISSION && pm->ps->pm_type != PM_NOCLIP && (pm->cmd.buttons & BUTTON_ATTACK) && pm->ps->stats[STAT_AMMO]) {
 		pm->ps->eFlags |= EF_FIRING;
 	} else {
 		pm->ps->eFlags &= ~EF_FIRING;

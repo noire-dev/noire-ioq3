@@ -495,6 +495,8 @@ void ClientThink_real(gentity_t* ent) {
 		client->ps.pm_type = PM_NORMAL;
 	}
 
+	client->ps.stats[STAT_AMMO] = ent->swep_ammo[client->ps.weapon];
+
 	client->ps.gravity = g_gravity.value;
 
 	// set speed
@@ -698,4 +700,32 @@ void ClientEndFrame(gentity_t* ent) {
 	// set the bit for the reachability area the client is currently in
 	//	i = trap_AAS_PointReachabilityAreaIndex( ent->client->ps.origin );
 	//	ent->client->areabits[i >> 3] |= 1 << (i & 7);
+}
+
+bool G_CheckWeapon(int clientNum, int wp, int finish) {
+	gentity_t* ent = g_entities + clientNum;
+
+	if(ent->swep_list[wp] >= WS_HAVE) {
+		if(finish) ent->client->ps.weapon = wp;
+		return true;
+	}
+	return false;
+}
+
+int G_CheckWeaponAmmo(int clientNum, int wp) {
+	gentity_t* ent;
+
+	ent = g_entities + clientNum;
+	return ent->swep_ammo[wp];
+}
+
+void PM_Add_SwepAmmo(int clientNum, int wp, int count) {
+	gentity_t* ent;
+
+	ent = g_entities + clientNum;
+	if(!(ent->swep_ammo[wp] == -1)) {
+		if(!(ent->swep_ammo[wp] >= 9999)) {
+			ent->swep_ammo[wp] += count;
+		}
+	}
 }
