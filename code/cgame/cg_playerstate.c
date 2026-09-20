@@ -260,11 +260,6 @@ void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
 		}
 	}
 
-	// if we are going into the intermission, don't start any voices
-	if(cg.intermissionStarted) {
-		return;
-	}
-
 	// reward sounds
 	reward = false;
 	if(ps->persistant[PERS_CAPTURES] != ops->persistant[PERS_CAPTURES]) {
@@ -375,9 +370,7 @@ void CG_TransitionPlayerState(playerState_t* ps, playerState_t* ops) {
 		cg.mapRestart = false;
 	}
 
-	if(cg.snap->ps.pm_type != PM_INTERMISSION && ps->persistant[PERS_TEAM] != TEAM_SPECTATOR) {
-		CG_CheckLocalSounds(ps, ops);
-	}
+	CG_CheckLocalSounds(ps, ops);
 
 	// run events
 	CG_CheckPlayerstateEvents(ps, ops);

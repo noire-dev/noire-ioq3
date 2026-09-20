@@ -330,7 +330,6 @@ typedef struct {
 	int curWeapon;
 
 	int handicap;
-	int wins, losses;  // in tourney mode
 
 	int teamTask;     // task in teamplay (offence/defence)
 	bool teamLeader;  // true when this is a team leader
@@ -454,8 +453,7 @@ typedef struct {
 
 	bool demoPlayback;
 	int deferredPlayerLoading;
-	bool loading;              // don't defer players at initial startup
-	bool intermissionStarted;  // don't play voice rewards, because game will end shortly
+	bool loading;  // don't defer players at initial startup
 
 	// there are only one or two snapshot_t that are relevant at a time
 	int latestSnapshotNum;   // the number of snapshots the client system has received
@@ -537,14 +535,6 @@ typedef struct {
 	score_t scores[MAX_CLIENTS];
 	bool showScores;
 	char killerName[MAX_NAME_LENGTH];
-	char spectatorList[MAX_STRING_CHARS];  // list of names
-	int spectatorLen;                      // length of list
-	float spectatorWidth;                  // width in device units
-	int spectatorTime;                     // next time to offset
-	int spectatorPaintX;                   // current paint x
-	int spectatorPaintX2;                  // current paint x
-	int spectatorOffset;                   // current offset from start
-	int spectatorPaintLen;                 // current offset from start
 
 	// centerprinting
 	int centerPrintTime;

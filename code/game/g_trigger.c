@@ -38,18 +38,7 @@ void multi_wait(gentity_t* ent) { ent->nextthink = 0; }
 // so wait for the delay time before firing
 void multi_trigger(gentity_t* ent, gentity_t* activator) {
 	ent->activator = activator;
-	if(ent->nextthink) {
-		return;  // can't retrigger until the wait is over
-	}
-
-	if(activator->client) {
-		if((ent->spawnflags & 1) && activator->client->sess.sessionTeam != TEAM_RED) {
-			return;
-		}
-		if((ent->spawnflags & 2) && activator->client->sess.sessionTeam != TEAM_BLUE) {
-			return;
-		}
-	}
+	if(ent->nextthink) return;  // can't retrigger until the wait is over
 
 	G_UseTargets(ent, ent->activator);
 
@@ -273,14 +262,6 @@ Must point at a target_position, which will be the teleport destination.
 */
 void SP_trigger_teleport(gentity_t* self) {
 	InitTrigger(self);
-
-	// unlike other triggers, we need to send this one to the client
-	// unless is a spectator trigger
-	if(self->spawnflags & 1) {
-		self->r.svFlags |= SVF_NOCLIENT;
-	} else {
-		self->r.svFlags &= ~SVF_NOCLIENT;
-	}
 
 	// make sure the client precaches this sound
 	G_SoundIndex("sound/world/jumppad.wav");

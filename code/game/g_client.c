@@ -55,11 +55,6 @@ void SP_info_player_start(gentity_t* ent) {
 	SP_info_player_deathmatch(ent);
 }
 
-/*QUAKED info_player_intermission (1 0 1) (-16 -16 -24) (16 16 32)
-The intermission will be viewed from this point.  Target an info_notnull for the view direction.
-*/
-void SP_info_player_intermission(gentity_t* ent) {}
-
 /*
 =======================================================================
 
@@ -487,73 +482,6 @@ int TeamCount(int ignoreClientNum, team_t team) {
 }
 
 /*
-================
-TeamLeader
-
-Returns the client number of the team leader
-================
-*/
-int TeamLeader(int team) {
-	int i;
-
-	for(i = 0; i < level.maxclients; i++) {
-		if(level.clients[i].pers.connected == CON_DISCONNECTED) {
-			continue;
-		}
-		if(level.clients[i].sess.sessionTeam == team) {
-			if(level.clients[i].sess.teamLeader) return i;
-		}
-	}
-
-	return -1;
-}
-
-/*
-================
-PickTeam
-
-================
-*/
-team_t PickTeam(int ignoreClientNum) {
-	int counts[TEAM_NUM_TEAMS];
-
-	counts[TEAM_BLUE] = TeamCount(ignoreClientNum, TEAM_BLUE);
-	counts[TEAM_RED] = TeamCount(ignoreClientNum, TEAM_RED);
-
-	if(counts[TEAM_BLUE] > counts[TEAM_RED]) {
-		return TEAM_RED;
-	}
-	if(counts[TEAM_RED] > counts[TEAM_BLUE]) {
-		return TEAM_BLUE;
-	}
-	// equal team count, so join the team with the lowest score
-	if(level.teamScores[TEAM_BLUE] > level.teamScores[TEAM_RED]) {
-		return TEAM_RED;
-	}
-	return TEAM_BLUE;
-}
-
-/*
-===========
-ForceClientSkin
-
-Forces a client's skin (for teamplay)
-===========
-*/
-/*
-static void ForceClientSkin( gclient_t *client, char *model, const char *skin ) {
-    char *p;
-
-    if ((p = strrchr(model, '/')) != 0) {
-        *p = 0;
-    }
-
-    Q_strcat(model, MAX_QPATH, "/");
-    Q_strcat(model, MAX_QPATH, skin);
-}
-*/
-
-/*
 ===========
 ClientCleanName
 ============
@@ -628,12 +556,6 @@ void ClientUserinfoChanged(int clientNum) {
 	s = Info_ValueForKey(userinfo, "name");
 	ClientCleanName(s, client->pers.netname, sizeof(client->pers.netname));
 
-	if(client->sess.sessionTeam == TEAM_SPECTATOR) {
-		if(client->sess.spectatorState == SPECTATOR_SCOREBOARD) {
-			Q_strncpyz(client->pers.netname, "scoreboard", sizeof(client->pers.netname));
-		}
-	}
-
 	if(client->pers.connected == CON_CONNECTED) {
 		if(strcmp(oldname, client->pers.netname)) {
 			trap_SendServerCommand(-1, va("print \"%s" S_COLOR_WHITE " renamed to %s\n\"", oldname, client->pers.netname));
@@ -667,9 +589,9 @@ void ClientUserinfoChanged(int clientNum) {
 	// send over a subset of the userinfo keys so other clients can
 	// print scoreboards, display models, and play custom sounds
 	if(ent->r.svFlags & SVF_BOT) {
-		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\w\\%i\\l\\%i\\skill\\%s\\tt\\%d\\tl\\%d", client->pers.netname, client->sess.sessionTeam, model, headModel, c1, c2, client->sess.wins, client->sess.losses, Info_ValueForKey(userinfo, "skill"), teamTask, teamLeader);
+		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\skill\\%s\\tt\\%d\\tl\\%d", client->pers.netname, client->sess.sessionTeam, model, headModel, c1, c2, Info_ValueForKey(userinfo, "skill"), teamTask, teamLeader);
 	} else {
-		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\g_redteam\\%s\\g_blueteam\\%s\\c1\\%s\\c2\\%s\\w\\%i\\l\\%i\\tt\\%d\\tl\\%d", client->pers.netname, client->sess.sessionTeam, model, headModel, redTeam, blueTeam, c1, c2, client->sess.wins, client->sess.losses, teamTask, teamLeader);
+		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\g_redteam\\%s\\g_blueteam\\%s\\c1\\%s\\c2\\%s\\tt\\%d\\tl\\%d", client->pers.netname, client->sess.sessionTeam, model, headModel, redTeam, blueTeam, c1, c2, teamTask, teamLeader);
 	}
 
 	trap_SetConfigstring(CS_PLAYERS + clientNum, s);
@@ -807,7 +729,7 @@ void ClientBegin(int clientNum) {
 	// locate ent at a spawn point
 	ClientSpawn(ent);
 
-	if(client->sess.sessionTeam != TEAM_SPECTATOR) trap_SendServerCommand(-1, va("print \"%s" S_COLOR_WHITE " entered the game\n\"", client->pers.netname));
+	trap_SendServerCommand(-1, va("print \"%s" S_COLOR_WHITE " entered the game\n\"", client->pers.netname));
 }
 
 /*
@@ -941,48 +863,38 @@ void ClientSpawn(gentity_t* ent) {
 	client->ps.torsoAnim = TORSO_STAND;
 	client->ps.legsAnim = LEGS_IDLE;
 
-	if(!level.intermissiontime) {
-		if(ent->client->sess.sessionTeam != TEAM_SPECTATOR) {
-			G_KillBox(ent);
-			// force the base weapon up
-			client->ps.weapon = WP_MACHINEGUN;
-			client->ps.weaponstate = WEAPON_READY;
-			for(i = 1; i < WEAPONS_NUM; i++) {
-				ent->swep_list[i] = WS_NONE;
-				ent->swep_ammo[i] = 0;
-			}
-
-			ent->swep_list[WP_MACHINEGUN] = WS_HAVE;
-			ent->swep_ammo[WP_MACHINEGUN] = 100;
-			ent->swep_list[WP_SHOTGUN] = WS_HAVE;
-			ent->swep_ammo[WP_SHOTGUN] = 100;
-
-			G_UseTargets(spawnPoint, ent);
-
-			client->ps.weapon = WP_SHOTGUN;
-
-			// positively link the client, even if the command times are weird
-			VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);
-
-			tent = G_TempEntity(ent->client->ps.origin, EV_PLAYER_TELEPORT_IN);
-			tent->s.clientNum = ent->s.clientNum;
-
-			trap_LinkEntity(ent);
-		}
-	} else {
-		// move players to intermission
-		MoveClientToIntermission(ent);
+	G_KillBox(ent);
+	// force the base weapon up
+	client->ps.weapon = WP_MACHINEGUN;
+	client->ps.weaponstate = WEAPON_READY;
+	for(i = 1; i < WEAPONS_NUM; i++) {
+		ent->swep_list[i] = WS_NONE;
+		ent->swep_ammo[i] = 0;
 	}
+
+	ent->swep_list[WP_MACHINEGUN] = WS_HAVE;
+	ent->swep_ammo[WP_MACHINEGUN] = 100;
+	ent->swep_list[WP_SHOTGUN] = WS_HAVE;
+	ent->swep_ammo[WP_SHOTGUN] = 100;
+
+	G_UseTargets(spawnPoint, ent);
+
+	client->ps.weapon = WP_SHOTGUN;
+
+	// positively link the client, even if the command times are weird
+	VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);
+
+	tent = G_TempEntity(ent->client->ps.origin, EV_PLAYER_TELEPORT_IN);
+	tent->s.clientNum = ent->s.clientNum;
+
+	trap_LinkEntity(ent);
+
 	// run a client frame to drop exactly to the floor,
 	// initialize animations and other things
 	client->ps.commandTime = level.time - 100;
 	ent->client->pers.cmd.serverTime = level.time;
 	ClientThink(ent - g_entities);
-	// run the presend to set anything else, follow spectators wait
-	// until all clients have been reconnected after map_restart
-	if(ent->client->sess.spectatorState != SPECTATOR_FOLLOW) {
-		ClientEndFrame(ent);
-	}
+	ClientEndFrame(ent);
 
 	// clear entity state values
 	BG_PlayerStateToEntityState(&client->ps, &ent->s, true);
@@ -1015,7 +927,7 @@ void ClientDisconnect(int clientNum) {
 	}
 
 	// send effect if they were completely connected
-	if(ent->client->pers.connected == CON_CONNECTED && ent->client->sess.sessionTeam != TEAM_SPECTATOR) {
+	if(ent->client->pers.connected == CON_CONNECTED) {
 		tent = G_TempEntity(ent->client->ps.origin, EV_PLAYER_TELEPORT_OUT);
 		tent->s.clientNum = ent->s.clientNum;
 

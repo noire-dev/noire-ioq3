@@ -172,8 +172,6 @@ struct gentity_s {
 
 typedef enum { CON_DISCONNECTED, CON_CONNECTING, CON_CONNECTED } clientConnected_t;
 
-typedef enum { SPECTATOR_NOT, SPECTATOR_FREE, SPECTATOR_FOLLOW, SPECTATOR_SCOREBOARD } spectatorState_t;
-
 typedef enum {
 	TEAM_BEGIN,  // Beginning a team game, spawn at base
 	TEAM_ACTIVE  // Now actively playing
@@ -203,11 +201,7 @@ typedef struct {
 // MUST be dealt with
 typedef struct {
 	team_t sessionTeam;
-	int spectatorNum;  // for determining next-in-line to play
-	spectatorState_t spectatorState;
-	int spectatorClient;  // for chasecam and follow mode
-	int wins, losses;     // tournament stats
-	bool teamLeader;      // true when this client is a team leader
+	bool teamLeader;  // true when this client is a team leader
 } clientSession_t;
 
 //
@@ -239,8 +233,6 @@ struct gclient_s {
 	// the rest of the structure is private to game
 	clientPersistant_t pers;
 	clientSession_t sess;
-
-	bool readyToExit;  // wishes to leave the intermission
 
 	bool noclip;
 
@@ -326,7 +318,6 @@ typedef struct {
 	int numNonSpectatorClients;      // includes connecting clients
 	int numPlayingClients;           // connected, non-spectators
 	int sortedClients[MAX_CLIENTS];  // sorted by score
-	int follow1, follow2;            // clientNums for auto-follow spectators
 
 	int snd_fry;  // sound index for standing in lava
 
@@ -337,18 +328,9 @@ typedef struct {
 	int numSpawnVarChars;
 	char spawnVarChars[MAX_SPAWN_VARS_CHARS];
 
-	// intermission state
-	int intermissionQueued;  // intermission was qualified, but
-	                         // wait INTERMISSION_DELAY_TIME before
-	                         // actually going there so the last
-	                         // frag can be watched.  Disable future
-	                         // kills during this delay
-	int intermissiontime;    // time the intermission was started
 	char* changemap;
 	bool readyToExit;  // at least one client wants to exit
 	int exitTime;
-	vec3_t intermission_origin;  // also used for spectator spawns
-	vec3_t intermission_angle;
 
 	bool locationLinked;      // target_locations get linked
 	gentity_t* locationHead;  // head of the location list
@@ -478,17 +460,13 @@ void Weapon_HookThink(gentity_t* ent);
 // g_client.c
 //
 int TeamCount(int ignoreClientNum, team_t team);
-int TeamLeader(int team);
-team_t PickTeam(int ignoreClientNum);
 void SetClientViewAngle(gentity_t* ent, vec3_t angle);
 gentity_t* SelectSpawnPoint(vec3_t avoidPoint, vec3_t origin, vec3_t angles, bool isbot);
 void CopyToBodyQue(gentity_t* ent);
 void ClientRespawn(gentity_t* ent);
-void BeginIntermission(void);
 void InitBodyQue(void);
 void ClientSpawn(gentity_t* ent);
 void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod);
-void AddScore(gentity_t* ent, vec3_t origin, int score);
 bool SpotWouldTelefrag(gentity_t* spot);
 
 //
@@ -513,8 +491,6 @@ void G_SendSpawnSwepWeapons(gentity_t* ent);
 //
 // g_main.c
 //
-void MoveClientToIntermission(gentity_t* ent);
-void FindIntermissionPoint(void);
 void G_RunThink(gentity_t* ent);
 void SendScoreboardMessageToAllClients(void);
 void QDECL G_Printf(const char* fmt, ...) Q_PRINTF_FUNC(1, 2);

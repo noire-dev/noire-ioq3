@@ -263,7 +263,7 @@ static void CG_DrawCrosshair(void) {
 	float cSize;
 	qhandle_t hShader;
 
-	if(!cg_drawCrosshair.integer || cg.renderingThirdPerson || cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR) return;
+	if(!cg_drawCrosshair.integer || cg.renderingThirdPerson) return;
 
 	trap_R_SetColor(color_white);
 	cSize = cg_crosshairScale.value;
@@ -314,9 +314,9 @@ static void CG_DrawCrosshair3D(void) {
 	vec3_t origin, endpos;
 	vec3_t axis[3];
 
-	if(!cg_drawCrosshair.integer || cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR) return;
+	if(!cg_drawCrosshair.integer) return;
 
-	if(cg.predictedPlayerState.pm_type == PM_DEAD || cg.predictedPlayerState.pm_type == PM_INTERMISSION) return;
+	if(cg.predictedPlayerState.pm_type == PM_DEAD) return;
 
 	VectorCopy(cg.predictedPlayerState.origin, origin);
 	origin[2] += cg.predictedPlayerState.viewheight;
@@ -478,11 +478,6 @@ static void CG_Draw2D(void) {
 		CG_ScanForCrosshairEntity();
 		CG_Notify();
 		CG_NSErrors();
-	}
-
-	if(cg.snap->ps.pm_type == PM_INTERMISSION) {
-		CG_DrawScoreboard();
-		return;
 	}
 
 	CG_UpdateWeaponStatus();

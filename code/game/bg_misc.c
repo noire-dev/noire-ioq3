@@ -460,10 +460,7 @@ void BG_TouchJumpPad(playerState_t* ps, entityState_t* jumppad) {
 	float p;
 	int effectNum;
 
-	// spectators don't use jump pads
-	if(ps->pm_type != PM_NORMAL) {
-		return;
-	}
+	if(ps->pm_type != PM_NORMAL) return;
 
 	// if we didn't hit this same jumppad the previous frame
 	// then don't play the event sound again if we are in a fat trigger
@@ -495,9 +492,7 @@ and after local prediction on the client
 void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, bool snap) {
 	int i;
 
-	if(ps->pm_type == PM_INTERMISSION || ps->pm_type == PM_SPECTATOR) {
-		s->eType = ET_INVISIBLE;
-	} else if(ps->stats[STAT_HEALTH] <= GIB_HEALTH) {
+	if(ps->stats[STAT_HEALTH] <= GIB_HEALTH) {
 		s->eType = ET_INVISIBLE;
 	} else {
 		s->eType = ET_PLAYER;
@@ -571,9 +566,7 @@ and after local prediction on the client
 void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s, int time, bool snap) {
 	int i;
 
-	if(ps->pm_type == PM_INTERMISSION || ps->pm_type == PM_SPECTATOR) {
-		s->eType = ET_INVISIBLE;
-	} else if(ps->stats[STAT_HEALTH] <= GIB_HEALTH) {
+	if(ps->stats[STAT_HEALTH] <= GIB_HEALTH) {
 		s->eType = ET_INVISIBLE;
 	} else {
 		s->eType = ET_PLAYER;

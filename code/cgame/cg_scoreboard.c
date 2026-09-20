@@ -88,7 +88,7 @@ void CG_DrawScoreboard(void) {
 	int maxClients;
 	int lineHeight;
 
-	if(!(cg.showScores || cg.predictedPlayerState.pm_type == PM_DEAD || cg.predictedPlayerState.pm_type == PM_INTERMISSION)) return;
+	if(!(cg.showScores || cg.predictedPlayerState.pm_type == PM_DEAD)) return;
 
 	drawRoundedRectAdjusted(320 - (SCOREB_WIDTH * 0.5), SCOREB_Y, SCOREB_WIDTH, SB_INTER_HEIGHT * 26, 4, scoreboardBG, 0);
 	drawRoundedRectAdjusted(320 - (SCOREB_WIDTH * 0.5) + 1, SCOREB_Y + 1, SCOREB_WIDTH, SB_INTER_HEIGHT * 26, 4, scoreboardOutlineBG, 0);
@@ -98,6 +98,4 @@ void CG_DrawScoreboard(void) {
 	maxClients = 25;
 	n1 = CG_TeamScoreboard(y, TEAM_FREE, maxClients, lineHeight);
 	y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
-	n2 = CG_TeamScoreboard(y, TEAM_SPECTATOR, maxClients - n1, lineHeight);
-	y += (n2 * lineHeight) + BIGCHAR_HEIGHT;
 }

@@ -47,7 +47,6 @@ float pm_flyaccelerate = 8.0f;
 float pm_friction = 6.0f;
 float pm_waterfriction = 1.0f;
 float pm_flightfriction = 3.0f;
-float pm_spectatorfriction = 5.0f;
 
 int c_pmove = 0;
 
@@ -202,10 +201,6 @@ static void PM_Friction(void) {
 	// apply water friction even if just wading
 	if(pm->waterlevel) {
 		drop += speed * pm_waterfriction * pm->waterlevel * pml.frametime;
-	}
-
-	if(pm->ps->pm_type == PM_SPECTATOR) {
-		drop += speed * pm_spectatorfriction * pml.frametime;
 	}
 
 	// scale the velocity
@@ -1428,11 +1423,6 @@ static void PM_Weapon(void) {
 		return;
 	}
 
-	// ignore if spectator
-	if(pm->ps->persistant[PERS_TEAM] == TEAM_SPECTATOR) {
-		return;
-	}
-
 	// check for dead player
 	if(pm->ps->stats[STAT_HEALTH] <= 0) {
 		pm->ps->weapon = WP_NONE;
@@ -1597,11 +1587,7 @@ void PM_UpdateViewAngles(playerState_t* ps, const usercmd_t* cmd) {
 	short temp;
 	int i;
 
-	if(ps->pm_type == PM_INTERMISSION || ps->pm_type == PM_SPINTERMISSION) {
-		return;  // no view changes at all
-	}
-
-	if(ps->pm_type != PM_SPECTATOR && ps->stats[STAT_HEALTH] <= 0) {
+	if(ps->stats[STAT_HEALTH] <= 0) {
 		return;  // no view changes at all
 	}
 
@@ -1657,7 +1643,7 @@ void PmoveSingle(pmove_t* pmove) {
 	}
 
 	// set the firing flag for continuous beam weapons
-	if(!(pm->ps->pm_flags & PMF_RESPAWNED) && pm->ps->pm_type != PM_INTERMISSION && pm->ps->pm_type != PM_NOCLIP && (pm->cmd.buttons & BUTTON_ATTACK) && pm->ps->stats[STAT_AMMO]) {
+	if(!(pm->ps->pm_flags & PMF_RESPAWNED) && pm->ps->pm_type != PM_NOCLIP && (pm->cmd.buttons & BUTTON_ATTACK) && pm->ps->stats[STAT_AMMO]) {
 		pm->ps->eFlags |= EF_FIRING;
 	} else {
 		pm->ps->eFlags &= ~EF_FIRING;
@@ -1723,13 +1709,6 @@ void PmoveSingle(pmove_t* pmove) {
 		pm->cmd.upmove = 0;
 	}
 
-	if(pm->ps->pm_type == PM_SPECTATOR) {
-		PM_CheckDuck();
-		PM_FlyMove();
-		PM_DropTimers();
-		return;
-	}
-
 	if(pm->ps->pm_type == PM_NOCLIP) {
 		PM_NoclipMove();
 		PM_DropTimers();
@@ -1737,10 +1716,6 @@ void PmoveSingle(pmove_t* pmove) {
 	}
 
 	if(pm->ps->pm_type == PM_FREEZE) {
-		return;  // no movement at all
-	}
-
-	if(pm->ps->pm_type == PM_INTERMISSION || pm->ps->pm_type == PM_SPINTERMISSION) {
 		return;  // no movement at all
 	}
 

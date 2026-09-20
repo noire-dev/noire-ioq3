@@ -42,23 +42,6 @@ void ScorePlum(gentity_t* ent, vec3_t origin, int score) {
 }
 
 /*
-============
-AddScore
-
-Adds score to both the client and his team
-============
-*/
-void AddScore(gentity_t* ent, vec3_t origin, int score) {
-	if(!ent->client) {
-		return;
-	}
-	// show score plum
-	ScorePlum(ent, origin, score);
-	//
-	ent->client->ps.persistant[PERS_SCORE] += score;
-}
-
-/*
 =================
 TossClientItems
 
@@ -150,38 +133,6 @@ char* modNames[] = {"MOD_UNKNOWN", "MOD_SHOTGUN", "MOD_GAUNTLET", "MOD_MACHINEGU
 
 /*
 ==================
-CheckAlmostScored
-==================
-*/
-void CheckAlmostScored(gentity_t* self, gentity_t* attacker) {
-	gentity_t* ent;
-	vec3_t dir;
-	char* classname;
-
-	// if the player was carrying cubes
-	if(self->client->ps.generic1) {
-		if(self->client->sess.sessionTeam == TEAM_BLUE) {
-			classname = "team_redobelisk";
-		} else {
-			classname = "team_blueobelisk";
-		}
-		ent = G_Find(NULL, FOFS(classname), classname);
-		// if we found the destination obelisk
-		if(ent) {
-			// if the player was *very* close
-			VectorSubtract(self->client->ps.origin, ent->s.origin, dir);
-			if(VectorLength(dir) < 200) {
-				self->client->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
-				if(attacker->client) {
-					attacker->client->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
-				}
-			}
-		}
-	}
-}
-
-/*
-==================
 player_die
 ==================
 */
@@ -196,13 +147,6 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 	if(self->client->ps.pm_type == PM_DEAD) {
 		return;
 	}
-
-	if(level.intermissiontime) {
-		return;
-	}
-
-	// check for a player that almost brought in cubes
-	CheckAlmostScored(self, attacker);
 
 	if(self->client && self->client->hook) {
 		Weapon_HookFree(self->client->hook);
@@ -241,14 +185,6 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 
 	self->enemy = attacker;
 
-	self->client->ps.persistant[PERS_KILLED]++;
-
-	if(attacker && attacker->client) {
-		attacker->client->lastkilled_client = self->s.number;
-	} else {
-		AddScore(self, self->r.currentOrigin, -1);
-	}
-
 	TossClientItems(self);
 
 	Cmd_Score_f(self);  // show scores
@@ -258,76 +194,68 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 		gclient_t* client;
 
 		client = &level.clients[i];
-		if(client->pers.connected != CON_CONNECTED) {
-			continue;
+		if(client->pers.connected != CON_CONNECTED) continue;
+
+		self->takedamage = true;  // can still be gibbed
+
+		self->s.weapon = WP_NONE;
+		self->s.powerups = 0;
+		self->r.contents = CONTENTS_CORPSE;
+
+		self->s.angles[0] = 0;
+		self->s.angles[2] = 0;
+		LookAtKiller(self, inflictor, attacker);
+
+		VectorCopy(self->s.angles, self->client->ps.viewangles);
+
+		self->s.loopSound = 0;
+
+		self->r.maxs[2] = DEAD_HEIGHT;
+
+		// don't allow respawn until the death anim is done
+		// g_forcerespawn may force spawning at some later time
+		self->client->respawnTime = level.time + 1700;
+
+		// remove powerups
+		memset(self->client->ps.powerups, 0, sizeof(self->client->ps.powerups));
+
+		// never gib in a nodrop
+		contents = trap_PointContents(self->r.currentOrigin, -1);
+
+		if((self->health <= GIB_HEALTH && !(contents & CONTENTS_NODROP) && g_blood.integer) || meansOfDeath == MOD_SUICIDE) {
+			// gib death
+			GibEntity(self, killer);
+		} else {
+			// normal death
+			static int lastDeath;
+
+			switch(lastDeath) {
+				case 0: anim = BOTH_DEATH1; break;
+				case 1: anim = BOTH_DEATH2; break;
+				case 2:
+				default: anim = BOTH_DEATH3; break;
+			}
+
+			// for the no-blood option, we need to prevent the health
+			// from going to gib level
+			if(self->health <= GIB_HEALTH) {
+				self->health = GIB_HEALTH + 1;
+			}
+
+			self->client->ps.legsAnim = ((self->client->ps.legsAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
+			self->client->ps.torsoAnim = ((self->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
+
+			G_AddEvent(self, EV_DEATH1 + lastDeath, killer);
+
+			// the body can still be gibbed
+			self->die = body_die;
+
+			// globally cycle through the different death animations
+			lastDeath = (lastDeath + 1) % 3;
 		}
-		if(client->sess.sessionTeam != TEAM_SPECTATOR) {
-			continue;
-		}
-		if(client->sess.spectatorClient == self->s.number) {
-			Cmd_Score_f(g_entities + i);
-		}
+
+		trap_LinkEntity(self);
 	}
-
-	self->takedamage = true;  // can still be gibbed
-
-	self->s.weapon = WP_NONE;
-	self->s.powerups = 0;
-	self->r.contents = CONTENTS_CORPSE;
-
-	self->s.angles[0] = 0;
-	self->s.angles[2] = 0;
-	LookAtKiller(self, inflictor, attacker);
-
-	VectorCopy(self->s.angles, self->client->ps.viewangles);
-
-	self->s.loopSound = 0;
-
-	self->r.maxs[2] = DEAD_HEIGHT;
-
-	// don't allow respawn until the death anim is done
-	// g_forcerespawn may force spawning at some later time
-	self->client->respawnTime = level.time + 1700;
-
-	// remove powerups
-	memset(self->client->ps.powerups, 0, sizeof(self->client->ps.powerups));
-
-	// never gib in a nodrop
-	contents = trap_PointContents(self->r.currentOrigin, -1);
-
-	if((self->health <= GIB_HEALTH && !(contents & CONTENTS_NODROP) && g_blood.integer) || meansOfDeath == MOD_SUICIDE) {
-		// gib death
-		GibEntity(self, killer);
-	} else {
-		// normal death
-		static int lastDeath;
-
-		switch(lastDeath) {
-			case 0: anim = BOTH_DEATH1; break;
-			case 1: anim = BOTH_DEATH2; break;
-			case 2:
-			default: anim = BOTH_DEATH3; break;
-		}
-
-		// for the no-blood option, we need to prevent the health
-		// from going to gib level
-		if(self->health <= GIB_HEALTH) {
-			self->health = GIB_HEALTH + 1;
-		}
-
-		self->client->ps.legsAnim = ((self->client->ps.legsAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
-		self->client->ps.torsoAnim = ((self->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
-
-		G_AddEvent(self, EV_DEATH1 + lastDeath, killer);
-
-		// the body can still be gibbed
-		self->die = body_die;
-
-		// globally cycle through the different death animations
-		lastDeath = (lastDeath + 1) % 3;
-	}
-
-	trap_LinkEntity(self);
 }
 
 /*
@@ -427,11 +355,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 		return;
 	}
 
-	// the intermission has already been qualified for, so don't
-	// allow any extra scoring
-	if(level.intermissionQueued) {
-		return;
-	}
 	if(!inflictor) {
 		inflictor = &g_entities[ENTITYNUM_WORLD];
 	}

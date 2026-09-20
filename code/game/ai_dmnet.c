@@ -750,32 +750,6 @@ int BotLongTermGoal(bot_state_t* bs, int tfl, int retreat, bot_goal_t* goal) {
 
 /*
 ==================
-AIEnter_Intermission
-==================
-*/
-void AIEnter_Intermission(bot_state_t* bs, char* s) {
-	BotRecordNodeSwitch(bs, "intermission", "", s);
-	// reset the bot state
-	BotResetState(bs);
-	bs->ainode = AINode_Intermission;
-}
-
-/*
-==================
-AINode_Intermission
-==================
-*/
-int AINode_Intermission(bot_state_t* bs) {
-	// if the intermission ended
-	if(!BotIntermission(bs)) {
-		bs->stand_time = FloatTime() + 2;
-		AIEnter_Stand(bs, "intermission: chat");
-	}
-	return true;
-}
-
-/*
-==================
 AIEnter_Observer
 ==================
 */
@@ -793,9 +767,7 @@ AINode_Observer
 */
 int AINode_Observer(bot_state_t* bs) {
 	// if the bot left observer mode
-	if(!BotIsObserver(bs)) {
-		AIEnter_Stand(bs, "observer: left observer");
-	}
+	AIEnter_Stand(bs, "observer: left observer");
 	return true;
 }
 
@@ -984,9 +956,6 @@ void BotClearPath(bot_state_t* bs, bot_moveresult_t* moveresult) {
 			}
 		}
 		if(bestmine != -1) {
-			//
-			// state->generic1 == TEAM_RED || state->generic1 == TEAM_BLUE
-			//
 			// deactivate prox mines in the bot's path by shooting
 			// rockets or plasma cells etc. at them
 			BotAI_GetEntityState(bs->proxmines[bestmine], &state);
@@ -1048,17 +1017,6 @@ int AINode_Seek_ActivateEntity(bot_state_t* bs) {
 	bsp_trace_t bsptrace;
 	aas_entityinfo_t entinfo;
 
-	if(BotIsObserver(bs)) {
-		BotClearActivateGoalStack(bs);
-		AIEnter_Observer(bs, "active entity: observer");
-		return false;
-	}
-	// if in the intermission
-	if(BotIntermission(bs)) {
-		BotClearActivateGoalStack(bs);
-		AIEnter_Intermission(bs, "activate entity: intermission");
-		return false;
-	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		BotClearActivateGoalStack(bs);
@@ -1257,15 +1215,6 @@ int AINode_Seek_NBG(bot_state_t* bs) {
 	vec3_t target, dir;
 	bot_moveresult_t moveresult;
 
-	if(BotIsObserver(bs)) {
-		AIEnter_Observer(bs, "seek nbg: observer");
-		return false;
-	}
-	// if in the intermission
-	if(BotIntermission(bs)) {
-		AIEnter_Intermission(bs, "seek nbg: intermision");
-		return false;
-	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "seek nbg: bot dead");
@@ -1387,18 +1336,7 @@ int AINode_Seek_LTG(bot_state_t* bs) {
 	vec3_t target, dir;
 	bot_moveresult_t moveresult;
 	int range;
-	// char buf[128];
-	// bot_goal_t tmpgoal;
 
-	if(BotIsObserver(bs)) {
-		AIEnter_Observer(bs, "seek ltg: observer");
-		return false;
-	}
-	// if in the intermission
-	if(BotIntermission(bs)) {
-		AIEnter_Intermission(bs, "seek ltg: intermission");
-		return false;
-	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "seek ltg: bot dead");
@@ -1552,16 +1490,6 @@ int AINode_Battle_Fight(bot_state_t* bs) {
 	aas_entityinfo_t entinfo;
 	bot_moveresult_t moveresult;
 
-	if(BotIsObserver(bs)) {
-		AIEnter_Observer(bs, "battle fight: observer");
-		return false;
-	}
-
-	// if in the intermission
-	if(BotIntermission(bs)) {
-		AIEnter_Intermission(bs, "battle fight: intermission");
-		return false;
-	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "battle fight: bot dead");
@@ -1679,15 +1607,6 @@ int AINode_Battle_Chase(bot_state_t* bs) {
 	bot_moveresult_t moveresult;
 	float range;
 
-	if(BotIsObserver(bs)) {
-		AIEnter_Observer(bs, "battle chase: observer");
-		return false;
-	}
-	// if in the intermission
-	if(BotIntermission(bs)) {
-		AIEnter_Intermission(bs, "battle chase: intermission");
-		return false;
-	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "battle chase: bot dead");
@@ -1816,15 +1735,6 @@ int AINode_Battle_Retreat(bot_state_t* bs) {
 	float attack_skill, range;
 	int areanum;
 
-	if(BotIsObserver(bs)) {
-		AIEnter_Observer(bs, "battle retreat: observer");
-		return false;
-	}
-	// if in the intermission
-	if(BotIntermission(bs)) {
-		AIEnter_Intermission(bs, "battle retreat: intermission");
-		return false;
-	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "battle retreat: bot dead");
@@ -1971,15 +1881,6 @@ int AINode_Battle_NBG(bot_state_t* bs) {
 	float attack_skill;
 	vec3_t target, dir;
 
-	if(BotIsObserver(bs)) {
-		AIEnter_Observer(bs, "battle nbg: observer");
-		return false;
-	}
-	// if in the intermission
-	if(BotIntermission(bs)) {
-		AIEnter_Intermission(bs, "battle nbg: intermission");
-		return false;
-	}
 	// respawn if dead
 	if(BotIsDead(bs)) {
 		AIEnter_Respawn(bs, "battle nbg: bot dead");

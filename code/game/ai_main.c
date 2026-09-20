@@ -347,10 +347,6 @@ void BotTeamplayReport(void) {
 		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
 		// if no config string or no name
 		if(!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) continue;
-		// skip spectators
-		if(atoi(Info_ValueForKey(buf, "t")) == TEAM_RED) {
-			BotReportStatus(botstates[i]);
-		}
 	}
 	BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "BLUE\n");
 	for(i = 0; i < level.maxclients; i++) {
@@ -360,10 +356,6 @@ void BotTeamplayReport(void) {
 		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
 		// if no config string or no name
 		if(!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) continue;
-		// skip spectators
-		if(atoi(Info_ValueForKey(buf, "t")) == TEAM_BLUE) {
-			BotReportStatus(botstates[i]);
-		}
 	}
 }
 
@@ -1042,14 +1034,6 @@ int BotAIShutdownClient(int client, bool restart) {
 	return true;
 }
 
-/*
-==============
-BotResetState
-
-called when a bot enters the intermission or observer mode and
-when the level is changed
-==============
-*/
 void BotResetState(bot_state_t* bs) {
 	int client, entitynum, inuse;
 	int movestate, goalstate, chatstate, weaponstate;
@@ -1135,7 +1119,7 @@ int BotAIStartFrame(int time) {
 	static int botlib_residual;
 	static int lastbotthink_time;
 
-	G_CheckBotSpawn();
+	// G_CheckBotSpawn();
 
 	trap_Cvar_Update(&bot_rocketjump);
 	trap_Cvar_Update(&bot_grapple);

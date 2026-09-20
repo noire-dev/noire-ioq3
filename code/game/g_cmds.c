@@ -73,7 +73,7 @@ void DeathmatchScoreboardMessage(gentity_t* ent) {
 		stringlength += j;
 	}
 
-	trap_SendServerCommand(ent - g_entities, va("scores %i %i %i%s", i, level.teamScores[TEAM_RED], level.teamScores[TEAM_BLUE], string));
+	trap_SendServerCommand(ent - g_entities, va("scores %i 0 0%s", i, string));
 }
 
 void G_SendSwepWeapons(gentity_t* ent) {
@@ -414,12 +414,7 @@ Cmd_Kill_f
 =================
 */
 void Cmd_Kill_f(gentity_t* ent) {
-	if(ent->client->sess.sessionTeam == TEAM_SPECTATOR) {
-		return;
-	}
-	if(ent->health <= 0) {
-		return;
-	}
+	if(ent->health <= 0) return;
 	ent->flags &= ~FL_GODMODE;
 	ent->client->ps.stats[STAT_HEALTH] = ent->health = -999;
 	player_die(ent, ent, ent, 100000, MOD_SUICIDE);
@@ -571,12 +566,6 @@ void ClientCommand(int clientNum) {
 	}
 	if(Q_stricmp(cmd, "score") == 0) {
 		Cmd_Score_f(ent);
-		return;
-	}
-
-	// ignore all other commands when at intermission
-	if(level.intermissiontime) {
-		Cmd_Say_f(ent, true);
 		return;
 	}
 

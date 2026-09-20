@@ -1051,14 +1051,6 @@ void CG_AddViewWeapon(playerState_t* ps) {
 	vec3_t angles;
 	weaponInfo_t* weapon;
 
-	if(ps->persistant[PERS_TEAM] == TEAM_SPECTATOR) {
-		return;
-	}
-
-	if(ps->pm_type == PM_INTERMISSION) {
-		return;
-	}
-
 	// no gun if in third person view or a camera is active
 	// if ( cg.renderingThirdPerson || cg.cameraMode) {
 	if(cg.renderingThirdPerson) {

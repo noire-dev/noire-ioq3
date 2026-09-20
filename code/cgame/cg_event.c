@@ -628,11 +628,6 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 			}
 			break;
 
-		case EV_SCOREPLUM:
-			DEBUGNAME("EV_SCOREPLUM");
-			CG_ScorePlum(cent->currentState.otherEntityNum, cent->lerpOrigin, cent->currentState.time);
-			break;
-
 		//
 		// missile impacts
 		//

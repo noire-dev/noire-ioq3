@@ -48,10 +48,6 @@ void BotUpdateInventory(bot_state_t* bs);
 void BotUpdateBattleInventory(bot_state_t* bs, int enemy);
 // return true if the bot is dead
 bool BotIsDead(bot_state_t* bs);
-// returns true if the bot is in observer mode
-bool BotIsObserver(bot_state_t* bs);
-// returns true if the bot is in the intermission
-bool BotIntermission(bot_state_t* bs);
 // returns true if the bot is in lava or slime
 bool BotInLavaOrSlime(bot_state_t* bs);
 // returns true if the entity is dead
@@ -136,14 +132,6 @@ int BotOppositeTeam(bot_state_t* bs);
 int BotCTFCarryingFlag(bot_state_t* bs);
 // remember the last ordered task
 void BotRememberLastOrderedTask(bot_state_t* bs);
-// set ctf goals (defend base, get enemy flag) during seek
-void BotCTFSeekGoals(bot_state_t* bs);
-// set ctf goals (defend base, get enemy flag) during retreat
-void BotCTFRetreatGoals(bot_state_t* bs);
-// get a random alternate route goal towards the given base
-int BotGetAlternateRouteGoal(bot_state_t* bs, int base);
-// returns either the alternate route goal or the given goal
-bot_goal_t* BotAlternateRoute(bot_state_t* bs, bot_goal_t* goal);
 // create a new waypoint
 bot_waypoint_t* BotCreateWayPoint(char* name, vec3_t origin, int areanum);
 // find a waypoint with the given name

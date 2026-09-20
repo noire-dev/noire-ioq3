@@ -476,11 +476,7 @@ static bool CG_RegisterClientModelname(clientInfo_t* ci, const char* modelName, 
 	if(!CG_RegisterClientSkin(ci, teamName, modelName, skinName, headName, headSkinName)) {
 		if(teamName && *teamName) {
 			Com_Printf("Failed to load skin file: %s : %s : %s, %s : %s\n", teamName, modelName, skinName, headName, headSkinName);
-			if(ci->team == TEAM_BLUE) {
-				Com_sprintf(newTeamName, sizeof(newTeamName), "%s/", DEFAULT_BLUETEAM_NAME);
-			} else {
-				Com_sprintf(newTeamName, sizeof(newTeamName), "%s/", DEFAULT_REDTEAM_NAME);
-			}
+			Com_sprintf(newTeamName, sizeof(newTeamName), "%s/", DEFAULT_REDTEAM_NAME);
 			if(!CG_RegisterClientSkin(ci, newTeamName, modelName, skinName, headName, headSkinName)) {
 				Com_Printf("Failed to load skin file: %s : %s : %s, %s : %s\n", newTeamName, modelName, skinName, headName, headSkinName);
 				return false;
@@ -761,14 +757,6 @@ void CG_NewClientInfo(int clientNum) {
 	// handicap
 	v = Info_ValueForKey(configstring, "hc");
 	newInfo.handicap = atoi(v);
-
-	// wins
-	v = Info_ValueForKey(configstring, "w");
-	newInfo.wins = atoi(v);
-
-	// losses
-	v = Info_ValueForKey(configstring, "l");
-	newInfo.losses = atoi(v);
 
 	// team
 	v = Info_ValueForKey(configstring, "t");

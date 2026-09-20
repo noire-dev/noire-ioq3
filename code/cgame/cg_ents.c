@@ -343,26 +343,8 @@ static void CG_Missile(centity_t* cent) {
 	VectorCopy(s1->angles, cent->lerpAngles);
 
 	// add trails
-	if(weapon->missileTrailFunc) {
-		weapon->missileTrailFunc(cent, weapon);
-	}
-	/*
-	    if ( cent->currentState.modelindex == TEAM_RED ) {
-	        col = 1;
-	    }
-	    else if ( cent->currentState.modelindex == TEAM_BLUE ) {
-	        col = 2;
-	    }
-	    else {
-	        col = 0;
-	    }
+	if(weapon->missileTrailFunc) weapon->missileTrailFunc(cent, weapon);
 
-	    // add dynamic light
-	    if ( weapon->missileDlight ) {
-	        trap_R_AddLightToScene(cent->lerpOrigin, weapon->missileDlight,
-	            weapon->missileDlightColor[col][0], weapon->missileDlightColor[col][1], weapon->missileDlightColor[col][2] );
-	    }
-	*/
 	// add dynamic light
 	if(weapon->missileDlight) {
 		trap_R_AddLightToScene(cent->lerpOrigin, weapon->missileDlight, weapon->missileDlightColor[0], weapon->missileDlightColor[1], weapon->missileDlightColor[2]);

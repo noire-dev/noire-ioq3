@@ -291,16 +291,11 @@ static void CG_TouchTriggerPrediction(void) {
 	entityState_t* ent;
 	clipHandle_t cmodel;
 	centity_t* cent;
-	bool spectator;
 
 	// dead clients don't activate triggers
-	if(cg.predictedPlayerState.stats[STAT_HEALTH] <= 0) {
-		return;
-	}
+	if(cg.predictedPlayerState.stats[STAT_HEALTH] <= 0) return;
 
-	spectator = (cg.predictedPlayerState.pm_type == PM_SPECTATOR);
-
-	if(cg.predictedPlayerState.pm_type != PM_NORMAL && !spectator) {
+	if(cg.predictedPlayerState.pm_type != PM_NORMAL) {
 		return;
 	}
 
@@ -308,7 +303,7 @@ static void CG_TouchTriggerPrediction(void) {
 		cent = cg_triggerEntities[i];
 		ent = &cent->currentState;
 
-		if(ent->eType == ET_ITEM && !spectator) {
+		if(ent->eType == ET_ITEM) {
 			CG_TouchItem(cent);
 			continue;
 		}
@@ -405,9 +400,6 @@ void CG_PredictPlayerState(void) {
 		cg_pmove.tracemask = MASK_PLAYERSOLID & ~CONTENTS_BODY;
 	} else {
 		cg_pmove.tracemask = MASK_PLAYERSOLID;
-	}
-	if(cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR) {
-		cg_pmove.tracemask &= ~CONTENTS_BODY;  // spectators can fly through bodies
 	}
 	cg_pmove.noFootsteps = (cgs.dmflags & DF_NO_FOOTSTEPS) > 0;
 

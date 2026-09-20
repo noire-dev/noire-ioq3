@@ -311,26 +311,6 @@ void ClientTimerActions(gentity_t* ent, int msec) {
 }
 
 /*
-====================
-ClientIntermissionThink
-====================
-*/
-void ClientIntermissionThink(gclient_t* client) {
-	client->ps.eFlags &= ~EF_TALK;
-	client->ps.eFlags &= ~EF_FIRING;
-
-	// the level will exit when everyone wants to or after timeouts
-
-	// swap and latch button actions
-	client->oldbuttons = client->buttons;
-	client->buttons = client->pers.cmd.buttons;
-	if(client->buttons & (BUTTON_ATTACK | BUTTON_USE_HOLDABLE) & (client->oldbuttons ^ client->buttons)) {
-		// this used to be an ^1 but once a player says ready, it should stick
-		client->readyToExit = 1;
-	}
-}
-
-/*
 ================
 ClientEvents
 
@@ -462,20 +442,8 @@ void ClientThink_real(gentity_t* ent) {
 	msec = ucmd->serverTime - client->ps.commandTime;
 	// following others may result in bad times, but we still want
 	// to check for follow toggles
-	if(msec < 1 && client->sess.spectatorState != SPECTATOR_FOLLOW) {
-		return;
-	}
-	if(msec > 200) {
-		msec = 200;
-	}
-
-	//
-	// check for exiting intermission
-	//
-	if(level.intermissiontime) {
-		ClientIntermissionThink(client);
-		return;
-	}
+	if(msec < 1) return;
+	if(msec > 200) msec = 200;
 
 	// check for inactivity timer, but never drop the local client of a non-dedicated server
 	if(!ClientInactivityTimer(client)) {
@@ -662,14 +630,6 @@ void ClientEndFrame(gentity_t* ent) {
 		if(ent->client->ps.powerups[i] < level.time) {
 			ent->client->ps.powerups[i] = 0;
 		}
-	}
-
-	//
-	// If the end of unit layout is displayed, don't give
-	// the player any normal movement attributes
-	//
-	if(level.intermissiontime) {
-		return;
 	}
 
 	// burn from lava, etc

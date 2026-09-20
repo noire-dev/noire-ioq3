@@ -87,7 +87,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define CS_GAME_VERSION 20
 #define CS_LEVEL_START_TIME 21  // so the timer only shows the current level
-#define CS_INTERMISSION 22      // when 1, fraglimit/timelimit has been hit and intermission will start in a second or two
 #define CS_FLAGSTATUS 23        // string indicating flag status in CTF
 #define CS_SHADERSTATE 24
 #define CS_BOTINFO 25
@@ -118,13 +117,10 @@ movement on the server game.
 */
 
 typedef enum {
-	PM_NORMAL,         // can accelerate and turn
-	PM_NOCLIP,         // noclip movement
-	PM_SPECTATOR,      // still run into walls
-	PM_DEAD,           // no acceleration or turning, but free falling
-	PM_FREEZE,         // stuck in place with no control
-	PM_INTERMISSION,   // no movement or status bar
-	PM_SPINTERMISSION  // no movement or status bar
+	PM_NORMAL,  // can accelerate and turn
+	PM_NOCLIP,  // noclip movement
+	PM_DEAD,    // no acceleration or turning, but free falling
+	PM_FREEZE,  // stuck in place with no control
 } pmtype_t;
 
 typedef enum { WEAPON_READY, WEAPON_RAISING, WEAPON_DROPPING, WEAPON_FIRING } weaponstate_t;
@@ -424,9 +420,6 @@ typedef struct animation_s {
 
 typedef enum {
 	TEAM_FREE,
-	TEAM_RED,
-	TEAM_BLUE,
-	TEAM_SPECTATOR,
 
 	TEAM_NUM_TEAMS
 } team_t;

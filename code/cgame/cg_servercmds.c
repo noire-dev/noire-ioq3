@@ -255,8 +255,6 @@ static void CG_ConfigStringModified(void) {
 		cgs.teamVoteModified[num - CS_TEAMVOTE_NO] = true;
 	} else if(num >= CS_TEAMVOTE_STRING && num <= CS_TEAMVOTE_STRING + 1) {
 		Q_strncpyz(cgs.teamVoteString[num - CS_TEAMVOTE_STRING], str, sizeof(cgs.teamVoteString[0]));
-	} else if(num == CS_INTERMISSION) {
-		cg.intermissionStarted = atoi(str);
 	} else if(num >= CS_MODELS && num < CS_MODELS + MAX_MODELS) {
 		cgs.gameModels[num - CS_MODELS] = trap_R_RegisterModel(str);
 	} else if(num >= CS_SOUNDS && num < CS_SOUNDS + MAX_SOUNDS) {
@@ -363,7 +361,6 @@ static void CG_MapRestart(void) {
 	cg.timelimitWarnings = 0;
 	cg.rewardTime = 0;
 	cg.rewardStack = 0;
-	cg.intermissionStarted = false;
 
 	cgs.voteTime = 0;
 

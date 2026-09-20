@@ -34,20 +34,14 @@ Sets the coordinates of the rendered window
 static void CG_CalcVrect(void) {
 	int size;
 
-	// the intermission should allways be full screen
-	if(cg.snap->ps.pm_type == PM_INTERMISSION) {
+	if(cg_viewsize.integer < 30) {
+		trap_Cvar_Set("cg_viewsize", "30");
+		size = 30;
+	} else if(cg_viewsize.integer > 100) {
+		trap_Cvar_Set("cg_viewsize", "100");
 		size = 100;
 	} else {
-		// bound normal viewsize
-		if(cg_viewsize.integer < 30) {
-			trap_Cvar_Set("cg_viewsize", "30");
-			size = 30;
-		} else if(cg_viewsize.integer > 100) {
-			trap_Cvar_Set("cg_viewsize", "100");
-			size = 100;
-		} else {
-			size = cg_viewsize.integer;
-		}
+		size = cg_viewsize.integer;
 	}
 	cg.refdef.width = cgs.glconfig.vidWidth * size / 100;
 	cg.refdef.width &= ~1;
@@ -166,10 +160,6 @@ static void CG_OffsetFirstPersonView(void) {
 	vec3_t predictedVelocity;
 	int timeDelta;
 
-	if(cg.snap->ps.pm_type == PM_INTERMISSION) {
-		return;
-	}
-
 	origin = cg.refdef.vieworg;
 	angles = cg.refdefViewAngles;
 
@@ -276,7 +266,7 @@ void CG_ZoomUp_f(void) {
 ====================
 CG_CalcFov
 
-Fixed fov at intermissions, otherwise account for fov variable and zooms.
+Fixed fov, otherwise account for fov variable and zooms.
 ====================
 */
 #define WAVE_AMPLITUDE 1
@@ -292,43 +282,38 @@ static int CG_CalcFov(void) {
 	float f;
 	int inwater;
 
-	if(cg.predictedPlayerState.pm_type == PM_INTERMISSION) {
-		// if in intermission, use a fixed value
+	// user selectable
+	if(cgs.dmflags & DF_FIXED_FOV) {
+		// dmflag to prevent wide fov for all clients
 		fov_x = 90;
 	} else {
-		// user selectable
-		if(cgs.dmflags & DF_FIXED_FOV) {
-			// dmflag to prevent wide fov for all clients
-			fov_x = 90;
-		} else {
-			fov_x = cg_fov.value;
-			if(fov_x < 1) {
-				fov_x = 1;
-			} else if(fov_x > 160) {
-				fov_x = 160;
-			}
+		fov_x = cg_fov.value;
+		if(fov_x < 1) {
+			fov_x = 1;
+		} else if(fov_x > 160) {
+			fov_x = 160;
 		}
+	}
 
-		// account for zooms
-		zoomFov = cg_zoomFov.value;
-		if(zoomFov < 1) {
-			zoomFov = 1;
-		} else if(zoomFov > 160) {
-			zoomFov = 160;
-		}
+	// account for zooms
+	zoomFov = cg_zoomFov.value;
+	if(zoomFov < 1) {
+		zoomFov = 1;
+	} else if(zoomFov > 160) {
+		zoomFov = 160;
+	}
 
-		if(cg.zoomed) {
-			f = (cg.time - cg.zoomTime) / (float)ZOOM_TIME;
-			if(f > 1.0) {
-				fov_x = zoomFov;
-			} else {
-				fov_x = fov_x + f * (zoomFov - fov_x);
-			}
+	if(cg.zoomed) {
+		f = (cg.time - cg.zoomTime) / (float)ZOOM_TIME;
+		if(f > 1.0) {
+			fov_x = zoomFov;
 		} else {
-			f = (cg.time - cg.zoomTime) / (float)ZOOM_TIME;
-			if(f <= 1.0) {
-				fov_x = zoomFov + f * (fov_x - zoomFov);
-			}
+			fov_x = fov_x + f * (zoomFov - fov_x);
+		}
+	} else {
+		f = (cg.time - cg.zoomTime) / (float)ZOOM_TIME;
+		if(f <= 1.0) {
+			fov_x = zoomFov + f * (fov_x - zoomFov);
 		}
 	}
 
@@ -424,13 +409,6 @@ static int CG_CalcViewValues(void) {
 	CG_CalcVrect();
 
 	ps = &cg.predictedPlayerState;
-	// intermission view
-	if(ps->pm_type == PM_INTERMISSION) {
-		VectorCopy(ps->origin, cg.refdef.vieworg);
-		VectorCopy(ps->viewangles, cg.refdefViewAngles);
-		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
-		return CG_CalcFov();
-	}
 
 	cg.bobcycle = (ps->bobCycle & 128) >> 7;
 	cg.bobfracsin = fabs(sin((ps->bobCycle & 127) / 127.0 * M_PI));
@@ -584,7 +562,7 @@ void CG_DrawActiveFrame(int serverTime, stereoFrame_t stereoView, bool demoPlayb
 	CG_PredictPlayerState();
 
 	// decide on third person view
-	cg.renderingThirdPerson = cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR && (cg_thirdPerson.integer || (cg.snap->ps.stats[STAT_HEALTH] <= 0));
+	cg.renderingThirdPerson = (cg_thirdPerson.integer || (cg.snap->ps.stats[STAT_HEALTH] <= 0));
 
 	// build cg.refdef
 	inwater = CG_CalcViewValues();

@@ -373,8 +373,6 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	}
 
 	G_RemapTeamShaders();
-
-	trap_SetConfigstring(CS_INTERMISSION, "");
 }
 
 /*
@@ -427,14 +425,6 @@ MAP CHANGING
 ========================================================================
 */
 
-/*
-========================
-SendScoreboardMessageToAllClients
-
-Do this at BeginIntermission time and whenever ranks are recalculated
-due to enters/exits/forced team changes
-========================
-*/
 void SendScoreboardMessageToAllClients(void) {
 	int i;
 
@@ -443,91 +433,6 @@ void SendScoreboardMessageToAllClients(void) {
 			DeathmatchScoreboardMessage(g_entities + i);
 		}
 	}
-}
-
-/*
-========================
-MoveClientToIntermission
-
-When the intermission starts, this will be called for all players.
-If a new client connects, this will be called after the spawn function.
-========================
-*/
-void MoveClientToIntermission(gentity_t* ent) {
-	FindIntermissionPoint();
-	// move to the spot
-	VectorCopy(level.intermission_origin, ent->s.origin);
-	VectorCopy(level.intermission_origin, ent->client->ps.origin);
-	VectorCopy(level.intermission_angle, ent->client->ps.viewangles);
-	ent->client->ps.pm_type = PM_INTERMISSION;
-
-	// clean up powerup info
-	memset(ent->client->ps.powerups, 0, sizeof(ent->client->ps.powerups));
-
-	ent->client->ps.eFlags = 0;
-	ent->s.eFlags = 0;
-	ent->s.eType = ET_GENERAL;
-	ent->s.modelindex = 0;
-	ent->s.loopSound = 0;
-	ent->s.event = 0;
-	ent->r.contents = 0;
-}
-
-/*
-==================
-FindIntermissionPoint
-
-This is also used for spectator spawns
-==================
-*/
-void FindIntermissionPoint(void) {
-	gentity_t *ent, *target;
-	vec3_t dir;
-
-	// find the intermission spot
-	ent = G_Find(NULL, FOFS(classname), "info_player_intermission");
-	if(!ent) {  // the map creator forgot to put in an intermission point...
-		SelectSpawnPoint(vec3_origin, level.intermission_origin, level.intermission_angle, false);
-	} else {
-		VectorCopy(ent->s.origin, level.intermission_origin);
-		VectorCopy(ent->s.angles, level.intermission_angle);
-		// if it has a target, look towards it
-		if(ent->target) {
-			target = G_PickTarget(ent->target);
-			if(target) {
-				VectorSubtract(target->s.origin, level.intermission_origin, dir);
-				vectoangles(dir, level.intermission_angle);
-			}
-		}
-	}
-}
-
-/*
-==================
-BeginIntermission
-==================
-*/
-void BeginIntermission(void) {
-	int i;
-	gentity_t* client;
-
-	if(level.intermissiontime) {
-		return;  // already active
-	}
-
-	level.intermissiontime = level.time;
-	// move all clients to the intermission point
-	for(i = 0; i < level.maxclients; i++) {
-		client = g_entities + i;
-		if(!client->inuse) continue;
-		// respawn if dead
-		if(client->health <= 0) {
-			ClientRespawn(client);
-		}
-		MoveClientToIntermission(client);
-	}
-	// send the current scoring to all clients
-	SendScoreboardMessageToAllClients();
 }
 
 /*
