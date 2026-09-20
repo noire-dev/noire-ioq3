@@ -625,20 +625,20 @@ bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps) {
 			return true;
 
 		case IT_ARMOR:
-			if(ps->stats[STAT_ARMOR] >= ps->stats[STAT_MAX_HEALTH] * 2) {
+			if(ps->stats[STAT_ARMOR] >= 200) {
 				return false;
 			}
 			return true;
 
 		case IT_HEALTH:
 			if(item->quantity == 5 || item->quantity == 100) {
-				if(ps->stats[STAT_HEALTH] >= ps->stats[STAT_MAX_HEALTH] * 2) {
+				if(ps->stats[STAT_HEALTH] >= 200) {
 					return false;
 				}
 				return true;
 			}
 
-			if(ps->stats[STAT_HEALTH] >= ps->stats[STAT_MAX_HEALTH]) {
+			if(ps->stats[STAT_HEALTH] >= 100) {
 				return false;
 			}
 			return true;

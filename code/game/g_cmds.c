@@ -285,48 +285,9 @@ void Cmd_Give_f(gentity_t* ent) {
 	else
 		give_all = false;
 
-	if(give_all || Q_stricmp(name, "health") == 0) {
-		ent->health = ent->client->ps.stats[STAT_MAX_HEALTH];
-		if(!give_all) return;
-	}
-
 	if(give_all || Q_stricmp(name, "weapons") == 0) {
 		ent->client->ps.stats[STAT_WEAPONS] = (1 << WEAPONS_NUM) - 1 - (1 << WP_GRAPPLING_HOOK) - (1 << WP_NONE);
 		if(!give_all) return;
-	}
-
-	if(give_all || Q_stricmp(name, "ammo") == 0) {
-		for(i = 0; i < MAX_WEAPONS; i++) {
-			ent->client->ps.ammo[i] = 999;
-		}
-		if(!give_all) return;
-	}
-
-	if(give_all || Q_stricmp(name, "armor") == 0) {
-		ent->client->ps.stats[STAT_ARMOR] = 200;
-
-		if(!give_all) return;
-	}
-
-	if(Q_stricmp(name, "excellent") == 0) {
-		ent->client->ps.persistant[PERS_EXCELLENT_COUNT]++;
-		return;
-	}
-	if(Q_stricmp(name, "impressive") == 0) {
-		ent->client->ps.persistant[PERS_IMPRESSIVE_COUNT]++;
-		return;
-	}
-	if(Q_stricmp(name, "gauntletaward") == 0) {
-		ent->client->ps.persistant[PERS_GAUNTLET_FRAG_COUNT]++;
-		return;
-	}
-	if(Q_stricmp(name, "defend") == 0) {
-		ent->client->ps.persistant[PERS_DEFEND_COUNT]++;
-		return;
-	}
-	if(Q_stricmp(name, "assist") == 0) {
-		ent->client->ps.persistant[PERS_ASSIST_COUNT]++;
-		return;
 	}
 
 	// spawn a specific item right on the player

@@ -318,34 +318,6 @@ void ClientTimerActions(gentity_t* ent, int msec) {
 
 	while(client->timeResidual >= 1000) {
 		client->timeResidual -= 1000;
-
-		// regenerate
-		if(client->ps.powerups[PW_REGEN]) {
-			if(ent->health < client->ps.stats[STAT_MAX_HEALTH]) {
-				ent->health += 15;
-				if(ent->health > client->ps.stats[STAT_MAX_HEALTH] * 1.1) {
-					ent->health = client->ps.stats[STAT_MAX_HEALTH] * 1.1;
-				}
-				G_AddEvent(ent, EV_POWERUP_REGEN, 0);
-			} else if(ent->health < client->ps.stats[STAT_MAX_HEALTH] * 2) {
-				ent->health += 5;
-				if(ent->health > client->ps.stats[STAT_MAX_HEALTH] * 2) {
-					ent->health = client->ps.stats[STAT_MAX_HEALTH] * 2;
-				}
-				G_AddEvent(ent, EV_POWERUP_REGEN, 0);
-			}
-		} else {
-			// count down health when over max
-			if(ent->health > client->ps.stats[STAT_MAX_HEALTH]) {
-				ent->health--;
-			}
-		}
-
-		// count down armor when over max
-		if(client->ps.stats[STAT_ARMOR] > client->ps.stats[STAT_MAX_HEALTH]) {
-			client->ps.stats[STAT_ARMOR]--;
-		}
-
 		G_SendSwepWeapons(ent);  // send sweps list to client for sync
 	}
 }
@@ -414,40 +386,9 @@ void ClientEvents(gentity_t* ent, int oldEventSequence) {
 				G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
 				break;
 
-			case EV_FIRE_WEAPON: FireWeapon(ent); break;
-
-			case EV_USE_ITEM1:  // teleporter
-				// drop flags in CTF
-				item = NULL;
-				j = 0;
-
-				if(ent->client->ps.powerups[PW_REDFLAG]) {
-					item = BG_FindItemForPowerup(PW_REDFLAG);
-					j = PW_REDFLAG;
-				} else if(ent->client->ps.powerups[PW_BLUEFLAG]) {
-					item = BG_FindItemForPowerup(PW_BLUEFLAG);
-					j = PW_BLUEFLAG;
-				} else if(ent->client->ps.powerups[PW_NEUTRALFLAG]) {
-					item = BG_FindItemForPowerup(PW_NEUTRALFLAG);
-					j = PW_NEUTRALFLAG;
-				}
-
-				if(item) {
-					drop = Drop_Item(ent, item, 0);
-					// decide how many seconds it has left
-					drop->count = (ent->client->ps.powerups[j] - level.time) / 1000;
-					if(drop->count < 1) {
-						drop->count = 1;
-					}
-
-					ent->client->ps.powerups[j] = 0;
-				}
-				SelectSpawnPoint(ent->client->ps.origin, origin, angles, false);
-				TeleportPlayer(ent, origin, angles);
+			case EV_FIRE_WEAPON:
+				FireWeapon(ent);
 				break;
-
-			case EV_USE_ITEM2:  // medkit
-				ent->health = ent->client->ps.stats[STAT_MAX_HEALTH] + 25;
 
 				break;
 
