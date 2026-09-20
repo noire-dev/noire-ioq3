@@ -237,13 +237,8 @@ static void CG_Item(centity_t* cent) {
 	memset(&ent, 0, sizeof(ent));
 
 	// autorotate at one of two speeds
-	if(item->giType == IT_HEALTH) {
-		VectorCopy(cg.autoAnglesFast, cent->lerpAngles);
-		AxisCopy(cg.autoAxisFast, ent.axis);
-	} else {
-		VectorCopy(cg.autoAngles, cent->lerpAngles);
-		AxisCopy(cg.autoAxis, ent.axis);
-	}
+	VectorCopy(cg.autoAngles, cent->lerpAngles);
+	AxisCopy(cg.autoAxis, ent.axis);
 
 	wi = NULL;
 	// the weapons have their origin where they attatch to player
@@ -280,12 +275,6 @@ static void CG_Item(centity_t* cent) {
 		ent.nonNormalizedAxes = true;
 	} else {
 		frac = 1.0;
-	}
-
-	// items without glow textures need to keep a minimum light value
-	// so they are always visible
-	if((item->giType == IT_WEAPON) || (item->giType == IT_ARMOR)) {
-		ent.renderfx |= RF_MINLIGHT;
 	}
 
 	// increase the size of the weapons when they are presented as items
@@ -328,21 +317,6 @@ static void CG_Item(centity_t* cent) {
 		vec3_t spinAngles;
 
 		VectorClear(spinAngles);
-
-		if(item->giType == IT_HEALTH) {
-			if((ent.hModel = cg_items[es->modelindex].models[1]) != 0) {
-				AnglesToAxis(spinAngles, ent.axis);
-
-				// scale up if respawning
-				if(frac != 1.0) {
-					VectorScale(ent.axis[0], frac, ent.axis[0]);
-					VectorScale(ent.axis[1], frac, ent.axis[1]);
-					VectorScale(ent.axis[2], frac, ent.axis[2]);
-					ent.nonNormalizedAxes = true;
-				}
-				trap_R_AddRefEntityToScene(&ent);
-			}
-		}
 	}
 }
 

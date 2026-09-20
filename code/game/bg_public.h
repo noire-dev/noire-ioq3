@@ -189,7 +189,6 @@ void Pmove(pmove_t* pmove);
 // NOTE: may not have more than 16
 typedef enum {
 	STAT_HEALTH,
-	STAT_HOLDABLE_ITEM,
 	STAT_WEAPONS,  // 16 bit fields
 	STAT_ARMOR,
 	STAT_DEAD_YAW,  // look this direction when dead (FIXME: get rid of?)
@@ -240,18 +239,6 @@ typedef enum {
 #define EF_AWARD_ASSIST 0x00020000      // draw a assist sprite
 #define EF_AWARD_DENIED 0x00040000      // denied
 #define EF_TEAMVOTED 0x00080000         // already cast a team vote
-
-typedef enum {
-	HI_NONE,
-
-	HI_TELEPORTER,
-	HI_MEDKIT,
-	HI_KAMIKAZE,
-	HI_PORTAL,
-	HI_INVULNERABILITY,
-
-	HI_NUM_HOLDABLE
-} holdable_t;
 
 typedef enum {
 	WP_NONE,
@@ -322,23 +309,6 @@ typedef enum {
 	EV_NOAMMO,
 	EV_CHANGE_WEAPON,
 	EV_FIRE_WEAPON,
-
-	EV_USE_ITEM0,
-	EV_USE_ITEM1,
-	EV_USE_ITEM2,
-	EV_USE_ITEM3,
-	EV_USE_ITEM4,
-	EV_USE_ITEM5,
-	EV_USE_ITEM6,
-	EV_USE_ITEM7,
-	EV_USE_ITEM8,
-	EV_USE_ITEM9,
-	EV_USE_ITEM10,
-	EV_USE_ITEM11,
-	EV_USE_ITEM12,
-	EV_USE_ITEM13,
-	EV_USE_ITEM14,
-	EV_USE_ITEM15,
 
 	EV_ITEM_RESPAWN,
 	EV_ITEM_POP,
@@ -476,12 +446,7 @@ typedef enum { MOD_UNKNOWN, MOD_SHOTGUN, MOD_GAUNTLET, MOD_MACHINEGUN, MOD_GRENA
 // gitem_t->type
 typedef enum {
 	IT_BAD,
-	IT_WEAPON,   // EFX: rotate + upscale + minlight
-	IT_AMMO,     // EFX: rotate
-	IT_ARMOR,    // EFX: rotate + minlight
-	IT_HEALTH,   // EFX: static external sphere + rotating internal
-	IT_HOLDABLE  // single use, holdable item
-	             // EFX: rotate + bob
+	IT_WEAPON,  // EFX: rotate + upscale + minlight
 } itemType_t;
 
 #define MAX_ITEM_MODELS 4
@@ -509,7 +474,6 @@ extern int bg_numItems;
 
 gitem_t* BG_FindItem(const char* pickupName);
 gitem_t* BG_FindItemForWeapon(weapon_t weapon);
-gitem_t* BG_FindItemForHoldable(holdable_t pw);
 #define ITEM_INDEX(x) ((x) - bg_itemlist)
 
 bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps);

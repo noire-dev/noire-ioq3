@@ -244,53 +244,6 @@ static void CG_Obituary(entityState_t* ent) {
 	CG_Printf("%s died.\n", targetName);
 }
 
-//==========================================================================
-
-/*
-===============
-CG_UseItem
-===============
-*/
-static void CG_UseItem(centity_t* cent) {
-	clientInfo_t* ci;
-	int itemNum, clientNum;
-	gitem_t* item;
-	entityState_t* es;
-
-	es = &cent->currentState;
-
-	itemNum = (es->event & ~EV_EVENT_BITS) - EV_USE_ITEM0;
-	if(itemNum < 0 || itemNum > HI_NUM_HOLDABLE) {
-		itemNum = 0;
-	}
-
-	// print a message if the local player
-	if(es->number == cg.snap->ps.clientNum) {
-		if(!itemNum) {
-			// CG_CenterPrint("No item to use", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
-		} else {
-			item = BG_FindItemForHoldable(itemNum);
-			// CG_CenterPrint(va("Use %s", item->pickup_name), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
-		}
-	}
-
-	switch(itemNum) {
-		default:
-		case HI_NONE: trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.useNothingSound); break;
-
-		case HI_TELEPORTER: break;
-
-		case HI_MEDKIT:
-			clientNum = cent->currentState.clientNum;
-			if(clientNum >= 0 && clientNum < MAX_CLIENTS) {
-				ci = &cgs.clientinfo[clientNum];
-				ci->medkitUsageTime = cg.time;
-			}
-			trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.medkitSound);
-			break;
-	}
-}
-
 /*
 ================
 CG_ItemPickup
@@ -637,71 +590,6 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		case EV_FIRE_WEAPON:
 			DEBUGNAME("EV_FIRE_WEAPON");
 			CG_FireWeapon(cent);
-			break;
-
-		case EV_USE_ITEM0:
-			DEBUGNAME("EV_USE_ITEM0");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM1:
-			DEBUGNAME("EV_USE_ITEM1");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM2:
-			DEBUGNAME("EV_USE_ITEM2");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM3:
-			DEBUGNAME("EV_USE_ITEM3");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM4:
-			DEBUGNAME("EV_USE_ITEM4");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM5:
-			DEBUGNAME("EV_USE_ITEM5");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM6:
-			DEBUGNAME("EV_USE_ITEM6");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM7:
-			DEBUGNAME("EV_USE_ITEM7");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM8:
-			DEBUGNAME("EV_USE_ITEM8");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM9:
-			DEBUGNAME("EV_USE_ITEM9");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM10:
-			DEBUGNAME("EV_USE_ITEM10");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM11:
-			DEBUGNAME("EV_USE_ITEM11");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM12:
-			DEBUGNAME("EV_USE_ITEM12");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM13:
-			DEBUGNAME("EV_USE_ITEM13");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM14:
-			DEBUGNAME("EV_USE_ITEM14");
-			CG_UseItem(cent);
-			break;
-		case EV_USE_ITEM15:
-			DEBUGNAME("EV_USE_ITEM15");
-			CG_UseItem(cent);
 			break;
 
 		//=================================================================

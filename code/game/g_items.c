@@ -22,124 +22,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 #include "g_local.h"
 
-/*
-
-  Items are any object that a player can touch to gain some effect.
-
-  Pickup will return the number of seconds until they should respawn.
-
-  all items should pop when dropped in lava or slime
-
-  Respawnable items don't actually go away when picked up, they are
-  just made invisible and untouchable.  This allows them to ride
-  movers and respawn appropriately.
-*/
-
-#define RESPAWN_ARMOR 25
-#define RESPAWN_HEALTH 35
-#define RESPAWN_AMMO 40
-#define RESPAWN_HOLDABLE 60
-#define RESPAWN_MEGAHEALTH 35  // 120
-#define RESPAWN_POWERUP 120
-
-//======================================================================
-
-int Pickup_Powerup(gentity_t* ent, gentity_t* other) {
-	int quantity;
-	int i;
-	gclient_t* client;
-
-	if(!other->client->ps.powerups[ent->item->giTag]) {
-		// round timing to seconds to make multiple powerup timers
-		// count in sync
-		other->client->ps.powerups[ent->item->giTag] = level.time - (level.time % 1000);
-	}
-
-	if(ent->count) {
-		quantity = ent->count;
-	} else {
-		quantity = ent->item->quantity;
-	}
-
-	other->client->ps.powerups[ent->item->giTag] += quantity * 1000;
-
-	// give any nearby players a "denied" anti-reward
-	for(i = 0; i < level.maxclients; i++) {
-		vec3_t delta;
-		float len;
-		vec3_t forward;
-		trace_t tr;
-
-		client = &level.clients[i];
-		if(client == other->client) {
-			continue;
-		}
-		if(client->pers.connected == CON_DISCONNECTED) {
-			continue;
-		}
-		if(client->ps.stats[STAT_HEALTH] <= 0) {
-			continue;
-		}
-
-		// if too far away, no sound
-		VectorSubtract(ent->s.pos.trBase, client->ps.origin, delta);
-		len = VectorNormalize(delta);
-		if(len > 192) {
-			continue;
-		}
-
-		// if not facing, no sound
-		AngleVectors(client->ps.viewangles, forward, NULL, NULL);
-		if(DotProduct(delta, forward) < 0.4) {
-			continue;
-		}
-
-		// if not line of sight, no sound
-		trap_Trace(&tr, client->ps.origin, NULL, NULL, ent->s.pos.trBase, ENTITYNUM_NONE, CONTENTS_SOLID);
-		if(tr.fraction != 1.0) {
-			continue;
-		}
-
-		// anti-reward
-		client->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_DENIEDREWARD;
-	}
-	return RESPAWN_POWERUP;
-}
-
-int Pickup_Holdable(gentity_t* ent, gentity_t* other) {
-	other->client->ps.stats[STAT_HOLDABLE_ITEM] = ent->item - bg_itemlist;
-
-	if(ent->item->giTag == HI_KAMIKAZE) {
-		other->client->ps.eFlags |= EF_KAMIKAZE;
-	}
-
-	return RESPAWN_HOLDABLE;
-}
-
-//======================================================================
-
 void Add_Ammo(gentity_t* ent, int weapon, int count) {
 	ent->client->ps.ammo[weapon] += count;
 	if(ent->client->ps.ammo[weapon] > 200) {
 		ent->client->ps.ammo[weapon] = 200;
 	}
 }
-
-int Pickup_Ammo(gentity_t* ent, gentity_t* other) {
-	int quantity;
-
-	if(ent->count) {
-		quantity = ent->count;
-	} else {
-		quantity = ent->item->quantity;
-	}
-
-	Add_Ammo(other, ent->item->giTag, quantity);
-
-	return RESPAWN_AMMO;
-}
-
-//======================================================================
 
 int Pickup_Weapon(gentity_t* ent, gentity_t* other) {
 	int quantity;
@@ -174,50 +62,6 @@ int Pickup_Weapon(gentity_t* ent, gentity_t* other) {
 
 	return g_weaponRespawn.integer;
 }
-
-//======================================================================
-
-int Pickup_Health(gentity_t* ent, gentity_t* other) {
-	int max;
-	int quantity;
-
-	// small and mega healths will go over the max
-	if(ent->item->quantity != 5 && ent->item->quantity != 100) {
-		max = 100;
-	} else {
-		max = 200;
-	}
-
-	if(ent->count) {
-		quantity = ent->count;
-	} else {
-		quantity = ent->item->quantity;
-	}
-
-	other->health += quantity;
-
-	if(other->health > max) {
-		other->health = max;
-	}
-	other->client->ps.stats[STAT_HEALTH] = other->health;
-
-	if(ent->item->quantity == 100) {  // mega health respawns slow
-		return RESPAWN_MEGAHEALTH;
-	}
-
-	return RESPAWN_HEALTH;
-}
-
-//======================================================================
-
-int Pickup_Armor(gentity_t* ent, gentity_t* other) {
-	other->client->ps.stats[STAT_ARMOR] += ent->item->quantity;
-	if(other->client->ps.stats[STAT_ARMOR] > 200) other->client->ps.stats[STAT_ARMOR] = 200;
-
-	return RESPAWN_ARMOR;
-}
-
-//======================================================================
 
 /*
 ===============
@@ -256,20 +100,6 @@ void RespawnItem(gentity_t* ent) {
 	ent->r.svFlags &= ~SVF_NOCLIENT;
 	trap_LinkEntity(ent);
 
-	if(ent->item->giType == IT_HOLDABLE && ent->item->giTag == HI_KAMIKAZE) {
-		// play powerup spawn sound to all clients
-		gentity_t* te;
-
-		// if the powerup respawn sound should Not be global
-		if(ent->speed) {
-			te = G_TempEntity(ent->s.pos.trBase, EV_GENERAL_SOUND);
-		} else {
-			te = G_TempEntity(ent->s.pos.trBase, EV_GLOBAL_SOUND);
-		}
-		te->s.eventParm = G_SoundIndex("sound/items/kamikazerespawn.wav");
-		te->r.svFlags |= SVF_BROADCAST;
-	}
-
 	// play the normal respawn sound only to nearby clients
 	G_AddEvent(ent, EV_ITEM_RESPAWN, 0);
 
@@ -301,13 +131,6 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 			respawn = Pickup_Weapon(ent, other);
 			//		predict = false;
 			break;
-		case IT_AMMO:
-			respawn = Pickup_Ammo(ent, other);
-			//		predict = false;
-			break;
-		case IT_ARMOR: respawn = Pickup_Armor(ent, other); break;
-		case IT_HEALTH: respawn = Pickup_Health(ent, other); break;
-		case IT_HOLDABLE: respawn = Pickup_Holdable(ent, other); break;
 		default: return;
 	}
 

@@ -475,13 +475,6 @@ CG_GrenadeTrail
 */
 static void CG_GrenadeTrail(centity_t* ent, const weaponInfo_t* wi) { CG_RocketTrail(ent, wi); }
 
-/*
-=================
-CG_RegisterWeapon
-
-The server says this item is used on this level
-=================
-*/
 void CG_RegisterWeapon(int weaponNum) {
 	weaponInfo_t* weaponInfo;
 	gitem_t *item, *ammo;
@@ -491,13 +484,9 @@ void CG_RegisterWeapon(int weaponNum) {
 
 	weaponInfo = &cg_weapons[weaponNum];
 
-	if(weaponNum == 0) {
-		return;
-	}
+	if(weaponNum == 0) return;
 
-	if(weaponInfo->registered) {
-		return;
-	}
+	if(weaponInfo->registered) return;
 
 	memset(weaponInfo, 0, sizeof(*weaponInfo));
 	weaponInfo->registered = true;
@@ -523,16 +512,6 @@ void CG_RegisterWeapon(int weaponNum) {
 	}
 
 	weaponInfo->weaponIcon = trap_R_RegisterShader(item->icon);
-	weaponInfo->ammoIcon = trap_R_RegisterShader(item->icon);
-
-	for(ammo = bg_itemlist + 1; ammo->classname; ammo++) {
-		if(ammo->giType == IT_AMMO && ammo->giTag == weaponNum) {
-			break;
-		}
-	}
-	if(ammo->classname && ammo->world_model[0]) {
-		weaponInfo->ammoModel = trap_R_RegisterModel(ammo->world_model[0]);
-	}
 
 	COM_StripExtension(item->world_model[0], path, sizeof(path));
 	Q_strcat(path, sizeof(path), "_flash.md3");
@@ -689,12 +668,6 @@ void CG_RegisterItemVisuals(int itemNum) {
 
 	if(item->giType == IT_WEAPON) {
 		CG_RegisterWeapon(item->giTag);
-	}
-
-	if(item->giType == IT_HEALTH || item->giType == IT_ARMOR || item->giType == IT_HOLDABLE) {
-		if(item->world_model[1]) {
-			itemInfo->models[1] = trap_R_RegisterModel(item->world_model[1]);
-		}
 	}
 }
 

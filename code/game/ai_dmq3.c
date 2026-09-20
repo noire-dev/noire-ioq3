@@ -819,8 +819,6 @@ void BotUpdateInventory(bot_state_t* bs) {
 	bs->inventory[INVENTORY_BFGAMMO] = bs->cur_ps.ammo[WP_BFG];
 	// powerups
 	bs->inventory[INVENTORY_HEALTH] = bs->cur_ps.stats[STAT_HEALTH];
-	bs->inventory[INVENTORY_TELEPORTER] = bs->cur_ps.stats[STAT_HOLDABLE_ITEM] == MODELINDEX_TELEPORTER;
-	bs->inventory[INVENTORY_MEDKIT] = bs->cur_ps.stats[STAT_HOLDABLE_ITEM] == MODELINDEX_MEDKIT;
 	BotCheckItemPickup(bs, oldinventory);
 }
 
@@ -839,26 +837,6 @@ void BotUpdateBattleInventory(bot_state_t* bs, int enemy) {
 	dir[2] = 0;
 	bs->inventory[ENEMY_HORIZONTAL_DIST] = (int)VectorLength(dir);
 	// FIXME: add num visible enemies and num visible team mates to the inventory
-}
-
-/*
-==================
-BotBattleUseItems
-==================
-*/
-void BotBattleUseItems(bot_state_t* bs) {
-	if(bs->inventory[INVENTORY_HEALTH] < 40) {
-		if(bs->inventory[INVENTORY_TELEPORTER] > 0) {
-			if(!BotCTFCarryingFlag(bs)) {
-				trap_EA_Use(bs->client);
-			}
-		}
-	}
-	if(bs->inventory[INVENTORY_HEALTH] < 60) {
-		if(bs->inventory[INVENTORY_MEDKIT] > 0) {
-			trap_EA_Use(bs->client);
-		}
-	}
 }
 
 /*
@@ -3196,14 +3174,6 @@ void BotCheckEvents(bot_state_t* bs, entityState_t* state) {
 				}
 				// check out the sound
 				trap_GetConfigstring(CS_SOUNDS + state->eventParm, buf, sizeof(buf));
-				// if falling into a death pit
-				if(!strcmp(buf, "*falling1.wav")) {
-					// if the bot has a personal teleporter
-					if(bs->inventory[INVENTORY_TELEPORTER] > 0) {
-						// use the holdable item
-						trap_EA_Use(bs->client);
-					}
-				}
 			}
 			break;
 		}
@@ -3233,22 +3203,6 @@ void BotCheckEvents(bot_state_t* bs, entityState_t* state) {
 		case EV_FIRE_WEAPON:
 			// FIXME: either add to sound queue or mark player as someone making noise
 			break;
-		case EV_USE_ITEM0:
-		case EV_USE_ITEM1:
-		case EV_USE_ITEM2:
-		case EV_USE_ITEM3:
-		case EV_USE_ITEM4:
-		case EV_USE_ITEM5:
-		case EV_USE_ITEM6:
-		case EV_USE_ITEM7:
-		case EV_USE_ITEM8:
-		case EV_USE_ITEM9:
-		case EV_USE_ITEM10:
-		case EV_USE_ITEM11:
-		case EV_USE_ITEM12:
-		case EV_USE_ITEM13:
-		case EV_USE_ITEM14:
-		case EV_USE_ITEM15: break;
 	}
 }
 
