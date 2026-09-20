@@ -477,7 +477,7 @@ static void CG_GrenadeTrail(centity_t* ent, const weaponInfo_t* wi) { CG_RocketT
 
 void CG_RegisterWeapon(int weaponNum) {
 	weaponInfo_t* weaponInfo;
-	gitem_t *item, *ammo;
+	gitem_t* item;
 	char path[MAX_QPATH];
 	vec3_t mins, maxs;
 	int i;

@@ -1089,28 +1089,6 @@ void CG_DrawActiveFrame(int serverTime, stereoFrame_t stereoView, bool demoPlayb
 // cg_drawtools.c
 void CG_DrawProgressBar(float x, float y, float width, float height, float progress, float segmentWidth, const float* barColor, const float* bgColor);
 void CG_Draw3DString(float x, float y, float z, const char* str, int style, vec4_t color, float fontSize, float min, float max, bool useTrace);
-void CG_AdjustFrom640(float* x, float* y, float* w, float* h);
-void CG_FillRect(float x, float y, float width, float height, const float* color);
-void CG_DrawPic(float x, float y, float width, float height, qhandle_t hShader);
-void CG_DrawString(float x, float y, const char* string, float charWidth, float charHeight, const float* modulate);
-
-void CG_DrawStringExt(int x, int y, const char* string, const float* setColor, bool forceColor, bool shadow, int charWidth, int charHeight, int maxChars);
-void CG_DrawBigString(int x, int y, const char* s, float alpha);
-void CG_DrawBigStringColor(int x, int y, const char* s, vec4_t color);
-void CG_DrawSmallString(int x, int y, const char* s, float alpha);
-void CG_DrawSmallStringColor(int x, int y, const char* s, vec4_t color);
-
-int CG_DrawStrlen(const char* str);
-
-float* CG_FadeColor(int startMsec, int totalMsec);
-float* CG_TeamColor(int team);
-void CG_ColorForHealth(vec4_t hcolor);
-void CG_GetColorForHealth(int health, int armor, vec4_t hcolor);
-
-void UI_DrawProportionalString(int x, int y, const char* str, int style, vec4_t color);
-void CG_DrawRect(float x, float y, float width, float height, float size, const float* color);
-void CG_DrawSides(float x, float y, float w, float h, float size);
-void CG_DrawTopBottom(float x, float y, float w, float h, float size);
 
 // cg_draw.c
 void CG_Add3DString(float x, float y, float z, const char* str, int style, const vec4_t color, float fontSize, float min, float max, bool useTrace);

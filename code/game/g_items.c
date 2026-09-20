@@ -9,9 +9,7 @@ void Add_Ammo(gentity_t* ent, int weapon, int count) {
 		ent->swep_ammo[weapon] = 9999;
 	} else {
 		ent->swep_ammo[weapon] += count;
-		if(ent->swep_ammo[weapon] > 9000) {
-			ent->swep_ammo[weapon] = 9000;
-		}
+		if(ent->swep_ammo[weapon] > 9000) ent->swep_ammo[weapon] = 9000;
 	}
 }
 
@@ -32,19 +30,14 @@ static int Pickup_Weapon(gentity_t* ent, gentity_t* other) {
 }
 
 void RespawnItem(gentity_t* ent) {
-	if(!ent) {
-		return;
-	}
+	if(!ent) return;
 
-	// randomly select from teamed entities
 	if(ent->team) {
 		gentity_t* master;
 		int count;
 		int choice;
 
-		if(!ent->teammaster) {
-			G_Error("RespawnItem: bad teammaster");
-		}
+		if(!ent->teammaster) G_Error("RespawnItem: bad teammaster");
 		master = ent->teammaster;
 
 		for(count = 0, ent = master; ent; ent = ent->teamchain, count++);
@@ -54,16 +47,13 @@ void RespawnItem(gentity_t* ent) {
 		for(count = 0, ent = master; ent && count < choice; ent = ent->teamchain, count++);
 	}
 
-	if(!ent) {
-		return;
-	}
+	if(!ent) return;
 
 	ent->r.contents = CONTENTS_TRIGGER;
 	ent->s.eFlags &= ~EF_NODRAW;
 	ent->r.svFlags &= ~SVF_NOCLIENT;
 	trap_LinkEntity(ent);
 
-	// play the normal respawn sound only to nearby clients
 	G_AddEvent(ent, EV_ITEM_RESPAWN, 0);
 
 	ent->nextthink = 0;
@@ -75,10 +65,8 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 	if(!other->client) return;
 	if(other->health < 1) return;  // dead people can't pickup
 
-	// the same pickup rules are used for client side and server side
 	if(!BG_CanItemBeGrabbed(&ent->s, &other->client->ps)) return;
 
-	// call the item-specific pickup function
 	switch(ent->item->giType) {
 		case IT_WEAPON: respawn = Pickup_Weapon(ent, other); break;
 		default: return;
@@ -86,13 +74,10 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 
 	if(!respawn) return;
 
-	// play the normal pickup sound
 	G_AddPredictableEvent(other, EV_ITEM_PICKUP, ent->s.modelindex);
 
-	// fire item targets
 	G_UseTargets(ent, other);
 
-	// wait of -1 will not respawn
 	if(ent->wait == -1) {
 		ent->r.svFlags |= SVF_NOCLIENT;
 		ent->s.eFlags |= EF_NODRAW;
@@ -105,9 +90,7 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 
 	if(ent->random) {
 		respawn += crandom() * ent->random;
-		if(respawn < 1) {
-			respawn = 1;
-		}
+		if(respawn < 1) respawn = 1;
 	}
 
 	if(ent->flags & FL_DROPPED_ITEM) ent->freeAfterEvent = true;
@@ -183,12 +166,10 @@ void FinishSpawningItem(gentity_t* ent) {
 
 	ent->r.contents = CONTENTS_TRIGGER;
 	ent->touch = Touch_Item;
-	// using an item causes it to respawn
 	ent->use = Use_Item;
 
 	if(ent->spawnflags & 1) {
-		// suspended
-		G_SetOrigin(ent, ent->s.origin);
+		G_SetOrigin(ent, ent->s.origin);  // suspended
 	} else {
 		// drop to floor
 		VectorSet(dest, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2] - 4096);
@@ -199,8 +180,7 @@ void FinishSpawningItem(gentity_t* ent) {
 			return;
 		}
 
-		// allow to ride movers
-		ent->s.groundEntityNum = tr.entityNum;
+		ent->s.groundEntityNum = tr.entityNum;  // allow to ride movers
 
 		G_SetOrigin(ent, tr.endpos);
 	}
@@ -220,8 +200,6 @@ void G_SpawnItem(gentity_t* ent, gitem_t* item) {
 	G_SpawnFloat("wait", "0", &ent->wait);
 
 	ent->item = item;
-	// some movers spawn on the second frame, so delay item
-	// spawns until the third frame so they can ride trains
 	ent->nextthink = level.time + FRAMETIME * 2;
 	ent->think = FinishSpawningItem;
 
@@ -271,7 +249,6 @@ void G_RunItem(gentity_t* ent) {
 	}
 
 	if(ent->s.pos.trType == TR_STATIONARY) {
-		// check think function
 		G_RunThink(ent);
 		return;
 	}
@@ -280,27 +257,23 @@ void G_RunItem(gentity_t* ent) {
 	BG_EvaluateTrajectory(&ent->s.pos, level.time, origin);
 
 	// trace a line from the previous position to the current position
-	if(ent->clipmask) {
+	if(ent->clipmask)
 		mask = ent->clipmask;
-	} else {
+	else
 		mask = MASK_PLAYERSOLID & ~CONTENTS_BODY;  // MASK_SOLID;
-	}
+
 	trap_Trace(&tr, ent->r.currentOrigin, ent->r.mins, ent->r.maxs, origin, ent->r.ownerNum, mask);
 
 	VectorCopy(tr.endpos, ent->r.currentOrigin);
 
-	if(tr.startsolid) {
-		tr.fraction = 0;
-	}
+	if(tr.startsolid) tr.fraction = 0;
 
 	trap_LinkEntity(ent);  // FIXME: avoid this for stationary?
 
 	// check think function
 	G_RunThink(ent);
 
-	if(tr.fraction == 1) {
-		return;
-	}
+	if(tr.fraction == 1) return;
 
 	// if it is in a nodrop volume, remove it
 	contents = trap_PointContents(ent->r.currentOrigin, -1);
