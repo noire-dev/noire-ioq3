@@ -95,24 +95,6 @@ void TossClientItems(gentity_t* self) {
 		// spawn the item
 		Drop_Item(self, item, 0);
 	}
-
-	// drop all the powerups if not in teamplay
-	angle = 45;
-	for(i = 1; i < PW_NUM_POWERUPS; i++) {
-		if(self->client->ps.powerups[i] > level.time) {
-			item = BG_FindItemForPowerup(i);
-			if(!item) {
-				continue;
-			}
-			drop = Drop_Item(self, item, angle);
-			// decide how many seconds it has left
-			drop->count = (self->client->ps.powerups[i] - level.time) / 1000;
-			if(drop->count < 1) {
-				drop->count = 1;
-			}
-			angle += 45;
-		}
-	}
 }
 
 /*
@@ -184,42 +166,6 @@ char* modNames[] = {"MOD_UNKNOWN", "MOD_SHOTGUN", "MOD_GAUNTLET", "MOD_MACHINEGU
 
 /*
 ==================
-CheckAlmostCapture
-==================
-*/
-void CheckAlmostCapture(gentity_t* self, gentity_t* attacker) {
-	gentity_t* ent;
-	vec3_t dir;
-	char* classname;
-
-	// if this player was carrying a flag
-	if(self->client->ps.powerups[PW_REDFLAG] || self->client->ps.powerups[PW_BLUEFLAG] || self->client->ps.powerups[PW_NEUTRALFLAG]) {
-		// get the goal flag this player should have been going for
-		if(self->client->sess.sessionTeam == TEAM_BLUE) {
-			classname = "team_CTF_redflag";
-		} else {
-			classname = "team_CTF_blueflag";
-		}
-		ent = NULL;
-		do {
-			ent = G_Find(ent, FOFS(classname), classname);
-		} while(ent && (ent->flags & FL_DROPPED_ITEM));
-		// if we found the destination flag and it's not picked up
-		if(ent && !(ent->r.svFlags & SVF_NOCLIENT)) {
-			// if the player was *very* close
-			VectorSubtract(self->client->ps.origin, ent->s.origin, dir);
-			if(VectorLength(dir) < 200) {
-				self->client->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
-				if(attacker->client) {
-					attacker->client->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
-				}
-			}
-		}
-	}
-}
-
-/*
-==================
 CheckAlmostScored
 ==================
 */
@@ -271,8 +217,6 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 		return;
 	}
 
-	// check for an almost capture
-	CheckAlmostCapture(self, attacker);
 	// check for a player that almost brought in cubes
 	CheckAlmostScored(self, attacker);
 
@@ -577,16 +521,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 		if(targ->flags & FL_GODMODE) {
 			return;
 		}
-	}
-
-	// battlesuit protects from all radius damage (but takes knockback)
-	// and protects 50% against all damage
-	if(client && client->ps.powerups[PW_BATTLESUIT]) {
-		G_AddEvent(targ, EV_POWERUP_BATTLESUIT, 0);
-		if((dflags & DAMAGE_RADIUS) || (mod == MOD_FALLING)) {
-			return;
-		}
-		damage *= 0.5;
 	}
 
 	// add to the attacker's hit counter (if the target isn't a general entity like a prox mine)

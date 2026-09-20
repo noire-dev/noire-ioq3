@@ -691,10 +691,7 @@ void CG_RegisterItemVisuals(int itemNum) {
 		CG_RegisterWeapon(item->giTag);
 	}
 
-	//
-	// powerups have an accompanying ring or sphere
-	//
-	if(item->giType == IT_POWERUP || item->giType == IT_HEALTH || item->giType == IT_ARMOR || item->giType == IT_HOLDABLE) {
+	if(item->giType == IT_HEALTH || item->giType == IT_ARMOR || item->giType == IT_HOLDABLE) {
 		if(item->world_model[1]) {
 			itemInfo->models[1] = trap_R_RegisterModel(item->world_model[1]);
 		}
@@ -986,30 +983,6 @@ static float CG_MachinegunSpinAngle(centity_t* cent) {
 }
 
 /*
-========================
-CG_AddWeaponWithPowerups
-========================
-*/
-static void CG_AddWeaponWithPowerups(refEntity_t* gun, int powerups) {
-	// add powerup effects
-	if(powerups & (1 << PW_INVIS)) {
-		gun->customShader = cgs.media.invisShader;
-		trap_R_AddRefEntityToScene(gun);
-	} else {
-		trap_R_AddRefEntityToScene(gun);
-
-		if(powerups & (1 << PW_BATTLESUIT)) {
-			gun->customShader = cgs.media.battleWeaponShader;
-			trap_R_AddRefEntityToScene(gun);
-		}
-		if(powerups & (1 << PW_QUAD)) {
-			gun->customShader = cgs.media.quadWeaponShader;
-			trap_R_AddRefEntityToScene(gun);
-		}
-	}
-}
-
-/*
 =============
 CG_AddPlayerWeapon
 
@@ -1086,7 +1059,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 	MatrixMultiply(lerped.axis, ((refEntity_t*)parent)->axis, gun.axis);
 	gun.backlerp = parent->backlerp;
 
-	CG_AddWeaponWithPowerups(&gun, cent->currentState.powerups);
+	trap_R_AddRefEntityToScene(&gun);
 
 	// add the spinning barrel
 	if(weapon->barrelModel) {
@@ -1103,7 +1076,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 
 		CG_PositionRotatedEntityOnTag(&barrel, &gun, weapon->weaponModel, "tag_barrel");
 
-		CG_AddWeaponWithPowerups(&barrel, cent->currentState.powerups);
+		trap_R_AddRefEntityToScene(&barrel);
 	}
 
 	// make sure we aren't looking at cg.predictedPlayerEntity for LG
@@ -1361,11 +1334,6 @@ void CG_FireWeapon(centity_t* cent) {
 
 	if(ent->weapon == WP_RAILGUN) {
 		cent->pe.railFireTime = cg.time;
-	}
-
-	// play quad sound if needed
-	if(cent->currentState.powerups & (1 << PW_QUAD)) {
-		trap_S_StartSound(NULL, cent->currentState.number, CHAN_ITEM, cgs.media.quadSound);
 	}
 
 	// play a sound

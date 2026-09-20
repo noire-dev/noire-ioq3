@@ -200,11 +200,6 @@ static void PM_Friction(void) {
 		drop += speed * pm_waterfriction * pm->waterlevel * pml.frametime;
 	}
 
-	// apply flying friction
-	if(pm->ps->powerups[PW_FLIGHT]) {
-		drop += speed * pm_flightfriction * pml.frametime;
-	}
-
 	if(pm->ps->pm_type == PM_SPECTATOR) {
 		drop += speed * pm_spectatorfriction * pml.frametime;
 	}
@@ -1197,19 +1192,6 @@ Sets mins, maxs, and pm->ps->viewheight
 static void PM_CheckDuck(void) {
 	trace_t trace;
 
-	if(pm->ps->powerups[PW_INVULNERABILITY]) {
-		if(pm->ps->pm_flags & PMF_INVULEXPAND) {
-			// invulnerability sphere has a 42 units radius
-			VectorSet(pm->mins, -INVUL_RADIUS, -INVUL_RADIUS, -INVUL_RADIUS);
-			VectorSet(pm->maxs, INVUL_RADIUS, INVUL_RADIUS, INVUL_RADIUS);
-		} else {
-			VectorSet(pm->mins, -PLAYER_WIDTH, -PLAYER_WIDTH, MINS_Z);
-			VectorSet(pm->maxs, PLAYER_WIDTH, PLAYER_WIDTH, 16);
-		}
-		pm->ps->pm_flags |= PMF_DUCKED;
-		pm->ps->viewheight = CROUCH_VIEWHEIGHT;
-		return;
-	}
 	pm->ps->pm_flags &= ~PMF_INVULEXPAND;
 
 	pm->mins[0] = -PLAYER_WIDTH;
@@ -1265,9 +1247,6 @@ static void PM_Footsteps(void) {
 	pm->xyspeed = sqrt(pm->ps->velocity[0] * pm->ps->velocity[0] + pm->ps->velocity[1] * pm->ps->velocity[1]);
 
 	if(pm->ps->groundEntityNum == ENTITYNUM_NONE) {
-		if(pm->ps->powerups[PW_INVULNERABILITY]) {
-			PM_ContinueLegsAnim(LEGS_IDLECR);
-		}
 		// airborne leaves position in cycle intact, but doesn't advance
 		if(pm->waterlevel > 1) {
 			PM_ContinueLegsAnim(LEGS_SWIM);
@@ -1561,9 +1540,6 @@ static void PM_Weapon(void) {
 		case WP_BFG: addTime = 200; break;
 		case WP_GRAPPLING_HOOK: addTime = 400; break;
 	}
-	if(pm->ps->powerups[PW_HASTE]) {
-		addTime /= 1.3;
-	}
 
 	pm->ps->weaponTime += addTime;
 }
@@ -1791,10 +1767,7 @@ void PmoveSingle(pmove_t* pmove) {
 
 	PM_DropTimers();
 
-	if(pm->ps->powerups[PW_FLIGHT]) {
-		// flight powerup doesn't allow jump and has different friction
-		PM_FlyMove();
-	} else if(pm->ps->pm_flags & PMF_GRAPPLE_PULL) {
+	if(pm->ps->pm_flags & PMF_GRAPPLE_PULL) {
 		PM_GrappleMove();
 		// We can wiggle a bit
 		PM_AirMove();

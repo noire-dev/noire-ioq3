@@ -256,20 +256,6 @@ void RespawnItem(gentity_t* ent) {
 	ent->r.svFlags &= ~SVF_NOCLIENT;
 	trap_LinkEntity(ent);
 
-	if(ent->item->giType == IT_POWERUP) {
-		// play powerup spawn sound to all clients
-		gentity_t* te;
-
-		// if the powerup respawn sound should Not be global
-		if(ent->speed) {
-			te = G_TempEntity(ent->s.pos.trBase, EV_GENERAL_SOUND);
-		} else {
-			te = G_TempEntity(ent->s.pos.trBase, EV_GLOBAL_SOUND);
-		}
-		te->s.eventParm = G_SoundIndex("sound/items/poweruprespawn.wav");
-		te->r.svFlags |= SVF_BROADCAST;
-	}
-
 	if(ent->item->giType == IT_HOLDABLE && ent->item->giTag == HI_KAMIKAZE) {
 		// play powerup spawn sound to all clients
 		gentity_t* te;
@@ -321,10 +307,6 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 			break;
 		case IT_ARMOR: respawn = Pickup_Armor(ent, other); break;
 		case IT_HEALTH: respawn = Pickup_Health(ent, other); break;
-		case IT_POWERUP:
-			respawn = Pickup_Powerup(ent, other);
-			predict = false;
-			break;
 		case IT_HOLDABLE: respawn = Pickup_Holdable(ent, other); break;
 		default: return;
 	}
@@ -338,26 +320,6 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 		G_AddPredictableEvent(other, EV_ITEM_PICKUP, ent->s.modelindex);
 	} else {
 		G_AddEvent(other, EV_ITEM_PICKUP, ent->s.modelindex);
-	}
-
-	// powerup pickups are global broadcasts
-	if(ent->item->giType == IT_POWERUP) {
-		// if we want the global sound to play
-		if(!ent->speed) {
-			gentity_t* te;
-
-			te = G_TempEntity(ent->s.pos.trBase, EV_GLOBAL_ITEM_PICKUP);
-			te->s.eventParm = ent->s.modelindex;
-			te->r.svFlags |= SVF_BROADCAST;
-		} else {
-			gentity_t* te;
-
-			te = G_TempEntity(ent->s.pos.trBase, EV_GLOBAL_ITEM_PICKUP);
-			te->s.eventParm = ent->s.modelindex;
-			// only send this temp entity to a single client
-			te->r.svFlags |= SVF_SINGLECLIENT;
-			te->r.singleClient = other->s.number;
-		}
 	}
 
 	// fire item targets
@@ -536,18 +498,6 @@ void FinishSpawningItem(gentity_t* ent) {
 		return;
 	}
 
-	// powerups don't spawn in for a while
-	if(ent->item->giType == IT_POWERUP) {
-		float respawn;
-
-		respawn = 45 + crandom() * 15;
-		ent->s.eFlags |= EF_NODRAW;
-		ent->r.contents = 0;
-		ent->nextthink = level.time + respawn * 1000;
-		ent->think = RespawnItem;
-		return;
-	}
-
 	trap_LinkEntity(ent);
 }
 
@@ -644,11 +594,6 @@ void G_SpawnItem(gentity_t* ent, gitem_t* item) {
 	ent->think = FinishSpawningItem;
 
 	ent->physicsBounce = 0.50;  // items are bouncy
-
-	if(item->giType == IT_POWERUP) {
-		G_SoundIndex("sound/items/poweruprespawn.wav");
-		G_SpawnFloat("noglobalsound", "0", &ent->speed);
-	}
 }
 
 /*

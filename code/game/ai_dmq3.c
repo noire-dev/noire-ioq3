@@ -196,30 +196,10 @@ bool EntityIsDead(aas_entityinfo_t* entinfo) {
 
 /*
 ==================
-EntityCarriesFlag
-==================
-*/
-bool EntityCarriesFlag(aas_entityinfo_t* entinfo) {
-	if(entinfo->powerups & (1 << PW_REDFLAG)) return true;
-	if(entinfo->powerups & (1 << PW_BLUEFLAG)) return true;
-	return false;
-}
-
-/*
-==================
 EntityIsInvisible
 ==================
 */
-bool EntityIsInvisible(aas_entityinfo_t* entinfo) {
-	// the flag is always visible
-	if(EntityCarriesFlag(entinfo)) {
-		return false;
-	}
-	if(entinfo->powerups & (1 << PW_INVIS)) {
-		return true;
-	}
-	return false;
-}
+bool EntityIsInvisible(aas_entityinfo_t* entinfo) { return false; }
 
 /*
 ==================
@@ -240,18 +220,6 @@ EntityIsChatting
 */
 bool EntityIsChatting(aas_entityinfo_t* entinfo) {
 	if(entinfo->flags & EF_TALK) {
-		return true;
-	}
-	return false;
-}
-
-/*
-==================
-EntityHasQuad
-==================
-*/
-bool EntityHasQuad(aas_entityinfo_t* entinfo) {
-	if(entinfo->powerups & (1 << PW_QUAD)) {
 		return true;
 	}
 	return false;
@@ -359,9 +327,7 @@ void BotCTFSeekGoals(bot_state_t* bs) {
 	if(bs->ltgtype == LTG_TEAMACCOMPANY && !bs->ordered) {
 		// if the team mate being accompanied no longer carries the flag
 		BotEntityInfo(bs->teammate, &entinfo);
-		if(!EntityCarriesFlag(&entinfo)) {
-			bs->ltgtype = 0;
-		}
+		bs->ltgtype = 0;
 	}
 	//
 	if(BotTeam(bs) == TEAM_RED)
@@ -855,14 +821,6 @@ void BotUpdateInventory(bot_state_t* bs) {
 	bs->inventory[INVENTORY_HEALTH] = bs->cur_ps.stats[STAT_HEALTH];
 	bs->inventory[INVENTORY_TELEPORTER] = bs->cur_ps.stats[STAT_HOLDABLE_ITEM] == MODELINDEX_TELEPORTER;
 	bs->inventory[INVENTORY_MEDKIT] = bs->cur_ps.stats[STAT_HOLDABLE_ITEM] == MODELINDEX_MEDKIT;
-	bs->inventory[INVENTORY_QUAD] = bs->cur_ps.powerups[PW_QUAD] != 0;
-	bs->inventory[INVENTORY_ENVIRONMENTSUIT] = bs->cur_ps.powerups[PW_BATTLESUIT] != 0;
-	bs->inventory[INVENTORY_HASTE] = bs->cur_ps.powerups[PW_HASTE] != 0;
-	bs->inventory[INVENTORY_INVISIBILITY] = bs->cur_ps.powerups[PW_INVIS] != 0;
-	bs->inventory[INVENTORY_REGEN] = bs->cur_ps.powerups[PW_REGEN] != 0;
-	bs->inventory[INVENTORY_FLIGHT] = bs->cur_ps.powerups[PW_FLIGHT] != 0;
-	bs->inventory[INVENTORY_REDFLAG] = bs->cur_ps.powerups[PW_REDFLAG] != 0;
-	bs->inventory[INVENTORY_BLUEFLAG] = bs->cur_ps.powerups[PW_BLUEFLAG] != 0;
 	BotCheckItemPickup(bs, oldinventory);
 }
 
@@ -1107,8 +1065,6 @@ int BotWantsToRetreat(bot_state_t* bs) {
 
 	if(bs->enemy >= 0) {
 		BotEntityInfo(bs->enemy, &entinfo);
-		// if the enemy is carrying a flag
-		if(EntityCarriesFlag(&entinfo)) return false;
 	}
 	// if the bot is getting the flag
 	if(bs->ltgtype == LTG_GETFLAG) return true;
@@ -1675,7 +1631,6 @@ int BotFindEnemy(bot_state_t* bs, int curenemy) {
 	//
 	if(curenemy >= 0) {
 		BotEntityInfo(curenemy, &curenemyinfo);
-		if(EntityCarriesFlag(&curenemyinfo)) return false;
 		VectorSubtract(curenemyinfo.origin, bs->origin, dir);
 		cursquaredist = VectorLengthSquared(dir);
 	} else {
@@ -1710,11 +1665,6 @@ int BotFindEnemy(bot_state_t* bs, int curenemy) {
 		// calculate the distance towards the enemy
 		VectorSubtract(entinfo.origin, bs->origin, dir);
 		squaredist = VectorLengthSquared(dir);
-		// if this entity is not carrying a flag
-		if(!EntityCarriesFlag(&entinfo)) {
-			// if this enemy is further away than the current one
-			if(curenemy >= 0 && squaredist > cursquaredist) continue;
-		}  // end if
 		// if the bot has no
 		if(squaredist > Square(900.0 + alertness * 4000.0)) continue;
 		// if on the same team
@@ -1770,8 +1720,6 @@ int BotTeamFlagCarrierVisible(bot_state_t* bs) {
 		BotEntityInfo(i, &entinfo);
 		// if this player is active
 		if(!entinfo.valid) continue;
-		// if this player is carrying a flag
-		if(!EntityCarriesFlag(&entinfo)) continue;
 		// if the flag carrier is not on the same team
 		if(!BotSameTeam(bs, i)) continue;
 		// if the flag carrier is not visible
@@ -1798,8 +1746,6 @@ int BotTeamFlagCarrier(bot_state_t* bs) {
 		BotEntityInfo(i, &entinfo);
 		// if this player is active
 		if(!entinfo.valid) continue;
-		// if this player is carrying a flag
-		if(!EntityCarriesFlag(&entinfo)) continue;
 		// if the flag carrier is not on the same team
 		if(!BotSameTeam(bs, i)) continue;
 		//
@@ -1824,8 +1770,6 @@ int BotEnemyFlagCarrierVisible(bot_state_t* bs) {
 		BotEntityInfo(i, &entinfo);
 		// if this player is active
 		if(!entinfo.valid) continue;
-		// if this player is carrying a flag
-		if(!EntityCarriesFlag(&entinfo)) continue;
 		// if the flag carrier is on the same team
 		if(BotSameTeam(bs, i)) continue;
 		// if the flag carrier is not visible
@@ -1856,8 +1800,6 @@ void BotVisibleTeamMatesAndEnemies(bot_state_t* bs, int* teammates, int* enemies
 		BotEntityInfo(i, &entinfo);
 		// if this player is active
 		if(!entinfo.valid) continue;
-		// if this player is carrying a flag
-		if(!EntityCarriesFlag(&entinfo)) continue;
 		// if not within range
 		VectorSubtract(entinfo.origin, bs->origin, dir);
 		if(VectorLengthSquared(dir) > Square(range)) continue;

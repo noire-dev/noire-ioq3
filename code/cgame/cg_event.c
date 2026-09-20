@@ -594,11 +594,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 
 				// powerups and team items will have a separate global sound, this one
 				// will be played at prediction time
-				if(item->giType == IT_POWERUP) {
-					trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.n_healthSound);
-				} else {
-					trap_S_StartSound(NULL, es->number, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, false));
-				}
+				trap_S_StartSound(NULL, es->number, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, false));
 
 				// show icon and name on status bar
 				if(es->number == cg.snap->ps.clientNum) {
@@ -856,34 +852,6 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		case EV_OBITUARY:
 			DEBUGNAME("EV_OBITUARY");
 			CG_Obituary(es);
-			break;
-
-		//
-		// powerup events
-		//
-		case EV_POWERUP_QUAD:
-			DEBUGNAME("EV_POWERUP_QUAD");
-			if(es->number == cg.snap->ps.clientNum) {
-				cg.powerupActive = PW_QUAD;
-				cg.powerupTime = cg.time;
-			}
-			trap_S_StartSound(NULL, es->number, CHAN_ITEM, cgs.media.quadSound);
-			break;
-		case EV_POWERUP_BATTLESUIT:
-			DEBUGNAME("EV_POWERUP_BATTLESUIT");
-			if(es->number == cg.snap->ps.clientNum) {
-				cg.powerupActive = PW_BATTLESUIT;
-				cg.powerupTime = cg.time;
-			}
-			trap_S_StartSound(NULL, es->number, CHAN_ITEM, cgs.media.protectSound);
-			break;
-		case EV_POWERUP_REGEN:
-			DEBUGNAME("EV_POWERUP_REGEN");
-			if(es->number == cg.snap->ps.clientNum) {
-				cg.powerupActive = PW_REGEN;
-				cg.powerupTime = cg.time;
-			}
-			trap_S_StartSound(NULL, es->number, CHAN_ITEM, cgs.media.regenSound);
 			break;
 
 		case EV_GIB_PLAYER:

@@ -93,7 +93,6 @@ Check for lava / slime contents and drowning
 =============
 */
 void P_WorldEffects(gentity_t* ent) {
-	bool envirosuit;
 	int waterlevel;
 
 	if(ent->client->noclip) {
@@ -103,17 +102,10 @@ void P_WorldEffects(gentity_t* ent) {
 
 	waterlevel = ent->waterlevel;
 
-	envirosuit = ent->client->ps.powerups[PW_BATTLESUIT] > level.time;
-
 	//
 	// check for drowning
 	//
 	if(waterlevel == 3) {
-		// envirosuit give air
-		if(envirosuit) {
-			ent->client->airOutTime = level.time + 10000;
-		}
-
 		// if out of air, start drowning
 		if(ent->client->airOutTime < level.time) {
 			// drown!
@@ -139,16 +131,12 @@ void P_WorldEffects(gentity_t* ent) {
 	//
 	if(waterlevel && (ent->watertype & (CONTENTS_LAVA | CONTENTS_SLIME))) {
 		if(ent->health > 0 && ent->pain_debounce_time <= level.time) {
-			if(envirosuit) {
-				G_AddEvent(ent, EV_POWERUP_BATTLESUIT, 0);
-			} else {
-				if(ent->watertype & CONTENTS_LAVA) {
-					G_Damage(ent, NULL, NULL, NULL, NULL, 30 * waterlevel, 0, MOD_LAVA);
-				}
+			if(ent->watertype & CONTENTS_LAVA) {
+				G_Damage(ent, NULL, NULL, NULL, NULL, 30 * waterlevel, 0, MOD_LAVA);
+			}
 
-				if(ent->watertype & CONTENTS_SLIME) {
-					G_Damage(ent, NULL, NULL, NULL, NULL, 10 * waterlevel, 0, MOD_SLIME);
-				}
+			if(ent->watertype & CONTENTS_SLIME) {
+				G_Damage(ent, NULL, NULL, NULL, NULL, 10 * waterlevel, 0, MOD_SLIME);
 			}
 		}
 	}
@@ -511,9 +499,6 @@ void ClientThink_real(gentity_t* ent) {
 
 	// set speed
 	client->ps.speed = g_speed.value;
-	if(client->ps.powerups[PW_HASTE]) {
-		client->ps.speed *= 1.3;
-	}
 
 	// Let go of the hook if we aren't firing
 	if(client->ps.weapon == WP_GRAPPLING_HOOK && client->hook && !(ucmd->buttons & BUTTON_ATTACK)) {

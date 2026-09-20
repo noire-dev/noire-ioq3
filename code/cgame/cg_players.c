@@ -1057,11 +1057,7 @@ static void CG_PlayerAnimation(centity_t* cent, int* legsOld, int* legs, float* 
 		return;
 	}
 
-	if(cent->currentState.powerups & (1 << PW_HASTE)) {
-		speedScale = 1.5;
-	} else {
-		speedScale = 1;
-	}
+	speedScale = 1;
 
 	ci = &cgs.clientinfo[clientNum];
 
@@ -1465,38 +1461,6 @@ static void CG_PlayerFlag(centity_t* cent, qhandle_t hSkin, refEntity_t* torso) 
 
 /*
 ===============
-CG_PlayerPowerups
-===============
-*/
-static void CG_PlayerPowerups(centity_t* cent, refEntity_t* torso) {
-	int powerups;
-	clientInfo_t* ci;
-
-	powerups = cent->currentState.powerups;
-	if(!powerups) {
-		return;
-	}
-
-	// quad gives a dlight
-	if(powerups & (1 << PW_QUAD)) {
-		trap_R_AddLightToScene(cent->lerpOrigin, 200 + (rand() & 31), 0.2f, 0.2f, 1);
-	}
-
-	// flight plays a looped sound
-	if(powerups & (1 << PW_FLIGHT)) {
-		trap_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.flightSound);
-	}
-
-	ci = &cgs.clientinfo[cent->currentState.clientNum];
-
-	// haste leaves smoke trails
-	if(powerups & (1 << PW_HASTE)) {
-		CG_HasteTrail(cent);
-	}
-}
-
-/*
-===============
 CG_PlayerFloatSprite
 
 Float a sprite over the player's head
@@ -1597,11 +1561,6 @@ static bool CG_PlayerShadow(centity_t* cent, float* shadowPlane) {
 	*shadowPlane = 0;
 
 	if(cg_shadows.integer == 0) {
-		return false;
-	}
-
-	// no shadows when invisible
-	if(cent->currentState.powerups & (1 << PW_INVIS)) {
 		return false;
 	}
 
@@ -1720,51 +1679,6 @@ static void CG_PlayerSplash(centity_t* cent) {
 	verts[3].modulate[3] = 255;
 
 	trap_R_AddPolyToScene(cgs.media.wakeMarkShader, 4, verts);
-}
-
-/*
-===============
-CG_AddRefEntityWithPowerups
-
-Adds a piece with modifications or duplications for powerups
-Also called by CG_Missile for quad rockets, but nobody can tell...
-===============
-*/
-void CG_AddRefEntityWithPowerups(refEntity_t* ent, entityState_t* state, int team) {
-	if(state->powerups & (1 << PW_INVIS)) {
-		ent->customShader = cgs.media.invisShader;
-		trap_R_AddRefEntityToScene(ent);
-	} else {
-		/*
-		if ( state->eFlags & EF_KAMIKAZE ) {
-		    if (team == TEAM_BLUE)
-		        ent->customShader = cgs.media.blueKamikazeShader;
-		    else
-		        ent->customShader = cgs.media.redKamikazeShader;
-		    trap_R_AddRefEntityToScene( ent );
-		}
-		else {*/
-		trap_R_AddRefEntityToScene(ent);
-		//}
-
-		if(state->powerups & (1 << PW_QUAD)) {
-			if(team == TEAM_RED)
-				ent->customShader = cgs.media.redQuadShader;
-			else
-				ent->customShader = cgs.media.quadShader;
-			trap_R_AddRefEntityToScene(ent);
-		}
-		if(state->powerups & (1 << PW_REGEN)) {
-			if(((cg.time / 100) % 10) == 1) {
-				ent->customShader = cgs.media.regenShader;
-				trap_R_AddRefEntityToScene(ent);
-			}
-		}
-		if(state->powerups & (1 << PW_BATTLESUIT)) {
-			ent->customShader = cgs.media.battleSuitShader;
-			trap_R_AddRefEntityToScene(ent);
-		}
-	}
 }
 
 /*
@@ -1891,7 +1805,7 @@ void CG_Player(centity_t* cent) {
 	legs.renderfx = renderfx;
 	VectorCopy(legs.origin, legs.oldorigin);  // don't positionally lerp at all
 
-	CG_AddRefEntityWithPowerups(&legs, &cent->currentState, ci->team);
+	trap_R_AddRefEntityToScene(&legs);
 
 	// if the model failed, allow the default nullmodel to be displayed
 	if(!legs.hModel) {
@@ -1915,7 +1829,7 @@ void CG_Player(centity_t* cent) {
 	torso.shadowPlane = shadowPlane;
 	torso.renderfx = renderfx;
 
-	CG_AddRefEntityWithPowerups(&torso, &cent->currentState, ci->team);
+	trap_R_AddRefEntityToScene(&torso);
 
 	//
 	// add the head
@@ -1933,7 +1847,7 @@ void CG_Player(centity_t* cent) {
 	head.shadowPlane = shadowPlane;
 	head.renderfx = renderfx;
 
-	CG_AddRefEntityWithPowerups(&head, &cent->currentState, ci->team);
+	trap_R_AddRefEntityToScene(&head);
 
 	// add player name
 	if(cent->currentState.number != cg.snap->ps.clientNum) {
@@ -1946,9 +1860,6 @@ void CG_Player(centity_t* cent) {
 
 	// add the gun / barrel / flash
 	CG_AddPlayerWeapon(&torso, NULL, cent, ci->team);
-
-	// add powerups floating behind the player
-	CG_PlayerPowerups(cent, &torso);
 }
 
 //=====================================================================

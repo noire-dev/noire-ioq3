@@ -241,31 +241,6 @@ typedef enum {
 #define EF_AWARD_DENIED 0x00040000      // denied
 #define EF_TEAMVOTED 0x00080000         // already cast a team vote
 
-// NOTE: may not have more than 16
-typedef enum {
-	PW_NONE,
-
-	PW_QUAD,
-	PW_BATTLESUIT,
-	PW_HASTE,
-	PW_INVIS,
-	PW_REGEN,
-	PW_FLIGHT,
-
-	PW_REDFLAG,
-	PW_BLUEFLAG,
-	PW_NEUTRALFLAG,
-
-	PW_SCOUT,
-	PW_GUARD,
-	PW_DOUBLER,
-	PW_AMMOREGEN,
-	PW_INVULNERABILITY,
-
-	PW_NUM_POWERUPS
-
-} powerup_t;
-
 typedef enum {
 	HI_NONE,
 
@@ -505,8 +480,6 @@ typedef enum {
 	IT_AMMO,     // EFX: rotate
 	IT_ARMOR,    // EFX: rotate + minlight
 	IT_HEALTH,   // EFX: static external sphere + rotating internal
-	IT_POWERUP,  // instant on, timer based
-	             // EFX: rotate + external ring that rotates
 	IT_HOLDABLE  // single use, holdable item
 	             // EFX: rotate + bob
 } itemType_t;
@@ -536,7 +509,6 @@ extern int bg_numItems;
 
 gitem_t* BG_FindItem(const char* pickupName);
 gitem_t* BG_FindItemForWeapon(weapon_t weapon);
-gitem_t* BG_FindItemForPowerup(powerup_t pw);
 gitem_t* BG_FindItemForHoldable(holdable_t pw);
 #define ITEM_INDEX(x) ((x) - bg_itemlist)
 

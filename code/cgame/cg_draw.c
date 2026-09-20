@@ -244,8 +244,6 @@ static void CG_ScanForCrosshairEntity(void) {
 	content = trap_CM_PointContents(trace.endpos, 0);
 	if(content & CONTENTS_FOG) return;
 
-	if(cg_entities[trace.entityNum].currentState.powerups & (1 << PW_INVIS)) return;
-
 	cg.crosshairClientNum = trace.entityNum;
 }
 

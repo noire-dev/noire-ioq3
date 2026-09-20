@@ -329,12 +329,8 @@ static void CG_Item(centity_t* cent) {
 
 		VectorClear(spinAngles);
 
-		if(item->giType == IT_HEALTH || item->giType == IT_POWERUP) {
+		if(item->giType == IT_HEALTH) {
 			if((ent.hModel = cg_items[es->modelindex].models[1]) != 0) {
-				if(item->giType == IT_POWERUP) {
-					ent.origin[2] += 12;
-					spinAngles[1] = (cg.time & 1023) * 360 / -1024.0f;
-				}
 				AnglesToAxis(spinAngles, ent.axis);
 
 				// scale up if respawning
@@ -440,8 +436,7 @@ static void CG_Missile(centity_t* cent) {
 		}
 	}
 
-	// add to refresh list, possibly with quad glow
-	CG_AddRefEntityWithPowerups(&ent, s1, TEAM_FREE);
+	trap_R_AddRefEntityToScene(&ent);
 }
 
 /*
