@@ -38,26 +38,6 @@ void CG_TargetCommand_f(void) {
 	trap_SendClientCommand(va("gc %i %i", targetNum, atoi(test)));
 }
 
-/*
-=================
-CG_SizeUp_f
-
-Keybinding command
-=================
-*/
-static void CG_SizeUp_f(void) { trap_Cvar_Set("cg_viewsize", va("%i", (int)(cg_viewsize.integer + 10))); }
-
-/*
-=================
-CG_SizeDown_f
-
-Keybinding command
-=================
-*/
-static void CG_SizeDown_f(void) { trap_Cvar_Set("cg_viewsize", va("%i", (int)(cg_viewsize.integer - 10))); }
-
-static void CG_Viewpos_f(void) { CG_Printf("(%i %i %i) : %i\n", (int)cg.refdef.vieworg[0], (int)cg.refdef.vieworg[1], (int)cg.refdef.vieworg[2], (int)cg.refdefViewAngles[YAW]); }
-
 static void CG_ScoresDown_f(void) {
 	if(cg.scoresRequestTime + 2000 < cg.time) {
 		cg.scoresRequestTime = cg.time;
@@ -135,19 +115,10 @@ typedef struct {
 	void (*function)(void);
 } consoleCommand_t;
 
-static consoleCommand_t commands[] = {{"testgun", CG_TestGun_f},
-                                      {"testmodel", CG_TestModel_f},
-                                      {"nextframe", CG_TestModelNextFrame_f},
-                                      {"prevframe", CG_TestModelPrevFrame_f},
-                                      {"nextskin", CG_TestModelNextSkin_f},
-                                      {"prevskin", CG_TestModelPrevSkin_f},
-                                      {"viewpos", CG_Viewpos_f},
-                                      {"+scores", CG_ScoresDown_f},
+static consoleCommand_t commands[] = {{"+scores", CG_ScoresDown_f},
                                       {"-scores", CG_ScoresUp_f},
                                       {"+zoom", CG_ZoomDown_f},
                                       {"-zoom", CG_ZoomUp_f},
-                                      {"sizeup", CG_SizeUp_f},
-                                      {"sizedown", CG_SizeDown_f},
                                       {"weapnext", CG_NextWeapon_f},
                                       {"weapprev", CG_PrevWeapon_f},
                                       {"weapon", CG_Weapon_f},

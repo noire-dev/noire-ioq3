@@ -116,27 +116,6 @@ int G_ModelIndex(char* name) { return G_FindConfigstringIndex(name, CS_MODELS, M
 
 int G_SoundIndex(char* name) { return G_FindConfigstringIndex(name, CS_SOUNDS, MAX_SOUNDS, true); }
 
-//=====================================================================
-
-/*
-================
-G_TeamCommand
-
-Broadcasts a command to only a specific team
-================
-*/
-void G_TeamCommand(team_t team, char* cmd) {
-	int i;
-
-	for(i = 0; i < level.maxclients; i++) {
-		if(level.clients[i].pers.connected == CON_CONNECTED) {
-			if(level.clients[i].sess.sessionTeam == team) {
-				trap_SendServerCommand(i, va("%s", cmd));
-			}
-		}
-	}
-}
-
 /*
 =============
 G_Find

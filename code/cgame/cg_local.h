@@ -1084,15 +1084,7 @@ void CG_RankRunFrame(void);
 void CG_SetScoreSelection(void* menu);
 score_t* CG_GetSelectedScore(void);
 
-//
 // cg_view.c
-//
-void CG_TestModel_f(void);
-void CG_TestGun_f(void);
-void CG_TestModelNextFrame_f(void);
-void CG_TestModelPrevFrame_f(void);
-void CG_TestModelNextSkin_f(void);
-void CG_TestModelPrevSkin_f(void);
 void CG_ZoomDown_f(void);
 void CG_ZoomUp_f(void);
 void CG_AddBufferedSound(sfxHandle_t sfx);

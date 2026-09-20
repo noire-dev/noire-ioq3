@@ -25,154 +25,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "cg_local.h"
 
 /*
-=============================================================================
-
-  MODEL TESTING
-
-The viewthing and gun positioning tools from Q2 have been integrated and
-enhanced into a single model testing facility.
-
-Model viewing can begin with either "testmodel <modelname>" or "testgun <modelname>".
-
-The names must be the full pathname after the basedir, like
-"models/weapons/v_launch/tris.md3" or "players/male/tris.md3"
-
-Testmodel will create a fake entity 100 units in front of the current view
-position, directly facing the viewer.  It will remain immobile, so you can
-move around it to view it from different angles.
-
-Testgun will cause the model to follow the player around and suppress the real
-view weapon model.  The default frame 0 of most guns is completely off screen,
-so you will probably have to cycle a couple frames to see it.
-
-"nextframe", "prevframe", "nextskin", and "prevskin" commands will change the
-frame or skin of the testmodel.  These are bound to F5, F6, F7, and F8 in
-q3default.cfg.
-
-If a gun is being tested, the "gun_x", "gun_y", and "gun_z" variables will let
-you adjust the positioning.
-
-Note that none of the model testing features update while the game is paused, so
-it may be convenient to test with deathmatch set to 1 so that bringing down the
-console doesn't pause the game.
-
-=============================================================================
-*/
-
-/*
-=================
-CG_TestModel_f
-
-Creates an entity in front of the current position, which
-can then be moved around
-=================
-*/
-void CG_TestModel_f(void) {
-	vec3_t angles;
-
-	cg.testGun = false;
-	memset(&cg.testModelEntity, 0, sizeof(cg.testModelEntity));
-	if(trap_Argc() < 2) {
-		return;
-	}
-
-	Q_strncpyz(cg.testModelName, CG_Argv(1), MAX_QPATH);
-	cg.testModelEntity.hModel = trap_R_RegisterModel(cg.testModelName);
-
-	if(trap_Argc() == 3) {
-		cg.testModelEntity.backlerp = atof(CG_Argv(2));
-		cg.testModelEntity.frame = 1;
-		cg.testModelEntity.oldframe = 0;
-	}
-	if(!cg.testModelEntity.hModel) {
-		CG_Printf("Can't register model\n");
-		return;
-	}
-
-	VectorMA(cg.refdef.vieworg, 100, cg.refdef.viewaxis[0], cg.testModelEntity.origin);
-
-	angles[PITCH] = 0;
-	angles[YAW] = 180 + cg.refdefViewAngles[1];
-	angles[ROLL] = 0;
-
-	AnglesToAxis(angles, cg.testModelEntity.axis);
-}
-
-/*
-=================
-CG_TestGun_f
-
-Replaces the current view weapon with the given model
-=================
-*/
-void CG_TestGun_f(void) {
-	CG_TestModel_f();
-
-	if(!cg.testModelEntity.hModel) {
-		return;
-	}
-
-	cg.testGun = true;
-	cg.testModelEntity.renderfx = RF_MINLIGHT | RF_DEPTHHACK | RF_FIRST_PERSON;
-}
-
-void CG_TestModelNextFrame_f(void) {
-	cg.testModelEntity.frame++;
-	CG_Printf("frame %i\n", cg.testModelEntity.frame);
-}
-
-void CG_TestModelPrevFrame_f(void) {
-	cg.testModelEntity.frame--;
-	if(cg.testModelEntity.frame < 0) {
-		cg.testModelEntity.frame = 0;
-	}
-	CG_Printf("frame %i\n", cg.testModelEntity.frame);
-}
-
-void CG_TestModelNextSkin_f(void) {
-	cg.testModelEntity.skinNum++;
-	CG_Printf("skin %i\n", cg.testModelEntity.skinNum);
-}
-
-void CG_TestModelPrevSkin_f(void) {
-	cg.testModelEntity.skinNum--;
-	if(cg.testModelEntity.skinNum < 0) {
-		cg.testModelEntity.skinNum = 0;
-	}
-	CG_Printf("skin %i\n", cg.testModelEntity.skinNum);
-}
-
-static void CG_AddTestModel(void) {
-	int i;
-
-	// re-register the model, because the level may have changed
-	cg.testModelEntity.hModel = trap_R_RegisterModel(cg.testModelName);
-	if(!cg.testModelEntity.hModel) {
-		CG_Printf("Can't register model\n");
-		return;
-	}
-
-	// if testing a gun, set the origin relative to the view origin
-	if(cg.testGun) {
-		VectorCopy(cg.refdef.vieworg, cg.testModelEntity.origin);
-		VectorCopy(cg.refdef.viewaxis[0], cg.testModelEntity.axis[0]);
-		VectorCopy(cg.refdef.viewaxis[1], cg.testModelEntity.axis[1]);
-		VectorCopy(cg.refdef.viewaxis[2], cg.testModelEntity.axis[2]);
-
-		// allow the position to be adjusted
-		for(i = 0; i < 3; i++) {
-			cg.testModelEntity.origin[i] += cg.refdef.viewaxis[0][i] * cg_gun_x.value;
-			cg.testModelEntity.origin[i] += cg.refdef.viewaxis[1][i] * cg_gun_y.value;
-			cg.testModelEntity.origin[i] += cg.refdef.viewaxis[2][i] * cg_gun_z.value;
-		}
-	}
-
-	trap_R_AddRefEntityToScene(&cg.testModelEntity);
-}
-
-//============================================================================
-
-/*
 =================
 CG_CalcVrect
 
@@ -346,14 +198,6 @@ static void CG_OffsetFirstPersonView(void) {
 		}
 	}
 
-	// add pitch based on fall kick
-#if 0
-	ratio = ( cg.time - cg.landTime) / FALL_TIME;
-	if (ratio < 0)
-		ratio = 0;
-	angles[PITCH] += ratio * cg.fall_value;
-#endif
-
 	// add angles based on velocity
 	VectorCopy(cg.predictedPlayerState.velocity, predictedVelocity);
 
@@ -408,19 +252,6 @@ static void CG_OffsetFirstPersonView(void) {
 
 	// add step offset
 	CG_StepOffset();
-
-	// pivot the eye based on a neck length
-#if 0
-	{
-#define NECK_LENGTH 8
-	vec3_t			forward, up;
- 
-	cg.refdef.vieworg[2] -= NECK_LENGTH;
-	AngleVectors( cg.refdefViewAngles, forward, NULL, up );
-	VectorMA( cg.refdef.vieworg, 3, forward, cg.refdef.vieworg );
-	VectorMA( cg.refdef.vieworg, NECK_LENGTH, up, cg.refdef.vieworg );
-	}
-#endif
 }
 
 //======================================================================
@@ -549,10 +380,6 @@ static void CG_DamageBlendBlob(void) {
 		return;
 	}
 
-	// if (cg.cameraMode) {
-	//	return;
-	// }
-
 	// ragePro systems can't fade blends, so don't obscure the screen
 	if(cgs.glconfig.hardwareType == GLHW_RAGEPRO) {
 		return;
@@ -593,28 +420,10 @@ static int CG_CalcViewValues(void) {
 
 	memset(&cg.refdef, 0, sizeof(cg.refdef));
 
-	// strings for in game rendering
-	// Q_strncpyz( cg.refdef.text[0], "Park Ranger", sizeof(cg.refdef.text[0]) );
-	// Q_strncpyz( cg.refdef.text[1], "19", sizeof(cg.refdef.text[1]) );
-
 	// calculate size of 3D view
 	CG_CalcVrect();
 
 	ps = &cg.predictedPlayerState;
-	/*
-	    if (cg.cameraMode) {
-	        vec3_t origin, angles;
-	        if (trap_getCameraInfo(cg.time, &origin, &angles)) {
-	            VectorCopy(origin, cg.refdef.vieworg);
-	            angles[ROLL] = 0;
-	            VectorCopy(angles, cg.refdefViewAngles);
-	            AnglesToAxis( cg.refdefViewAngles, cg.refdef.viewaxis );
-	            return CG_CalcFov();
-	        } else {
-	            cg.cameraMode = false;
-	        }
-	    }
-	*/
 	// intermission view
 	if(ps->pm_type == PM_INTERMISSION) {
 		VectorCopy(ps->origin, cg.refdef.vieworg);
@@ -797,10 +606,6 @@ void CG_DrawActiveFrame(int serverTime, stereoFrame_t stereoView, bool demoPlayb
 	// add buffered sounds
 	CG_PlayBufferedSounds();
 
-	// finish up the rest of the refdef
-	if(cg.testModelEntity.hModel) {
-		CG_AddTestModel();
-	}
 	cg.refdef.time = cg.time;
 	memcpy(cg.refdef.areamask, cg.snap->areamask, sizeof(cg.refdef.areamask));
 
