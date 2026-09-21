@@ -160,3 +160,10 @@ void JS_GameRunFrame(int levelTime) {
 	jsargs.v[0].i = levelTime;
 	JS_Function(JS_GAMERUNFRAME);
 }
+
+void JS_ItemInit(int vmIndex) {
+	JS_StackClean();
+	jsargs.t[0] = JS_TYPE_INT;
+	jsargs.v[0].i = vmIndex;
+	JS_Function(JS_ITEMINIT);
+}

@@ -325,7 +325,7 @@ void ClientEvents(gentity_t* ent, int oldEventSequence) {
 	int damage;
 	vec3_t origin, angles;
 	//	bool	fired;
-	gitem_t* item;
+	item_t* item;
 	gentity_t* drop;
 
 	client = ent->client;

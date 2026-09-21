@@ -22,7 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // cg_main.c -- initialization and primary entry point for cgame
 #include "../qcommon/vm_javascript.h"
-#include "../qcommon/vm_javascript_core.h"
 
 int forceModelModificationCount = -1;
 
@@ -51,7 +50,7 @@ Q_EXPORT intptr_t vmMain(int command, int arg0, int arg1, int arg2, int arg3, in
 
 		case GETVMCONTEXT: VMContext(&vmargs, &vmresult); return 0;
 		case VMCALL: VMCall(arg0); return 0;
-		default: trap_Error("ui.qvm: unknown command"); break;
+		default: trap_Error("cgame.vm: unknown command"); break;
 	}
 	return -1;
 }
@@ -374,12 +373,12 @@ The server says this item is used on this level
 =================
 */
 static void CG_RegisterItemSounds(int itemNum) {
-	gitem_t* item;
+	item_t* item;
 	char data[MAX_QPATH];
 	char *s, *start;
 	int len;
 
-	item = &bg_itemlist[itemNum];
+	item = &jsd_item[itemNum];
 
 	if(item->pickup_sound) {
 		trap_S_RegisterSound(item->pickup_sound, false);
@@ -497,7 +496,7 @@ static void CG_RegisterSounds(void) {
 		cgs.media.footsteps[FOOTSTEP_METAL][i] = trap_S_RegisterSound(name, false);
 	}
 
-	for(i = 1; i < bg_numItems; i++) {
+	for(i = 1; i < jsd_itemCount; i++) {
 		CG_RegisterItemSounds(i);
 	}
 
@@ -660,7 +659,7 @@ static void CG_RegisterGraphics(void) {
 	memset(cg_items, 0, sizeof(cg_items));
 	memset(cg_weapons, 0, sizeof(cg_weapons));
 
-	for(i = 1; i < bg_numItems; i++) {
+	for(i = 1; i < jsd_itemCount; i++) {
 		CG_LoadingItem(i);
 		CG_RegisterItemVisuals(i);
 	}
@@ -808,6 +807,8 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 	cgs.media.charsetPropB = trap_R_RegisterShaderNoMip("menu/art/font2_prop.tga");
 
 	CG_RegisterCvars();
+
+	JS_SystemInit(VM_CGAME);
 
 	CL_UIInit();
 	JS_HUDInit();

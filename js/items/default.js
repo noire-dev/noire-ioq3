@@ -1,0 +1,10 @@
+item.register(null, null, null, null, 0, 0, 0);
+item.register("weapon_gauntlet", "models/weapons2/gauntlet/gauntlet.md3", "icons/iconw_gauntlet", "Gauntlet", 0, 1, 1);
+item.register("weapon_shotgun", "models/weapons2/shotgun/shotgun.md3", "icons/iconw_shotgun", "Shotgun", 10, 1, 2);
+item.register("weapon_machinegun", "models/weapons2/machinegun/machinegun.md3", "icons/iconw_machinegun", "Machinegun", 40, 1, 3);
+item.register("weapon_grenadelauncher", "models/weapons2/grenadel/grenadel.md3", "icons/iconw_grenade", "Grenade Launcher", 10, 1, 4);
+item.register("weapon_rocketlauncher", "models/weapons2/rocketl/rocketl.md3", "icons/iconw_rocket", "Rocket Launcher", 10, 1, 5);
+item.register("weapon_lightning", "models/weapons2/lightning/lightning.md3", "icons/iconw_lightning", "Lightning Gun", 100, 1, 6);
+item.register("weapon_railgun", "models/weapons2/railgun/railgun.md3", "icons/iconw_railgun", "Railgun", 10, 1, 7);
+item.register("weapon_plasmagun", "models/weapons2/plasma/plasma.md3", "icons/iconw_plasma", "Plasma Gun", 50, 1, 8);
+item.register("weapon_bfg", "models/weapons2/bfg/bfg.md3", "icons/iconw_bfg", "BFG10K", 20, 1, 9);

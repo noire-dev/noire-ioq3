@@ -10,13 +10,16 @@
 
 #ifdef GAME
 #include "../game/g_local.h"
+#include "vm_javascript_core.h"
 #endif
 #ifdef CGAME
 #include "../cgame/cg_local.h"
+#include "vm_javascript_core.h"
 #include "vm_javascript_draw.h"
 #endif
 #ifdef UI
 #include "../ui/ui_local.h"
+#include "vm_javascript_core.h"
 #include "vm_javascript_draw.h"
 #endif
 
@@ -40,10 +43,12 @@ typedef enum {
 	JS_TOOLINIT,
 	JS_TOOLCALL,
 	JS_GAMERUNFRAME,
+	JS_ITEMINIT,
 } jscall_t;
 
 typedef enum {
 	// General
+	VM_APIITEM,
 	VM_CMD,
 
 	// game.qvm
@@ -134,6 +139,9 @@ const char* JS_GetToolName(int id);
 void JS_ToolInit(int id);
 void JS_ToolCall(int id, int targetID, int playerID, char* arg1, char* arg2, char* arg3, char* arg4, char* arg5, char* arg6, char* arg7, char* arg8, char* arg9);
 void JS_GameRunFrame(int levelTime);
+void JS_ItemInit(int vmIndex);
+
+void JS_SystemInit(int vmIndex);
 
 extern js_args_t vmargs;
 extern js_result_t vmresult;

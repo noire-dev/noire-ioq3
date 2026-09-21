@@ -29,9 +29,9 @@ void CG_LoadingString(const char* s, float value) {
 }
 
 void CG_LoadingItem(int itemNum) {
-	gitem_t* item;
+	item_t* item;
 
-	item = &bg_itemlist[itemNum];
+	item = &jsd_item[itemNum];
 	CG_LoadingString(item->pickup_name, -1);
 }
 void CG_LoadingClient(int clientNum) {

@@ -460,7 +460,7 @@ typedef enum {
 
 //---------------------------------------------------------
 
-// gitem_t->type
+// item_t->type
 typedef enum {
 	IT_BAD,
 	IT_WEAPON,  // EFX: rotate + upscale + minlight
@@ -468,30 +468,25 @@ typedef enum {
 
 #define MAX_ITEM_MODELS 4
 
-typedef struct gitem_s {
-	char* classname;  // spawning name
-	char* pickup_sound;
-	char* world_model[MAX_ITEM_MODELS];
-
-	char* icon;
-	char* pickup_name;  // for printing on pickup
-
-	int quantity;       // for ammo how much, or duration of powerup
-	itemType_t giType;  // IT_* flags
-
+typedef struct item_s {
+	char classname[MAX_JS_STRINGSIZE];
+	char pickup_sound[MAX_JS_STRINGSIZE];
+	char world_model[MAX_ITEM_MODELS][MAX_JS_STRINGSIZE];
+	char icon[MAX_JS_STRINGSIZE];
+	char pickup_name[MAX_JS_STRINGSIZE];
+	int quantity;
+	itemType_t giType;
 	int giTag;
+	char precaches[MAX_JS_STRINGSIZE];
+	char sounds[MAX_JS_STRINGSIZE];
+} item_t;
 
-	char* precaches;  // string of all models and images this item will use
-	char* sounds;     // string of all sounds this item will use
-} gitem_t;
+extern item_t jsd_item[MAX_ITEMS];
+extern int jsd_itemCount;
 
-// included in both the game dll and the client
-extern gitem_t bg_itemlist[];
-extern int bg_numItems;
-
-gitem_t* BG_FindItem(const char* pickupName);
-gitem_t* BG_FindItemForWeapon(weapon_t weapon);
-#define ITEM_INDEX(x) ((x) - bg_itemlist)
+item_t* BG_FindItem(const char* pickupName);
+item_t* BG_FindItemForWeapon(weapon_t weapon);
+#define ITEM_INDEX(x) ((x) - jsd_item)
 
 bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps);
 

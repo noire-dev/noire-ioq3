@@ -192,7 +192,6 @@ returning false if not found
 */
 bool G_CallSpawn(gentity_t* ent) {
 	spawn_t* s;
-	gitem_t* item;
 
 	if(!ent->classname) {
 		G_Printf("G_CallSpawn: NULL classname\n");
@@ -200,9 +199,9 @@ bool G_CallSpawn(gentity_t* ent) {
 	}
 
 	// check item spawn functions
-	for(item = bg_itemlist + 1; item->classname; item++) {
-		if(!strcmp(item->classname, ent->classname)) {
-			G_SpawnItem(ent, item);
+	for(int i = 0; i < jsd_itemCount; i++) {
+		if(!strcmp(jsd_item[i].classname, ent->classname)) {
+			G_SpawnItem(ent, &jsd_item[i]);
 			return true;
 		}
 	}

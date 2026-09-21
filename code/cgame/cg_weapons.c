@@ -441,7 +441,7 @@ static void CG_GrenadeTrail(centity_t* ent, const weaponInfo_t* wi) { CG_RocketT
 
 void CG_RegisterWeapon(int weaponNum) {
 	weaponInfo_t* weaponInfo;
-	gitem_t* item;
+	item_t* item;
 	char path[MAX_QPATH];
 	vec3_t mins, maxs;
 	int i;
@@ -455,7 +455,7 @@ void CG_RegisterWeapon(int weaponNum) {
 	memset(weaponInfo, 0, sizeof(*weaponInfo));
 	weaponInfo->registered = true;
 
-	for(item = bg_itemlist + 1; item->classname; item++) {
+	for(item = jsd_item + 1; item->classname; item++) {
 		if(item->giType == IT_WEAPON && item->giTag == weaponNum) {
 			weaponInfo->item = item;
 			break;
@@ -464,7 +464,7 @@ void CG_RegisterWeapon(int weaponNum) {
 	if(!item->classname) {
 		CG_Error("Couldn't find weapon %i", weaponNum);
 	}
-	CG_RegisterItemVisuals(item - bg_itemlist);
+	CG_RegisterItemVisuals(item - jsd_item);
 
 	// load cmodel before model so filecache works
 	weaponInfo->weaponModel = trap_R_RegisterModel(item->world_model[0]);
@@ -599,10 +599,10 @@ The server says this item is used on this level
 */
 void CG_RegisterItemVisuals(int itemNum) {
 	itemInfo_t* itemInfo;
-	gitem_t* item;
+	item_t* item;
 
-	if(itemNum < 0 || itemNum >= bg_numItems) {
-		CG_Error("CG_RegisterItemVisuals: itemNum %d out of range [0-%d]", itemNum, bg_numItems - 1);
+	if(itemNum < 0 || itemNum >= jsd_itemCount) {
+		CG_Error("CG_RegisterItemVisuals: itemNum %d out of range [0-%d]", itemNum, jsd_itemCount - 1);
 	}
 
 	itemInfo = &cg_items[itemNum];
@@ -610,7 +610,7 @@ void CG_RegisterItemVisuals(int itemNum) {
 		return;
 	}
 
-	item = &bg_itemlist[itemNum];
+	item = &jsd_item[itemNum];
 
 	memset(itemInfo, 0, sizeof(*itemInfo));
 	itemInfo->registered = true;

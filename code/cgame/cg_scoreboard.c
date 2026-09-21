@@ -22,7 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // cg_scoreboard -- draw the scoreboard on top of the game screen
 #include "../qcommon/vm_javascript.h"
-#include "../qcommon/vm_javascript_core.h"
 
 static float scoreboardBG[4] = {0.00, 0.00, 0.00, 0.50};
 static float scoreboardOutlineBG[4] = {0.10, 0.10, 0.10, 0.50};

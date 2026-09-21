@@ -103,14 +103,14 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 	trap_LinkEntity(ent);
 }
 
-gentity_t* LaunchItem(gitem_t* item, vec3_t origin, vec3_t velocity) {
+gentity_t* LaunchItem(item_t* item, vec3_t origin, vec3_t velocity) {
 	gentity_t* dropped;
 
 	dropped = G_Spawn();
 
 	dropped->s.eType = ET_ITEM;
-	dropped->s.modelindex = item - bg_itemlist;  // store item number in modelindex
-	dropped->s.modelindex2 = 1;                  // This is non-zero is it's a dropped item
+	dropped->s.modelindex = item - jsd_item;  // store item number in modelindex
+	dropped->s.modelindex2 = 1;               // This is non-zero is it's a dropped item
 
 	dropped->classname = item->classname;
 	dropped->item = item;
@@ -136,7 +136,7 @@ gentity_t* LaunchItem(gitem_t* item, vec3_t origin, vec3_t velocity) {
 	return dropped;
 }
 
-gentity_t* Drop_Item(gentity_t* ent, gitem_t* item) {
+gentity_t* Drop_Item(gentity_t* ent, item_t* item) {
 	vec3_t velocity;
 	vec3_t angles;
 
@@ -161,8 +161,8 @@ void FinishSpawningItem(gentity_t* ent) {
 	VectorSet(ent->r.maxs, ITEM_RADIUS, ITEM_RADIUS, ITEM_RADIUS);
 
 	ent->s.eType = ET_ITEM;
-	ent->s.modelindex = ent->item - bg_itemlist;  // store item number in modelindex
-	ent->s.modelindex2 = 0;                       // zero indicates this isn't a dropped item
+	ent->s.modelindex = ent->item - jsd_item;  // store item number in modelindex
+	ent->s.modelindex2 = 0;                    // zero indicates this isn't a dropped item
 
 	ent->r.contents = CONTENTS_TRIGGER;
 	ent->touch = Touch_Item;
@@ -195,7 +195,7 @@ void FinishSpawningItem(gentity_t* ent) {
 	trap_LinkEntity(ent);
 }
 
-void G_SpawnItem(gentity_t* ent, gitem_t* item) {
+void G_SpawnItem(gentity_t* ent, item_t* item) {
 	G_SpawnFloat("random", "0", &ent->random);
 	G_SpawnFloat("wait", "0", &ent->wait);
 

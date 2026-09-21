@@ -1,7 +1,6 @@
 // Copyright (C) 2023-2026 Noire's Mod (noire.dev) — GPLv2
 
 #include "../qcommon/vm_javascript.h"
-#include "../qcommon/vm_javascript_core.h"
 
 shell_s shell;
 
@@ -21,7 +20,7 @@ Q_EXPORT intptr_t vmMain(int command, int arg0, int arg1, int arg2, int arg3, in
 
 		case GETVMCONTEXT: VMContext(&vmargs, &vmresult); return 0;
 		case VMCALL: VMCall(arg0); return 0;
-		default: trap_Error("ui.qvm: unknown command"); break;
+		default: trap_Error("ui.vm: unknown command"); break;
 	}
 
 	return -1;
@@ -300,7 +299,7 @@ static int UI_ListGetCount(int listType, int listSubtype) {
 	if(listType == LTYPE_MAPS) return UI_CountOfMaps("ffa");
 	if(listType == LTYPE_BOTS) return UI_CountOfMaps("ffa");
 	if(listType == LTYPE_PLAYERMODELS) return ui_numPlayerModels;
-	if(listType == LTYPE_GAMEITEMS) return bg_numItems - 1;
+	if(listType == LTYPE_GAMEITEMS) return jsd_itemCount - 1;
 	if(listType == LTYPE_TOOLS) return shell.toolCount;
 	return 0;
 }
@@ -310,7 +309,7 @@ static char* UI_ListGetCallbackName(int listType, int listSubtype, int index) {
 	if(listType == LTYPE_MAPS) return UI_MapForID(index, "ffa");
 	if(listType == LTYPE_BOTS) return UI_MapForID(index, "ffa");
 	if(listType == LTYPE_PLAYERMODELS) return ui_playerModelNames[index];
-	if(listType == LTYPE_GAMEITEMS) return bg_itemlist[index + 1].pickup_name;
+	if(listType == LTYPE_GAMEITEMS) return jsd_item[index + 1].pickup_name;
 	if(listType == LTYPE_TOOLS) return shell.tool[index].nameID;
 	return "";
 }
@@ -320,7 +319,7 @@ static char* UI_ListGetName(int listType, int listSubtype, int index) {
 	if(listType == LTYPE_MAPS) return UI_MapForID(index, "ffa");
 	if(listType == LTYPE_BOTS) return UI_MapForID(index, "ffa");
 	if(listType == LTYPE_PLAYERMODELS) return ui_playerModelNames[index];
-	if(listType == LTYPE_GAMEITEMS) return bg_itemlist[index + 1].pickup_name;
+	if(listType == LTYPE_GAMEITEMS) return jsd_item[index + 1].pickup_name;
 	if(listType == LTYPE_TOOLS) return shell.tool[index].name;
 	return "";
 }
@@ -330,7 +329,7 @@ static char* UI_ListGetIcon(int listType, int listSubtype, int index) {
 	if(listType == LTYPE_MAPS) return va("levelshots/%s", UI_MapForID(index, "ffa"));
 	if(listType == LTYPE_BOTS) return va("levelshots/%s", UI_MapForID(index, "ffa"));
 	if(listType == LTYPE_PLAYERMODELS) return ui_playerModelIcons[index];
-	if(listType == LTYPE_GAMEITEMS) return bg_itemlist[index + 1].icon;
+	if(listType == LTYPE_GAMEITEMS) return jsd_item[index + 1].icon;
 	if(listType == LTYPE_TOOLS) return "";
 	return "";
 }
@@ -406,6 +405,7 @@ int UI_Init(void) {  // Инициализация UI и загрузка сос
 	int lastWindow = 0;
 
 	trap_Print("NMRE: init... \n");
+	JS_SystemInit(VM_UI);
 	CL_UIInit();
 	UI_ShellInit();
 	UI_LoadApps();

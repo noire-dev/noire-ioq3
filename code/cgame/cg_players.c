@@ -21,7 +21,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // cg_players.c -- handle the media and animation for player entities
 #include "../qcommon/vm_javascript.h"
-#include "../qcommon/vm_javascript_core.h"
 
 char* cg_customSoundNames[MAX_CUSTOM_SOUNDS] = {"*death1.wav", "*death2.wav", "*death3.wav", "*jump1.wav", "*pain25_1.wav", "*pain50_1.wav", "*pain75_1.wav", "*pain100_1.wav", "*falling1.wav", "*gasp.wav", "*drown.wav", "*fall1.wav", "*taunt.wav"};
 

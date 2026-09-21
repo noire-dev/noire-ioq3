@@ -1,6 +1,6 @@
-JSCall = function(func_id) {
+JSCall = function (func_id) {
     var args = Array.prototype.slice.call(arguments, 1);
-    switch(func_id) {
+    switch (func_id) {
         case js.shellInit: return Shell_Init();
         case js.shellDraw: return Shell_Draw();
         case js.shellKey: return Shell_Key(args[0], args[1]);
@@ -20,5 +20,6 @@ JSCall = function(func_id) {
         case js.initTool: return tool.init(args[0]);
         case js.callTool: return tool.call(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11]);
         case js.gameRunFrame: return Game_RunFrame(args[0]);
+        case js.itemInit: return item.initSystem(args[0]);
     }
 };

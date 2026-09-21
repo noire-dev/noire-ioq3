@@ -58,6 +58,9 @@ set(GAME_SOURCES
     ${SOURCE_DIR}/game/g_trigger.c
     ${SOURCE_DIR}/game/g_utils.c
     ${SOURCE_DIR}/game/g_weapon.c
+    ${SOURCE_DIR}/qcommon/vm_javascript.c
+    ${SOURCE_DIR}/qcommon/vm_javascript_core.c
+    ${SOURCE_DIR}/qcommon/vm_javascript_func.c
 )
 
 set(GAME_BINARY_SOURCES ${SOURCE_DIR}/game/g_syscalls.c)

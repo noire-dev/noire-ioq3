@@ -3,6 +3,22 @@ const apiFields = {};
 const apiField = -1;
 
 apiField = -1;
+apiFields.item = {
+    "classname": apiField += 1,
+    "pickup_sound": apiField += 1,
+    "world_model": apiField += 1, // [4]
+    "icon": apiField += 1,
+    "pickup_name": apiField += 1,
+    "quantity": apiField += 1,
+    "giType": apiField += 1,
+    "giTag": apiField += 1,
+    "precaches": apiField += 1,
+    "sounds": apiField += 1,
+
+    "itemCount": apiField += 1,
+};
+
+apiField = -1;
 apiFields.gameEntity = {
 };
 
@@ -145,6 +161,16 @@ apiFields.element = {
     "row": apiField += 1,
     "listID": apiField += 1,
 };
+
+api.item = function (vmIndex, itemID, fieldName, value, i1, i2, i3, i4) {
+    var fieldID = apiFields.item[fieldName];
+    var newValue = value;
+    if (fieldID === undefined) {
+        console.log("#ff5api.item: invalid field '" + fieldName + "'");
+        return false;
+    }
+    return qvm.call(vm.apiItem, vmIndex, itemID, fieldID, newValue, i1, i2, i3, i4);
+}
 
 api.gameEntity = function (entityID, fieldName, value, i1, i2, i3, i4) {
     var fieldID = apiFields.gameEntity[fieldName];

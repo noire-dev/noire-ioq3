@@ -25,23 +25,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/q_shared.h"
 #include "bg_public.h"
 
-/*QUAKED item_***** ( 0 0 0 ) (-16 -16 -16) (16 16 16) suspended
-DO NOT USE THIS CLASS, IT JUST HOLDS GENERAL INFORMATION.
-The suspended flag will allow items to hang in the air, otherwise they are dropped to the next surface.
+item_t jsd_item[MAX_ITEMS];
+int jsd_itemCount = 0;
 
-If an item is the target of another entity, it will not spawn in until fired.
-
-An item fires all of its targets when it is picked up.  If the toucher can't carry it, the targets won't be fired.
-
-"notfree" if set to 1, don't spawn in free for all games
-"notteam" if set to 1, don't spawn in team games
-"notsingle" if set to 1, don't spawn in single player games
-"wait"	override the default wait before respawning.  -1 = never respawn automatically, which can be used with targeted spawning.
-"random" random number of plus or minus seconds varied from the respawn time
-"count" override quantity or duration on most items.
-*/
-
-gitem_t bg_itemlist[] = {{NULL,
+#if 0
+item_t jsd_item[] = {{NULL,
                           NULL,
                           {NULL, NULL, NULL, NULL},
                           /* icon */ NULL,
@@ -176,7 +164,8 @@ gitem_t bg_itemlist[] = {{NULL,
                          // end of list marker
                          {NULL}};
 
-int bg_numItems = ARRAY_LEN(bg_itemlist) - 1;
+int jsd_itemCount = ARRAY_LEN(jsd_item) - 1;
+#endif
 
 /*
 ===============
@@ -184,10 +173,10 @@ BG_FindItemForWeapon
 
 ===============
 */
-gitem_t* BG_FindItemForWeapon(weapon_t weapon) {
-	gitem_t* it;
+item_t* BG_FindItemForWeapon(weapon_t weapon) {
+	item_t* it;
 
-	for(it = bg_itemlist + 1; it->classname; it++) {
+	for(it = jsd_item + 1; it->classname; it++) {
 		if(it->giType == IT_WEAPON && it->giTag == weapon) {
 			return it;
 		}
@@ -203,10 +192,10 @@ BG_FindItem
 
 ===============
 */
-gitem_t* BG_FindItem(const char* pickupName) {
-	gitem_t* it;
+item_t* BG_FindItem(const char* pickupName) {
+	item_t* it;
 
-	for(it = bg_itemlist + 1; it->classname; it++) {
+	for(it = jsd_item + 1; it->classname; it++) {
 		if(!Q_stricmp(it->pickup_name, pickupName)) return it;
 	}
 
@@ -243,13 +232,13 @@ This needs to be the same for client side prediction and server use.
 ================
 */
 bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps) {
-	gitem_t* item;
+	item_t* item;
 
-	if(ent->modelindex < 1 || ent->modelindex >= bg_numItems) {
+	if(ent->modelindex < 1 || ent->modelindex >= jsd_itemCount) {
 		Com_Error(ERR_DROP, "BG_CanItemBeGrabbed: index out of range");
 	}
 
-	item = &bg_itemlist[ent->modelindex];
+	item = &jsd_item[ent->modelindex];
 
 	switch(item->giType) {
 		case IT_WEAPON: return true;  // weapons are always picked up

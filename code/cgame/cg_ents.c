@@ -212,14 +212,14 @@ CG_Item
 static void CG_Item(centity_t* cent) {
 	refEntity_t ent;
 	entityState_t* es;
-	gitem_t* item;
+	item_t* item;
 	int msec;
 	float frac;
 	float scale;
 	weaponInfo_t* wi;
 
 	es = &cent->currentState;
-	if(es->modelindex >= bg_numItems) {
+	if(es->modelindex >= jsd_itemCount) {
 		CG_Error("Bad item index %i on entity", es->modelindex);
 	}
 
@@ -228,7 +228,7 @@ static void CG_Item(centity_t* cent) {
 		return;
 	}
 
-	item = &bg_itemlist[es->modelindex];
+	item = &jsd_item[es->modelindex];
 
 	// items bob up and down continuously
 	scale = 0.005 + cent->currentState.number * 0.00001;

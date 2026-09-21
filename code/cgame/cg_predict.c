@@ -251,7 +251,7 @@ CG_TouchItem
 ===================
 */
 static void CG_TouchItem(centity_t* cent) {
-	gitem_t* item;
+	item_t* item;
 
 	if(!BG_PlayerTouchesItem(&cg.predictedPlayerState, &cent->currentState, cg.time)) {
 		return;
@@ -266,7 +266,7 @@ static void CG_TouchItem(centity_t* cent) {
 		return;  // can't hold it
 	}
 
-	item = &bg_itemlist[cent->currentState.modelindex];
+	item = &jsd_item[cent->currentState.modelindex];
 
 	// grab it
 	BG_AddPredictableEventToPlayerstate(EV_ITEM_PICKUP, cent->currentState.modelindex, &cg.predictedPlayerState);

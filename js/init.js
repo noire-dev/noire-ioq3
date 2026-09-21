@@ -19,11 +19,13 @@ const js = {
     initTool: jsCount += 1,
     callTool: jsCount += 1,
     gameRunFrame: jsCount += 1,
+    itemInit: jsCount += 1,
 };
 
 const vmCount = -1;
 const vm = {
     // General
+    apiItem: vmCount += 1,
     cmd: vmCount += 1,
 
     // game.qvm
@@ -121,6 +123,7 @@ openjs.file("js/ui");
 openjs.file("js/utils");
 openjs.file("js/app");
 openjs.file("js/tool");
+openjs.file("js/item");
 openjs.file("js/shell");
 openjs.file("js/cg");
 openjs.file("js/hud/" + cvar.string("hud.module"));

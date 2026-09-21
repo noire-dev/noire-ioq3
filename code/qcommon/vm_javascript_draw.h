@@ -1,7 +1,5 @@
 // Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
 
-#include "../qcommon/vm_javascript_core.h"
-
 typedef enum {
 	K_TAB = 9,
 	K_ENTER = 13,

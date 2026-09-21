@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 //
 
-#include "g_local.h"
+#include "../qcommon/vm_javascript.h"
 
 level_locals_t level;
 
@@ -152,6 +152,10 @@ Q_EXPORT intptr_t vmMain(int command, int arg0, int arg1, int arg2, int arg3, in
 		case GAME_RUN_FRAME: G_RunFrame(arg0); return 0;
 		case GAME_CONSOLE_COMMAND: return ConsoleCommand();
 		case BOTAI_START_FRAME: return BotAIStartFrame(arg0);
+
+		case GETVMCONTEXT: VMContext(&vmargs, &vmresult); return 0;
+		case VMCALL: VMCall(arg0); return 0;
+		default: trap_Error("game.vm: unknown command"); break;
 	}
 
 	return -1;
@@ -275,6 +279,8 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	G_RegisterCvars();
 
 	G_InitMemory();
+
+	JS_SystemInit(VM_GAME);
 
 	// set some level globals
 	memset(&level, 0, sizeof(level));

@@ -49,7 +49,7 @@ Toss the weapon and powerups for the killed player
 =================
 */
 void TossClientItems(gentity_t* self) {
-	gitem_t* item;
+	item_t* item;
 	gentity_t* drop;
 
 	// drop all weapons

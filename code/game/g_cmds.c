@@ -268,7 +268,7 @@ Give items to a client
 */
 void Cmd_Give_f(gentity_t* ent) {
 	char* name;
-	gitem_t* it;
+	item_t* it;
 	int i;
 	bool give_all;
 	gentity_t* it_ent;

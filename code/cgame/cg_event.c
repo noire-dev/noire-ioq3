@@ -526,15 +526,15 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		case EV_ITEM_PICKUP:
 			DEBUGNAME("EV_ITEM_PICKUP");
 			{
-				gitem_t* item;
+				item_t* item;
 				int index;
 
 				index = es->eventParm;  // player predicted
 
-				if(index < 1 || index >= bg_numItems) {
+				if(index < 1 || index >= jsd_itemCount) {
 					break;
 				}
-				item = &bg_itemlist[index];
+				item = &jsd_item[index];
 
 				// powerups and team items will have a separate global sound, this one
 				// will be played at prediction time
@@ -550,15 +550,15 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		case EV_GLOBAL_ITEM_PICKUP:
 			DEBUGNAME("EV_GLOBAL_ITEM_PICKUP");
 			{
-				gitem_t* item;
+				item_t* item;
 				int index;
 
 				index = es->eventParm;  // player predicted
 
-				if(index < 1 || index >= bg_numItems) {
+				if(index < 1 || index >= jsd_itemCount) {
 					break;
 				}
-				item = &bg_itemlist[index];
+				item = &jsd_item[index];
 				// powerup pickups are global
 				if(item->pickup_sound) {
 					trap_S_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, false));

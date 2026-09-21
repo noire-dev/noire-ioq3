@@ -1,6 +1,7 @@
 // Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
 
 #include "vm_javascript.h"
+#include "q_shared.h"
 
 js_args_t vmargs;
 js_result_t vmresult;
@@ -60,6 +61,35 @@ void JSE_Entity(gentity_t* ent) {
 		return;                    \
 	}
 
+void JS_SystemInit(int vmIndex) {
+	if(vmIndex == VM_GAME) trap_Print("JS_SystemInit for game\n");
+	if(vmIndex == VM_CGAME) trap_Print("JS_SystemInit for cgame\n");
+	if(vmIndex == VM_UI) trap_Print("JS_SystemInit for ui\n");
+
+	JS_ItemInit(vmIndex);
+}
+
+static void API_Item(int itemID, int fieldID, int i1, int i2, int i3, int i4) {
+	api_foundEntry = false;
+	api_valueIndex = 2;
+	api_counter = 0;
+
+	bounds(itemID, MAX_ITEMS, "API_Item - itemID");
+
+	API_FIELD(JSE_String(jsd_item[itemID].classname, MAX_JS_STRINGSIZE))
+	API_FIELD(JSE_String(jsd_item[itemID].pickup_sound, MAX_JS_STRINGSIZE))
+	API_FIELD(bounds(i1, MAX_ITEM_MODELS, "API_Item -> world_model"); JSE_String(jsd_item[itemID].world_model[i1], MAX_JS_STRINGSIZE))
+	API_FIELD(JSE_String(jsd_item[itemID].icon, MAX_JS_STRINGSIZE))
+	API_FIELD(JSE_String(jsd_item[itemID].pickup_name, MAX_JS_STRINGSIZE))
+	API_FIELD(JSE_Int(&jsd_item[itemID].quantity))
+	API_FIELD(JSE_Int((int*)&jsd_item[itemID].giType))
+	API_FIELD(JSE_Int(&jsd_item[itemID].giTag))
+	API_FIELD(JSE_String(jsd_item[itemID].precaches, MAX_JS_STRINGSIZE))
+	API_FIELD(JSE_String(jsd_item[itemID].sounds, MAX_JS_STRINGSIZE))
+
+	API_FIELD(JSE_Int(&jsd_itemCount))
+}
+
 #ifdef GAME
 static void API_GameEntity(int entityID, int fieldID, int i1, int i2, int i3, int i4) {
 	api_foundEntry = false;
@@ -73,7 +103,7 @@ static void GAPI_EntityDelete(int entityID) {
 	if(!g_entities[entityID].client) {
 		G_FreeEntity(&g_entities[entityID]);
 	} else {
-		DropClientSilently(g_entities[entityID].client->ps.clientNum);
+		// DropClientSilently(g_entities[entityID].client->ps.clientNum);
 	}
 }
 #endif
@@ -251,6 +281,7 @@ static void API_Element(int windowID, int elementID, int fieldID, int i1, int i2
 
 void VMCall(int func_id) {
 	switch(func_id) {
+		case VM_APIITEM: API_Item(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
 		case VM_CMD: trap_SendConsoleCommand(vmargs.v[0].i, vmargs.v[1].s); break;
 #ifdef GAME
 		case VM_APIGAMEENTITY: API_GameEntity(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;

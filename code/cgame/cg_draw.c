@@ -1,7 +1,6 @@
 // Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
 
 #include "../qcommon/vm_javascript.h"
-#include "../qcommon/vm_javascript_core.h"
 
 static queued3DString_t queued3DStrings[MAX_3D_STRING_QUEUE];
 static int queued3DStringCount = 0;
