@@ -109,3 +109,11 @@ if(BUILD_GAME_LIBRARIES)
     set_target_properties(      ${UI_MODULE_BINARY_BASEGAME} PROPERTIES OUTPUT_NAME ${UI_MODULE_BINARY})
     set_output_dirs(            ${UI_MODULE_BINARY_BASEGAME} SUBDIRECTORY ${BASEGAME})
 endif()
+
+set(JS_DEST_DIR "$<TARGET_FILE_DIR:${GAME_MODULE_BINARY_BASEGAME}>/js")
+
+add_custom_target(copy_js_scripts ALL
+    COMMAND ${CMAKE_COMMAND} -E remove_directory "${JS_DEST_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/js" "${JS_DEST_DIR}"
+    COMMENT "Copying JS scripts..."
+)

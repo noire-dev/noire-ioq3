@@ -17,5 +17,5 @@ set(MACOS_BUNDLE_ID org.noiredev.${CLIENT_NAME})
 
 set(COPYRIGHT "// Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2")
 
-set(CONTACT_EMAIL "opennoire@gmail.com")
+set(CONTACT_EMAIL "noirecx@gmail.com")
 set(PROTOCOL_HANDLER_SCHEME quake3)

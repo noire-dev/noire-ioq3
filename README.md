@@ -390,7 +390,7 @@ folder for distribution.
 
 Noire-ioq3 Maintainers
 
-  * noire.dev <opennoire@gmail.com>
+  * noire.dev <noirecx@gmail.com>
 
 Maintainers
 
