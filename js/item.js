@@ -20,8 +20,6 @@ item.register = function (classname, model, icon, pickup_name, quantity, giType,
     api.item(item.vmIndex, itemCount, "sounds", "");
 
     api.item(item.vmIndex, 0, "itemCount", itemCount + 1);
-
-    console.log("added item: " + classname + " with id " + itemCount);
 }
 
 item.initSystem = function (vmIndex) {

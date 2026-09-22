@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 //
-#include "g_local.h"
+#include "../qcommon/vm_javascript.h"
 
 /*
 ==================
@@ -583,6 +583,8 @@ void ClientCommand(int clientNum) {
 		Cmd_Where_f(ent);
 	else if(Q_stricmp(cmd, "setviewpos") == 0)
 		Cmd_SetViewpos_f(ent);
+	else if(JS_CommandRun() != -1)
+		return;
 	else
 		trap_SendServerCommand(clientNum, va("print \"unknown cmd %s\n\"", cmd));
 }
