@@ -471,9 +471,9 @@ typedef enum {
 typedef struct item_s {
 	char classname[MAX_JS_STRINGSIZE];
 	char pickup_sound[MAX_JS_STRINGSIZE];
-	char world_model[MAX_ITEM_MODELS][MAX_JS_STRINGSIZE];
-	char icon[MAX_JS_STRINGSIZE];
 	char pickup_name[MAX_JS_STRINGSIZE];
+	char model[MAX_JS_STRINGSIZE];
+	char icon[MAX_JS_STRINGSIZE];
 	int quantity;
 	itemType_t giType;
 	int giTag;

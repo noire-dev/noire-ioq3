@@ -441,7 +441,7 @@ static void CG_GrenadeTrail(centity_t* ent, const weaponInfo_t* wi) { CG_RocketT
 
 void CG_RegisterWeapon(int weaponNum) {
 	weaponInfo_t* weaponInfo;
-	item_t* item;
+	item_t* weaponItem;
 	char path[MAX_QPATH];
 	vec3_t mins, maxs;
 	int i;
@@ -449,49 +449,44 @@ void CG_RegisterWeapon(int weaponNum) {
 	weaponInfo = &cg_weapons[weaponNum];
 
 	if(weaponNum == 0) return;
-
 	if(weaponInfo->registered) return;
 
 	memset(weaponInfo, 0, sizeof(*weaponInfo));
 	weaponInfo->registered = true;
 
-	for(item = jsd_item + 1; item->classname; item++) {
-		if(item->giType == IT_WEAPON && item->giTag == weaponNum) {
-			weaponInfo->item = item;
+	for(i = 0; i < jsd_itemCount; i++) {
+		if(jsd_item[i].giType == IT_WEAPON && jsd_item[i].giTag == weaponNum) {
+			weaponItem = &jsd_item[i];
+			weaponInfo->item = weaponItem;
 			break;
 		}
 	}
-	if(!item->classname) {
-		CG_Error("Couldn't find weapon %i", weaponNum);
-	}
-	CG_RegisterItemVisuals(item - jsd_item);
+	if(!strlen(weaponItem->classname)) CG_Error("Couldn't find weapon %i", weaponNum);
+
+	CG_RegisterItemVisuals(weaponItem - jsd_item);
 
 	// load cmodel before model so filecache works
-	weaponInfo->weaponModel = trap_R_RegisterModel(item->world_model[0]);
+	weaponInfo->weaponModel = trap_R_RegisterModel(weaponItem->model);
 
 	// calc midpoint for rotation
 	trap_R_ModelBounds(weaponInfo->weaponModel, mins, maxs);
-	for(i = 0; i < 3; i++) {
-		weaponInfo->weaponMidpoint[i] = mins[i] + 0.5 * (maxs[i] - mins[i]);
-	}
+	for(i = 0; i < 3; i++) weaponInfo->weaponMidpoint[i] = mins[i] + 0.5 * (maxs[i] - mins[i]);
 
-	weaponInfo->weaponIcon = trap_R_RegisterShader(item->icon);
+	weaponInfo->weaponIcon = trap_R_RegisterShader(weaponItem->icon);
 
-	COM_StripExtension(item->world_model[0], path, sizeof(path));
+	COM_StripExtension(weaponItem->model, path, sizeof(path));
 	Q_strcat(path, sizeof(path), "_flash.md3");
 	weaponInfo->flashModel = trap_R_RegisterModel(path);
 
-	COM_StripExtension(item->world_model[0], path, sizeof(path));
+	COM_StripExtension(weaponItem->model, path, sizeof(path));
 	Q_strcat(path, sizeof(path), "_barrel.md3");
 	weaponInfo->barrelModel = trap_R_RegisterModel(path);
 
-	COM_StripExtension(item->world_model[0], path, sizeof(path));
+	COM_StripExtension(weaponItem->model, path, sizeof(path));
 	Q_strcat(path, sizeof(path), "_hand.md3");
 	weaponInfo->handsModel = trap_R_RegisterModel(path);
 
-	if(!weaponInfo->handsModel) {
-		weaponInfo->handsModel = trap_R_RegisterModel("models/weapons2/shotgun/shotgun_hand.md3");
-	}
+	if(!weaponInfo->handsModel) weaponInfo->handsModel = trap_R_RegisterModel("models/weapons2/shotgun/shotgun_hand.md3");
 
 	switch(weaponNum) {
 		case WP_GAUNTLET:
@@ -556,7 +551,6 @@ void CG_RegisterWeapon(int weaponNum) {
 			break;
 
 		case WP_PLASMAGUN:
-			//		weaponInfo->missileModel = cgs.media.invulnerabilityPowerupModel;
 			weaponInfo->missileTrailFunc = CG_PlasmaTrail;
 			weaponInfo->missileSound = trap_S_RegisterSound("sound/weapons/plasma/lasfly.wav", false);
 			MAKERGB(weaponInfo->flashDlightColor, 0.6f, 0.6f, 1.0f);
@@ -615,13 +609,11 @@ void CG_RegisterItemVisuals(int itemNum) {
 	memset(itemInfo, 0, sizeof(*itemInfo));
 	itemInfo->registered = true;
 
-	itemInfo->models[0] = trap_R_RegisterModel(item->world_model[0]);
+	itemInfo->models[0] = trap_R_RegisterModel(item->model);
 
 	itemInfo->icon = trap_R_RegisterShader(item->icon);
 
-	if(item->giType == IT_WEAPON) {
-		CG_RegisterWeapon(item->giTag);
-	}
+	if(item->giType == IT_WEAPON) CG_RegisterWeapon(item->giTag);
 }
 
 /*

@@ -496,9 +496,7 @@ static void CG_RegisterSounds(void) {
 		cgs.media.footsteps[FOOTSTEP_METAL][i] = trap_S_RegisterSound(name, false);
 	}
 
-	for(i = 1; i < jsd_itemCount; i++) {
-		CG_RegisterItemSounds(i);
-	}
+	for(i = 0; i < jsd_itemCount; i++) CG_RegisterItemSounds(i);
 
 	for(i = 1; i < MAX_SOUNDS; i++) {
 		soundName = CG_ConfigString(CS_SOUNDS + i);
@@ -659,7 +657,7 @@ static void CG_RegisterGraphics(void) {
 	memset(cg_items, 0, sizeof(cg_items));
 	memset(cg_weapons, 0, sizeof(cg_weapons));
 
-	for(i = 1; i < jsd_itemCount; i++) {
+	for(i = 0; i < jsd_itemCount; i++) {
 		CG_LoadingItem(i);
 		CG_RegisterItemVisuals(i);
 	}

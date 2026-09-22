@@ -554,20 +554,10 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 				int index;
 
 				index = es->eventParm;  // player predicted
-
-				if(index < 1 || index >= jsd_itemCount) {
-					break;
-				}
+				if(index < 1 || index >= jsd_itemCount) break;
 				item = &jsd_item[index];
-				// powerup pickups are global
-				if(item->pickup_sound) {
-					trap_S_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, false));
-				}
-
-				// show icon and name on status bar
-				if(es->number == cg.snap->ps.clientNum) {
-					CG_ItemPickup(index);
-				}
+				if(strlen(item->pickup_sound)) trap_S_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, false));
+				if(es->number == cg.snap->ps.clientNum) CG_ItemPickup(index);
 			}
 			break;
 

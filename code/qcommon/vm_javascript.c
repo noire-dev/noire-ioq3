@@ -78,9 +78,9 @@ static void API_Item(int itemID, int fieldID, int i1, int i2, int i3, int i4) {
 
 	API_FIELD(JSE_String(jsd_item[itemID].classname, MAX_JS_STRINGSIZE))
 	API_FIELD(JSE_String(jsd_item[itemID].pickup_sound, MAX_JS_STRINGSIZE))
-	API_FIELD(bounds(i1, MAX_ITEM_MODELS, "API_Item -> world_model"); JSE_String(jsd_item[itemID].world_model[i1], MAX_JS_STRINGSIZE))
-	API_FIELD(JSE_String(jsd_item[itemID].icon, MAX_JS_STRINGSIZE))
 	API_FIELD(JSE_String(jsd_item[itemID].pickup_name, MAX_JS_STRINGSIZE))
+	API_FIELD(JSE_String(jsd_item[itemID].model, MAX_JS_STRINGSIZE))
+	API_FIELD(JSE_String(jsd_item[itemID].icon, MAX_JS_STRINGSIZE))
 	API_FIELD(JSE_Int(&jsd_item[itemID].quantity))
 	API_FIELD(JSE_Int((int*)&jsd_item[itemID].giType))
 	API_FIELD(JSE_Int(&jsd_item[itemID].giTag))
