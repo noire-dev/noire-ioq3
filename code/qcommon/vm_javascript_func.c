@@ -167,3 +167,15 @@ void JS_ItemInit(int vmIndex) {
 	jsargs.v[0].i = vmIndex;
 	JS_Function(JS_ITEMINIT);
 }
+
+int JS_CommandRun(void) {
+	JS_StackClean();
+
+	for(int i = 0; i < trap_Argc() && i < MAX_JS_ARGS; i++) {
+		jsargs.t[i] = JS_TYPE_STRING;
+		trap_Argv(i, jsargs.v[i].s, MAX_JS_STRINGSIZE);
+	}
+
+	JS_Function(JS_COMMANDRUN);
+	return jsresult.v.i;
+}

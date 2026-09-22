@@ -44,6 +44,7 @@ typedef enum {
 	JS_TOOLCALL,
 	JS_GAMERUNFRAME,
 	JS_ITEMINIT,
+	JS_COMMANDRUN,
 } jscall_t;
 
 typedef enum {
@@ -140,6 +141,7 @@ void JS_ToolInit(int id);
 void JS_ToolCall(int id, int targetID, int playerID, char* arg1, char* arg2, char* arg3, char* arg4, char* arg5, char* arg6, char* arg7, char* arg8, char* arg9);
 void JS_GameRunFrame(int levelTime);
 void JS_ItemInit(int vmIndex);
+int JS_CommandRun(void);
 
 void JS_SystemInit(int vmIndex);
 

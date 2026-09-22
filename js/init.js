@@ -20,6 +20,7 @@ const js = {
     callTool: jsCount += 1,
     gameRunFrame: jsCount += 1,
     itemInit: jsCount += 1,
+    commandRun: jsCount += 1,
 };
 
 const vmCount = -1;
@@ -118,6 +119,7 @@ openjs.file("js/cvar");
 openjs.file("js/translation");
 openjs.file("js/api");
 openjs.file("js/color");
+openjs.file("js/command");
 openjs.file("js/cgui");
 openjs.file("js/ui");
 openjs.file("js/utils");

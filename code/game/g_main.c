@@ -478,6 +478,8 @@ void G_RunFrame(int levelTime) {
 	// get any cvar changes
 	G_UpdateCvars();
 
+	JS_GameRunFrame(level.time);
+
 	//
 	// go through all allocated objects
 	//
@@ -491,12 +493,7 @@ void G_RunFrame(int levelTime) {
 		if(level.time - ent->eventTime > EVENT_VALID_MSEC) {
 			if(ent->s.event) {
 				ent->s.event = 0;  // &= EV_EVENT_BITS;
-				if(ent->client) {
-					ent->client->ps.externalEvent = 0;
-					// predicted events should never be set to zero
-					// ent->client->ps.events[0] = 0;
-					// ent->client->ps.events[1] = 0;
-				}
+				if(ent->client) ent->client->ps.externalEvent = 0;
 			}
 			if(ent->freeAfterEvent) {
 				// tempEntities or dropped items completely go away after their event
