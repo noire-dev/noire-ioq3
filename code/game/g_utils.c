@@ -192,35 +192,15 @@ match (string)self.target and call their .use function
 ==============================
 */
 void G_UseTargets(gentity_t* ent, gentity_t* activator) {
-	gentity_t* t;
+	gentity_t* t = NULL;
 
-	if(!ent) {
-		return;
-	}
+	if(!ent || !ent->target) return;
 
-	if(ent->targetShaderName && ent->targetShaderNewName) {
-		float f = level.time * 0.001;
-		AddRemap(ent->targetShaderName, ent->targetShaderNewName, f);
-		trap_SetConfigstring(CS_SHADERSTATE, BuildShaderStateConfig());
-	}
-
-	if(!ent->target) {
-		return;
-	}
-
-	t = NULL;
 	while((t = G_Find(t, FOFS(targetname), ent->target)) != NULL) {
-		if(t == ent) {
+		if(t == ent)
 			G_Printf("WARNING: Entity used itself.\n");
-		} else {
-			if(t->use) {
-				t->use(t, ent, activator);
-			}
-		}
-		if(!ent->inuse) {
-			G_Printf("entity was removed while using targets\n");
-			return;
-		}
+		else if(t->use)
+			t->use(t, ent, activator);
 	}
 }
 

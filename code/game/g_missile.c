@@ -171,13 +171,8 @@ void G_RunMissile(gentity_t* ent) {
 	// get current position
 	BG_EvaluateTrajectory(&ent->s.pos, level.time, origin);
 
-	// if this missile bounced off an invulnerability sphere
-	if(ent->target_ent) {
-		passent = ent->target_ent->s.number;
-	} else {
-		// ignore interactions with the missile owner
-		passent = ent->r.ownerNum;
-	}
+	passent = ent->r.ownerNum;
+
 	// trace a line from the previous position to the current position
 	trap_Trace(&tr, ent->r.currentOrigin, ent->r.mins, ent->r.maxs, origin, passent, ent->clipmask);
 
@@ -234,7 +229,6 @@ gentity_t* fire_plasma(gentity_t* self, vec3_t start, vec3_t dir) {
 	bolt->methodOfDeath = MOD_PLASMA;
 	bolt->splashMethodOfDeath = MOD_PLASMA_SPLASH;
 	bolt->clipmask = MASK_SHOT;
-	bolt->target_ent = NULL;
 
 	bolt->s.pos.trType = TR_LINEAR;
 	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;  // move a bit on the very first frame
@@ -275,7 +269,6 @@ gentity_t* fire_grenade(gentity_t* self, vec3_t start, vec3_t dir) {
 	bolt->methodOfDeath = MOD_GRENADE;
 	bolt->splashMethodOfDeath = MOD_GRENADE_SPLASH;
 	bolt->clipmask = MASK_SHOT;
-	bolt->target_ent = NULL;
 
 	bolt->s.pos.trType = TR_GRAVITY;
 	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;  // move a bit on the very first frame
@@ -315,7 +308,6 @@ gentity_t* fire_bfg(gentity_t* self, vec3_t start, vec3_t dir) {
 	bolt->methodOfDeath = MOD_BFG;
 	bolt->splashMethodOfDeath = MOD_BFG_SPLASH;
 	bolt->clipmask = MASK_SHOT;
-	bolt->target_ent = NULL;
 
 	bolt->s.pos.trType = TR_LINEAR;
 	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;  // move a bit on the very first frame
@@ -354,7 +346,6 @@ gentity_t* fire_rocket(gentity_t* self, vec3_t start, vec3_t dir) {
 	bolt->methodOfDeath = MOD_ROCKET;
 	bolt->splashMethodOfDeath = MOD_ROCKET_SPLASH;
 	bolt->clipmask = MASK_SHOT;
-	bolt->target_ent = NULL;
 
 	bolt->s.pos.trType = TR_LINEAR;
 	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;  // move a bit on the very first frame

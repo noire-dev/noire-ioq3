@@ -110,16 +110,11 @@ struct gentity_s {
 	gentity_t* prevTrain;
 	vec3_t pos1, pos2;
 
-	char* message;
-
 	int timestamp;  // body queue sinking, etc
 
 	char* target;
 	char* targetname;
 	char* team;
-	char* targetShaderName;
-	char* targetShaderNewName;
-	gentity_t* target_ent;
 
 	float speed;
 	vec3_t movedir;
@@ -172,29 +167,6 @@ struct gentity_s {
 
 typedef enum { CON_DISCONNECTED, CON_CONNECTING, CON_CONNECTED } clientConnected_t;
 
-typedef enum {
-	TEAM_BEGIN,  // Beginning a team game, spawn at base
-	TEAM_ACTIVE  // Now actively playing
-} playerTeamStateState_t;
-
-typedef struct {
-	playerTeamStateState_t state;
-
-	int location;
-
-	int captures;
-	int basedefense;
-	int carrierdefense;
-	int flagrecovery;
-	int fragcarrier;
-	int assists;
-
-	float lasthurtcarrier;
-	float lastreturnedflag;
-	float flagsince;
-	float lastfraggedcarrier;
-} playerTeamState_t;
-
 // client data that stays across multiple levels or tournament restarts
 // this is achieved by writing all the data to cvar strings at game shutdown
 // time and reading them back at connection time.  Anything added here
@@ -217,11 +189,10 @@ typedef struct {
 	bool initialSpawn;  // the first spawn should be at a cool location
 	bool pmoveFixed;    //
 	char netname[MAX_NETNAME];
-	int enterTime;                // level.time the client entered the game
-	playerTeamState_t teamState;  // status in teamplay games
-	int voteCount;                // to prevent people from constantly calling votes
-	int teamVoteCount;            // to prevent people from constantly calling votes
-	bool teamInfo;                // send team overlay updates?
+	int enterTime;      // level.time the client entered the game
+	int voteCount;      // to prevent people from constantly calling votes
+	int teamVoteCount;  // to prevent people from constantly calling votes
+	bool teamInfo;      // send team overlay updates?
 } clientPersistant_t;
 
 // this structure is cleared on each ClientSpawn(),
@@ -584,9 +555,6 @@ extern vmCvar_t g_blueteam;
 extern vmCvar_t g_smoothClients;
 extern vmCvar_t g_enableDust;
 extern vmCvar_t g_enableBreath;
-extern vmCvar_t g_singlePlayer;
-extern vmCvar_t g_proxMineTimeout;
-extern vmCvar_t g_localTeamPref;
 
 void trap_LocateGameData(gentity_t* gEnts, int numGEntities, int sizeofGEntity_t, playerState_t* gameClients, int sizeofGameClient);
 void trap_DropClient(int clientNum, const char* reason);

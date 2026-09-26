@@ -97,8 +97,6 @@ field_t fields[] = {{"classname", FOFS(classname), F_STRING},
                     {"dmg", FOFS(damage), F_INT},
                     {"angles", FOFS(s.angles), F_VECTOR},
                     {"angle", FOFS(s.angles), F_ANGLEHACK},
-                    {"targetShaderName", FOFS(targetShaderName), F_STRING},
-                    {"targetShaderNewName", FOFS(targetShaderNewName), F_STRING},
 
                     {NULL}};
 

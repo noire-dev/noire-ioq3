@@ -69,7 +69,6 @@ vmCvar_t g_banIPs;
 vmCvar_t g_filterBan;
 vmCvar_t g_smoothClients;
 vmCvar_t g_listEntity;
-vmCvar_t g_localTeamPref;
 
 static cvarTable_t gameCvarTable[] = {
     // don't override the cheat state set by the system
@@ -119,9 +118,7 @@ static cvarTable_t gameCvarTable[] = {
     {&g_blood, "com_blood", "1", 0, 0, false},
 
     {&g_listEntity, "g_listEntity", "0", 0, 0, false},
-    {&g_smoothClients, "g_smoothClients", "1", 0, 0, false},
-
-    {&g_localTeamPref, "g_localTeamPref", "", 0, 0, false}
+    {&g_smoothClients, "g_smoothClients", "1", 0, 0, false}
 
 };
 

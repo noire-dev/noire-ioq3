@@ -707,7 +707,6 @@ void ClientBegin(int clientNum) {
 
 	client->pers.connected = CON_CONNECTED;
 	client->pers.enterTime = level.time;
-	client->pers.teamState.state = TEAM_BEGIN;
 
 	// save eflags around this, because changing teams will
 	// cause this to happen with a valid entity, and we
@@ -766,7 +765,6 @@ void ClientSpawn(gentity_t* ent) {
 		// don't spawn near existing origin if possible
 		spawnPoint = SelectSpawnPoint(client->ps.origin, spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
 	}
-	client->pers.teamState.state = TEAM_ACTIVE;
 
 	// always clear the kamikaze flag
 	ent->s.eFlags &= ~EF_KAMIKAZE;
