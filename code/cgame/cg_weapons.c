@@ -836,7 +836,7 @@ The main player will have this called for BOTH cases, so effects like light and
 sound should only be done on the world model case.
 =============
 */
-void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent, int team) {
+void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent) {
 	refEntity_t gun;
 	refEntity_t barrel;
 	refEntity_t flash;
@@ -1059,7 +1059,7 @@ void CG_AddViewWeapon(playerState_t* ps) {
 	hand.renderfx = RF_DEPTHHACK | RF_FIRST_PERSON | RF_MINLIGHT;
 
 	// add everything onto the hand
-	CG_AddPlayerWeapon(&hand, ps, &cg.predictedPlayerEntity, ps->persistant[PERS_TEAM]);
+	CG_AddPlayerWeapon(&hand, ps, &cg.predictedPlayerEntity);
 }
 
 void CG_NextWeapon_f(void) {

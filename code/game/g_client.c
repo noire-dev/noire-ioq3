@@ -456,32 +456,6 @@ void ClientRespawn(gentity_t* ent) {
 }
 
 /*
-================
-TeamCount
-
-Returns number of players on a team
-================
-*/
-int TeamCount(int ignoreClientNum, team_t team) {
-	int i;
-	int count = 0;
-
-	for(i = 0; i < level.maxclients; i++) {
-		if(i == ignoreClientNum) {
-			continue;
-		}
-		if(level.clients[i].pers.connected == CON_DISCONNECTED) {
-			continue;
-		}
-		if(level.clients[i].sess.sessionTeam == team) {
-			count++;
-		}
-	}
-
-	return count;
-}
-
-/*
 ===========
 ClientCleanName
 ============
@@ -527,7 +501,7 @@ if desired.
 */
 void ClientUserinfoChanged(int clientNum) {
 	gentity_t* ent;
-	int teamTask, teamLeader, health;
+	int health;
 	char* s;
 	char model[MAX_QPATH];
 	char headModel[MAX_QPATH];
@@ -535,8 +509,6 @@ void ClientUserinfoChanged(int clientNum) {
 	gclient_t* client;
 	char c1[MAX_INFO_STRING];
 	char c2[MAX_INFO_STRING];
-	char redTeam[MAX_INFO_STRING];
-	char blueTeam[MAX_INFO_STRING];
 	char userinfo[MAX_INFO_STRING];
 
 	ent = g_entities + clientNum;
@@ -566,33 +538,13 @@ void ClientUserinfoChanged(int clientNum) {
 	Q_strncpyz(model, Info_ValueForKey(userinfo, "model"), sizeof(model));
 	Q_strncpyz(headModel, Info_ValueForKey(userinfo, "headmodel"), sizeof(headModel));
 
-	// teamInfo
-	s = Info_ValueForKey(userinfo, "teamoverlay");
-	if(!*s || atoi(s) != 0) {
-		client->pers.teamInfo = true;
-	} else {
-		client->pers.teamInfo = false;
-	}
-
-	// team task (0 = none, 1 = offence, 2 = defence)
-	teamTask = atoi(Info_ValueForKey(userinfo, "teamtask"));
-	// team Leader (1 = leader, 0 is normal player)
-	teamLeader = client->sess.teamLeader;
-
 	// colors
 	Q_strncpyz(c1, Info_ValueForKey(userinfo, "color1"), sizeof(c1));
 	Q_strncpyz(c2, Info_ValueForKey(userinfo, "color2"), sizeof(c2));
 
-	Q_strncpyz(redTeam, Info_ValueForKey(userinfo, "g_redteam"), sizeof(redTeam));
-	Q_strncpyz(blueTeam, Info_ValueForKey(userinfo, "g_blueteam"), sizeof(blueTeam));
-
 	// send over a subset of the userinfo keys so other clients can
 	// print scoreboards, display models, and play custom sounds
-	if(ent->r.svFlags & SVF_BOT) {
-		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\skill\\%s\\tt\\%d\\tl\\%d", client->pers.netname, client->sess.sessionTeam, model, headModel, c1, c2, Info_ValueForKey(userinfo, "skill"), teamTask, teamLeader);
-	} else {
-		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\g_redteam\\%s\\g_blueteam\\%s\\c1\\%s\\c2\\%s\\tt\\%d\\tl\\%d", client->pers.netname, client->sess.sessionTeam, model, headModel, redTeam, blueTeam, c1, c2, teamTask, teamLeader);
-	}
+	s = va("n\\%s\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s", client->pers.netname, model, headModel, c1, c2);
 
 	trap_SetConfigstring(CS_PLAYERS + clientNum, s);
 }
@@ -738,7 +690,6 @@ void ClientSpawn(gentity_t* ent) {
 	gclient_t* client;
 	int i;
 	clientPersistant_t saved;
-	clientSession_t savedSess;
 	int persistant[MAX_PERSISTANT];
 	gentity_t* spawnPoint;
 	gentity_t* tent;
@@ -776,7 +727,6 @@ void ClientSpawn(gentity_t* ent) {
 
 	// clear everything but the persistant data
 	saved = client->pers;
-	savedSess = client->sess;
 	savedPing = client->ps.ping;
 	//	savedAreaBits = client->areabits;
 	accuracy_hits = client->accuracy_hits;
@@ -789,7 +739,6 @@ void ClientSpawn(gentity_t* ent) {
 	Com_Memset(client, 0, sizeof(*client));
 
 	client->pers = saved;
-	client->sess = savedSess;
 	client->ps.ping = savedPing;
 	//	client->areabits = savedAreaBits;
 	client->accuracy_hits = accuracy_hits;
@@ -802,7 +751,6 @@ void ClientSpawn(gentity_t* ent) {
 	client->ps.eventSequence = eventSequence;
 	// increment the spawncount so the client will detect the respawn
 	client->ps.persistant[PERS_SPAWN_COUNT]++;
-	client->ps.persistant[PERS_TEAM] = client->sess.sessionTeam;
 
 	client->airOutTime = level.time + 12000;
 
@@ -931,8 +879,6 @@ void ClientDisconnect(int clientNum) {
 	ent->inuse = false;
 	ent->classname = "disconnected";
 	ent->client->pers.connected = CON_DISCONNECTED;
-	ent->client->ps.persistant[PERS_TEAM] = TEAM_FREE;
-	ent->client->sess.sessionTeam = TEAM_FREE;
 
 	trap_SetConfigstring(CS_PLAYERS + clientNum, "");
 

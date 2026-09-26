@@ -88,7 +88,6 @@ field_t fields[] = {{"classname", FOFS(classname), F_STRING},
                     {"speed", FOFS(speed), F_FLOAT},
                     {"target", FOFS(target), F_STRING},
                     {"targetname", FOFS(targetname), F_STRING},
-                    {"message", FOFS(message), F_STRING},
                     {"team", FOFS(team), F_STRING},
                     {"wait", FOFS(wait), F_FLOAT},
                     {"random", FOFS(random), F_FLOAT},
@@ -418,7 +417,6 @@ bool G_ParseSpawnVars(void) {
 Every map should have exactly one worldspawn.
 "music"		music wav file
 "gravity"	800 is default gravity
-"message"	Text to print during connection process
 */
 void SP_worldspawn(void) {
 	char* s;
@@ -435,9 +433,6 @@ void SP_worldspawn(void) {
 
 	G_SpawnString("music", "", &s);
 	trap_SetConfigstring(CS_MUSIC, s);
-
-	G_SpawnString("message", "", &s);
-	trap_SetConfigstring(CS_MESSAGE, s);  // map specific message
 
 	trap_SetConfigstring(CS_MOTD, g_motd.string);  // message of the day
 

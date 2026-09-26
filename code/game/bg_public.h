@@ -196,7 +196,6 @@ typedef enum {
 	PERS_SCORE,           // !!! MUST NOT CHANGE, SERVER AND GAME BOTH REFERENCE !!!
 	PERS_HITS,            // total points damage inflicted so damage beeps can sound on change
 	PERS_RANK,            // player rank or team rank
-	PERS_TEAM,            // player team
 	PERS_SPAWN_COUNT,     // incremented every respawn
 	PERS_PLAYEREVENTS,    // 16 bits that can be flipped for events
 	PERS_ATTACKER,        // clientnum of last damage inflicter
@@ -415,12 +414,6 @@ typedef struct animation_s {
 // flip the togglebit every time an animation
 // changes so a restart of the same anim can be detected
 #define ANIM_TOGGLEBIT 128
-
-typedef enum {
-	TEAM_FREE,
-
-	TEAM_NUM_TEAMS
-} team_t;
 
 // Time between location updates
 #define TEAM_LOCATION_UPDATE_TIME 1000

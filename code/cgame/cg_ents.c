@@ -655,13 +655,6 @@ static void CG_CalcEntityLerpPositions(centity_t* cent) {
 
 /*
 ===============
-CG_TeamBase
-===============
-*/
-static void CG_TeamBase(centity_t* cent) { refEntity_t model; }
-
-/*
-===============
 CG_AddCEntity
 
 ===============
@@ -691,7 +684,6 @@ static void CG_AddCEntity(centity_t* cent) {
 		case ET_BEAM: CG_Beam(cent); break;
 		case ET_PORTAL: CG_Portal(cent); break;
 		case ET_SPEAKER: CG_Speaker(cent); break;
-		case ET_TEAM: CG_TeamBase(cent); break;
 	}
 }
 

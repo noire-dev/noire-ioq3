@@ -241,11 +241,6 @@ void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
 	int highScore, reward;
 	sfxHandle_t sfx;
 
-	// don't play the sounds if the player just changed teams
-	if(ps->persistant[PERS_TEAM] != ops->persistant[PERS_TEAM]) {
-		return;
-	}
-
 	// hit changes
 	if(ps->persistant[PERS_HITS] > ops->persistant[PERS_HITS]) {
 		trap_S_StartLocalSound(cgs.media.hitSound, CHAN_LOCAL_SOUND);

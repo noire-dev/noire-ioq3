@@ -313,9 +313,6 @@ typedef struct {
 	bool infoValid;
 
 	char name[MAX_QPATH];
-	team_t team;
-
-	int botSkill;  // 0 = not bot, 1-5 = bot
 
 	vec3_t color1;
 	vec3_t color2;
@@ -328,11 +325,6 @@ typedef struct {
 	int health;    // you only get this info about your teammates
 	int armor;
 	int curWeapon;
-
-	int handicap;
-
-	int teamTask;     // task in teamplay (offence/defence)
-	bool teamLeader;  // true when this is a team leader
 
 	int powerups;  // so can display quad/flag status
 
@@ -1140,7 +1132,7 @@ void CG_Bullet(vec3_t origin, int sourceEntityNum, vec3_t normal, bool flesh, in
 
 void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end);
 void CG_AddViewWeapon(playerState_t* ps);
-void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent, int team);
+void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent);
 
 //
 // cg_marks.c

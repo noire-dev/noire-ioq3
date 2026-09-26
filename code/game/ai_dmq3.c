@@ -115,14 +115,14 @@ int BotCTFCarryingFlag(bot_state_t* bs) { return CTF_FLAG_NONE; }
 BotTeam
 ==================
 */
-int BotTeam(bot_state_t* bs) { return TEAM_FREE; }
+int BotTeam(bot_state_t* bs) { return 0; }
 
 /*
 ==================
 BotOppositeTeam
 ==================
 */
-int BotOppositeTeam(bot_state_t* bs) { return TEAM_FREE; }
+int BotOppositeTeam(bot_state_t* bs) { return 0; }
 
 /*
 ==================

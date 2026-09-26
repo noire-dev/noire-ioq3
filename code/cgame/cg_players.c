@@ -749,32 +749,6 @@ void CG_NewClientInfo(int clientNum) {
 	newInfo.c2RGBA[2] = 255 * newInfo.color2[2];
 	newInfo.c2RGBA[3] = 255;
 
-	// bot skill
-	v = Info_ValueForKey(configstring, "skill");
-	newInfo.botSkill = atoi(v);
-
-	// handicap
-	v = Info_ValueForKey(configstring, "hc");
-	newInfo.handicap = atoi(v);
-
-	// team
-	v = Info_ValueForKey(configstring, "t");
-	newInfo.team = atoi(v);
-
-	// team task
-	v = Info_ValueForKey(configstring, "tt");
-	newInfo.teamTask = atoi(v);
-
-	// team leader
-	v = Info_ValueForKey(configstring, "tl");
-	newInfo.teamLeader = atoi(v);
-
-	v = Info_ValueForKey(configstring, "g_redteam");
-	Q_strncpyz(newInfo.redTeam, v, MAX_TEAMNAME);
-
-	v = Info_ValueForKey(configstring, "g_blueteam");
-	Q_strncpyz(newInfo.blueTeam, v, MAX_TEAMNAME);
-
 	// model
 	v = Info_ValueForKey(configstring, "model");
 	if(cg_forceModel.integer) {
@@ -1479,59 +1453,6 @@ static void CG_PlayerFloatSprite(centity_t* cent, qhandle_t shader) {
 
 /*
 ===============
-CG_PlayerSprites
-
-Float sprites over the player's head
-===============
-*/
-static void CG_PlayerSprites(centity_t* cent) {
-	int team;
-
-	if(cent->currentState.eFlags & EF_CONNECTION) {
-		CG_PlayerFloatSprite(cent, cgs.media.connectionShader);
-		return;
-	}
-
-	if(cent->currentState.eFlags & EF_TALK) {
-		CG_PlayerFloatSprite(cent, cgs.media.balloonShader);
-		return;
-	}
-
-	if(cent->currentState.eFlags & EF_AWARD_IMPRESSIVE) {
-		CG_PlayerFloatSprite(cent, cgs.media.medalImpressive);
-		return;
-	}
-
-	if(cent->currentState.eFlags & EF_AWARD_EXCELLENT) {
-		CG_PlayerFloatSprite(cent, cgs.media.medalExcellent);
-		return;
-	}
-
-	if(cent->currentState.eFlags & EF_AWARD_GAUNTLET) {
-		CG_PlayerFloatSprite(cent, cgs.media.medalGauntlet);
-		return;
-	}
-
-	if(cent->currentState.eFlags & EF_AWARD_DEFEND) {
-		CG_PlayerFloatSprite(cent, cgs.media.medalDefend);
-		return;
-	}
-
-	if(cent->currentState.eFlags & EF_AWARD_ASSIST) {
-		CG_PlayerFloatSprite(cent, cgs.media.medalAssist);
-		return;
-	}
-
-	if(cent->currentState.eFlags & EF_AWARD_CAP) {
-		CG_PlayerFloatSprite(cent, cgs.media.medalCapture);
-		return;
-	}
-
-	team = cgs.clientinfo[cent->currentState.clientNum].team;
-}
-
-/*
-===============
 CG_PlayerShadow
 
 Returns the Z component of the surface being shadowed
@@ -1766,9 +1687,6 @@ void CG_Player(centity_t* cent) {
 	// get the animation state (after rotation, to allow feet shuffle)
 	CG_PlayerAnimation(cent, &legs.oldframe, &legs.frame, &legs.backlerp, &torso.oldframe, &torso.frame, &torso.backlerp);
 
-	// add the talk baloon or disconnect icon
-	CG_PlayerSprites(cent);
-
 	// add the shadow
 	shadow = CG_PlayerShadow(cent, &shadowPlane);
 
@@ -1837,16 +1755,10 @@ void CG_Player(centity_t* cent) {
 	trap_R_AddRefEntityToScene(&head);
 
 	// add player name
-	if(cent->currentState.number != cg.snap->ps.clientNum) {
-		if(ci->team == cg.snap->ps.persistant[PERS_TEAM] && ci->team != TEAM_FREE) {
-			CG_Add3DString(cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2] + 48, ci->name, FONTSTYLE_DROPSHADOW, color_white, 0.50, 2048, 3072, false);
-		} else if(ci->team == TEAM_FREE) {
-			CG_Add3DString(cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2] + 48, ci->name, FONTSTYLE_DROPSHADOW, color_white, 0.50, 512, 1536, true);
-		}
-	}
+	if(cent->currentState.number != cg.snap->ps.clientNum) CG_Add3DString(cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2] + 48, ci->name, FONTSTYLE_DROPSHADOW, color_white, 0.50, 512, 1536, true);
 
 	// add the gun / barrel / flash
-	CG_AddPlayerWeapon(&torso, NULL, cent, ci->team);
+	CG_AddPlayerWeapon(&torso, NULL, cent);
 }
 
 //=====================================================================

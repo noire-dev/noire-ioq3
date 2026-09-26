@@ -59,7 +59,7 @@ static void CG_DrawClientScore(int y, score_t* score) {
 	drawStringAdjusted((SCOREB_X + 8 + ICON_SIZE) + ((FONT_SIZE * FONT_WIDTH) * 54) * 0.56, y + 2, scoreText, FONTSTYLE_RIGHT | FONTSTYLE_DROPSHADOW, color_white, 0.56, 256);
 }
 
-static int CG_TeamScoreboard(int y, team_t team, int maxClients, int lineHeight) {
+static int CG_Scoreboard(int y, int maxClients, int lineHeight) {
 	int i, count;
 	score_t* score;
 	bool localFinded;
@@ -70,7 +70,6 @@ static int CG_TeamScoreboard(int y, team_t team, int maxClients, int lineHeight)
 	for(i = 0; i < cg.numScores && count < maxClients; i++) {
 		score = &cg.scores[i];
 		ci = &cgs.clientinfo[score->client];
-		if(team != ci->team) continue;
 		if(score->client == 0) {
 			if(localFinded) continue;
 			localFinded = true;
@@ -95,6 +94,6 @@ void CG_DrawScoreboard(void) {
 	y = 50;
 	lineHeight = SB_INTER_HEIGHT;
 	maxClients = 25;
-	n1 = CG_TeamScoreboard(y, TEAM_FREE, maxClients, lineHeight);
+	n1 = CG_Scoreboard(y, maxClients, lineHeight);
 	y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
 }

@@ -167,15 +167,6 @@ struct gentity_s {
 
 typedef enum { CON_DISCONNECTED, CON_CONNECTING, CON_CONNECTED } clientConnected_t;
 
-// client data that stays across multiple levels or tournament restarts
-// this is achieved by writing all the data to cvar strings at game shutdown
-// time and reading them back at connection time.  Anything added here
-// MUST be dealt with
-typedef struct {
-	team_t sessionTeam;
-	bool teamLeader;  // true when this client is a team leader
-} clientSession_t;
-
 //
 #define MAX_NETNAME 36
 #define MAX_VOTE_COUNT 3
@@ -196,14 +187,13 @@ typedef struct {
 } clientPersistant_t;
 
 // this structure is cleared on each ClientSpawn(),
-// except for 'client->pers' and 'client->sess'
+// except for 'client->pers'
 struct gclient_s {
 	// ps MUST be the first element, because the server expects it
 	playerState_t ps;  // communicated by server to clients
 
 	// the rest of the structure is private to game
 	clientPersistant_t pers;
-	clientSession_t sess;
 
 	bool noclip;
 
@@ -276,9 +266,6 @@ typedef struct {
 	int previousTime;  // so movers can back up when blocked
 
 	int startTime;  // level.time the map was started
-
-	int teamScores[TEAM_NUM_TEAMS];
-	int lastTeamLocationTime;  // last time of client team location update
 
 	bool restarted;  // waiting for a map_restart to fire
 
@@ -424,7 +411,6 @@ bool CheckGauntletAttack(gentity_t* ent);
 //
 // g_client.c
 //
-int TeamCount(int ignoreClientNum, team_t team);
 void SetClientViewAngle(gentity_t* ent, vec3_t angle);
 gentity_t* SelectSpawnPoint(vec3_t avoidPoint, vec3_t origin, vec3_t angles, bool isbot);
 void CopyToBodyQue(gentity_t* ent);
