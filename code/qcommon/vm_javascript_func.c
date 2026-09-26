@@ -168,12 +168,15 @@ void JS_ItemInit(int vmIndex) {
 	JS_Function(JS_ITEMINIT);
 }
 
-int JS_CommandRun(void) {
+int JS_CommandRun(int clientNum) {
 	JS_StackClean();
 
-	for(int i = 0; i < trap_Argc() && i < MAX_JS_ARGS; i++) {
-		jsargs.t[i] = JS_TYPE_STRING;
-		trap_Argv(i, jsargs.v[i].s, MAX_JS_STRINGSIZE);
+	jsargs.t[0] = JS_TYPE_INT;
+	jsargs.v[0].i = clientNum;
+
+	for(int i = 0; i < trap_Argc() && i < MAX_JS_ARGS - 1; i++) {
+		jsargs.t[i + 1] = JS_TYPE_STRING;
+		trap_Argv(i, jsargs.v[i + 1].s, MAX_JS_STRINGSIZE);
 	}
 
 	JS_Function(JS_COMMANDRUN);

@@ -583,7 +583,7 @@ void ClientCommand(int clientNum) {
 		Cmd_Where_f(ent);
 	else if(Q_stricmp(cmd, "setviewpos") == 0)
 		Cmd_SetViewpos_f(ent);
-	else if(JS_CommandRun() != -1)
+	else if(JS_CommandRun(clientNum) != -1)
 		return;
 	else
 		trap_SendServerCommand(clientNum, va("print \"unknown cmd %s\n\"", cmd));

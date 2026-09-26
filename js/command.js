@@ -6,8 +6,8 @@ command.register = function (name, func) {
 }
 
 command.run = function (args) {
-    if (typeof command.data[args[0]] === 'function')
-        return command.data[args[0]](args);
+    if (typeof command.data[args[1]] === 'function')
+        return command.data[args[1]](args);
 
     return -1;
 }
