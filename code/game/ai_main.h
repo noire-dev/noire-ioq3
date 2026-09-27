@@ -168,7 +168,6 @@ typedef struct bot_state_s {
 	float check_time;                       // time to check for nearby items
 	float stand_time;                       // time the bot is standing still
 	float lastchat_time;                    // time the bot last selected a chat
-	float kamikaze_time;                    // time to check for kamikaze usage
 	float invulnerability_time;             // time to check for invulnerability usage
 	float standfindenemy_time;              // time to find enemy while standing
 	float attackstrafe_time;                // time the bot is strafing in one dir
@@ -199,10 +198,6 @@ typedef struct bot_state_s {
 	vec3_t aimtarget;
 	vec3_t enemyvelocity;  // enemy velocity 0.5 secs ago during battle
 	vec3_t enemyorigin;    // enemy origin 0.5 secs ago during battle
-	//
-	int kamikazebody;  // kamikaze body
-	int proxmines[MAX_PROXMINES];
-	int numproxmines;
 	//
 	int character;  // the bot character
 	int ms;         // move state of the bot

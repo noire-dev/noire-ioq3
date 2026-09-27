@@ -658,7 +658,6 @@ void ClientBegin(int clientNum) {
 	ent->client = client;
 
 	client->pers.connected = CON_CONNECTED;
-	client->pers.enterTime = level.time;
 
 	// save eflags around this, because changing teams will
 	// cause this to happen with a valid entity, and we
@@ -695,8 +694,6 @@ void ClientSpawn(gentity_t* ent) {
 	gentity_t* tent;
 	int flags;
 	int savedPing;
-	//	char	*savedAreaBits;
-	int accuracy_hits, accuracy_shots;
 	int eventSequence;
 	char userinfo[MAX_INFO_STRING];
 
@@ -705,20 +702,7 @@ void ClientSpawn(gentity_t* ent) {
 
 	VectorClear(spawn_origin);
 
-	// find a spawn point
-	// do it before setting health back up, so farthest
-	// ranging doesn't count this client
-	// the first spawn should be at a good looking spot
-	if(!client->pers.initialSpawn && client->pers.localClient) {
-		client->pers.initialSpawn = true;
-		spawnPoint = SelectInitialSpawnPoint(spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
-	} else {
-		// don't spawn near existing origin if possible
-		spawnPoint = SelectSpawnPoint(client->ps.origin, spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
-	}
-
-	// always clear the kamikaze flag
-	ent->s.eFlags &= ~EF_KAMIKAZE;
+	spawnPoint = SelectSpawnPoint(client->ps.origin, spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
 
 	// toggle the teleport bit so the client knows to not lerp
 	// and never clear the voted flag
@@ -728,9 +712,6 @@ void ClientSpawn(gentity_t* ent) {
 	// clear everything but the persistant data
 	saved = client->pers;
 	savedPing = client->ps.ping;
-	//	savedAreaBits = client->areabits;
-	accuracy_hits = client->accuracy_hits;
-	accuracy_shots = client->accuracy_shots;
 	for(i = 0; i < MAX_PERSISTANT; i++) {
 		persistant[i] = client->ps.persistant[i];
 	}
@@ -740,9 +721,6 @@ void ClientSpawn(gentity_t* ent) {
 
 	client->pers = saved;
 	client->ps.ping = savedPing;
-	//	client->areabits = savedAreaBits;
-	client->accuracy_hits = accuracy_hits;
-	client->accuracy_shots = accuracy_shots;
 	client->lastkilled_client = -1;
 
 	for(i = 0; i < MAX_PERSISTANT; i++) {

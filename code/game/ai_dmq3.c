@@ -2841,10 +2841,6 @@ void BotCheckSnapshot(bot_state_t* bs) {
 
 	// remove all avoid spots
 	trap_BotAddAvoidSpot(bs->ms, vec3_origin, 0, AVOID_CLEAR);
-	// reset kamikaze body
-	bs->kamikazebody = 0;
-	// reset number of proxmines
-	bs->numproxmines = 0;
 	//
 	ent = 0;
 	while((ent = BotAI_GetSnapshotEntity(bs->client, ent, &state)) != -1) {

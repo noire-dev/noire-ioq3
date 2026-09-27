@@ -68,179 +68,36 @@ const char* CG_PlaceString(int rank) {
 	return str;
 }
 
-/*
-=============
-CG_Obituary
-=============
-*/
 static void CG_Obituary(entityState_t* ent) {
-	int mod;
-	int target, attacker;
-	char* message;
-	char* message2;
-	const char* targetInfo;
-	const char* attackerInfo;
-	char targetName[32];
-	char attackerName[32];
-	gender_t gender;
-	clientInfo_t* ci;
+	int mod, target, attacker;
+	const char *targetInfo, *attackerInfo;
+	char targetName[MAX_NETNAME], attackerName[MAX_NETNAME];
 
-	target = ent->otherEntityNum;
-	attacker = ent->otherEntityNum2;
+	attacker = ent->otherEntityNum;
+	target = ent->otherEntityNum2;
 	mod = ent->eventParm;
 
-	if(target < 0 || target >= MAX_CLIENTS) {
-		CG_Error("CG_Obituary: target out of range");
-	}
-	ci = &cgs.clientinfo[target];
+	if(target < 0 || target >= MAX_CLIENTS) CG_Error("CG_Obituary: target out of range");
 
-	if(attacker < 0 || attacker >= MAX_CLIENTS) {
-		attacker = ENTITYNUM_WORLD;
+	if(attacker < 0 || attacker >= MAX_CLIENTS)
 		attackerInfo = NULL;
-	} else {
+	else
 		attackerInfo = CG_ConfigString(CS_PLAYERS + attacker);
-	}
 
 	targetInfo = CG_ConfigString(CS_PLAYERS + target);
-	if(!targetInfo) {
-		return;
-	}
+	if(!targetInfo) return;
 	Q_strncpyz(targetName, Info_ValueForKey(targetInfo, "n"), sizeof(targetName) - 2);
 	strcat(targetName, S_COLOR_WHITE);
 
-	message2 = "";
-
-	// check for single client messages
-
-	switch(mod) {
-		case MOD_SUICIDE: message = "suicides"; break;
-		case MOD_FALLING: message = "cratered"; break;
-		case MOD_CRUSH: message = "was squished"; break;
-		case MOD_WATER: message = "sank like a rock"; break;
-		case MOD_SLIME: message = "melted"; break;
-		case MOD_LAVA: message = "does a back flip into the lava"; break;
-		case MOD_TARGET_LASER: message = "saw the light"; break;
-		case MOD_TRIGGER_HURT: message = "was in the wrong place"; break;
-		default: message = NULL; break;
-	}
-
-	if(attacker == target) {
-		gender = ci->gender;
-		switch(mod) {
-			case MOD_GRENADE_SPLASH:
-				if(gender == GENDER_FEMALE)
-					message = "tripped on her own grenade";
-				else if(gender == GENDER_NEUTER)
-					message = "tripped on its own grenade";
-				else
-					message = "tripped on his own grenade";
-				break;
-			case MOD_ROCKET_SPLASH:
-				if(gender == GENDER_FEMALE)
-					message = "blew herself up";
-				else if(gender == GENDER_NEUTER)
-					message = "blew itself up";
-				else
-					message = "blew himself up";
-				break;
-			case MOD_PLASMA_SPLASH:
-				if(gender == GENDER_FEMALE)
-					message = "melted herself";
-				else if(gender == GENDER_NEUTER)
-					message = "melted itself";
-				else
-					message = "melted himself";
-				break;
-			case MOD_BFG_SPLASH: message = "should have used a smaller gun"; break;
-			default:
-				if(gender == GENDER_FEMALE)
-					message = "killed herself";
-				else if(gender == GENDER_NEUTER)
-					message = "killed itself";
-				else
-					message = "killed himself";
-				break;
-		}
-	}
-
-	if(message) {
-		CG_Printf("%s %s.\n", targetName, message);
-		return;
-	}
-
-	// check for kill messages from the current clientNum
-	if(attacker == cg.snap->ps.clientNum) {
-		char* s;
-
-		s = va("You fragged %s\n%s place with %i", targetName, CG_PlaceString(cg.snap->ps.persistant[PERS_RANK] + 1), cg.snap->ps.persistant[PERS_SCORE]);
-		// CG_CenterPrint(s, SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
-		//  print the text message as well
-	}
-
-	// check for double client messages
-	if(!attackerInfo) {
-		attacker = ENTITYNUM_WORLD;
-		strcpy(attackerName, "noname");
-	} else {
+	if(attackerInfo) {
 		Q_strncpyz(attackerName, Info_ValueForKey(attackerInfo, "n"), sizeof(attackerName) - 2);
 		strcat(attackerName, S_COLOR_WHITE);
-		// check for kill messages about the current clientNum
-		if(target == cg.snap->ps.clientNum) {
-			Q_strncpyz(cg.killerName, attackerName, sizeof(cg.killerName));
-		}
 	}
 
-	if(attacker != ENTITYNUM_WORLD) {
-		switch(mod) {
-			case MOD_GAUNTLET: message = "was pummeled by"; break;
-			case MOD_MACHINEGUN: message = "was machinegunned by"; break;
-			case MOD_SHOTGUN: message = "was gunned down by"; break;
-			case MOD_GRENADE:
-				message = "ate";
-				message2 = "'s grenade";
-				break;
-			case MOD_GRENADE_SPLASH:
-				message = "was shredded by";
-				message2 = "'s shrapnel";
-				break;
-			case MOD_ROCKET:
-				message = "ate";
-				message2 = "'s rocket";
-				break;
-			case MOD_ROCKET_SPLASH:
-				message = "almost dodged";
-				message2 = "'s rocket";
-				break;
-			case MOD_PLASMA:
-				message = "was melted by";
-				message2 = "'s plasmagun";
-				break;
-			case MOD_PLASMA_SPLASH:
-				message = "was melted by";
-				message2 = "'s plasmagun";
-				break;
-			case MOD_RAILGUN: message = "was railed by"; break;
-			case MOD_LIGHTNING: message = "was electrocuted by"; break;
-			case MOD_BFG:
-			case MOD_BFG_SPLASH:
-				message = "was blasted by";
-				message2 = "'s BFG";
-				break;
-			case MOD_TELEFRAG:
-				message = "tried to invade";
-				message2 = "'s personal space";
-				break;
-			default: message = "was killed by"; break;
-		}
-
-		if(message) {
-			CG_Printf("%s %s %s%s\n", targetName, message, attackerName, message2);
-			return;
-		}
-	}
-
-	// we don't know what it was
-	CG_Printf("%s died.\n", targetName);
+	if(attackerInfo)
+		CG_AddNotify(va("%s -> %s", attackerName, targetName), NOTIFY_KILL, mod, "");
+	else
+		CG_AddNotify(va("%s", targetName), NOTIFY_KILL, mod, "");
 }
 
 /*
@@ -663,7 +520,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 
 		case EV_SHOTGUN:
 			DEBUGNAME("EV_SHOTGUN");
-			CG_ShotgunFire(es);
+			CG_ShotgunFire(es, es->weapon);
 			break;
 
 		case EV_GENERAL_SOUND:
@@ -720,12 +577,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 
 		case EV_GIB_PLAYER:
 			DEBUGNAME("EV_GIB_PLAYER");
-			// don't play gib sound when using the kamikaze because it interferes
-			// with the kamikaze sound, downside is that the gib sound will also
-			// not be played when someone is gibbed while just carrying the kamikaze
-			if(!(es->eFlags & EF_KAMIKAZE)) {
-				trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.gibSound);
-			}
+			trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.gibSound);
 			CG_GibPlayer(cent->lerpOrigin);
 			break;
 

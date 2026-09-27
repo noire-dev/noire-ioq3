@@ -93,18 +93,6 @@ void GibEntity(gentity_t* self, int killer) {
 	gentity_t* ent;
 	int i;
 
-	// if this entity still has kamikaze
-	if(self->s.eFlags & EF_KAMIKAZE) {
-		// check if there is a kamikaze timer around for this owner
-		for(i = 0; i < level.num_entities; i++) {
-			ent = &g_entities[i];
-			if(!ent->inuse) continue;
-			if(ent->activator != self) continue;
-			if(strcmp(ent->classname, "kamikaze timer")) continue;
-			G_FreeEntity(ent);
-			break;
-		}
-	}
 	G_AddEvent(self, EV_GIB_PLAYER, killer);
 	self->takedamage = false;
 	self->s.eType = ET_INVISIBLE;
@@ -128,9 +116,6 @@ void body_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int da
 	GibEntity(self, 0);
 }
 
-// these are just for logging, the client prints its own messages
-char* modNames[] = {"MOD_UNKNOWN", "MOD_SHOTGUN", "MOD_GAUNTLET", "MOD_MACHINEGUN", "MOD_GRENADE", "MOD_GRENADE_SPLASH", "MOD_ROCKET", "MOD_ROCKET_SPLASH", "MOD_PLASMA", "MOD_PLASMA_SPLASH", "MOD_RAILGUN", "MOD_LIGHTNING", "MOD_BFG", "MOD_BFG_SPLASH", "MOD_WATER", "MOD_SLIME", "MOD_LAVA", "MOD_CRUSH", "MOD_TELEFRAG", "MOD_FALLING", "MOD_SUICIDE", "MOD_TARGET_LASER", "MOD_TRIGGER_HURT", "MOD_GRAPPLE"};
-
 /*
 ==================
 player_die
@@ -142,33 +127,15 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 	int contents;
 	int killer;
 	int i;
-	char *killerName, *obit;
+	char* killerName;
 
 	if(self->client->ps.pm_type == PM_DEAD) return;
 	self->client->ps.pm_type = PM_DEAD;
 
-	if(attacker) {
+	if(attacker)
 		killer = attacker->s.number;
-		if(attacker->client) {
-			killerName = attacker->client->pers.netname;
-		} else {
-			killerName = "<non-client>";
-		}
-	} else {
+	else
 		killer = ENTITYNUM_WORLD;
-		killerName = "<world>";
-	}
-
-	if(killer < 0 || killer >= MAX_CLIENTS) {
-		killer = ENTITYNUM_WORLD;
-		killerName = "<world>";
-	}
-
-	if(meansOfDeath < 0 || meansOfDeath >= ARRAY_LEN(modNames)) {
-		obit = "<bad obituary>";
-	} else {
-		obit = modNames[meansOfDeath];
-	}
 
 	// broadcast the death event to everyone
 	ent = G_TempEntity(self->r.currentOrigin, EV_OBITUARY);
@@ -232,9 +199,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 
 			// for the no-blood option, we need to prevent the health
 			// from going to gib level
-			if(self->health <= GIB_HEALTH) {
-				self->health = GIB_HEALTH + 1;
-			}
+			if(self->health <= GIB_HEALTH) self->health = GIB_HEALTH + 1;
 
 			self->client->ps.legsAnim = ((self->client->ps.legsAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
 			self->client->ps.torsoAnim = ((self->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
@@ -590,7 +555,7 @@ bool CanDamage(gentity_t* targ, vec3_t origin) {
 G_RadiusDamage
 ============
 */
-bool G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float radius, gentity_t* ignore, int mod) {
+void G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float radius, gentity_t* ignore, int mod) {
 	float points, dist;
 	gentity_t* ent;
 	int entityList[MAX_GENTITIES];
@@ -599,11 +564,8 @@ bool G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float radi
 	vec3_t v;
 	vec3_t dir;
 	int i, e;
-	bool hitClient = false;
 
-	if(radius < 1) {
-		radius = 1;
-	}
+	if(radius < 1) radius = 1;
 
 	for(i = 0; i < 3; i++) {
 		mins[i] = origin[i] - radius;
@@ -620,33 +582,23 @@ bool G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float radi
 
 		// find the distance from the edge of the bounding box
 		for(i = 0; i < 3; i++) {
-			if(origin[i] < ent->r.absmin[i]) {
+			if(origin[i] < ent->r.absmin[i])
 				v[i] = ent->r.absmin[i] - origin[i];
-			} else if(origin[i] > ent->r.absmax[i]) {
+			else if(origin[i] > ent->r.absmax[i])
 				v[i] = origin[i] - ent->r.absmax[i];
-			} else {
+			else
 				v[i] = 0;
-			}
 		}
 
 		dist = VectorLength(v);
-		if(dist >= radius) {
-			continue;
-		}
+		if(dist >= radius) continue;
 
 		points = damage * (1.0 - dist / radius);
 
 		if(CanDamage(ent, origin)) {
-			if(LogAccuracyHit(ent, attacker)) {
-				hitClient = true;
-			}
 			VectorSubtract(ent->r.currentOrigin, origin, dir);
-			// push the center of mass higher than the origin so players
-			// get knocked into the air more
 			dir[2] += 24;
 			G_Damage(ent, NULL, attacker, dir, origin, (int)points, DAMAGE_RADIUS, mod);
 		}
 	}
-
-	return hitClient;
 }

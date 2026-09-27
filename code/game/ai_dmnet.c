@@ -893,94 +893,59 @@ void BotClearPath(bot_state_t* bs, bot_moveresult_t* moveresult) {
 	bsp_trace_t bsptrace;
 	entityState_t state;
 
-	// if there is a dead body wearing kamikze nearby
-	if(bs->kamikazebody) {
-		// if the bot's view angles and weapon are not used for movement
-		if(!(moveresult->flags & (MOVERESULT_MOVEMENTVIEW | MOVERESULT_MOVEMENTWEAPON))) {
-			//
-			BotAI_GetEntityState(bs->kamikazebody, &state);
-			VectorCopy(state.pos.trBase, target);
-			target[2] += 8;
-			VectorSubtract(target, bs->eye, dir);
-			vectoangles(dir, moveresult->ideal_viewangles);
-			//
-			moveresult->weapon = BotSelectActivateWeapon(bs);
-			if(moveresult->weapon == -1) {
-				// FIXME: run away!
-				moveresult->weapon = 0;
-			}
-			if(moveresult->weapon) {
-				//
-				moveresult->flags |= MOVERESULT_MOVEMENTWEAPON | MOVERESULT_MOVEMENTVIEW;
-				// if holding the right weapon
-				if(bs->cur_ps.weapon == moveresult->weapon) {
-					// if the bot is pretty close with its aim
-					if(InFieldOfVision(bs->viewangles, 20, moveresult->ideal_viewangles)) {
-						//
-						BotAI_Trace(&bsptrace, bs->eye, NULL, NULL, target, bs->entitynum, MASK_SHOT);
-						// if the mine is visible from the current position
-						if(bsptrace.fraction >= 1.0 || bsptrace.ent == state.number) {
-							// shoot at the mine
-							trap_EA_Attack(bs->client);
-						}
-					}
-				}
-			}
-		}
-	}
 	if(moveresult->flags & MOVERESULT_BLOCKEDBYAVOIDSPOT) {
 		bs->blockedbyavoidspot_time = FloatTime() + 5;
 	}
 	// if blocked by an avoid spot and the view angles and weapon are used for movement
-	if(bs->blockedbyavoidspot_time > FloatTime() && !(moveresult->flags & (MOVERESULT_MOVEMENTVIEW | MOVERESULT_MOVEMENTWEAPON))) {
-		bestdist = 300;
-		bestmine = -1;
-		for(i = 0; i < bs->numproxmines; i++) {
-			BotAI_GetEntityState(bs->proxmines[i], &state);
-			VectorSubtract(state.pos.trBase, bs->origin, dir);
-			dist = VectorLength(dir);
-			if(dist < bestdist) {
-				bestdist = dist;
-				bestmine = i;
-			}
-		}
-		if(bestmine != -1) {
-			// deactivate prox mines in the bot's path by shooting
-			// rockets or plasma cells etc. at them
-			BotAI_GetEntityState(bs->proxmines[bestmine], &state);
-			VectorCopy(state.pos.trBase, target);
-			target[2] += 2;
-			VectorSubtract(target, bs->eye, dir);
-			vectoangles(dir, moveresult->ideal_viewangles);
-			// if the bot has a weapon that does splash damage
-			if(bs->inventory[INVENTORY_PLASMAGUN] > 0 && bs->inventory[INVENTORY_CELLS] > 0)
-				moveresult->weapon = WEAPONINDEX_PLASMAGUN;
-			else if(bs->inventory[INVENTORY_ROCKETLAUNCHER] > 0 && bs->inventory[INVENTORY_ROCKETS] > 0)
-				moveresult->weapon = WEAPONINDEX_ROCKET_LAUNCHER;
-			else if(bs->inventory[INVENTORY_BFG10K] > 0 && bs->inventory[INVENTORY_BFGAMMO] > 0)
-				moveresult->weapon = WEAPONINDEX_BFG;
-			else {
-				moveresult->weapon = 0;
-			}
-			if(moveresult->weapon) {
-				//
-				moveresult->flags |= MOVERESULT_MOVEMENTWEAPON | MOVERESULT_MOVEMENTVIEW;
-				// if holding the right weapon
-				if(bs->cur_ps.weapon == moveresult->weapon) {
-					// if the bot is pretty close with its aim
-					if(InFieldOfVision(bs->viewangles, 20, moveresult->ideal_viewangles)) {
-						//
-						BotAI_Trace(&bsptrace, bs->eye, NULL, NULL, target, bs->entitynum, MASK_SHOT);
-						// if the mine is visible from the current position
-						if(bsptrace.fraction >= 1.0 || bsptrace.ent == state.number) {
-							// shoot at the mine
-							trap_EA_Attack(bs->client);
-						}
-					}
-				}
-			}
-		}
-	}
+	/*if(bs->blockedbyavoidspot_time > FloatTime() && !(moveresult->flags & (MOVERESULT_MOVEMENTVIEW | MOVERESULT_MOVEMENTWEAPON))) {
+	    bestdist = 300;
+	    bestmine = -1;
+	    for(i = 0; i < bs->numproxmines; i++) {
+	        BotAI_GetEntityState(bs->proxmines[i], &state);
+	        VectorSubtract(state.pos.trBase, bs->origin, dir);
+	        dist = VectorLength(dir);
+	        if(dist < bestdist) {
+	            bestdist = dist;
+	            bestmine = i;
+	        }
+	    }
+	    if(bestmine != -1) {
+	        // deactivate prox mines in the bot's path by shooting
+	        // rockets or plasma cells etc. at them
+	        BotAI_GetEntityState(bs->proxmines[bestmine], &state);
+	        VectorCopy(state.pos.trBase, target);
+	        target[2] += 2;
+	        VectorSubtract(target, bs->eye, dir);
+	        vectoangles(dir, moveresult->ideal_viewangles);
+	        // if the bot has a weapon that does splash damage
+	        if(bs->inventory[INVENTORY_PLASMAGUN] > 0 && bs->inventory[INVENTORY_CELLS] > 0)
+	            moveresult->weapon = WEAPONINDEX_PLASMAGUN;
+	        else if(bs->inventory[INVENTORY_ROCKETLAUNCHER] > 0 && bs->inventory[INVENTORY_ROCKETS] > 0)
+	            moveresult->weapon = WEAPONINDEX_ROCKET_LAUNCHER;
+	        else if(bs->inventory[INVENTORY_BFG10K] > 0 && bs->inventory[INVENTORY_BFGAMMO] > 0)
+	            moveresult->weapon = WEAPONINDEX_BFG;
+	        else {
+	            moveresult->weapon = 0;
+	        }
+	        if(moveresult->weapon) {
+	            //
+	            moveresult->flags |= MOVERESULT_MOVEMENTWEAPON | MOVERESULT_MOVEMENTVIEW;
+	            // if holding the right weapon
+	            if(bs->cur_ps.weapon == moveresult->weapon) {
+	                // if the bot is pretty close with its aim
+	                if(InFieldOfVision(bs->viewangles, 20, moveresult->ideal_viewangles)) {
+	                    //
+	                    BotAI_Trace(&bsptrace, bs->eye, NULL, NULL, target, bs->entitynum, MASK_SHOT);
+	                    // if the mine is visible from the current position
+	                    if(bsptrace.fraction >= 1.0 || bsptrace.ent == state.number) {
+	                        // shoot at the mine
+	                        trap_EA_Attack(bs->client);
+	                    }
+	                }
+	            }
+	        }
+	    }
+	}*/
 }
 
 /*

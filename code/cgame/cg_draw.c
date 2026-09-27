@@ -327,19 +327,15 @@ static void CG_DrawCrosshair3D(void) {
 }
 
 static qhandle_t CG_FindModImage(int mod) {
-	// if(mod > 0 && mod < MOD_WEAPONS) return cg_items[ITEM_INDEX(BG_FindItemForWeapon(mod))].icon;
-	// if(mod == MOD_WATER) return trap_R_RegisterShaderNoMip("icons/d_water");
-	// if(mod == MOD_SLIME) return trap_R_RegisterShaderNoMip("icons/d_slime");
-	// if(mod == MOD_LAVA) return trap_R_RegisterShaderNoMip("icons/d_lava");
-	// if(mod == MOD_CRUSH) return trap_R_RegisterShaderNoMip("icons/d_death");
-	// if(mod == MOD_TELEFRAG) return trap_R_RegisterShaderNoMip("icons/teleporter");
-	// if(mod == MOD_FALLING) return trap_R_RegisterShaderNoMip("icons/d_fall");
-	// if(mod == MOD_SUICIDE) return trap_R_RegisterShaderNoMip("icons/d_death");
-	// if(mod == MOD_TRIGGER_HURT) return trap_R_RegisterShaderNoMip("icons/d_death");
-	// if(mod == MOD_KAMIKAZE) return trap_R_RegisterShaderNoMip("icons/kamikaze");
-	// if(mod == MOD_JUICED) return trap_R_RegisterShaderNoMip("icons/d_death");
-	// if(mod == MOD_CAR) return trap_R_RegisterShaderNoMip("icons/d_car");
-	// if(mod == MOD_CAREXPLODE) return trap_R_RegisterShaderNoMip("icons/d_car");
+	if(mod > 0 && mod < MOD_WEAPONS) return cg_items[ITEM_INDEX(BG_FindItemForWeapon(mod))].icon;
+	if(mod == MOD_WATER) return trap_R_RegisterShaderNoMip("icons/d_water");
+	if(mod == MOD_SLIME) return trap_R_RegisterShaderNoMip("icons/d_slime");
+	if(mod == MOD_LAVA) return trap_R_RegisterShaderNoMip("icons/d_lava");
+	if(mod == MOD_CRUSH) return trap_R_RegisterShaderNoMip("icons/d_death");
+	if(mod == MOD_TELEFRAG) return trap_R_RegisterShaderNoMip("icons/teleporter");
+	if(mod == MOD_FALLING) return trap_R_RegisterShaderNoMip("icons/d_fall");
+	if(mod == MOD_SUICIDE) return trap_R_RegisterShaderNoMip("icons/d_death");
+	if(mod == MOD_TRIGGER_HURT) return trap_R_RegisterShaderNoMip("icons/d_death");
 	// if(mod == MOD_PROP) return trap_R_RegisterShaderNoMip("icons/iconw_propgun");
 	return trap_R_RegisterShaderNoMip("icons/d_death");
 }

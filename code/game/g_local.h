@@ -129,18 +129,15 @@ struct gentity_s {
 	void (*die)(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod);
 
 	int pain_debounce_time;
-	int fly_sound_debounce_time;  // wind tunnel
-	int last_move_time;
+	int fly_sound_debounce_time;
 
 	int health;
 
 	bool takedamage;
 
 	int damage;
-	int splashDamage;  // quad will increase this without increasing radius
+	int splashDamage;
 	int splashRadius;
-	int methodOfDeath;
-	int splashMethodOfDeath;
 
 	int count;
 
@@ -168,22 +165,15 @@ struct gentity_s {
 typedef enum { CON_DISCONNECTED, CON_CONNECTING, CON_CONNECTED } clientConnected_t;
 
 //
-#define MAX_NETNAME 36
 #define MAX_VOTE_COUNT 3
 
 // client data that stays across multiple respawns, but is cleared
 // on each level change or team change at ClientBegin()
 typedef struct {
 	clientConnected_t connected;
-	usercmd_t cmd;      // we would lose angles if not persistant
-	bool localClient;   // true if "ip" info key is "localhost"
-	bool initialSpawn;  // the first spawn should be at a cool location
-	bool pmoveFixed;    //
+	usercmd_t cmd;     // we would lose angles if not persistant
+	bool localClient;  // true if "ip" info key is "localhost"
 	char netname[MAX_NETNAME];
-	int enterTime;      // level.time the client entered the game
-	int voteCount;      // to prevent people from constantly calling votes
-	int teamVoteCount;  // to prevent people from constantly calling votes
-	bool teamInfo;      // send team overlay updates?
 } clientPersistant_t;
 
 // this structure is cleared on each ClientSpawn(),
@@ -214,12 +204,6 @@ struct gclient_s {
 	vec3_t damage_from;     // origin for vector calculation
 	bool damage_fromWorld;  // if true, don't use the damage_from vector
 
-	int accurateCount;  // for "impressive" reward sound
-
-	int accuracy_shots;  // total number of shots
-	int accuracy_hits;   // total number of hits
-
-	//
 	int lastkilled_client;  // last client that this client killed
 	int lasthurt_client;    // last client that damaged this client
 	int lasthurt_mod;       // type of damage the client did
@@ -228,13 +212,8 @@ struct gclient_s {
 	int respawnTime;         // can respawn when time > this, force after g_forcerespwan
 	int inactivityTime;      // kick players when time > this
 	bool inactivityWarning;  // true if the five seoond warning has been given
-	int rewardTime;          // clear the EF_AWARD_IMPRESSIVE, etc when time > this
 
 	int airOutTime;
-
-	int lastKillTime;  // for multiple kill rewards
-
-	int switchTeamTime;  // time the player switched teams
 
 	// timeResidual is used to handle events that happen every second
 	// like health / armor countdowns and regeneration
@@ -362,8 +341,7 @@ const char* BuildShaderStateConfig(void);
 //
 bool CanDamage(gentity_t* targ, vec3_t origin);
 void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t dir, vec3_t point, int damage, int dflags, int mod);
-bool G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float radius, gentity_t* ignore, int mod);
-int G_InvulnerabilityEffect(gentity_t* targ, vec3_t dir, vec3_t point, vec3_t impactpoint, vec3_t bouncedir);
+void G_RadiusDamage(vec3_t origin, gentity_t* attacker, float damage, float radius, gentity_t* ignore, int mod);
 void body_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int meansOfDeath);
 void TossClientItems(gentity_t* self);
 void TossClientCubes(gentity_t* self);
@@ -373,16 +351,6 @@ void TossClientCubes(gentity_t* self);
 #define DAMAGE_NO_ARMOR 0x00000002       // armour does not protect from this damage
 #define DAMAGE_NO_KNOCKBACK 0x00000004   // do not affect velocity, just view angles
 #define DAMAGE_NO_PROTECTION 0x00000008  // armor, shields, invulnerability, and godmode have no effect
-
-//
-// g_missile.c
-//
-void G_RunMissile(gentity_t* ent);
-
-gentity_t* fire_plasma(gentity_t* self, vec3_t start, vec3_t aimdir);
-gentity_t* fire_grenade(gentity_t* self, vec3_t start, vec3_t aimdir);
-gentity_t* fire_rocket(gentity_t* self, vec3_t start, vec3_t dir);
-gentity_t* fire_bfg(gentity_t* self, vec3_t start, vec3_t dir);
 
 //
 // g_mover.c
@@ -400,13 +368,15 @@ void trigger_teleporter_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 //
 void TeleportPlayer(gentity_t* player, vec3_t origin, vec3_t angles);
 
-//
 // g_weapon.c
-//
-bool LogAccuracyHit(gentity_t* target, gentity_t* attacker);
 void CalcMuzzlePoint(gentity_t* ent, vec3_t forward, vec3_t right, vec3_t up, vec3_t muzzlePoint);
-void SnapVectorTowards(vec3_t v, vec3_t to);
-bool CheckGauntletAttack(gentity_t* ent);
+void G_ExplodeMissile(gentity_t* ent);
+bool Melee_Fire(gentity_t* ent, int weapon);
+void Weapon_HookFree(gentity_t* ent);
+void ProximityMine_Trigger(gentity_t* trigger, gentity_t* other, trace_t* trace);
+void G_RunMissile(gentity_t* ent);
+gentity_t* fire_missile(gentity_t* self, vec3_t start, vec3_t forward, vec3_t right, vec3_t up, int weapon);
+void FireWeapon(gentity_t* ent);
 
 //
 // g_client.c

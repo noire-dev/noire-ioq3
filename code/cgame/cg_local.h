@@ -245,8 +245,6 @@ typedef enum {
 typedef enum {
 	LEF_PUFF_DONT_SCALE = 0x0001,  // do not scale size over time
 	LEF_TUMBLE = 0x0002,           // tumble over time, used for ejecting shells
-	LEF_SOUND1 = 0x0004,           // sound 1 for kamikaze
-	LEF_SOUND2 = 0x0008            // sound 2 for kamikaze
 } leFlag_t;
 
 typedef enum { LEMT_NONE, LEMT_BURN, LEMT_BLOOD } leMarkType_t;  // fragment local entities can leave marks on walls
@@ -549,13 +547,6 @@ typedef struct {
 	// attacking player
 	int attackerTime;
 	int voiceTime;
-
-	// reward medals
-	int rewardStack;
-	int rewardTime;
-	int rewardCount[MAX_REWARDSTACK];
-	qhandle_t rewardShader[MAX_REWARDSTACK];
-	qhandle_t rewardSound[MAX_REWARDSTACK];
 
 	// sound buffer mainly for announcer sounds
 	int soundBufferIn;
@@ -1127,7 +1118,7 @@ void CG_RegisterItemVisuals(int itemNum);
 void CG_FireWeapon(centity_t* cent);
 void CG_MissileHitWall(int weapon, int clientNum, vec3_t origin, vec3_t dir, impactSound_t soundType);
 void CG_MissileHitPlayer(int weapon, vec3_t origin, vec3_t dir, int entityNum);
-void CG_ShotgunFire(entityState_t* es);
+void CG_ShotgunFire(entityState_t* es, int weapon);
 void CG_Bullet(vec3_t origin, int sourceEntityNum, vec3_t normal, bool flesh, int fleshEntityNum);
 
 void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end);

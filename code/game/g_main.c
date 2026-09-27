@@ -110,7 +110,7 @@ static cvarTable_t gameCvarTable[] = {
     {&g_weaponRespawn, "g_weaponrespawn", "5", 0, 0, true},
     {&g_weaponTeamRespawn, "g_weaponTeamRespawn", "30", 0, 0, true},
     {&g_forcerespawn, "g_forcerespawn", "20", 0, 0, true},
-    {&g_inactivity, "g_inactivity", "0", 0, 0, true},
+    {&g_inactivity, "g_inactivity", "60", 0, 0, true},
     {&g_debugMove, "g_debugMove", "0", 0, 0, false},
     {&g_debugDamage, "g_debugDamage", "0", 0, 0, false},
     {&g_debugAlloc, "g_debugAlloc", "0", 0, 0, false},

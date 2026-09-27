@@ -103,6 +103,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #error overflow: (CS_MAX) > MAX_CONFIGSTRINGS
 #endif
 
+#define MAX_NETNAME 36
+
 typedef enum { GENDER_MALE, GENDER_FEMALE, GENDER_NEUTER } gender_t;
 
 /*
@@ -215,12 +217,11 @@ typedef enum {
 #define EF_TELEPORT_BIT 0x00000004     // toggled every time the origin abruptly changes
 #define EF_AWARD_EXCELLENT 0x00000008  // draw an excellent sprite
 #define EF_PLAYER_EVENT 0x00000010
-#define EF_BOUNCE 0x00000010          // for missiles
-#define EF_BOUNCE_HALF 0x00000020     // for missiles
-#define EF_AWARD_GAUNTLET 0x00000040  // draw a gauntlet sprite
-#define EF_NODRAW 0x00000080          // may have an event, but no model (unspawned items)
-#define EF_FIRING 0x00000100          // for lightning gun
-#define EF_KAMIKAZE 0x00000200
+#define EF_BOUNCE 0x00000010            // for missiles
+#define EF_BOUNCE_HALF 0x00000020       // for missiles
+#define EF_AWARD_GAUNTLET 0x00000040    // draw a gauntlet sprite
+#define EF_NODRAW 0x00000080            // may have an event, but no model (unspawned items)
+#define EF_FIRING 0x00000100            // for lightning gun
 #define EF_MOVER_STOP 0x00000400        // will push otherwise
 #define EF_AWARD_CAP 0x00000800         // draw the capture sprite
 #define EF_TALK 0x00001000              // draw a talk balloon
@@ -248,14 +249,42 @@ typedef enum {
 	WEAPONS_NUM
 } weapon_t;
 
-typedef struct {
-	char name[MAX_JS_STRINGSIZE];
-} weaponStorage_s;
+typedef enum {
+	WT_NONE,
 
-// reward sounds (stored in ps->persistant[PERS_PLAYEREVENTS])
-#define PLAYEREVENT_DENIEDREWARD 0x0001
-#define PLAYEREVENT_GAUNTLETREWARD 0x0002
-#define PLAYEREVENT_HOLYSHIT 0x0004
+	WT_MELEE,
+	WT_BULLET,
+	WT_SHOTGUN,
+	WT_LIGHTNING,
+	WT_RAILGUN,
+	WT_EMPTY,
+	WT_TOOLGUN,
+	WT_MISSILE,
+
+	WEAPONTYPES_NUM
+} weaponType_t;
+
+typedef struct weaponPropeties_s {
+	weaponType_t wType;
+	weapon_t mEffect;
+	char* classname;
+	int delay;
+	int count;
+	int damage;
+	int splashDamage;
+	int splashRadius;
+	int range;
+	int speed;
+	int speedRandom;
+	int spread;
+	int timeout;
+	bool gravity;
+	bool bounce;
+	float bounceModifier;
+} weaponProperties_t;
+
+extern weaponProperties_t jsd_weapon[];
+extern int jsd_weaponCount;
 
 // entityState_t->event values
 // entity events are for effects that take place relative
@@ -427,19 +456,8 @@ typedef enum { TEAMTASK_NONE, TEAMTASK_OFFENSE, TEAMTASK_DEFENSE, TEAMTASK_PATRO
 // means of death
 typedef enum {
 	MOD_UNKNOWN,
-	MOD_SHOTGUN,
-	MOD_GAUNTLET,
-	MOD_MACHINEGUN,
-	MOD_GRENADE,
-	MOD_GRENADE_SPLASH,
-	MOD_ROCKET,
-	MOD_ROCKET_SPLASH,
-	MOD_PLASMA,
-	MOD_PLASMA_SPLASH,
-	MOD_RAILGUN,
-	MOD_LIGHTNING,
-	MOD_BFG,
-	MOD_BFG_SPLASH,
+	MOD_WEAPONS = WEAPONS_NUM,  // Weapons (check weapon_t)
+
 	MOD_WATER,
 	MOD_SLIME,
 	MOD_LAVA,
@@ -447,7 +465,6 @@ typedef enum {
 	MOD_TELEFRAG,
 	MOD_FALLING,
 	MOD_SUICIDE,
-	MOD_TARGET_LASER,
 	MOD_TRIGGER_HURT,
 } meansOfDeath_t;
 

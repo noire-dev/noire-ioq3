@@ -270,12 +270,7 @@ Returns false if the client is dropped
 =================
 */
 bool ClientInactivityTimer(gclient_t* client) {
-	if(!g_inactivity.integer) {
-		// give everyone some time, so if the operator sets g_inactivity during
-		// gameplay, everyone isn't kicked
-		client->inactivityTime = level.time + 60 * 1000;
-		client->inactivityWarning = false;
-	} else if(client->pers.cmd.forwardmove || client->pers.cmd.rightmove || client->pers.cmd.upmove || (client->pers.cmd.buttons & BUTTON_ATTACK)) {
+	if(client->pers.cmd.forwardmove || client->pers.cmd.rightmove || client->pers.cmd.upmove || (client->pers.cmd.buttons & BUTTON_ATTACK)) {
 		client->inactivityTime = level.time + g_inactivity.integer * 1000;
 		client->inactivityWarning = false;
 	} else if(!client->pers.localClient) {
@@ -283,9 +278,9 @@ bool ClientInactivityTimer(gclient_t* client) {
 			trap_DropClient(client - level.clients, "Dropped due to inactivity");
 			return false;
 		}
-		if(level.time > client->inactivityTime - 10000 && !client->inactivityWarning) {
+		if(level.time > client->inactivityTime - 15000 && !client->inactivityWarning) {
 			client->inactivityWarning = true;
-			trap_SendServerCommand(client - level.clients, "cp \"Ten seconds until inactivity drop!\n\"");
+			trap_SendServerCommand(client - level.clients, "cp \"15 seconds until inactivity drop!\n\"");
 		}
 	}
 	return true;
@@ -446,14 +441,7 @@ void ClientThink_real(gentity_t* ent) {
 	if(msec > 200) msec = 200;
 
 	// check for inactivity timer, but never drop the local client of a non-dedicated server
-	if(!ClientInactivityTimer(client)) {
-		return;
-	}
-
-	// clear the rewards if time
-	if(level.time > client->rewardTime) {
-		client->ps.eFlags &= ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP);
-	}
+	if(!ClientInactivityTimer(client)) return;
 
 	if(client->noclip) {
 		client->ps.pm_type = PM_NOCLIP;
@@ -477,9 +465,7 @@ void ClientThink_real(gentity_t* ent) {
 
 	// check for the hit-scan gauntlet, don't let the action
 	// go through as an attack unless it actually hits something
-	if(client->ps.weapon == WP_GAUNTLET && !(ucmd->buttons & BUTTON_TALK) && (ucmd->buttons & BUTTON_ATTACK) && client->ps.weaponTime <= 0) {
-		pm.gauntletHit = CheckGauntletAttack(ent);
-	}
+	if(jsd_weapon[client->ps.weapon].wType == WT_MELEE && !(ucmd->buttons & BUTTON_TALK) && (ucmd->buttons & BUTTON_ATTACK) && client->ps.weaponTime <= 0) pm.gauntletHit = Melee_Fire(ent, ent->s.weapon);
 
 	if(ent->flags & FL_FORCE_GESTURE) {
 		ent->flags &= ~FL_FORCE_GESTURE;
