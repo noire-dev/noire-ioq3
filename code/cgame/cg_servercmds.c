@@ -26,46 +26,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "cg_local.h"
 
-/*
-=================
-CG_ParseScores
+#define NUM_DATA 2
+#define FIRST_DATA 1
 
-=================
-*/
 static void CG_ParseScores(void) {
-	int i, powerups;
+	int i;
 
 	cg.numScores = atoi(CG_Argv(1));
-	if(cg.numScores > MAX_CLIENTS) {
-		cg.numScores = MAX_CLIENTS;
-	}
-
-	cg.teamScores[0] = atoi(CG_Argv(2));
-	cg.teamScores[1] = atoi(CG_Argv(3));
+	if(cg.numScores > MAX_CLIENTS) cg.numScores = MAX_CLIENTS;
 
 	memset(cg.scores, 0, sizeof(cg.scores));
-	for(i = 0; i < cg.numScores; i++) {
-		//
-		cg.scores[i].client = atoi(CG_Argv(i * 14 + 4));
-		cg.scores[i].score = atoi(CG_Argv(i * 14 + 5));
-		cg.scores[i].ping = atoi(CG_Argv(i * 14 + 6));
-		cg.scores[i].time = atoi(CG_Argv(i * 14 + 7));
-		cg.scores[i].scoreFlags = atoi(CG_Argv(i * 14 + 8));
-		powerups = atoi(CG_Argv(i * 14 + 9));
-		cg.scores[i].accuracy = atoi(CG_Argv(i * 14 + 10));
-		cg.scores[i].impressiveCount = atoi(CG_Argv(i * 14 + 11));
-		cg.scores[i].excellentCount = atoi(CG_Argv(i * 14 + 12));
-		cg.scores[i].guantletCount = atoi(CG_Argv(i * 14 + 13));
-		cg.scores[i].defendCount = atoi(CG_Argv(i * 14 + 14));
-		cg.scores[i].assistCount = atoi(CG_Argv(i * 14 + 15));
-		cg.scores[i].perfect = atoi(CG_Argv(i * 14 + 16));
-		cg.scores[i].captures = atoi(CG_Argv(i * 14 + 17));
 
-		if(cg.scores[i].client < 0 || cg.scores[i].client >= MAX_CLIENTS) {
-			cg.scores[i].client = 0;
-		}
-		cgs.clientinfo[cg.scores[i].client].score = cg.scores[i].score;
-		cgs.clientinfo[cg.scores[i].client].powerups = powerups;
+	for(i = 0; i < cg.numScores; i++) {
+		cg.scores[i].client = atoi(CG_Argv(i * NUM_DATA + FIRST_DATA + 1));
+		cg.scores[i].ping = atoi(CG_Argv(i * NUM_DATA + FIRST_DATA + 2));
+
+		if(cg.scores[i].client < 0 || cg.scores[i].client >= MAX_CLIENTS) cg.scores[i].client = 0;
 	}
 }
 

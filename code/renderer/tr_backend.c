@@ -1103,64 +1103,6 @@ const void* RB_DrawBuffer(const void* data) {
 }
 
 /*
-===============
-RB_ShowImages
-
-Draw all the images to the screen, on top of whatever
-was there.  This is used to test for texture thrashing.
-
-Also called by RE_EndRegistration
-===============
-*/
-void RB_ShowImages(void) {
-	int i;
-	image_t* image;
-	float x, y, w, h;
-	int start, end;
-
-	RB_SetGL2D();
-
-	qglClear(GL_COLOR_BUFFER_BIT);
-
-	qglFinish();
-
-	start = ri.Milliseconds();
-
-	for(i = 0; i < tr.numImages; i++) {
-		image = tr.images[i];
-
-		w = glConfig.vidWidth / 20;
-		h = glConfig.vidHeight / 15;
-		x = i % 20 * w;
-		y = i / 20 * h;
-
-		// show in proportional size in mode 2
-		if(r_showImages->integer == 2) {
-			w *= image->uploadWidth / 512.0f;
-			h *= image->uploadHeight / 512.0f;
-		}
-
-		{
-			vec4_t quadVerts[4];
-
-			GL_BindToTMU(image, TB_COLORMAP);
-
-			VectorSet4(quadVerts[0], x, y, 0, 1);
-			VectorSet4(quadVerts[1], x + w, y, 0, 1);
-			VectorSet4(quadVerts[2], x + w, y + h, 0, 1);
-			VectorSet4(quadVerts[3], x, y + h, 0, 1);
-
-			RB_InstantQuad(quadVerts);
-		}
-	}
-
-	qglFinish();
-
-	end = ri.Milliseconds();
-	ri.Printf(PRINT_ALL, "%i msec to draw all images\n", end - start);
-}
-
-/*
 =============
 RB_ColorMask
 
@@ -1196,9 +1138,6 @@ const void* RB_ClearDepth(const void* data) {
 
 	// finish any 2D drawing if needed
 	if(tess.numIndexes) RB_EndSurface();
-
-	// texture swapping test
-	if(r_showImages->integer) RB_ShowImages();
 
 	if(glRefConfig.framebufferObject) {
 		FBO_Bind(tr.renderFbo);
@@ -1292,11 +1231,6 @@ const void* RB_SwapBuffers(const void* data) {
 	// finish any 2D drawing if needed
 	if(tess.numIndexes) {
 		RB_EndSurface();
-	}
-
-	// texture swapping test
-	if(r_showImages->integer) {
-		RB_ShowImages();
 	}
 
 	cmd = (const swapBuffersCommand_t*)data;

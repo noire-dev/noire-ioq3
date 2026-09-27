@@ -103,7 +103,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #error overflow: (CS_MAX) > MAX_CONFIGSTRINGS
 #endif
 
-#define MAX_NETNAME 36
+#define MAX_NETNAME 256
 
 typedef enum { GENDER_MALE, GENDER_FEMALE, GENDER_NEUTER } gender_t;
 
@@ -225,7 +225,6 @@ typedef enum {
 #define EF_MOVER_STOP 0x00000400        // will push otherwise
 #define EF_AWARD_CAP 0x00000800         // draw the capture sprite
 #define EF_TALK 0x00001000              // draw a talk balloon
-#define EF_CONNECTION 0x00002000        // draw a connection trouble sprite
 #define EF_VOTED 0x00004000             // already cast a vote
 #define EF_AWARD_IMPRESSIVE 0x00008000  // draw an impressive sprite
 #define EF_AWARD_DEFEND 0x00010000      // draw a defend sprite

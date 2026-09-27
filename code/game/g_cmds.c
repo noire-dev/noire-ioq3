@@ -25,48 +25,37 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 /*
 ==================
 DeathmatchScoreboardMessage
-
 ==================
 */
 void DeathmatchScoreboardMessage(gentity_t* ent) {
 	char entry[1024];
 	char string[1000];
-	int stringlength;
+	int stringlength = 0, clientCount = 0, ping = 0;
 	int i, j;
-	gclient_t* cl;
-	int numSorted, scoreFlags, accuracy, perfect;
 
-	// don't send scores to bots, they don't parse it
-	if(ent->r.svFlags & SVF_BOT) {
-		return;
-	}
+	if(ent->r.svFlags & SVF_BOT) return;
 
-	// send the latest information on all clients
 	string[0] = 0;
-	stringlength = 0;
-	scoreFlags = 0;
 
-	numSorted = level.numConnectedClients;
+	for(i = 0; i < MAX_CLIENTS; i++) {
+		gclient_t* cl = &level.clients[i];
 
-	for(i = 0; i < numSorted; i++) {
-		int ping;
-
-		cl = &level.clients[level.sortedClients[i]];
-
-		if(cl->pers.connected == CON_CONNECTING) {
+		if(cl->pers.connected == CON_DISCONNECTED)
+			continue;
+		else if(cl->pers.connected == CON_CONNECTING)
 			ping = -1;
-		} else {
+		else
 			ping = cl->ps.ping < 999 ? cl->ps.ping : 999;
-		}
 
-		Com_sprintf(entry, sizeof(entry), " %i %i %i %i %i %i %i %i %i %i %i %i %i %i", level.sortedClients[i], cl->ps.persistant[PERS_SCORE], ping, 0, scoreFlags, g_entities[level.sortedClients[i]].s.powerups, accuracy, cl->ps.persistant[PERS_IMPRESSIVE_COUNT], cl->ps.persistant[PERS_EXCELLENT_COUNT], cl->ps.persistant[PERS_GAUNTLET_FRAG_COUNT], cl->ps.persistant[PERS_DEFEND_COUNT], cl->ps.persistant[PERS_ASSIST_COUNT], perfect, cl->ps.persistant[PERS_CAPTURES]);
+		Com_sprintf(entry, sizeof(entry), " %i %i", cl->ps.clientNum, ping);
 		j = strlen(entry);
 		if(stringlength + j >= sizeof(string)) break;
 		strcpy(string + stringlength, entry);
 		stringlength += j;
+		clientCount++;
 	}
 
-	trap_SendServerCommand(ent - g_entities, va("scores %i 0 0%s", i, string));
+	trap_SendServerCommand(ent - g_entities, va("scores %i %s", clientCount, string));
 }
 
 void G_SendSwepWeapons(gentity_t* ent) {

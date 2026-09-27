@@ -156,7 +156,8 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 	float ax, ay, aw, ah;
 	float frow, fcol;
 	int codepoint, bytesRead;
-	int fontIndex = 0, currentIndex = 0, currentDrawChar = 0;
+	int fontIndex = 0, currentIndex = 0;
+	float currentDrawChar = 0.00;
 	float glyphsPerRow = 4096.0 / 256.0;
 	float glyphTexSize = 256.0 / 4096.0;
 	const char* formatStyle = "Regular";
@@ -363,7 +364,7 @@ static float drawChars(int x, int y, const char* str, float* color, float fontSc
 				currentDrawChar += 1;
 			} else if((isEmojiPage(codepoint / 256) && !(style & FONTSTYLE_LOCKEMOJI)) || !isEmojiPage(codepoint / 256)) {
 				ax += aw * FONT_WIDTH_CJK;
-				currentDrawChar += 2;
+				currentDrawChar += 1.60;
 			}
 		}
 

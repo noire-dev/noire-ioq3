@@ -27,8 +27,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "bg_public.h"
 #include "g_public.h"
 
-//==================================================================
-
 // the "gameversion" client command will print this plus compile date
 #define GAMEVERSION BASEGAME
 
@@ -56,20 +54,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // movers are things like doors, plats, buttons, etc
 typedef enum { MOVER_POS1, MOVER_POS2, MOVER_1TO2, MOVER_2TO1 } moverState_t;
 
-#define SP_PODIUM_MODEL "models/mapobjects/podium/podium4.md3"
-
-//============================================================================
-
 typedef struct gentity_s gentity_t;
 typedef struct gclient_s gclient_t;
 
 struct gentity_s {
 	entityState_t s;   // communicated by server to clients
 	entityShared_t r;  // shared by both the server system and game
-
-	// DO NOT MODIFY ANYTHING ABOVE THIS, THE SERVER
-	// EXPECTS THE FIELDS IN THAT ORDER!
-	//================================
 
 	struct gclient_s* client;  // NULL if not a client
 
@@ -78,8 +68,7 @@ struct gentity_s {
 	char* classname;  // set in QuakeEd
 	int spawnflags;   // set in QuakeEd
 
-	bool neverFree;  // if true, FreeEntity will only unlink
-	                 // bodyque uses this
+	bool neverFree;  // if true, FreeEntity will only unlink bodyque uses this
 
 	int flags;  // FL_* variables
 
@@ -92,13 +81,9 @@ struct gentity_s {
 	bool unlinkAfterEvent;
 
 	bool physicsObject;   // if true, it can be pushed by movers and fall off edges
-	                      // all game items are physicsObjects,
 	float physicsBounce;  // 1.0 = continuous bounce, 0.0 = no bounce
-	int clipmask;         // brushes with this content value will be collided against
-	                      // when moving.  items and corpses do not collide against
-	                      // players, for instance
+	int clipmask;         // brushes with this content value will be collided against when moving.
 
-	// movers
 	moverState_t moverState;
 	int soundPos1;
 	int sound1to2;
@@ -110,7 +95,7 @@ struct gentity_s {
 	gentity_t* prevTrain;
 	vec3_t pos1, pos2;
 
-	int timestamp;  // body queue sinking, etc
+	int timestamp;
 
 	char* target;
 	char* targetname;
@@ -144,28 +129,22 @@ struct gentity_s {
 	gentity_t* chain;
 	gentity_t* enemy;
 	gentity_t* activator;
-	gentity_t* teamchain;   // next entity in team
-	gentity_t* teammaster;  // master of the team
+	gentity_t* teamchain;
+	gentity_t* teammaster;
 
 	int watertype;
 	int waterlevel;
 
-	int noise_index;
-
-	// timing variables
 	float wait;
 	float random;
 
-	item_t* item;  // for bonus items
+	item_t* item;
 
 	int swep_list[WEAPONS_NUM];
 	int swep_ammo[WEAPONS_NUM];
 };
 
 typedef enum { CON_DISCONNECTED, CON_CONNECTING, CON_CONNECTED } clientConnected_t;
-
-//
-#define MAX_VOTE_COUNT 3
 
 // client data that stays across multiple respawns, but is cleared
 // on each level change or team change at ClientBegin()
@@ -179,20 +158,13 @@ typedef struct {
 // this structure is cleared on each ClientSpawn(),
 // except for 'client->pers'
 struct gclient_s {
-	// ps MUST be the first element, because the server expects it
-	playerState_t ps;  // communicated by server to clients
-
-	// the rest of the structure is private to game
-	clientPersistant_t pers;
+	playerState_t ps;         // communicated by server to clients
+	clientPersistant_t pers;  // the rest of the structure is private to game
 
 	bool noclip;
 
-	int lastCmdTime;  // level.time of last usercmd_t, for EF_CONNECTION
-	                  // we can't just use pers.lastCommand.time, because
-	                  // of the g_sycronousclients case
 	int buttons;
 	int oldbuttons;
-	int latched_buttons;
 
 	vec3_t oldOrigin;
 
@@ -247,11 +219,6 @@ typedef struct {
 	int startTime;  // level.time the map was started
 
 	bool restarted;  // waiting for a map_restart to fire
-
-	int numConnectedClients;
-	int numNonSpectatorClients;      // includes connecting clients
-	int numPlayingClients;           // connected, non-spectators
-	int sortedClients[MAX_CLIENTS];  // sorted by score
 
 	int snd_fry;  // sound index for standing in lava
 
@@ -489,7 +456,6 @@ extern vmCvar_t g_gravity;
 extern vmCvar_t g_speed;
 extern vmCvar_t g_knockback;
 extern vmCvar_t g_quadfactor;
-extern vmCvar_t g_forcerespawn;
 extern vmCvar_t g_inactivity;
 extern vmCvar_t g_debugMove;
 extern vmCvar_t g_debugAlloc;
@@ -508,7 +474,6 @@ extern vmCvar_t g_obeliskRespawnDelay;
 extern vmCvar_t g_cubeTimeout;
 extern vmCvar_t g_redteam;
 extern vmCvar_t g_blueteam;
-extern vmCvar_t g_smoothClients;
 extern vmCvar_t g_enableDust;
 extern vmCvar_t g_enableBreath;
 

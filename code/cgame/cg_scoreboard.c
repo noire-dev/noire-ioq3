@@ -1,99 +1,60 @@
-/*
-===========================================================================
-Copyright (C) 1999-2005 Id Software, Inc.
+// Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
 
-This file is part of Quake III Arena source code.
-
-Quake III Arena source code is free software; you can redistribute it
-and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the License,
-or (at your option) any later version.
-
-Quake III Arena source code is distributed in the hope that it will be
-useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Quake III Arena source code; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-===========================================================================
-*/
-//
-// cg_scoreboard -- draw the scoreboard on top of the game screen
 #include "../qcommon/vm_javascript.h"
 
-static float scoreboardBG[4] = {0.00, 0.00, 0.00, 0.50};
-static float scoreboardOutlineBG[4] = {0.10, 0.10, 0.10, 0.50};
-static float scoreboardFieldBG[4] = {0.40, 0.40, 0.40, 0.50};
+static float scoreboardBG[4] = {0.10, 0.10, 0.10, 0.72};
+static float scoreboardMeBG[4] = {0.96, 0.16, 0.32, 1.00};
 
-#define SCOREB_WIDTH 400.0
-#define SCOREB_X (320.0 - (SCOREB_WIDTH / 2))
-#define SCOREB_Y 42
-#define SB_INTER_HEIGHT 16
+#define SCORE_WIDTH 148.0
+#define SCORE_HEIGHT 11.0
+#define SCORE_SPACE 1.0
+#define SCORE_SPACEX 2.0
+#define SCORE_ICON_SIZE 9.0
+#define SCORE_PING_SIZE 12.0
 
-static void CG_DrawClientScore(int y, score_t* score) {
-	char nameText[256];
-	char scoreText[256];
-	clientInfo_t* ci;
+static void CG_DrawPing(int x, int y, int ping) {
+	int pingID = 0;
 
-	if(score->client < 0 || score->client >= cgs.maxclients) return;
+	if(ping >= 80) pingID = 1;
+	if(ping >= 160) pingID = 2;
+	if(ping >= 240) pingID = 3;
+	if(ping >= 320) pingID = 4;
+	if(ping >= 400) pingID = 5;
+	if(ping >= 800 || ping == -1) pingID = 6;
 
-	if(score->client == cg.snap->ps.clientNum) {
-		float hcolor[4];
-		int rank;
-
-		rank = cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG;
-
-		drawRoundedRectAdjusted(SCOREB_X, y, SCOREB_WIDTH - 4, ICON_SIZE, 3, scoreboardFieldBG, NO_TOP_LEFT | NO_BOTTOM_LEFT);
-	}
-
-	ci = &cgs.clientinfo[score->client];
-	CG_DrawHead(SCOREB_X + 4, y, ICON_SIZE, ICON_SIZE, score->client);
-
-	// draw the score line
-	Com_sprintf(nameText, sizeof(nameText), "%s", ci->name);
-	Com_sprintf(scoreText, sizeof(scoreText), "⇄ %i ▶ %i", score->ping, score->score);
-
-	drawStringAdjusted(SCOREB_X + 8 + ICON_SIZE, y + 2, nameText, FONTSTYLE_LEFT | FONTSTYLE_DROPSHADOW, color_white, 0.56, 256);
-	drawStringAdjusted((SCOREB_X + 8 + ICON_SIZE) + ((FONT_SIZE * FONT_WIDTH) * 54) * 0.56, y + 2, scoreText, FONTSTYLE_RIGHT | FONTSTYLE_DROPSHADOW, color_white, 0.56, 256);
+	drawShaderAdjusted(x, y - 3, SCORE_PING_SIZE, SCORE_PING_SIZE, va("menu/ping_%i", pingID));
 }
 
-static int CG_Scoreboard(int y, int maxClients, int lineHeight) {
-	int i, count;
-	score_t* score;
-	bool localFinded;
-	clientInfo_t* ci;
+static void CG_DrawClientScore(int x, int y, score_t* score) {
+	if(score->client < 0 || score->client >= cgs.maxclients) return;
 
-	count = 0;
-	localFinded = false;
-	for(i = 0; i < cg.numScores && count < maxClients; i++) {
-		score = &cg.scores[i];
-		ci = &cgs.clientinfo[score->client];
-		if(score->client == 0) {
-			if(localFinded) continue;
-			localFinded = true;
-		}
-		CG_DrawClientScore(y + lineHeight * count, score);
-		count++;
-	}
+	drawRoundedRectAdjusted(x, y, SCORE_WIDTH, SCORE_HEIGHT, 0, scoreboardBG, 0);
+	if(score->client == cg.snap->ps.clientNum) drawRoundedRectAdjusted(x, y + (SCORE_HEIGHT - 1), SCORE_WIDTH, 1, 0, scoreboardMeBG, 0);
 
-	return count;
+	CG_DrawHead(x + 1, y + 1, SCORE_ICON_SIZE, SCORE_ICON_SIZE, score->client);
+
+	drawStringAdjusted(x + 8 + SCORE_ICON_SIZE, y + 2, cgs.clientinfo[score->client].name, FONTSTYLE_LEFT | FONTSTYLE_DROPSHADOW, color_white, 0.35, 26);
+	CG_DrawPing((x - 4) + (SCORE_WIDTH - SCORE_PING_SIZE), y, score->ping);
 }
 
 void CG_DrawScoreboard(void) {
-	int y, n1, n2;
-	int maxClients;
-	int lineHeight;
+	float x, y;
+	int i, cols = (cg.numScores + 15) / 16;
+	int colPosition = 0;
 
 	if(!(cg.showScores || cg.predictedPlayerState.pm_type == PM_DEAD)) return;
 
-	drawRoundedRectAdjusted(320 - (SCOREB_WIDTH * 0.5), SCOREB_Y, SCOREB_WIDTH, SB_INTER_HEIGHT * 26, 4, scoreboardBG, 0);
-	drawRoundedRectAdjusted(320 - (SCOREB_WIDTH * 0.5) + 1, SCOREB_Y + 1, SCOREB_WIDTH, SB_INTER_HEIGHT * 26, 4, scoreboardOutlineBG, 0);
+	x = 320 - ((SCORE_WIDTH * 0.5) * cols) - ((cols - 1) * (SCORE_SPACEX * 0.5));
+	y = 32;
 
-	y = 50;
-	lineHeight = SB_INTER_HEIGHT;
-	maxClients = 25;
-	n1 = CG_Scoreboard(y, maxClients, lineHeight);
-	y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
+	for(i = 0; i < cg.numScores; i++) {
+		CG_DrawClientScore(x, y, &cg.scores[i]);
+		y += SCORE_HEIGHT + SCORE_SPACE;
+		colPosition++;
+		if(colPosition >= 16) {
+			x += SCORE_WIDTH + SCORE_SPACEX;
+			y = 32;
+			colPosition = 0;
+		}
+	}
 }

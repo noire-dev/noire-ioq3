@@ -32,9 +32,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // If you absolutely need something stored, it can either be kept
 // by the server in the server stored userinfos, or stashed in a cvar.
 
-#define POWERUP_BLINKS 5
-
-#define POWERUP_BLINK_TIME 1000
 #define FADE_TIME 200
 #define PULSE_TIME 200
 #define DAMAGE_DEFLECT_TIME 100
@@ -63,7 +60,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define STAT_MINUS 10  // num frame for '-' stats digit
 
-#define ICON_SIZE 16
 #undef CHAR_WIDTH  // ignore define from libc
 #define CHAR_WIDTH 32
 #define CHAR_HEIGHT 48
@@ -284,20 +280,7 @@ typedef struct localEntity_s {
 
 typedef struct {
 	int client;
-	int score;
 	int ping;
-	int time;
-	int scoreFlags;
-	int powerUps;
-	int accuracy;
-	int impressiveCount;
-	int excellentCount;
-	int guantletCount;
-	int defendCount;
-	int assistCount;
-	int captures;
-	bool perfect;
-	int team;
 } score_t;
 
 // each client has an associated clientInfo_t
@@ -310,7 +293,7 @@ typedef struct {
 typedef struct {
 	bool infoValid;
 
-	char name[MAX_QPATH];
+	char name[MAX_NETNAME];
 
 	vec3_t color1;
 	vec3_t color2;
@@ -323,8 +306,6 @@ typedef struct {
 	int health;    // you only get this info about your teammates
 	int armor;
 	int curWeapon;
-
-	int powerups;  // so can display quad/flag status
 
 	int medkitUsageTime;
 	int invulnerabilityStartTime;
@@ -414,10 +395,6 @@ typedef struct {
 	qhandle_t models[MAX_ITEM_MODELS];
 	qhandle_t icon;
 } itemInfo_t;
-
-typedef struct {
-	int itemNum;
-} powerupInfo_t;
 
 #define MAX_SKULLTRAIL 10
 
@@ -540,10 +517,6 @@ typedef struct {
 	int crosshairClientNum;
 	int crosshairClientTime;
 
-	// powerup active flashing
-	int powerupActive;
-	int powerupTime;
-
 	// attacking player
 	int attackerTime;
 	int voiceTime;
@@ -601,7 +574,7 @@ typedef struct {
 // all of the model, shader, and sound references that are
 // loaded at gamestate time are stored in cgMedia_t
 // Other media that can be tied to clients, weapons, or items are
-// stored in the clientInfo_t, itemInfo_t, weaponInfo_t, and powerupInfo_t
+// stored in the clientInfo_t, itemInfo_t, weaponInfo_t
 typedef struct {
 	qhandle_t charsetShader;
 	qhandle_t charsetProp;
@@ -689,16 +662,6 @@ typedef struct {
 	qhandle_t holeMarkShader;
 	qhandle_t energyMarkShader;
 
-	// powerup shaders
-	qhandle_t quadShader;
-	qhandle_t redQuadShader;
-	qhandle_t quadWeaponShader;
-	qhandle_t invisShader;
-	qhandle_t regenShader;
-	qhandle_t battleSuitShader;
-	qhandle_t battleWeaponShader;
-	qhandle_t hastePuffShader;
-
 	// weapon effect models
 	qhandle_t bulletFlashModel;
 	qhandle_t ringFlashModel;
@@ -718,20 +681,6 @@ typedef struct {
 	qhandle_t teleportEffectModel;
 	qhandle_t teleportEffectShader;
 
-	// scoreboard headers
-	qhandle_t scoreboardName;
-	qhandle_t scoreboardPing;
-	qhandle_t scoreboardScore;
-	qhandle_t scoreboardTime;
-
-	// medals shown during gameplay
-	qhandle_t medalImpressive;
-	qhandle_t medalExcellent;
-	qhandle_t medalGauntlet;
-	qhandle_t medalDefend;
-	qhandle_t medalAssist;
-	qhandle_t medalCapture;
-
 	// Assets Noire's Mod
 	qhandle_t errIcon;
 	qhandle_t notifyIcon;
@@ -740,7 +689,6 @@ typedef struct {
 	sfxHandle_t undoSound;
 
 	// sounds
-	sfxHandle_t quadSound;
 	sfxHandle_t tracerSound;
 	sfxHandle_t selectSound;
 	sfxHandle_t useNothingSound;
@@ -786,46 +734,10 @@ typedef struct {
 	sfxHandle_t humiliationSound;
 	sfxHandle_t assistSound;
 	sfxHandle_t defendSound;
-	sfxHandle_t firstImpressiveSound;
-	sfxHandle_t firstExcellentSound;
-	sfxHandle_t firstHumiliationSound;
-
-	sfxHandle_t takenLeadSound;
-	sfxHandle_t tiedLeadSound;
-	sfxHandle_t lostLeadSound;
-
-	sfxHandle_t voteNow;
-	sfxHandle_t votePassed;
-	sfxHandle_t voteFailed;
 
 	sfxHandle_t watrInSound;
 	sfxHandle_t watrOutSound;
 	sfxHandle_t watrUnSound;
-
-	sfxHandle_t flightSound;
-	sfxHandle_t medkitSound;
-
-	// teamplay sounds
-	sfxHandle_t captureAwardSound;
-	sfxHandle_t redScoredSound;
-	sfxHandle_t blueScoredSound;
-	sfxHandle_t redLeadsSound;
-	sfxHandle_t blueLeadsSound;
-	sfxHandle_t teamsTiedSound;
-
-	sfxHandle_t captureYourTeamSound;
-	sfxHandle_t captureOpponentSound;
-	sfxHandle_t returnYourTeamSound;
-	sfxHandle_t returnOpponentSound;
-	sfxHandle_t takenYourTeamSound;
-	sfxHandle_t takenOpponentSound;
-
-	sfxHandle_t redFlagReturnedSound;
-	sfxHandle_t blueFlagReturnedSound;
-	sfxHandle_t enemyTookYourFlagSound;
-	sfxHandle_t yourTeamTookEnemyFlagSound;
-	sfxHandle_t youHaveFlagSound;
-	sfxHandle_t holyShitSound;
 
 	// tournament sounds
 	sfxHandle_t count3Sound;
@@ -996,7 +908,6 @@ extern vmCvar_t cg_tracerChance;
 extern vmCvar_t cg_tracerWidth;
 extern vmCvar_t cg_tracerLength;
 extern vmCvar_t cg_ignore;
-extern vmCvar_t cg_simpleItems;
 extern vmCvar_t cg_fov;
 extern vmCvar_t cg_zoomFov;
 extern vmCvar_t cg_thirdPersonRange;
@@ -1015,7 +926,6 @@ extern vmCvar_t cg_deferPlayers;
 extern vmCvar_t cg_drawFriend;
 extern vmCvar_t cg_teamChatsOnly;
 extern vmCvar_t cg_scorePlum;
-extern vmCvar_t cg_smoothClients;
 extern vmCvar_t cg_cameraOrbit;
 extern vmCvar_t cg_cameraOrbitDelay;
 extern vmCvar_t cg_timescaleFadeEnd;

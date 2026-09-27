@@ -311,13 +311,6 @@ static void CG_Item(centity_t* cent) {
 
 		trap_R_AddRefEntityToScene(&barrel);
 	}
-
-	// accompanying rings / spheres for powerups
-	if(!cg_simpleItems.integer) {
-		vec3_t spinAngles;
-
-		VectorClear(spinAngles);
-	}
 }
 
 //============================================================================
@@ -485,7 +478,7 @@ static void CG_Portal(centity_t* cent) {
 
 	CrossProduct(ent.axis[0], ent.axis[1], ent.axis[2]);
 	ent.reType = RT_PORTALSURFACE;
-	ent.oldframe = s1->powerups;
+	// ent.oldframe = s1->powerups;
 	ent.frame = s1->frame;                      // rotation speed
 	ent.skinNum = s1->clientNum / 256.0 * 360;  // roll offset
 
@@ -621,15 +614,6 @@ CG_CalcEntityLerpPositions
 ===============
 */
 static void CG_CalcEntityLerpPositions(centity_t* cent) {
-	// if this player does not want to see extrapolated players
-	if(!cg_smoothClients.integer) {
-		// make sure the clients use TR_INTERPOLATE
-		if(cent->currentState.number < MAX_CLIENTS) {
-			cent->currentState.pos.trType = TR_INTERPOLATE;
-			cent->nextState.pos.trType = TR_INTERPOLATE;
-		}
-	}
-
 	if(cent->interpolate && cent->currentState.pos.trType == TR_INTERPOLATE) {
 		CG_InterpolateEntityPosition(cent);
 		return;

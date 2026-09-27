@@ -381,13 +381,6 @@ void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, bool snap)
 	s->weapon = ps->weapon;
 	s->groundEntityNum = ps->groundEntityNum;
 
-	s->powerups = 0;
-	for(i = 0; i < MAX_POWERUPS; i++) {
-		if(ps->powerups[i]) {
-			s->powerups |= 1 << i;
-		}
-	}
-
 	s->loopSound = ps->loopSound;
 	s->generic1 = ps->generic1;
 }
@@ -421,7 +414,7 @@ void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s,
 	// set the time for linear prediction
 	s->pos.trTime = time;
 	// set maximum extra polation time
-	s->pos.trDuration = 50;  // 1000 / sv_fps (default = 20)
+	s->pos.trDuration = 33;  // 1000 / sv_fps (default = 30)
 
 	s->apos.trType = TR_INTERPOLATE;
 	VectorCopy(ps->viewangles, s->apos.trBase);
@@ -458,13 +451,6 @@ void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s,
 
 	s->weapon = ps->weapon;
 	s->groundEntityNum = ps->groundEntityNum;
-
-	s->powerups = 0;
-	for(i = 0; i < MAX_POWERUPS; i++) {
-		if(ps->powerups[i]) {
-			s->powerups |= 1 << i;
-		}
-	}
 
 	s->loopSound = ps->loopSound;
 	s->generic1 = ps->generic1;

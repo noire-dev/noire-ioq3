@@ -102,7 +102,6 @@ vmCvar_t cg_tracerChance;
 vmCvar_t cg_tracerWidth;
 vmCvar_t cg_tracerLength;
 vmCvar_t cg_ignore;
-vmCvar_t cg_simpleItems;
 vmCvar_t cg_fov;
 vmCvar_t cg_zoomFov;
 vmCvar_t cg_thirdPerson;
@@ -124,7 +123,6 @@ vmCvar_t cg_drawFriend;
 vmCvar_t cg_teamChatsOnly;
 vmCvar_t cg_hudFiles;
 vmCvar_t cg_scorePlum;
-vmCvar_t cg_smoothClients;
 vmCvar_t cg_cameraMode;
 vmCvar_t cg_cameraOrbit;
 vmCvar_t cg_cameraOrbitDelay;
@@ -164,7 +162,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_drawCrosshair, "cg_drawCrosshair", "4", CVAR_ARCHIVE},
     {&cg_crosshairScale, "cg_crosshairScale", "24", CVAR_ARCHIVE},
     {&cg_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE},
-    {&cg_simpleItems, "cg_simpleItems", "0", CVAR_ARCHIVE},
     {&cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE},
     {&cg_railTrailTime, "cg_railTrailTime", "400", CVAR_ARCHIVE},
     {&cg_gun_x, "cg_gunX", "0", CVAR_CHEAT},
@@ -214,7 +211,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_timescaleFadeSpeed, "cg_timescaleFadeSpeed", "0", 0},
     {&cg_timescale, "timescale", "1", 0},
     {&cg_scorePlum, "cg_scorePlums", "1", CVAR_USERINFO | CVAR_ARCHIVE},
-    {&cg_smoothClients, "cg_smoothClients", "0", CVAR_USERINFO | CVAR_ARCHIVE},
     {&cg_cameraMode, "com_cameraMode", "0", CVAR_CHEAT},
     {&cg_noProjectileTrail, "cg_noProjectileTrail", "0", CVAR_ARCHIVE},
     {&cg_oldRail, "cg_oldRail", "1", CVAR_ARCHIVE},
@@ -456,17 +452,6 @@ static void CG_RegisterSounds(void) {
 
 	cgs.media.hitSound = trap_S_RegisterSound("sound/feedback/hit.wav", false);
 
-	cgs.media.impressiveSound = trap_S_RegisterSound("sound/feedback/impressive.wav", true);
-	cgs.media.excellentSound = trap_S_RegisterSound("sound/feedback/excellent.wav", true);
-	cgs.media.deniedSound = trap_S_RegisterSound("sound/feedback/denied.wav", true);
-	cgs.media.humiliationSound = trap_S_RegisterSound("sound/feedback/humiliation.wav", true);
-	cgs.media.assistSound = trap_S_RegisterSound("sound/feedback/assist.wav", true);
-	cgs.media.defendSound = trap_S_RegisterSound("sound/feedback/defense.wav", true);
-
-	cgs.media.takenLeadSound = trap_S_RegisterSound("sound/feedback/takenlead.wav", true);
-	cgs.media.tiedLeadSound = trap_S_RegisterSound("sound/feedback/tiedlead.wav", true);
-	cgs.media.lostLeadSound = trap_S_RegisterSound("sound/feedback/lostlead.wav", true);
-
 	cgs.media.watrInSound = trap_S_RegisterSound("sound/player/watr_in.wav", false);
 	cgs.media.watrOutSound = trap_S_RegisterSound("sound/player/watr_out.wav", false);
 	cgs.media.watrUnSound = trap_S_RegisterSound("sound/player/watr_un.wav", false);
@@ -510,9 +495,6 @@ static void CG_RegisterSounds(void) {
 	}
 
 	// FIXME: only needed with item
-	cgs.media.flightSound = trap_S_RegisterSound("sound/items/flight.wav", false);
-	cgs.media.medkitSound = trap_S_RegisterSound("sound/items/use_medkit.wav", false);
-	cgs.media.quadSound = trap_S_RegisterSound("sound/items/damage3.wav", false);
 	cgs.media.sfx_ric1 = trap_S_RegisterSound("sound/weapons/machinegun/ric1.wav", false);
 	cgs.media.sfx_ric2 = trap_S_RegisterSound("sound/weapons/machinegun/ric2.wav", false);
 	cgs.media.sfx_ric3 = trap_S_RegisterSound("sound/weapons/machinegun/ric3.wav", false);
@@ -520,7 +502,6 @@ static void CG_RegisterSounds(void) {
 	cgs.media.sfx_rockexp = trap_S_RegisterSound("sound/weapons/rocket/rocklx1a.wav", false);
 	cgs.media.sfx_plasmaexp = trap_S_RegisterSound("sound/weapons/plasma/plasmx1a.wav", false);
 
-	cgs.media.regenSound = trap_S_RegisterSound("sound/items/regen.wav", false);
 	cgs.media.protectSound = trap_S_RegisterSound("sound/items/protect3.wav", false);
 	cgs.media.n_healthSound = trap_S_RegisterSound("sound/items/n_health.wav", false);
 	cgs.media.hgrenb1aSound = trap_S_RegisterSound("sound/weapons/grenade/hgrenb1a.wav", false);
@@ -578,11 +559,6 @@ static void CG_RegisterGraphics(void) {
 
 	cgs.media.deferShader = trap_R_RegisterShaderNoMip("gfx/2d/defer.tga");
 
-	cgs.media.scoreboardName = trap_R_RegisterShaderNoMip("menu/tab/name.tga");
-	cgs.media.scoreboardPing = trap_R_RegisterShaderNoMip("menu/tab/ping.tga");
-	cgs.media.scoreboardScore = trap_R_RegisterShaderNoMip("menu/tab/score.tga");
-	cgs.media.scoreboardTime = trap_R_RegisterShaderNoMip("menu/tab/time.tga");
-
 	cgs.media.smokePuffShader = trap_R_RegisterShader("smokePuff");
 	cgs.media.smokePuffRageProShader = trap_R_RegisterShader("smokePuffRagePro");
 	cgs.media.shotgunSmokePuffShader = trap_R_RegisterShader("shotgunSmokePuff");
@@ -601,15 +577,6 @@ static void CG_RegisterGraphics(void) {
 
 	cgs.media.backTileShader = trap_R_RegisterShader("gfx/2d/backtile");
 	cgs.media.noammoShader = trap_R_RegisterShader("icons/noammo");
-
-	// powerup shaders
-	cgs.media.quadShader = trap_R_RegisterShader("powerups/quad");
-	cgs.media.quadWeaponShader = trap_R_RegisterShader("powerups/quadWeapon");
-	cgs.media.battleSuitShader = trap_R_RegisterShader("powerups/battleSuit");
-	cgs.media.battleWeaponShader = trap_R_RegisterShader("powerups/battleWeapon");
-	cgs.media.invisShader = trap_R_RegisterShader("powerups/invisibility");
-	cgs.media.regenShader = trap_R_RegisterShader("powerups/regen");
-	cgs.media.hastePuffShader = trap_R_RegisterShader("hasteSmokePuff");
 
 	cgs.media.armorModel = trap_R_RegisterModel("models/powerups/armor/armor_yel.md3");
 	cgs.media.armorIcon = trap_R_RegisterShaderNoMip("icons/iconr_yellow");
@@ -639,13 +606,6 @@ static void CG_RegisterGraphics(void) {
 	cgs.media.dishFlashModel = trap_R_RegisterModel("models/weaphits/boom01.md3");
 	cgs.media.teleportEffectModel = trap_R_RegisterModel("models/misc/telep.md3");
 	cgs.media.teleportEffectShader = trap_R_RegisterShader("teleportEffect");
-
-	cgs.media.medalImpressive = trap_R_RegisterShaderNoMip("medal_impressive");
-	cgs.media.medalExcellent = trap_R_RegisterShaderNoMip("medal_excellent");
-	cgs.media.medalGauntlet = trap_R_RegisterShaderNoMip("medal_gauntlet");
-	cgs.media.medalDefend = trap_R_RegisterShaderNoMip("medal_defend");
-	cgs.media.medalAssist = trap_R_RegisterShaderNoMip("medal_assist");
-	cgs.media.medalCapture = trap_R_RegisterShaderNoMip("medal_capture");
 
 	// Assets Noire's Mod
 	cgs.media.errIcon = trap_R_RegisterShaderNoMip("menu/erricon");

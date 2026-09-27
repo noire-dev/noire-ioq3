@@ -1254,38 +1254,6 @@ static void CG_PlayerAngles(centity_t* cent, vec3_t legs[3], vec3_t torso[3], ve
 
 /*
 ===============
-CG_HasteTrail
-===============
-*/
-static void CG_HasteTrail(centity_t* cent) {
-	localEntity_t* smoke;
-	vec3_t origin;
-	int anim;
-
-	if(cent->trailTime > cg.time) {
-		return;
-	}
-	anim = cent->pe.legs.animationNumber & ~ANIM_TOGGLEBIT;
-	if(anim != LEGS_RUN && anim != LEGS_BACK) {
-		return;
-	}
-
-	cent->trailTime += 100;
-	if(cent->trailTime < cg.time) {
-		cent->trailTime = cg.time;
-	}
-
-	VectorCopy(cent->lerpOrigin, origin);
-	origin[2] -= 16;
-
-	smoke = CG_SmokePuff(origin, vec3_origin, 8, 1, 1, 1, 1, 500, cg.time, 0, 0, cgs.media.hastePuffShader);
-
-	// use the optimized local entity add
-	smoke->leType = LE_SCALE_FADE;
-}
-
-/*
-===============
 CG_TrailItem
 ===============
 */

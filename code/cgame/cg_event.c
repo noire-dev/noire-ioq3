@@ -100,17 +100,9 @@ static void CG_Obituary(entityState_t* ent) {
 		CG_AddNotify(va("%s", targetName), NOTIFY_KILL, mod, "");
 }
 
-/*
-================
-CG_ItemPickup
-
-A new item was picked up this frame
-================
-*/
 static void CG_ItemPickup(int itemNum) {
-	cg.itemPickup = itemNum;
-	cg.itemPickupTime = cg.time;
-	cg.itemPickupBlendTime = cg.time;
+	CG_AddNotify(jsd_item[itemNum].pickup_name, NOTIFY_ITEM, itemNum, "");
+	if(jsd_item[itemNum].giType == IT_WEAPON) cg.swep_listcl[jsd_item[itemNum].giTag] = WS_HAVE;
 }
 
 /*
@@ -386,21 +378,15 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 				item_t* item;
 				int index;
 
-				index = es->eventParm;  // player predicted
+				index = es->eventParm;
 
-				if(index < 1 || index >= jsd_itemCount) {
-					break;
-				}
+				if(index < 1 || index >= jsd_itemCount) break;
 				item = &jsd_item[index];
 
-				// powerups and team items will have a separate global sound, this one
-				// will be played at prediction time
 				trap_S_StartSound(NULL, es->number, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, false));
 
 				// show icon and name on status bar
-				if(es->number == cg.snap->ps.clientNum) {
-					CG_ItemPickup(index);
-				}
+				if(es->number == cg.snap->ps.clientNum) CG_ItemPickup(index);
 			}
 			break;
 

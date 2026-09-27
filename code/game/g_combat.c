@@ -140,8 +140,8 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 	// broadcast the death event to everyone
 	ent = G_TempEntity(self->r.currentOrigin, EV_OBITUARY);
 	ent->s.eventParm = meansOfDeath;
-	ent->s.otherEntityNum = self->s.number;
-	ent->s.otherEntityNum2 = killer;
+	ent->s.otherEntityNum = killer;
+	ent->s.otherEntityNum2 = self->s.number;
 	ent->r.svFlags = SVF_BROADCAST;  // send to everyone
 
 	self->enemy = attacker;
@@ -173,8 +173,6 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 
 		self->r.maxs[2] = DEAD_HEIGHT;
 
-		// don't allow respawn until the death anim is done
-		// g_forcerespawn may force spawning at some later time
 		self->client->respawnTime = level.time + 1700;
 
 		// remove powerups

@@ -53,7 +53,6 @@ vmCvar_t g_gravity;
 vmCvar_t g_cheats;
 vmCvar_t g_knockback;
 vmCvar_t g_quadfactor;
-vmCvar_t g_forcerespawn;
 vmCvar_t g_inactivity;
 vmCvar_t g_debugMove;
 vmCvar_t g_debugDamage;
@@ -67,7 +66,6 @@ vmCvar_t g_logfileSync;
 vmCvar_t g_blood;
 vmCvar_t g_banIPs;
 vmCvar_t g_filterBan;
-vmCvar_t g_smoothClients;
 vmCvar_t g_listEntity;
 
 static cvarTable_t gameCvarTable[] = {
@@ -109,7 +107,6 @@ static cvarTable_t gameCvarTable[] = {
     {&g_quadfactor, "g_quadfactor", "3", 0, 0, true},
     {&g_weaponRespawn, "g_weaponrespawn", "5", 0, 0, true},
     {&g_weaponTeamRespawn, "g_weaponTeamRespawn", "30", 0, 0, true},
-    {&g_forcerespawn, "g_forcerespawn", "20", 0, 0, true},
     {&g_inactivity, "g_inactivity", "60", 0, 0, true},
     {&g_debugMove, "g_debugMove", "0", 0, 0, false},
     {&g_debugDamage, "g_debugDamage", "0", 0, 0, false},
@@ -117,8 +114,7 @@ static cvarTable_t gameCvarTable[] = {
     {&g_motd, "g_motd", "", 0, 0, false},
     {&g_blood, "com_blood", "1", 0, 0, false},
 
-    {&g_listEntity, "g_listEntity", "0", 0, 0, false},
-    {&g_smoothClients, "g_smoothClients", "1", 0, 0, false}
+    {&g_listEntity, "g_listEntity", "0", 0, 0, false}
 
 };
 

@@ -491,14 +491,9 @@ void ClientThink_real(gentity_t* ent) {
 	Pmove(&pm);
 
 	// save results of pmove
-	if(ent->client->ps.eventSequence != oldEventSequence) {
-		ent->eventTime = level.time;
-	}
-	if(g_smoothClients.integer) {
-		BG_PlayerStateToEntityStateExtraPolate(&ent->client->ps, &ent->s, ent->client->ps.commandTime, true);
-	} else {
-		BG_PlayerStateToEntityState(&ent->client->ps, &ent->s, true);
-	}
+	if(ent->client->ps.eventSequence != oldEventSequence) ent->eventTime = level.time;
+
+	BG_PlayerStateToEntityStateExtraPolate(&ent->client->ps, &ent->s, ent->client->ps.commandTime, true);
 	SendPendingPredictableEvents(&ent->client->ps);
 
 	// use the snapped origin for linking so it matches client predicted versions
@@ -515,9 +510,7 @@ void ClientThink_real(gentity_t* ent) {
 
 	// link entity now, after any personal teleporters have been used
 	trap_LinkEntity(ent);
-	if(!ent->client->noclip) {
-		G_TouchTriggers(ent);
-	}
+	if(!ent->client->noclip) G_TouchTriggers(ent);
 
 	// NOTE: now copy the exact origin over otherwise clients can be snapped into solid
 	VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);
@@ -529,30 +522,15 @@ void ClientThink_real(gentity_t* ent) {
 	ClientImpacts(ent, &pm);
 
 	// save results of triggers and client events
-	if(ent->client->ps.eventSequence != oldEventSequence) {
-		ent->eventTime = level.time;
-	}
+	if(ent->client->ps.eventSequence != oldEventSequence) ent->eventTime = level.time;
 
 	// swap and latch button actions
 	client->oldbuttons = client->buttons;
 	client->buttons = ucmd->buttons;
-	client->latched_buttons |= client->buttons & ~client->oldbuttons;
 
 	// check for respawning
 	if(client->ps.stats[STAT_HEALTH] <= 0) {
-		// wait for the attack button to be pressed
-		if(level.time > client->respawnTime) {
-			// forcerespawn is to prevent users from waiting out powerups
-			if(g_forcerespawn.integer > 0 && (level.time - client->respawnTime) > g_forcerespawn.integer * 1000) {
-				ClientRespawn(ent);
-				return;
-			}
-
-			// pressing attack or use is the normal respawn method
-			if(ucmd->buttons & (BUTTON_ATTACK | BUTTON_USE_HOLDABLE)) {
-				ClientRespawn(ent);
-			}
-		}
+		if(level.time > client->respawnTime && ucmd->buttons & (BUTTON_ATTACK | BUTTON_USE_HOLDABLE)) ClientRespawn(ent);
 		return;
 	}
 
@@ -573,13 +551,7 @@ void ClientThink(int clientNum) {
 	ent = g_entities + clientNum;
 	trap_GetUsercmd(clientNum, &ent->client->pers.cmd);
 
-	// mark the time we got info, so we can display the
-	// phone jack if they don't get any for a while
-	ent->client->lastCmdTime = level.time;
-
-	if(!(ent->r.svFlags & SVF_BOT) && !g_synchronousClients.integer) {
-		ClientThink_real(ent);
-	}
+	if(!(ent->r.svFlags & SVF_BOT) && !g_synchronousClients.integer) ClientThink_real(ent);
 }
 
 void G_RunClient(gentity_t* ent) {
@@ -602,36 +574,18 @@ while a slow client may have multiple ClientEndFrame between ClientThink.
 void ClientEndFrame(gentity_t* ent) {
 	int i;
 
-	// turn off any expired powerups
-	for(i = 0; i < MAX_POWERUPS; i++) {
-		if(ent->client->ps.powerups[i] < level.time) {
-			ent->client->ps.powerups[i] = 0;
-		}
-	}
-
 	// burn from lava, etc
 	P_WorldEffects(ent);
 
 	// apply all the damage taken this frame
 	P_DamageFeedback(ent);
 
-	// add the EF_CONNECTION flag if we haven't gotten commands recently
-	if(level.time - ent->client->lastCmdTime > 1000) {
-		ent->client->ps.eFlags |= EF_CONNECTION;
-	} else {
-		ent->client->ps.eFlags &= ~EF_CONNECTION;
-	}
-
 	ent->client->ps.stats[STAT_HEALTH] = ent->health;  // FIXME: get rid of ent->health...
 
 	G_SetClientSound(ent);
 
 	// set the latest infor
-	if(g_smoothClients.integer) {
-		BG_PlayerStateToEntityStateExtraPolate(&ent->client->ps, &ent->s, ent->client->ps.commandTime, true);
-	} else {
-		BG_PlayerStateToEntityState(&ent->client->ps, &ent->s, true);
-	}
+	BG_PlayerStateToEntityStateExtraPolate(&ent->client->ps, &ent->s, ent->client->ps.commandTime, true);
 	SendPendingPredictableEvents(&ent->client->ps);
 
 	// set the bit for the reachability area the client is currently in

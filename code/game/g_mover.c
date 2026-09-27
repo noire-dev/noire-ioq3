@@ -779,14 +779,10 @@ void Think_SpawnNewDoorTrigger(gentity_t* ent) {
 	vec3_t mins, maxs;
 	int i, best;
 
-	if(!ent) {
-		return;
-	}
+	if(!ent) return;
 
 	// set all of the members as shootable
-	for(other = ent; other; other = other->teamchain) {
-		other->takedamage = true;
-	}
+	for(other = ent; other; other = other->teamchain) other->takedamage = true;
 
 	// find the bounds of everything on the team
 	VectorCopy(ent->r.absmin, mins);
@@ -800,9 +796,7 @@ void Think_SpawnNewDoorTrigger(gentity_t* ent) {
 	// find the thinnest axis, which will be the one we expand
 	best = 0;
 	for(i = 1; i < 3; i++) {
-		if(maxs[i] - mins[i] < maxs[best] - mins[best]) {
-			best = i;
-		}
+		if(maxs[i] - mins[i] < maxs[best] - mins[best]) best = i;
 	}
 	maxs[best] += 120;
 	mins[best] -= 120;

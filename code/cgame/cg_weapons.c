@@ -1654,9 +1654,8 @@ void CG_Bullet(vec3_t end, int sourceEntityNum, vec3_t normal, bool flesh, int f
 	}
 
 	// impact splash and mark
-	if(flesh) {
+	if(flesh)
 		CG_Bleed(end, fleshEntityNum);
-	} else {
+	else
 		CG_MissileHitWall(WP_MACHINEGUN, 0, end, normal, IMPACTSOUND_DEFAULT);
-	}
 }

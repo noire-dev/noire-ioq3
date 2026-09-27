@@ -1436,12 +1436,7 @@ RE_EndRegistration
 Touch all images to make sure they are resident
 =============
 */
-void RE_EndRegistration(void) {
-	R_IssuePendingRenderCommands();
-	if(!ri.Sys_LowPhysicalMemory()) {
-		RB_ShowImages();
-	}
-}
+void RE_EndRegistration(void) { R_IssuePendingRenderCommands(); }
 
 /*
 @@@@@@@@@@@@@@@@@@@@@
