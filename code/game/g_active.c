@@ -149,7 +149,7 @@ G_SetClientSound
 */
 void G_SetClientSound(gentity_t* ent) {
 	if(ent->waterlevel && (ent->watertype & (CONTENTS_LAVA | CONTENTS_SLIME))) {
-		ent->client->ps.loopSound = level.snd_fry;
+		ent->client->ps.loopSound = G_SoundIndex("sound/player/fry.wav");
 	} else {
 		ent->client->ps.loopSound = 0;
 	}
@@ -587,10 +587,6 @@ void ClientEndFrame(gentity_t* ent) {
 	// set the latest infor
 	BG_PlayerStateToEntityStateExtraPolate(&ent->client->ps, &ent->s, ent->client->ps.commandTime, true);
 	SendPendingPredictableEvents(&ent->client->ps);
-
-	// set the bit for the reachability area the client is currently in
-	//	i = trap_AAS_PointReachabilityAreaIndex( ent->client->ps.origin );
-	//	ent->client->areabits[i >> 3] |= 1 << (i & 7);
 }
 
 bool G_CheckWeapon(int clientNum, int wp, int finish) {

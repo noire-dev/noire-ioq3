@@ -61,8 +61,6 @@ vmCvar_t g_weaponRespawn;
 vmCvar_t g_weaponTeamRespawn;
 vmCvar_t g_motd;
 vmCvar_t g_synchronousClients;
-vmCvar_t g_logfile;
-vmCvar_t g_logfileSync;
 vmCvar_t g_blood;
 vmCvar_t g_banIPs;
 vmCvar_t g_filterBan;
@@ -88,9 +86,6 @@ static cvarTable_t gameCvarTable[] = {
     {&g_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO, 0, false},
 
     {&g_friendlyFire, "g_friendlyFire", "0", CVAR_ARCHIVE, 0, true},
-
-    {&g_logfile, "g_log", "games.log", CVAR_ARCHIVE, 0, false},
-    {&g_logfileSync, "g_logsync", "0", CVAR_ARCHIVE, 0, false},
 
     {&g_password, "g_password", "", CVAR_USERINFO, 0, false},
 
@@ -280,25 +275,6 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	level.time = levelTime;
 	level.startTime = levelTime;
 
-	level.snd_fry = G_SoundIndex("sound/player/fry.wav");  // FIXME standing in lava / slime
-
-	if(g_logfile.string[0]) {
-		if(g_logfileSync.integer) {
-			trap_FS_FOpenFile(g_logfile.string, &level.logFile, FS_APPEND_SYNC);
-		} else {
-			trap_FS_FOpenFile(g_logfile.string, &level.logFile, FS_APPEND);
-		}
-		if(!level.logFile) {
-			G_Printf("WARNING: Couldn't open logfile: %s\n", g_logfile.string);
-		} else {
-			char serverinfo[MAX_INFO_STRING];
-
-			trap_GetServerinfo(serverinfo, sizeof(serverinfo));
-		}
-	} else {
-		G_Printf("Not logging to disk.\n");
-	}
-
 	// initialize all entities for this game
 	memset(g_entities, 0, MAX_GENTITIES * sizeof(g_entities[0]));
 	level.gentities = g_entities;
@@ -353,14 +329,7 @@ G_ShutdownGame
 void G_ShutdownGame(int restart) {
 	G_Printf("==== ShutdownGame ====\n");
 
-	if(level.logFile) {
-		trap_FS_FCloseFile(level.logFile);
-		level.logFile = 0;
-	}
-
-	if(trap_Cvar_VariableIntegerValue("bot_enable")) {
-		BotAIShutdown(restart);
-	}
+	if(trap_Cvar_VariableIntegerValue("bot_enable")) BotAIShutdown(restart);
 }
 
 //===================================================================

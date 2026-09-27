@@ -493,20 +493,10 @@ void NET_SendPacket(netsrc_t sock, int length, const void* data, netadr_t to) {
 		NET_SendLoopPacket(sock, length, data, to);
 		return;
 	}
-	if(to.type == NA_BOT) {
-		return;
-	}
-	if(to.type == NA_BAD) {
-		return;
-	}
+	if(to.type == NA_BOT) return;
+	if(to.type == NA_BAD) return;
 
-	if(sock == NS_CLIENT && cl_packetdelay->integer > 0) {
-		NET_QueuePacket(length, data, to, cl_packetdelay->integer);
-	} else if(sock == NS_SERVER && sv_packetdelay->integer > 0) {
-		NET_QueuePacket(length, data, to, sv_packetdelay->integer);
-	} else {
-		Sys_SendPacket(length, data, to);
-	}
+	Sys_SendPacket(length, data, to);
 }
 
 /*

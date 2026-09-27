@@ -600,8 +600,6 @@ char* ClientConnect(int clientNum, bool firstTime, bool isBot) {
 	ent->client = level.clients + clientNum;
 	client = ent->client;
 
-	//	areabits = client->areabits;
-
 	memset(client, 0, sizeof(*client));
 
 	client->pers.connected = CON_CONNECTING;
@@ -721,7 +719,6 @@ void ClientSpawn(gentity_t* ent) {
 
 	client->pers = saved;
 	client->ps.ping = savedPing;
-	client->lastkilled_client = -1;
 
 	for(i = 0; i < MAX_PERSISTANT; i++) {
 		client->ps.persistant[i] = persistant[i];

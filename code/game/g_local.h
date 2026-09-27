@@ -164,7 +164,6 @@ struct gclient_s {
 	bool noclip;
 
 	int buttons;
-	int oldbuttons;
 
 	vec3_t oldOrigin;
 
@@ -176,10 +175,6 @@ struct gclient_s {
 	vec3_t damage_from;     // origin for vector calculation
 	bool damage_fromWorld;  // if true, don't use the damage_from vector
 
-	int lastkilled_client;  // last client that this client killed
-	int lasthurt_client;    // last client that damaged this client
-	int lasthurt_mod;       // type of damage the client did
-
 	// timers
 	int respawnTime;         // can respawn when time > this, force after g_forcerespwan
 	int inactivityTime;      // kick players when time > this
@@ -187,11 +182,7 @@ struct gclient_s {
 
 	int airOutTime;
 
-	// timeResidual is used to handle events that happen every second
-	// like health / armor countdowns and regeneration
 	int timeResidual;
-
-	char* areabits;
 };
 
 //
@@ -202,12 +193,8 @@ struct gclient_s {
 
 typedef struct {
 	struct gclient_s* clients;  // [maxclients]
-
 	struct gentity_s* gentities;
-	int gentitySize;
 	int num_entities;  // MAX_CLIENTS <= num_entities <= ENTITYNUM_MAX_NORMAL
-
-	fileHandle_t logFile;
 
 	// store latched cvars here that we want to get at often
 	int maxclients;
@@ -220,8 +207,6 @@ typedef struct {
 
 	bool restarted;  // waiting for a map_restart to fire
 
-	int snd_fry;  // sound index for standing in lava
-
 	// spawn variables
 	bool spawning;  // the G_Spawn*() functions are valid
 	int numSpawnVars;
@@ -229,13 +214,7 @@ typedef struct {
 	int numSpawnVarChars;
 	char spawnVarChars[MAX_SPAWN_VARS_CHARS];
 
-	char* changemap;
-	bool readyToExit;  // at least one client wants to exit
-	int exitTime;
-
-	bool locationLinked;      // target_locations get linked
-	gentity_t* locationHead;  // head of the location list
-	int bodyQueIndex;         // dead bodies
+	int bodyQueIndex;  // dead bodies
 	gentity_t* bodyQue[BODY_QUEUE_SIZE];
 } level_locals_t;
 

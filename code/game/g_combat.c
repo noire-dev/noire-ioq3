@@ -427,12 +427,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 		}
 	}
 
-	if(targ->client) {
-		// set the last client who damaged the target
-		targ->client->lasthurt_client = attacker->s.number;
-		targ->client->lasthurt_mod = mod;
-	}
-
 	// do the damage
 	if(take) {
 		targ->health = targ->health - take;
