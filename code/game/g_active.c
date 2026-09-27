@@ -525,7 +525,6 @@ void ClientThink_real(gentity_t* ent) {
 	if(ent->client->ps.eventSequence != oldEventSequence) ent->eventTime = level.time;
 
 	// swap and latch button actions
-	client->oldbuttons = client->buttons;
 	client->buttons = ucmd->buttons;
 
 	// check for respawning
