@@ -474,8 +474,7 @@ void RE_RenderScene(const refdef_t* fd) {
 
 	// playing with cube maps
 	// this is where dynamic cubemaps would be rendered
-	if(0)  //(glRefConfig.framebufferObject && !( fd->rdflags & RDF_NOWORLDMODEL ))
-	{
+	if(0) {
 		int i, j;
 
 		for(i = 0; i < tr.numCubemaps; i++) {

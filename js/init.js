@@ -114,7 +114,6 @@ qvm.cmd = function (vmIndex, type, command) {
 
 cvar.register("hud.module", "default", CVAR.ARCHIVE);
 
-openjs.file("js/addons");
 openjs.file("js/cvar");
 openjs.file("js/translation");
 openjs.file("js/api");
