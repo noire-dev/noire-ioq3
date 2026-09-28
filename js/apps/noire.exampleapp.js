@@ -1,7 +1,7 @@
 function ExampleApp_Init(appID) {
     var id = ui.window(-1, app.list[appID].nameid, app.list[appID].name, app.list[appID].icon, 0, 640, 480, color.white, color.windowHeader, color.window);
-    if(!ctx[id]) ctx[id] = {};
-    
+    if (!ctx[id]) ctx[id] = {};
+
     ctx[id].self = id;
     ctx[id].close = ui.windowButton(id, -1, 0, "✕", UI.BOLD, color.windowButton, 1.00);
     ui.func(id, ctx[id].close, ExampleApp_Exit);
@@ -22,13 +22,13 @@ function ExampleApp_Call(id, eid, key) {
 }
 
 function ExampleApp_Update(id) {
-    if(api.window(id, "minimized")) api.element(id, ctx[id].minimize, "colorBackground", color.accent3);
+    if (api.window(id, "minimized")) api.element(id, ctx[id].minimize, "colorBackground", color.accent3);
     else api.element(id, ctx[id].minimize, "colorBackground", color.windowButton);
-    if(api.window(id, "pinned")) api.element(id, ctx[id].pin, "colorBackground", color.accent3);
+    if (api.window(id, "pinned")) api.element(id, ctx[id].pin, "colorBackground", color.accent3);
     else api.element(id, ctx[id].pin, "colorBackground", color.windowButton);
-    if(api.window(id, "linked")) api.element(id, ctx[id].link, "colorBackground", color.accent3);
+    if (api.window(id, "linked")) api.element(id, ctx[id].link, "colorBackground", color.accent3);
     else api.element(id, ctx[id].link, "colorBackground", color.windowButton);
-    if(api.window(id, "keyboardCapture")) api.element(id, ctx[id].keyboard, "colorBackground", color.accent3);
+    if (api.window(id, "keyboardCapture")) api.element(id, ctx[id].keyboard, "colorBackground", color.accent3);
     else api.element(id, ctx[id].keyboard, "colorBackground", color.windowButton);
 }
 
@@ -45,17 +45,17 @@ function ExampleApp_Exit(id) {
 }
 
 function ExampleApp_Minimize(id) {
-    if(api.window(id, "minimized")) api.window(id, "minimized", 0);
+    if (api.window(id, "minimized")) api.window(id, "minimized", 0);
     else api.window(id, "minimized", 1);
 }
 
 function ExampleApp_Pin(id) {
-    if(api.window(id, "pinned")) api.window(id, "pinned", 0);
+    if (api.window(id, "pinned")) api.window(id, "pinned", 0);
     else api.window(id, "pinned", 1);
 }
 
 function ExampleApp_Link(id) {
-    if(api.window(id, "linked")) {
+    if (api.window(id, "linked")) {
         api.window(id, "linked", 0);
     } else {
         ui.teleportWindowToPlayer(id, 128);
@@ -64,8 +64,8 @@ function ExampleApp_Link(id) {
 }
 
 function ExampleApp_Keyboard(id) {
-    if(api.window(id, "keyboardCapture")) api.window(id, "keyboardCapture", 0);
+    if (api.window(id, "keyboardCapture")) api.window(id, "keyboardCapture", 0);
     else api.window(id, "keyboardCapture", 1);
 }
 
-app.register("noiredev.exampleapp", "Example App", ExampleApp_Init, ExampleApp_Key, ExampleApp_Call, ExampleApp_Update, ExampleApp_BackgroundUpdate, ExampleApp_Shutdown);
+app.register("noire.exampleapp", "Example App", ExampleApp_Init, ExampleApp_Key, ExampleApp_Call, ExampleApp_Update, ExampleApp_BackgroundUpdate, ExampleApp_Shutdown);

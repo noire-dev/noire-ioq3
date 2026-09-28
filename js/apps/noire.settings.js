@@ -1,4 +1,4 @@
-cvar.register("noiredev.settings.playerModelSelect", "0", 0);
+cvar.register("noire.settings.playerModelSelect", "0", 0);
 
 function NoireSettings_Init(appID) {
     var id = ui.window(-1, app.list[appID].nameid, app.list[appID].name, app.list[appID].icon, 0, 800, 600, color.white, color.windowHeader, color.window);
@@ -55,9 +55,9 @@ function NoireSettings_UpdateTab(id) {
         api.element(id, ctx[id].lang, "optionsCount", 6);
         ui.spin(id, ctx[id].lang, 234, y, 800 - 224 - 20, ctx[id].elementHeight, "Language", UI.BOLD, color.windowItem, ctx[id].elementFontScale, "language", EMODE.STRING);
         ctx[id].scaleFactor = ctx[id].tabEndID += 1;
-        ui.slider(id, ctx[id].scaleFactor, 234, y += ctx[id].elementHeight + ctx[id].elementSpace, 800 - 224 - 20, ctx[id].elementHeight, "Shell scale", UI.BOLD, color.windowItem, ctx[id].elementFontScale, "", 1, api.cgui(qvm.ui, "scale") * 2, EMODE.INT);
+        ui.slider(id, ctx[id].scaleFactor, 234, y += ctx[id].elementHeight + ctx[id].elementSpace, 800 - 224 - 20, ctx[id].elementHeight, "Shell scale", UI.BOLD, color.windowItem, ctx[id].elementFontScale, "", 1, api.cgui(qvm.ui, "scale") * 5, EMODE.INT);
         ui.func(id, ctx[id].scaleFactor, NoireSettings_ApplyScale);
-        api.element(id, ctx[id].scaleFactor, "value", cvar.float("shell.global.scale") * 2);
+        api.element(id, ctx[id].scaleFactor, "value", cvar.float("shell.global.scale") * 10);
     }
 
     if (ctx[id].tabs[ctx[id].currentTab].name === "Profile") {
@@ -68,7 +68,7 @@ function NoireSettings_UpdateTab(id) {
         api.element(id, ctx[id].playerModelSelect, "options", "Head", 2);
         api.element(id, ctx[id].playerModelSelect, "options", "Legs", 3);
         api.element(id, ctx[id].playerModelSelect, "optionsCount", 4);
-        ui.spin(id, ctx[id].playerModelSelect, 234, y += ctx[id].elementHeight + ctx[id].elementSpace, 800 - 224 - 20, ctx[id].elementHeight, "Player model select", UI.BOLD, color.windowItem, ctx[id].elementFontScale, "noiredev.settings.playerModelSelect", EMODE.INT);
+        ui.spin(id, ctx[id].playerModelSelect, 234, y += ctx[id].elementHeight + ctx[id].elementSpace, 800 - 224 - 20, ctx[id].elementHeight, "Player model select", UI.BOLD, color.windowItem, ctx[id].elementFontScale, "noire.settings.playerModelSelect", EMODE.INT);
         ctx[id].playerModelListBG = ui.button(id, ctx[id].tabEndID += 1, 234, y += ctx[id].elementHeight + ctx[id].elementSpace, 800 - 224 - 20, 92 * 4, "", 0, color.windowItem, 0.00);
         ctx[id].playerModelList = ui.list(id, ctx[id].tabEndID += 1, 236, y, 92, 92, 0.65, 6, 4, LSTYLE.GRID, LMODE.PLAYERMODELS, 0);
         ui.setMargin(id, ctx[id].playerModelList, 6, 6, 6, 6);
@@ -214,7 +214,7 @@ function NoireSettings_UpdateTab(id) {
 }
 
 function NoireSettings_ApplyScale(id) {
-    cvar.set("shell.global.scale", api.element(id, ctx[id].scaleFactor, "value") / 2);
+    cvar.set("shell.global.scale", api.element(id, ctx[id].scaleFactor, "value") / 10);
     api.shell("scale", cvar.float("shell.global.scale"));
     qvm.cmd(qvm.ui, EXEC.INSERT, "shell.restart");
 }
@@ -260,14 +260,14 @@ function NoireSettings_Call(id, eid, key) {
 
     if (ctx[id].tabs[ctx[id].currentTab].name === "Profile") {
         if (eid == ctx[id].playerModelList) {
-            if (cvar.int("noiredev.settings.playerModelSelect") == 0) {
+            if (cvar.int("noire.settings.playerModelSelect") == 0) {
                 qvm.cmd(qvm.ui, EXEC.APPEND, "set headmodel " + api.element(id, ctx[id].playerModelList, "field") + ";");
                 qvm.cmd(qvm.ui, EXEC.APPEND, "set model " + api.element(id, ctx[id].playerModelList, "field") + ";");
                 qvm.cmd(qvm.ui, EXEC.APPEND, "set legsmodel " + api.element(id, ctx[id].playerModelList, "field") + ";");
             }
-            if (cvar.int("noiredev.settings.playerModelSelect") == 1) qvm.cmd(qvm.ui, EXEC.APPEND, "set model " + api.element(id, ctx[id].playerModelList, "field") + ";");
-            if (cvar.int("noiredev.settings.playerModelSelect") == 2) qvm.cmd(qvm.ui, EXEC.APPEND, "set headmodel " + api.element(id, ctx[id].playerModelList, "field") + ";");
-            if (cvar.int("noiredev.settings.playerModelSelect") == 3) qvm.cmd(qvm.ui, EXEC.APPEND, "set legsmodel " + api.element(id, ctx[id].playerModelList, "field") + ";");
+            if (cvar.int("noire.settings.playerModelSelect") == 1) qvm.cmd(qvm.ui, EXEC.APPEND, "set model " + api.element(id, ctx[id].playerModelList, "field") + ";");
+            if (cvar.int("noire.settings.playerModelSelect") == 2) qvm.cmd(qvm.ui, EXEC.APPEND, "set headmodel " + api.element(id, ctx[id].playerModelList, "field") + ";");
+            if (cvar.int("noire.settings.playerModelSelect") == 3) qvm.cmd(qvm.ui, EXEC.APPEND, "set legsmodel " + api.element(id, ctx[id].playerModelList, "field") + ";");
         }
     }
 
@@ -347,4 +347,4 @@ function NoireSettings_Keyboard(id) {
     else api.window(id, "keyboardCapture", 1);
 }
 
-app.register("noiredev.settings", "Settings", NoireSettings_Init, NoireSettings_Key, NoireSettings_Call, NoireSettings_Update, NoireSettings_BackgroundUpdate, NoireSettings_Shutdown);
+app.register("noire.settings", "Settings", NoireSettings_Init, NoireSettings_Key, NoireSettings_Call, NoireSettings_Update, NoireSettings_BackgroundUpdate, NoireSettings_Shutdown);

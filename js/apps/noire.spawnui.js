@@ -1,10 +1,10 @@
-cvar.register("noiredev.spawnui.toolgun.setting[1]", "", 0);
-cvar.register("noiredev.spawnui.toolgun.setting[2]", "", 0);
-cvar.register("noiredev.spawnui.toolgun.setting[3]", "", 0);
-cvar.register("noiredev.spawnui.toolgun.setting[4]", "", 0);
-cvar.register("noiredev.spawnui.prop.private", "0", 0);
-cvar.register("noiredev.spawnui.prop.physics", "1", 0);
-cvar.register("noiredev.spawnui.prop.grid", "25", 0);
+cvar.register("noire.spawnui.toolgun.setting[1]", "", 0);
+cvar.register("noire.spawnui.toolgun.setting[2]", "", 0);
+cvar.register("noire.spawnui.toolgun.setting[3]", "", 0);
+cvar.register("noire.spawnui.toolgun.setting[4]", "", 0);
+cvar.register("noire.spawnui.prop.private", "0", 0);
+cvar.register("noire.spawnui.prop.physics", "1", 0);
+cvar.register("noire.spawnui.prop.grid", "25", 0);
 
 function NoireSpawn_Init(appID) {
     var id = ui.window(-1, app.list[appID].nameid, app.list[appID].name, app.list[appID].icon, 0, 756 + 224, 532, color.white, color.windowHeader, color.window);
@@ -25,20 +25,20 @@ function NoireSpawn_Init(appID) {
     ctx[id].sidePanel = ui.button(id, -1, 0, 0, 224, 532, "", UI.NO_TOP_LEFT | UI.NO_TOP_RIGHT | UI.NO_BOTTOM_RIGHT | UI.NO_BOTTOM_LEFT, color.windowSide, 1.00);
     ctx[id].sidePanel2 = ui.button(id, -1, 756, 0, 224, 532, "", UI.NO_TOP_LEFT | UI.NO_TOP_RIGHT | UI.NO_BOTTOM_RIGHT | UI.NO_BOTTOM_LEFT, color.windowSide, 1.00);
 
-    ctx[id].toolgunSetting1 = ui.field(id, -1, 756 + 10, 10 + 0 * 29, 204, 24, "", UI.BOLD, color.windowItem, 0.65, "noiredev.spawnui.toolgun.setting[1]");
+    ctx[id].toolgunSetting1 = ui.field(id, -1, 756 + 10, 10 + 0 * 29, 204, 24, "", UI.BOLD, color.windowItem, 0.65, "noire.spawnui.toolgun.setting[1]");
     api.element(id, ctx[id].toolgunSetting1, "baseCorner", 4);
-    ctx[id].toolgunSetting2 = ui.field(id, -1, 756 + 10, 10 + 1 * 29, 204, 24, "", UI.BOLD, color.windowItem, 0.65, "noiredev.spawnui.toolgun.setting[2]");
+    ctx[id].toolgunSetting2 = ui.field(id, -1, 756 + 10, 10 + 1 * 29, 204, 24, "", UI.BOLD, color.windowItem, 0.65, "noire.spawnui.toolgun.setting[2]");
     api.element(id, ctx[id].toolgunSetting2, "baseCorner", 4);
-    ctx[id].toolgunSetting3 = ui.field(id, -1, 756 + 10, 10 + 2 * 29, 204, 24, "", UI.BOLD, color.windowItem, 0.65, "noiredev.spawnui.toolgun.setting[3]");
+    ctx[id].toolgunSetting3 = ui.field(id, -1, 756 + 10, 10 + 2 * 29, 204, 24, "", UI.BOLD, color.windowItem, 0.65, "noire.spawnui.toolgun.setting[3]");
     api.element(id, ctx[id].toolgunSetting3, "baseCorner", 4);
-    ctx[id].toolgunSetting4 = ui.field(id, -1, 756 + 10, 10 + 3 * 29, 204, 24, "", UI.BOLD, color.windowItem, 0.65, "noiredev.spawnui.toolgun.setting[4]");
+    ctx[id].toolgunSetting4 = ui.field(id, -1, 756 + 10, 10 + 3 * 29, 204, 24, "", UI.BOLD, color.windowItem, 0.65, "noire.spawnui.toolgun.setting[4]");
     api.element(id, ctx[id].toolgunSetting4, "baseCorner", 4);
 
-    ctx[id].private = ui.checkbox(id, -1, 756 + 10, 10 + 5 * 29, 204, 24, "Private", UI.BOLD, color.windowItem, 0.65, "noiredev.spawnui.prop.private");
+    ctx[id].private = ui.checkbox(id, -1, 756 + 10, 10 + 5 * 29, 204, 24, "Private", UI.BOLD, color.windowItem, 0.65, "noire.spawnui.prop.private");
     api.element(id, ctx[id].private, "baseCorner", 4);
-    ctx[id].physics = ui.checkbox(id, -1, 756 + 10, 10 + 6 * 29, 204, 24, "Physics", UI.BOLD, color.windowItem, 0.65, "noiredev.spawnui.prop.physics");
+    ctx[id].physics = ui.checkbox(id, -1, 756 + 10, 10 + 6 * 29, 204, 24, "Physics", UI.BOLD, color.windowItem, 0.65, "noire.spawnui.prop.physics");
     api.element(id, ctx[id].physics, "baseCorner", 4);
-    ctx[id].grid = ui.field(id, -1, 756 + 10, 10 + 7 * 29, 204, 24, "Grid", UI.BOLD, color.windowItem, 0.65, "noiredev.spawnui.prop.grid");
+    ctx[id].grid = ui.field(id, -1, 756 + 10, 10 + 7 * 29, 204, 24, "Grid", UI.BOLD, color.windowItem, 0.65, "noire.spawnui.prop.grid");
     api.element(id, ctx[id].grid, "baseCorner", 4);
 
     ctx[id].tabs = [
@@ -243,4 +243,4 @@ function NoireSpawn_Keyboard(id) {
     else api.window(id, "keyboardCapture", 1);
 }
 
-app.register("noiredev.spawnui", "Spawn UI", NoireSpawn_Init, NoireSpawn_Key, NoireSpawn_Call, NoireSpawn_Update, NoireSpawn_BackgroundUpdate, NoireSpawn_Shutdown);
+app.register("noire.spawnui", "Spawn UI", NoireSpawn_Init, NoireSpawn_Key, NoireSpawn_Call, NoireSpawn_Update, NoireSpawn_BackgroundUpdate, NoireSpawn_Shutdown);
