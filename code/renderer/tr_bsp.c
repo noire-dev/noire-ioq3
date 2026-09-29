@@ -2281,7 +2281,7 @@ void R_LoadEnvironmentJson(const char* baseName) {
 
 		keyValueJson = JSON_ObjectGetNamedValue(cubemapJson, bufferEnd, "Position");
 		JSON_ArrayGetIndex(keyValueJson, bufferEnd, indexes, 3);
-		for(j = 0; j < 3; j++) cubemap->origin[j] = JSON_ValueGetFloat(indexes[j], bufferEnd);
+		for(j = 0; j < 3; j++) cubemap->const_origin[j] = JSON_ValueGetFloat(indexes[j], bufferEnd);
 
 		cubemap->parallaxRadius = 1000.0f;
 		keyValueJson = JSON_ObjectGetNamedValue(cubemapJson, bufferEnd, "Radius");
@@ -2355,6 +2355,8 @@ void R_AssignCubemapsToWorldSurfaces(void) {
 	for(i = 0; i < w->numsurfaces; i++) {
 		msurface_t* surf = &w->surfaces[i];
 		vec3_t surfOrigin;
+
+		if(!(surf->shader->surfaceFlags & SURF_CUBEMAP)) continue;
 
 		if(surf->cullinfo.type & CULLINFO_SPHERE) {
 			VectorCopy(surf->cullinfo.localOrigin, surfOrigin);
@@ -2692,18 +2694,7 @@ void RE_LoadWorldMap(const char* name) {
 		// Try loading an env.json file first
 		R_LoadEnvironmentJson(s_worldData.baseName);
 
-		if(!tr.numCubemaps) {
-			R_LoadCubemapEntities("misc_cubemap");
-		}
-
-		if(!tr.numCubemaps) {
-			// use deathmatch spawn points as cubemaps
-			R_LoadCubemapEntities("info_player_deathmatch");
-		}
-
-		if(tr.numCubemaps) {
-			R_AssignCubemapsToWorldSurfaces();
-		}
+		if(tr.numCubemaps) R_AssignCubemapsToWorldSurfaces();
 	}
 
 	s_worldData.dataSize = (byte*)ri.Hunk_Alloc(0, h_low) - startMarker;

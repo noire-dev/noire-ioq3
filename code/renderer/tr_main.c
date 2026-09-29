@@ -2412,13 +2412,12 @@ void R_RenderCubemapSide(int cubemapIndex, int cubemapSide, bool subscene) {
 
 		// FIXME: sun shadows aren't rendered correctly in cubemaps
 		// fix involves changing r_FBufScale to fit smaller cubemap image size, or rendering cubemap to framebuffer first
-		if(0)  //(glRefConfig.framebufferObject && r_sunlightMode->integer && (r_forceSun->integer || tr.sunShadows))
-		{
-			R_RenderSunShadowMaps(&refdef, 0);
-			R_RenderSunShadowMaps(&refdef, 1);
-			R_RenderSunShadowMaps(&refdef, 2);
-			R_RenderSunShadowMaps(&refdef, 3);
-		}
+		// if(glRefConfig.framebufferObject && r_sunlightMode->integer && (r_forceSun->integer || tr.sunShadows)) {
+		//	R_RenderSunShadowMaps(&refdef, 0);
+		//	R_RenderSunShadowMaps(&refdef, 1);
+		//	R_RenderSunShadowMaps(&refdef, 2);
+		//	R_RenderSunShadowMaps(&refdef, 3);
+		//}
 	}
 
 	{
@@ -2456,10 +2455,9 @@ void R_RenderCubemapSide(int cubemapIndex, int cubemapSide, bool subscene) {
 
 	// FIXME: sun shadows aren't rendered correctly in cubemaps
 	// fix involves changing r_FBufScale to fit smaller cubemap image size, or rendering cubemap to framebuffer first
-	if(0)  //(r_depthPrepass->value && ((r_forceSun->integer) || tr.sunShadows))
-	{
-		parms.flags = VPF_USESUNLIGHT;
-	}
+	// if(r_depthPrepass->value && ((r_forceSun->integer) || tr.sunShadows)) {
+	//	parms.flags = VPF_USESUNLIGHT;
+	//}
 
 	parms.targetFbo = tr.renderCubeFbo;
 	parms.targetFboLayer = cubemapSide;
