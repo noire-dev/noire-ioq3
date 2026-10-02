@@ -2254,7 +2254,7 @@ void R_RenderMissingCubemaps(void) {
 	imgFlags_t flags = IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_NOLIGHTSCALE | IMGFLAG_CUBEMAP;
 
 	if(!tr.cubemap->image) {
-		tr.cubemap->image = R_CreateImage(va("*cubeMap%d", i), NULL, r_cubemapSize->integer, r_cubemapSize->integer, IMGTYPE_COLORALPHA, flags, GL_RGBA8);
+		tr.cubemap->image = R_CreateImage("*cubeMap", NULL, r_cubemapSize->integer, r_cubemapSize->integer, IMGTYPE_COLORALPHA, flags, GL_RGBA8);
 
 		for(i = 0; i < 6; i++) {
 			RE_ClearScene();
