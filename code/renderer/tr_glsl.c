@@ -149,8 +149,6 @@ static uniformInfo_t uniformsInfo[] = {{"u_DiffuseMap", GLSL_INT},
                                        {"u_PrimaryLightAmbient", GLSL_VEC3},
                                        {"u_PrimaryLightRadius", GLSL_FLOAT},
 
-                                       {"u_CubeMapInfo", GLSL_VEC4},
-
                                        {"u_AlphaTest", GLSL_INT},
 
                                        {"u_BoneMatrix", GLSL_MAT16_BONEMATRIX},
@@ -992,7 +990,6 @@ void GLSL_InitGPUShaders(void) {
 
 			if(r_cubeMapping->integer) {
 				Q_strcat(extradefines, 1024, "#define USE_CUBEMAP\n");
-				if(r_cubeMapping->integer == 2) Q_strcat(extradefines, 1024, "#define USE_BOX_CUBEMAP_PARALLAX\n");
 			} else if(r_deluxeSpecular->value > 0.000001f) {
 				Q_strcat(extradefines, 1024, va("#define r_deluxeSpecular %f\n", r_deluxeSpecular->value));
 			}
