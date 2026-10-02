@@ -234,7 +234,7 @@ void R_AddMD3Surfaces(trRefEntity_t* ent) {
 	int cull;
 	int lod;
 	int fogNum;
-	int cubemapIndex;
+	bool useCubemap;
 	bool personalModel;
 
 	// don't add third_person objects if not in a portal
@@ -324,24 +324,21 @@ void R_AddMD3Surfaces(trRefEntity_t* ent) {
 			drawSurf = surface;
 		}
 
-		if(shader->surfaceFlags & SURF_CUBEMAP)
-			cubemapIndex = R_CubemapForPoint(ent->e.origin);
-		else
-			cubemapIndex = 0;
+		useCubemap = R_CubemapForShader(shader->surfaceFlags & SURF_CUBEMAP);
 
 		// stencil shadows can't do personal models unless I polyhedron clip
 		if(!personalModel && r_shadows->integer == 2 && fogNum == 0 && !(ent->e.renderfx & (RF_NOSHADOW | RF_DEPTHHACK)) && shader->sort == SS_OPAQUE) {
-			R_AddDrawSurf(drawSurf, tr.shadowShader, 0, false, false, 0);
+			R_AddDrawSurf(drawSurf, tr.shadowShader, 0, false, false, false);
 		}
 
 		// projection shadows work fine with personal models
 		if(r_shadows->integer == 3 && fogNum == 0 && (ent->e.renderfx & RF_SHADOW_PLANE) && shader->sort == SS_OPAQUE) {
-			R_AddDrawSurf(drawSurf, tr.projectionShadowShader, 0, false, false, 0);
+			R_AddDrawSurf(drawSurf, tr.projectionShadowShader, 0, false, false, false);
 		}
 
 		// don't add third_person objects if not viewing through a portal
 		if(!personalModel) {
-			R_AddDrawSurf(drawSurf, shader, fogNum, false, false, cubemapIndex);
+			R_AddDrawSurf(drawSurf, shader, fogNum, false, false, useCubemap);
 		}
 
 		surface++;

@@ -97,7 +97,7 @@ void R_AddPolygonSurfaces(void) {
 
 	for(i = 0, poly = tr.refdef.polys; i < tr.refdef.numPolys; i++, poly++) {
 		sh = R_GetShaderByHandle(poly->hShader);
-		R_AddDrawSurf((void*)poly, sh, poly->fogIndex & fogMask, false, false, 0 /*cubeMap*/);
+		R_AddDrawSurf((void*)poly, sh, poly->fogIndex & fogMask, false, false, false);
 	}
 }
 
@@ -472,19 +472,9 @@ void RE_RenderScene(const refdef_t* fd) {
 		}
 	}
 
-	// playing with cube maps this is where dynamic cubemaps would be rendered
-	int i, j;
-
-	for(i = 0; i < tr.numCubemaps; i++) {
-		for(j = 0; j < 3; j++) {
-			if(tr.cubemaps[i].const_origin[j] == 0)
-				tr.cubemaps[i].origin[j] = tr.refdef.vieworg[j];
-			else
-				tr.cubemaps[i].origin[j] = tr.cubemaps[i].const_origin[j];
-		}
-		for(j = 0; j < 6; j++) {
-			R_RenderCubemapSide(i, j, true);
-		}
+	if(r_cubeMapping->integer && tr.cubemap) {
+		for(int i = 0; i < 3; i++) tr.cubemap->origin[i] = tr.refdef.vieworg[i];
+		for(int i = 0; i < 6; i++) R_RenderCubemapSide(i, true);
 	}
 
 	// setup view parms for the initial view

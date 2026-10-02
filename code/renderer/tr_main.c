@@ -1137,7 +1137,7 @@ static bool SurfIsOffscreen(const drawSurf_t* drawSurf, vec4_t clipDest[128]) {
 	R_RotateForViewer();
 
 	R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted, &pshadowed);
-	RB_BeginSurface(shader, fogNum, drawSurf->cubemapIndex);
+	RB_BeginSurface(shader, fogNum, drawSurf->useCubemap);
 	rb_surfaceTable[*drawSurf->surface](drawSurf->surface);
 
 	assert(tess.numVertexes < 128);
@@ -1364,7 +1364,7 @@ static void R_RadixSort(drawSurf_t* source, int size) {
 R_AddDrawSurf
 =================
 */
-void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, int pshadowMap, int cubemap) {
+void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, int pshadowMap, bool useCubemap) {
 	int index;
 
 	// instead of checking for overflow, we just mask the index
@@ -1373,7 +1373,7 @@ void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int d
 	// the sort data is packed into a single 32 bit value so it can be
 	// compared quickly during the qsorting process
 	tr.refdef.drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT) | tr.shiftedEntityNum | (fogIndex << QSORT_FOGNUM_SHIFT) | ((int)pshadowMap << QSORT_PSHADOW_SHIFT) | (int)dlightMap;
-	tr.refdef.drawSurfs[index].cubemapIndex = cubemap;
+	tr.refdef.drawSurfs[index].useCubemap = useCubemap;
 	tr.refdef.drawSurfs[index].surface = surface;
 	tr.refdef.numDrawSurfs++;
 }
@@ -1486,7 +1486,7 @@ static void R_AddEntitySurface(int entityNum) {
 				return;
 			}
 			shader = R_GetShaderByHandle(ent->e.customShader);
-			R_AddDrawSurf(&entitySurface, shader, R_SpriteFogNum(ent), 0, 0, 0 /*cubeMap*/);
+			R_AddDrawSurf(&entitySurface, shader, R_SpriteFogNum(ent), 0, 0, 0);
 			break;
 
 		case RT_MODEL:
@@ -1495,7 +1495,7 @@ static void R_AddEntitySurface(int entityNum) {
 
 			tr.currentModel = R_GetModelByHandle(ent->e.hModel);
 			if(!tr.currentModel) {
-				R_AddDrawSurf(&entitySurface, tr.defaultShader, 0, 0, 0, 0 /*cubeMap*/);
+				R_AddDrawSurf(&entitySurface, tr.defaultShader, 0, 0, 0, 0);
 			} else {
 				switch(tr.currentModel->type) {
 					case MOD_MESH: R_AddMD3Surfaces(ent); break;
@@ -2350,13 +2350,13 @@ void R_RenderSunShadowMaps(const refdef_t* fd, int level) {
 	}
 }
 
-void R_RenderCubemapSide(int cubemapIndex, int cubemapSide, bool subscene) {
+void R_RenderCubemapSide(int cubemapSide, bool subscene) {
 	refdef_t refdef;
 	viewParms_t parms;
 
 	memset(&refdef, 0, sizeof(refdef));
 	refdef.rdflags = 0;
-	VectorCopy(tr.cubemaps[cubemapIndex].origin, refdef.vieworg);
+	VectorCopy(tr.cubemap->origin, refdef.vieworg);
 
 	switch(cubemapSide) {
 		case 0:
@@ -2429,7 +2429,7 @@ void R_RenderCubemapSide(int cubemapIndex, int cubemapSide, bool subscene) {
 
 		// only print message for first side
 		if(scale < 1.0001f && cubemapSide == 0) {
-			ri.Printf(PRINT_ALL, "cubemap %d %s (%f, %f, %f) is outside the lightgrid or inside a wall!\n", cubemapIndex, tr.cubemaps[cubemapIndex].name, tr.refdef.vieworg[0], tr.refdef.vieworg[1], tr.refdef.vieworg[2]);
+			ri.Printf(PRINT_ALL, "cubemap (%f, %f, %f) is outside the lightgrid or inside a wall!\n", tr.refdef.vieworg[0], tr.refdef.vieworg[1], tr.refdef.vieworg[2]);
 		}
 	}
 
@@ -2461,7 +2461,6 @@ void R_RenderCubemapSide(int cubemapIndex, int cubemapSide, bool subscene) {
 
 	parms.targetFbo = tr.renderCubeFbo;
 	parms.targetFboLayer = cubemapSide;
-	parms.targetFboCubemapIndex = cubemapIndex;
 
 	R_RenderView(&parms);
 

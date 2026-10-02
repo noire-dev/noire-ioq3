@@ -277,7 +277,7 @@ because a surface may be forced to perform a RB_End due
 to overflow.
 ==============
 */
-void RB_BeginSurface(shader_t* shader, int fogNum, int cubemapIndex) {
+void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap) {
 	shader_t* state = (shader->remappedShader) ? shader->remappedShader : shader;
 
 	tess.numIndexes = 0;
@@ -285,7 +285,7 @@ void RB_BeginSurface(shader_t* shader, int fogNum, int cubemapIndex) {
 	tess.numVertexes = 0;
 	tess.shader = state;
 	tess.fogNum = fogNum;
-	tess.cubemapIndex = cubemapIndex;
+	tess.useCubemap = useCubemap;
 	tess.dlightBits = 0;   // will be OR'd in by surface functions
 	tess.pshadowBits = 0;  // will be OR'd in by surface functions
 	tess.xstages = state->stages;
@@ -1329,7 +1329,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 						GL_BindToTMU(tr.whiteImage, TB_SPECULARMAP);
 				}
 
-				enableTextures[3] = (r_cubeMapping->integer && !(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->cubemapIndex) ? 1.0f : 0.0f;
+				enableTextures[3] = (r_cubeMapping->integer && !(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap) ? 1.0f : 0.0f;
 			}
 
 			GLSL_SetUniformVec4(sp, UNIFORM_ENABLETEXTURES, enableTextures);
@@ -1343,12 +1343,10 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 			R_BindAnimatedImageToTMU(&pStage->bundle[0], 0);
 		}
 
-		//
 		// testing cube map
-		//
-		if(!(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->cubemapIndex && r_cubeMapping->integer) {
+		if(!(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap && r_cubeMapping->integer) {
 			vec4_t vec;
-			cubemap_t* cubemap = &tr.cubemaps[input->cubemapIndex - 1];
+			cubemap_t* cubemap = tr.cubemap;
 
 			// FIXME: cubemap image could be NULL if cubemap isn't renderer or loaded
 			if(cubemap->image) GL_BindToTMU(cubemap->image, TB_CUBEMAP);

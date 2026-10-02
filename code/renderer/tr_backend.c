@@ -268,8 +268,8 @@ void RB_BeginDrawingView(void) {
 
 		if(fbo == NULL) fbo = tr.renderFbo;
 
-		if(tr.renderCubeFbo && fbo == tr.renderCubeFbo) {
-			cubemap_t* cubemap = &tr.cubemaps[backEnd.viewParms.targetFboCubemapIndex];
+		if(tr.cubemap && tr.cubemap->image && tr.renderCubeFbo && fbo == tr.renderCubeFbo) {
+			cubemap_t* cubemap = tr.cubemap;
 			FBO_AttachImage(fbo, cubemap->image, GL_COLOR_ATTACHMENT0_EXT, backEnd.viewParms.targetFboLayer);
 		}
 
@@ -344,7 +344,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	int entityNum, oldEntityNum;
 	int dlighted, oldDlighted;
 	int pshadowed, oldPshadowed;
-	int cubemapIndex, oldCubemapIndex;
+	bool useCubemap, oldCubemapIndex;
 	bool depthRange, oldDepthRange, isCrosshair, wasCrosshair;
 	int i;
 	drawSurf_t* drawSurf;
@@ -372,7 +372,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	backEnd.pc.c_surfaces += numDrawSurfs;
 
 	for(i = 0, drawSurf = drawSurfs; i < numDrawSurfs; i++, drawSurf++) {
-		if(drawSurf->sort == (unsigned)oldSort && drawSurf->cubemapIndex == oldCubemapIndex) {
+		if(drawSurf->sort == (unsigned)oldSort && drawSurf->useCubemap == oldCubemapIndex) {
 			if(backEnd.depthFill && shader && (shader->sort != SS_OPAQUE && shader->sort != SS_PORTAL)) continue;
 
 			// fast path, same as previous sort
@@ -381,23 +381,23 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 		}
 		oldSort = (int)drawSurf->sort;
 		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted, &pshadowed);
-		cubemapIndex = drawSurf->cubemapIndex;
+		useCubemap = drawSurf->useCubemap;
 
 		//
 		// change the tess parameters if needed
 		// a "entityMergable" shader is a shader that can have surfaces from separate
 		// entities merged into a single batch, like smoke and blood puff sprites
-		if(shader != NULL && (shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted || pshadowed != oldPshadowed || cubemapIndex != oldCubemapIndex || (entityNum != oldEntityNum && !shader->entityMergable))) {
+		if(shader != NULL && (shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted || pshadowed != oldPshadowed || useCubemap != oldCubemapIndex || (entityNum != oldEntityNum && !shader->entityMergable))) {
 			if(oldShader != NULL) {
 				RB_EndSurface();
 			}
-			RB_BeginSurface(shader, fogNum, cubemapIndex);
+			RB_BeginSurface(shader, fogNum, useCubemap);
 			backEnd.pc.c_surfBatches++;
 			oldShader = shader;
 			oldFogNum = fogNum;
 			oldDlighted = dlighted;
 			oldPshadowed = pshadowed;
-			oldCubemapIndex = cubemapIndex;
+			oldCubemapIndex = useCubemap;
 		}
 
 		if(backEnd.depthFill && shader && (shader->sort != SS_OPAQUE && shader->sort != SS_PORTAL)) continue;
@@ -713,7 +713,7 @@ const void* RB_StretchPic(const void* data) {
 			RB_EndSurface();
 		}
 		backEnd.currentEntity = &backEnd.entity2D;
-		RB_BeginSurface(shader, 0, 0);
+		RB_BeginSurface(shader, 0, false);
 	}
 
 	RB_CHECKOVERFLOW(4, 6);
@@ -1055,7 +1055,7 @@ const void* RB_DrawSurfs(const void* data) {
 	}
 
 	if(glRefConfig.framebufferObject && tr.renderCubeFbo && backEnd.viewParms.targetFbo == tr.renderCubeFbo) {
-		cubemap_t* cubemap = &tr.cubemaps[backEnd.viewParms.targetFboCubemapIndex];
+		cubemap_t* cubemap = tr.cubemap;
 
 		FBO_Bind(NULL);
 		if(cubemap && cubemap->image) qglGenerateTextureMipmapEXT(cubemap->image->texnum, GL_TEXTURE_CUBE_MAP);
@@ -1369,77 +1369,9 @@ const void* RB_PostProcess(const void* data) {
 
 	if(r_drawSunRays->integer) RB_SunRays(srcFbo, srcBox, srcFbo, srcBox);
 
-	if(1)
-		RB_BokehBlur(srcFbo, srcBox, srcFbo, srcBox, backEnd.refdef.blurFactor);
-	else
-		RB_GaussianBlur(srcFbo, srcFbo, backEnd.refdef.blurFactor);
+	RB_BokehBlur(srcFbo, srcBox, srcFbo, srcBox, backEnd.refdef.blurFactor);
 
 	if(srcFbo != dstFbo) FBO_FastBlit(srcFbo, srcBox, dstFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-#if 0
-	if (0)
-	{
-		vec4_t quadVerts[4];
-		vec2_t texCoords[4];
-		ivec4_t iQtrBox;
-		vec4_t box;
-		vec4_t viewInfo;
-		static float scale = 5.0f;
-
-		scale -= 0.005f;
-		if (scale < 0.01f)
-			scale = 5.0f;
-
-		FBO_FastBlit(dstFbo, NULL, tr.quarterFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-
-		iQtrBox[0] = backEnd.viewParms.viewportX      * tr.quarterImage[0]->width / (float)glConfig.vidWidth;
-		iQtrBox[1] = backEnd.viewParms.viewportY      * tr.quarterImage[0]->height / (float)glConfig.vidHeight;
-		iQtrBox[2] = backEnd.viewParms.viewportWidth  * tr.quarterImage[0]->width / (float)glConfig.vidWidth;
-		iQtrBox[3] = backEnd.viewParms.viewportHeight * tr.quarterImage[0]->height / (float)glConfig.vidHeight;
-
-		qglViewport(iQtrBox[0], iQtrBox[1], iQtrBox[2], iQtrBox[3]);
-		qglScissor(iQtrBox[0], iQtrBox[1], iQtrBox[2], iQtrBox[3]);
-
-		VectorSet4(box, 0.0f, 0.0f, 1.0f, 1.0f);
-
-		texCoords[0][0] = box[0]; texCoords[0][1] = box[3];
-		texCoords[1][0] = box[2]; texCoords[1][1] = box[3];
-		texCoords[2][0] = box[2]; texCoords[2][1] = box[1];
-		texCoords[3][0] = box[0]; texCoords[3][1] = box[1];
-
-		VectorSet4(box, -1.0f, -1.0f, 1.0f, 1.0f);
-
-		VectorSet4(quadVerts[0], box[0], box[3], 0, 1);
-		VectorSet4(quadVerts[1], box[2], box[3], 0, 1);
-		VectorSet4(quadVerts[2], box[2], box[1], 0, 1);
-		VectorSet4(quadVerts[3], box[0], box[1], 0, 1);
-
-		GL_State(GLS_DEPTHTEST_DISABLE);
-
-
-		VectorSet4(viewInfo, backEnd.viewParms.zFar / r_znear->value, backEnd.viewParms.zFar, 0.0, 0.0);
-
-		viewInfo[2] = scale / (float)(tr.quarterImage[0]->width);
-		viewInfo[3] = scale / (float)(tr.quarterImage[0]->height);
-
-		FBO_Bind(tr.quarterFbo[1]);
-		GLSL_BindProgram(&tr.depthBlurShader[2]);
-		GL_BindToTMU(tr.quarterImage[0], TB_COLORMAP);
-		GLSL_SetUniformVec4(&tr.depthBlurShader[2], UNIFORM_VIEWINFO, viewInfo);
-		RB_InstantQuad2(quadVerts, texCoords);
-
-		FBO_Bind(tr.quarterFbo[0]);
-		GLSL_BindProgram(&tr.depthBlurShader[3]);
-		GL_BindToTMU(tr.quarterImage[1], TB_COLORMAP);
-		GLSL_SetUniformVec4(&tr.depthBlurShader[3], UNIFORM_VIEWINFO, viewInfo);
-		RB_InstantQuad2(quadVerts, texCoords);
-
-		SetViewportAndScissor();
-
-		FBO_FastBlit(tr.quarterFbo[1], NULL, dstFbo, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-		FBO_Bind(NULL);
-	}
-#endif
 
 	if(0 && r_sunlightMode->integer) {
 		ivec4_t dstBox2;
@@ -1479,80 +1411,6 @@ const void* RB_PostProcess(const void* data) {
 		FBO_BlitFromTexture(tr.sunRaysImage, NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
 	}
 
-#if 0
-	if (r_cubeMapping->integer && tr.numCubemaps)
-	{
-		ivec4_t dstBox;
-		int cubemapIndex = R_CubemapForPoint( backEnd.viewParms.or.origin );
-
-		if (cubemapIndex)
-		{
-			VectorSet4(dstBox, 0, glConfig.vidHeight - 256, 256, 256);
-			//FBO_BlitFromTexture(tr.renderCubeImage, NULL, NULL, dstFbo, dstBox, &tr.testcubeShader, NULL, 0);
-			FBO_BlitFromTexture(tr.cubemaps[cubemapIndex - 1].image, NULL, NULL, dstFbo, dstBox, &tr.testcubeShader, NULL, 0);
-		}
-	}
-#endif
-
-	return (const void*)(cmd + 1);
-}
-
-// FIXME: put this function declaration elsewhere
-void R_SaveDDS(const char* filename, byte* pic, int width, int height, int depth);
-
-/*
-=============
-RB_ExportCubemaps
-
-=============
-*/
-const void* RB_ExportCubemaps(const void* data) {
-	const exportCubemapsCommand_t* cmd = data;
-
-	// finish any 2D drawing if needed
-	if(tess.numIndexes) RB_EndSurface();
-
-	if(!glRefConfig.framebufferObject || !tr.world || tr.numCubemaps == 0) {
-		// do nothing
-		ri.Printf(PRINT_ALL, "Nothing to export!\n");
-		return (const void*)(cmd + 1);
-	}
-
-	if(cmd) {
-		FBO_t* oldFbo = glState.currentFBO;
-		int sideSize = r_cubemapSize->integer * r_cubemapSize->integer * 4;
-		byte* cubemapPixels = ri.Malloc(sideSize * 6);
-		int i, j;
-
-		FBO_Bind(tr.renderCubeFbo);
-
-		for(i = 0; i < tr.numCubemaps; i++) {
-			char filename[MAX_QPATH];
-			cubemap_t* cubemap = &tr.cubemaps[i];
-			byte* p = cubemapPixels;
-
-			for(j = 0; j < 6; j++) {
-				FBO_AttachImage(tr.renderCubeFbo, cubemap->image, GL_COLOR_ATTACHMENT0_EXT, j);
-				qglReadPixels(0, 0, r_cubemapSize->integer, r_cubemapSize->integer, GL_RGBA, GL_UNSIGNED_BYTE, p);
-				p += sideSize;
-			}
-
-			if(cubemap->name[0]) {
-				COM_StripExtension(cubemap->name, filename, MAX_QPATH);
-				Q_strcat(filename, MAX_QPATH, ".dds");
-			} else {
-				Com_sprintf(filename, MAX_QPATH, "cubemaps/%s/%03d.dds", tr.world->baseName, i);
-			}
-
-			R_SaveDDS(filename, cubemapPixels, r_cubemapSize->integer, r_cubemapSize->integer, 6);
-			ri.Printf(PRINT_ALL, "Saved cubemap %d as %s\n", i, filename);
-		}
-
-		FBO_Bind(oldFbo);
-
-		ri.Free(cubemapPixels);
-	}
-
 	return (const void*)(cmd + 1);
 }
 
@@ -1581,7 +1439,6 @@ void RB_ExecuteRenderCommands(const void* data) {
 			case RC_CLEARDEPTH: data = RB_ClearDepth(data); break;
 			case RC_CAPSHADOWMAP: data = RB_CapShadowMap(data); break;
 			case RC_POSTPROCESS: data = RB_PostProcess(data); break;
-			case RC_EXPORT_CUBEMAPS: data = RB_ExportCubemaps(data); break;
 			case RC_END_OF_LIST:
 			default:
 				// finish any 2D drawing if needed

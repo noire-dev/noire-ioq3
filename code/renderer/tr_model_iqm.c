@@ -1126,7 +1126,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 	bool personalModel;
 	int cull;
 	int fogNum;
-	int cubemapIndex;
+	bool useCubemap;
 	shader_t* shader;
 	skin_t* skin;
 
@@ -1197,10 +1197,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 			drawSurf = surface;
 		}
 
-		if(shader->surfaceFlags & SURF_CUBEMAP)
-			cubemapIndex = R_CubemapForPoint(ent->e.origin);
-		else
-			cubemapIndex = 0;
+		useCubemap = R_CubemapForShader(shader->surfaceFlags & SURF_CUBEMAP);
 
 		// stencil shadows can't do personal models unless I polyhedron clip
 		if(!personalModel && r_shadows->integer == 2 && fogNum == 0 && !(ent->e.renderfx & (RF_NOSHADOW | RF_DEPTHHACK)) && shader->sort == SS_OPAQUE) {
@@ -1213,7 +1210,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 		}
 
 		if(!personalModel) {
-			R_AddDrawSurf(drawSurf, shader, fogNum, 0, 0, cubemapIndex);
+			R_AddDrawSurf(drawSurf, shader, fogNum, 0, 0, useCubemap);
 		}
 
 		surface++;
@@ -1531,7 +1528,7 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 
 	// RB_CheckVao(surface->vao);
 	RB_EndSurface();
-	RB_BeginSurface(tess.shader, tess.fogNum, tess.cubemapIndex);
+	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap);
 
 	R_BindVao(surface->vao);
 

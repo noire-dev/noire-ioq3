@@ -743,32 +743,6 @@ void R_ScreenShotJPEG_f(void) {
 	}
 }
 
-//============================================================================
-
-/*
-==================
-R_ExportCubemaps
-==================
-*/
-void R_ExportCubemaps(void) {
-	exportCubemapsCommand_t* cmd;
-
-	cmd = R_GetCommandBuffer(sizeof(*cmd));
-	if(!cmd) {
-		return;
-	}
-	cmd->commandId = RC_EXPORT_CUBEMAPS;
-}
-
-/*
-==================
-R_ExportCubemaps_f
-==================
-*/
-void R_ExportCubemaps_f(void) { R_ExportCubemaps(); }
-
-//============================================================================
-
 /*
 ==================
 RB_TakeVideoFrameCmd
@@ -1274,7 +1248,6 @@ void R_Register(void) {
 	ri.Cmd_AddCommand("gfxinfo", GfxInfo_f);
 	ri.Cmd_AddCommand("minimize", GLimp_Minimize);
 	ri.Cmd_AddCommand("gfxmeminfo", GfxMemInfo_f);
-	ri.Cmd_AddCommand("exportCubemaps", R_ExportCubemaps_f);
 }
 
 void R_InitQueries(void) {
@@ -1399,7 +1372,6 @@ void RE_Shutdown(bool destroyWindow) {
 	ri.Cmd_RemoveCommand("gfxinfo");
 	ri.Cmd_RemoveCommand("minimize");
 	ri.Cmd_RemoveCommand("gfxmeminfo");
-	ri.Cmd_RemoveCommand("exportCubemaps");
 
 	if(tr.registered) {
 		R_IssuePendingRenderCommands();

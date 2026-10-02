@@ -2225,69 +2225,12 @@ bool R_ParseSpawnVars(char* spawnVarChars, int maxSpawnVarChars, int* numSpawnVa
 }
 
 void R_CreateBaseCubemap(void) {
-	tr.numCubemaps = 1;
-	tr.cubemaps = ri.Hunk_Alloc(tr.numCubemaps * sizeof(*tr.cubemaps), h_low);
-	memset(tr.cubemaps, 0, tr.numCubemaps * sizeof(*tr.cubemaps));
-	cubemap_t* cubemap = &tr.cubemaps[0];
+	tr.cubemap = ri.Hunk_Alloc(sizeof(*tr.cubemap), h_low);
+	memset(tr.cubemap, 0, sizeof(*tr.cubemap));
+	cubemap_t* cubemap = tr.cubemap;
 
-	strcpy(cubemap->name, "base_cubemap\0");
-	VectorClear(cubemap->const_origin);
+	VectorClear(cubemap->origin);
 	cubemap->parallaxRadius = 65535.0f;
-}
-
-void R_LoadCubemapEntities(char* cubemapEntityName) {
-	char spawnVarChars[2048];
-	int numSpawnVars;
-	char* spawnVars[MAX_SPAWN_VARS][2];
-	int numCubemaps = 0;
-
-	// count cubemaps
-	numCubemaps = 0;
-	while(R_ParseSpawnVars(spawnVarChars, sizeof(spawnVarChars), &numSpawnVars, spawnVars)) {
-		int i;
-
-		for(i = 0; i < numSpawnVars; i++) {
-			if(!Q_stricmp(spawnVars[i][0], "classname") && !Q_stricmp(spawnVars[i][1], cubemapEntityName)) numCubemaps++;
-		}
-	}
-
-	if(!numCubemaps) return;
-
-	tr.numCubemaps = numCubemaps;
-	tr.cubemaps = ri.Hunk_Alloc(tr.numCubemaps * sizeof(*tr.cubemaps), h_low);
-	memset(tr.cubemaps, 0, tr.numCubemaps * sizeof(*tr.cubemaps));
-
-	numCubemaps = 0;
-	while(R_ParseSpawnVars(spawnVarChars, sizeof(spawnVarChars), &numSpawnVars, spawnVars)) {
-		int i;
-		char name[MAX_QPATH];
-		bool isCubemap = false;
-		bool originSet = false;
-		vec3_t origin;
-		float parallaxRadius = 1000.0f;
-
-		name[0] = '\0';
-		for(i = 0; i < numSpawnVars; i++) {
-			if(!Q_stricmp(spawnVars[i][0], "classname") && !Q_stricmp(spawnVars[i][1], cubemapEntityName)) isCubemap = true;
-
-			if(!Q_stricmp(spawnVars[i][0], "name")) Q_strncpyz(name, spawnVars[i][1], MAX_QPATH);
-
-			if(!Q_stricmp(spawnVars[i][0], "origin")) {
-				sscanf(spawnVars[i][1], "%f %f %f", &origin[0], &origin[1], &origin[2]);
-				originSet = true;
-			} else if(!Q_stricmp(spawnVars[i][0], "radius")) {
-				sscanf(spawnVars[i][1], "%f", &parallaxRadius);
-			}
-		}
-
-		if(isCubemap && originSet) {
-			cubemap_t* cubemap = &tr.cubemaps[numCubemaps];
-			Q_strncpyz(cubemap->name, name, MAX_QPATH);
-			VectorCopy(origin, cubemap->origin);
-			cubemap->parallaxRadius = parallaxRadius;
-			numCubemaps++;
-		}
-	}
 }
 
 void R_AssignCubemapsToWorldSurfaces(void) {
@@ -2298,56 +2241,26 @@ void R_AssignCubemapsToWorldSurfaces(void) {
 
 	for(i = 0; i < w->numsurfaces; i++) {
 		msurface_t* surf = &w->surfaces[i];
-		vec3_t surfOrigin;
 
-		surf->cubemapIndex = 0;
+		surf->useCubemap = false;
 
 		if(!(surf->shader->surfaceFlags & SURF_CUBEMAP)) continue;
-
-		if(surf->cullinfo.type & CULLINFO_SPHERE) {
-			VectorCopy(surf->cullinfo.localOrigin, surfOrigin);
-		} else if(surf->cullinfo.type & CULLINFO_BOX) {
-			surfOrigin[0] = (surf->cullinfo.bounds[0][0] + surf->cullinfo.bounds[1][0]) * 0.5f;
-			surfOrigin[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
-			surfOrigin[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
-		} else {
-			// ri.Printf(PRINT_ALL, "surface %d has no cubemap\n", i);
-			continue;
-		}
-
-		surf->cubemapIndex = R_CubemapForPoint(surfOrigin);
-		// ri.Printf(PRINT_ALL, "surface %d has cubemap %d\n", i, surf->cubemapIndex);
-	}
-}
-
-void R_LoadCubemaps(void) {
-	int i;
-	imgFlags_t flags = IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_NOLIGHTSCALE | IMGFLAG_CUBEMAP;
-
-	for(i = 0; i < tr.numCubemaps; i++) {
-		char filename[MAX_QPATH];
-		cubemap_t* cubemap = &tr.cubemaps[i];
-
-		Com_sprintf(filename, MAX_QPATH, "cubemaps/%s/%03d.dds", tr.world->baseName, i);
-
-		cubemap->image = R_FindImageFile(filename, IMGTYPE_COLORALPHA, flags);
+		if((surf->cullinfo.type & CULLINFO_SPHERE) || (surf->cullinfo.type & CULLINFO_BOX)) surf->useCubemap = R_CubemapForShader(true);
 	}
 }
 
 void R_RenderMissingCubemaps(void) {
-	int i, j;
+	int i;
 	imgFlags_t flags = IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_NOLIGHTSCALE | IMGFLAG_CUBEMAP;
 
-	for(i = 0; i < tr.numCubemaps; i++) {
-		if(!tr.cubemaps[i].image) {
-			tr.cubemaps[i].image = R_CreateImage(va("*cubeMap%d", i), NULL, r_cubemapSize->integer, r_cubemapSize->integer, IMGTYPE_COLORALPHA, flags, GL_RGBA8);
+	if(!tr.cubemap->image) {
+		tr.cubemap->image = R_CreateImage(va("*cubeMap%d", i), NULL, r_cubemapSize->integer, r_cubemapSize->integer, IMGTYPE_COLORALPHA, flags, GL_RGBA8);
 
-			for(j = 0; j < 6; j++) {
-				RE_ClearScene();
-				R_RenderCubemapSide(i, j, false);
-				R_IssuePendingRenderCommands();
-				R_InitNextFrame();
-			}
+		for(i = 0; i < 6; i++) {
+			RE_ClearScene();
+			R_RenderCubemapSide(i, false);
+			R_IssuePendingRenderCommands();
+			R_InitNextFrame();
 		}
 	}
 }
@@ -2637,8 +2550,7 @@ void RE_LoadWorldMap(const char* name) {
 
 	// load cubemaps
 	if(r_cubeMapping->integer) {
-		R_LoadCubemapEntities("misc_cubemap");
-		if(!tr.numCubemaps) R_CreateBaseCubemap();
+		R_CreateBaseCubemap();
 		R_AssignCubemapsToWorldSurfaces();
 	}
 
@@ -2650,11 +2562,8 @@ void RE_LoadWorldMap(const char* name) {
 	// make sure the VAO glState entry is safe
 	R_BindNullVao();
 
-	// Render or load all cubemaps
-	if(r_cubeMapping->integer && tr.numCubemaps && glRefConfig.framebufferObject) {
-		R_LoadCubemaps();
-		R_RenderMissingCubemaps();
-	}
+	// Render all cubemaps
+	if(r_cubeMapping->integer && glRefConfig.framebufferObject) R_RenderMissingCubemaps();
 
 	ri.FS_FreeFile(buffer.v);
 }

@@ -70,8 +70,6 @@ typedef unsigned int vaoCacheGlIndex_t;
 #define PSHADOW_MAP_SIZE 512
 
 typedef struct cubemap_s {
-	char name[MAX_QPATH];
-	vec3_t const_origin;
 	vec3_t origin;
 	float parallaxRadius;
 	image_t* image;
@@ -713,7 +711,6 @@ typedef struct {
 	int viewportX, viewportY, viewportWidth, viewportHeight;
 	FBO_t* targetFbo;
 	int targetFboLayer;
-	int targetFboCubemapIndex;
 	float fovX, fovY;
 	float projectionMatrix[16];
 	cplane_t frustum[5];
@@ -754,7 +751,7 @@ typedef enum {
 
 typedef struct drawSurf_s {
 	unsigned int sort;  // bit combination for fast compares
-	int cubemapIndex;
+	bool useCubemap;
 	surfaceType_t* surface;  // any of surface*_t
 } drawSurf_t;
 
@@ -982,7 +979,7 @@ typedef struct msurface_s {
 	// int					viewCount;		// if == tr.viewCount, already added
 	struct shader_s* shader;
 	int fogIndex;
-	int cubemapIndex;
+	bool useCubemap;
 	cullinfo_t cullinfo;
 
 	surfaceType_t* data;  // any of srf*_t
@@ -1428,8 +1425,7 @@ typedef struct {
 	int fatLightmapCols;
 	int fatLightmapRows;
 
-	int numCubemaps;
-	cubemap_t* cubemaps;
+	cubemap_t* cubemap;
 
 	trRefEntity_t* currentEntity;
 	trRefEntity_t worldEntity;  // point currentEntity at this when rendering world
@@ -1720,7 +1716,7 @@ void R_RenderView(viewParms_t* parms);
 void R_RenderDlightCubemaps(const refdef_t* fd);
 void R_RenderPshadowMaps(const refdef_t* fd);
 void R_RenderSunShadowMaps(const refdef_t* fd, int level);
-void R_RenderCubemapSide(int cubemapIndex, int cubemapSide, bool subscene);
+void R_RenderCubemapSide(int cubemapSide, bool subscene);
 
 void R_AddMD3Surfaces(trRefEntity_t* e);
 void R_AddNullModelSurfaces(trRefEntity_t* e);
@@ -1732,7 +1728,7 @@ void R_AddPolygonSurfaces(void);
 
 void R_DecomposeSort(unsigned sort, int* entityNum, shader_t** shader, int* fogNum, int* dlightMap, int* pshadowMap);
 
-void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, int pshadowMap, int cubemap);
+void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, int pshadowMap, bool useCubemap);
 
 void R_CalcTexDirs(vec3_t sdir, vec3_t tdir, const vec3_t v1, const vec3_t v2, const vec3_t v3, const vec2_t w1, const vec2_t w2, const vec2_t w3);
 vec_t R_CalcTangentSpace(vec3_t tangent, vec3_t bitangent, const vec3_t normal, const vec3_t sdir, const vec3_t tdir);
@@ -1899,7 +1895,7 @@ typedef struct shaderCommands_s {
 	shader_t* shader;
 	double shaderTime;
 	int fogNum;
-	int cubemapIndex;
+	bool useCubemap;
 
 	int dlightBits;  // or together of all vertexDlightBits
 	int pshadowBits;
@@ -1916,7 +1912,7 @@ typedef struct shaderCommands_s {
 
 extern shaderCommands_t tess;
 
-void RB_BeginSurface(shader_t* shader, int fogNum, int cubemapIndex);
+void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap);
 void RB_EndSurface(void);
 void RB_CheckOverflow(int verts, int indexes);
 #define RB_CHECKOVERFLOW(v, i)                                                                         \
@@ -1974,7 +1970,7 @@ void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent);
 void R_TransformDlights(int count, dlight_t* dl, orientationr_t* or);
 int R_LightForPoint(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir);
 int R_LightDirForPoint(vec3_t point, vec3_t lightDir, vec3_t normal, world_t* world);
-int R_CubemapForPoint(vec3_t point);
+bool R_CubemapForShader(bool applyCubemap);
 
 /*
 ============================================================
@@ -2274,11 +2270,7 @@ typedef struct {
 	viewParms_t viewParms;
 } postProcessCommand_t;
 
-typedef struct {
-	int commandId;
-} exportCubemapsCommand_t;
-
-typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_DRAW_BUFFER, RC_SWAP_BUFFERS, RC_SCREENSHOT, RC_VIDEOFRAME, RC_COLORMASK, RC_CLEARDEPTH, RC_CAPSHADOWMAP, RC_POSTPROCESS, RC_EXPORT_CUBEMAPS } renderCommand_t;
+typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_DRAW_BUFFER, RC_SWAP_BUFFERS, RC_SCREENSHOT, RC_VIDEOFRAME, RC_COLORMASK, RC_CLEARDEPTH, RC_CAPSHADOWMAP, RC_POSTPROCESS } renderCommand_t;
 
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --

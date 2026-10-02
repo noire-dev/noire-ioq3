@@ -57,13 +57,13 @@ void RB_CheckOverflow(int verts, int indexes) {
 		ri.Error(ERR_DROP, "RB_CheckOverflow: indices > MAX (%d > %d)", indexes, SHADER_MAX_INDEXES);
 	}
 
-	RB_BeginSurface(tess.shader, tess.fogNum, tess.cubemapIndex);
+	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap);
 }
 
 void RB_CheckVao(vao_t* vao) {
 	if(vao != glState.currentVao) {
 		RB_EndSurface();
-		RB_BeginSurface(tess.shader, tess.fogNum, tess.cubemapIndex);
+		RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap);
 
 		R_BindVao(vao);
 	}
@@ -392,7 +392,7 @@ static bool RB_SurfaceVaoCached(int numVerts, srfVert_t* verts, int numIndexes, 
 
 	if(endSurface) {
 		RB_EndSurface();
-		RB_BeginSurface(tess.shader, tess.fogNum, tess.cubemapIndex);
+		RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap);
 	}
 
 	if(recycleVertexBuffer) VaoCache_RecycleVertexBuffer();
@@ -938,7 +938,7 @@ static void RB_SurfaceGrid(srfBspSurface_t* srf) {
 			// if we don't have enough space for at least one strip, flush the buffer
 			if(vrows < 2 || irows < 1) {
 				RB_EndSurface();
-				RB_BeginSurface(tess.shader, tess.fogNum, tess.cubemapIndex);
+				RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap);
 			} else {
 				break;
 			}
@@ -1122,7 +1122,7 @@ void RB_SurfaceVaoMdvMesh(srfVaoMdvMesh_t* surface) {
 
 	// RB_CheckVao(surface->vao);
 	RB_EndSurface();
-	RB_BeginSurface(tess.shader, tess.fogNum, tess.cubemapIndex);
+	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap);
 
 	R_BindVao(surface->vao);
 
