@@ -285,8 +285,6 @@ void R_AddMD3Surfaces(trRefEntity_t* ent) {
 	//
 	fogNum = R_ComputeFogNum(model, ent);
 
-	cubemapIndex = R_CubemapForPoint(ent->e.origin);
-
 	//
 	// draw all surfaces
 	//
@@ -326,7 +324,10 @@ void R_AddMD3Surfaces(trRefEntity_t* ent) {
 			drawSurf = surface;
 		}
 
-		// we will add shadows even if the main object isn't visible in the view
+		if(shader->surfaceFlags & SURF_CUBEMAP)
+			cubemapIndex = R_CubemapForPoint(ent->e.origin);
+		else
+			cubemapIndex = 0;
 
 		// stencil shadows can't do personal models unless I polyhedron clip
 		if(!personalModel && r_shadows->integer == 2 && fogNum == 0 && !(ent->e.renderfx & (RF_NOSHADOW | RF_DEPTHHACK)) && shader->sort == SS_OPAQUE) {

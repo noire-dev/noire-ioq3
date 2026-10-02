@@ -214,8 +214,6 @@ void R_MDRAddAnimSurfaces(trRefEntity_t* ent) {
 	// fogNum?
 	fogNum = R_MDRComputeFogNum(header, ent);
 
-	cubemapIndex = R_CubemapForPoint(ent->e.origin);
-
 	surface = (mdrSurface_t*)((byte*)lod + lod->ofsSurfaces);
 
 	for(i = 0; i < lod->numSurfaces; i++) {
@@ -236,7 +234,10 @@ void R_MDRAddAnimSurfaces(trRefEntity_t* ent) {
 		else
 			shader = tr.defaultShader;
 
-		// we will add shadows even if the main object isn't visible in the view
+		if(shader->surfaceFlags & SURF_CUBEMAP)
+			cubemapIndex = R_CubemapForPoint(ent->e.origin);
+		else
+			cubemapIndex = 0;
 
 		// stencil shadows can't do personal models unless I polyhedron clip
 		if(!personalModel && r_shadows->integer == 2 && fogNum == 0 && !(ent->e.renderfx & (RF_NOSHADOW | RF_DEPTHHACK)) && shader->sort == SS_OPAQUE) {

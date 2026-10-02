@@ -23,10 +23,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-#define JSON_IMPLEMENTATION
-#include "../qcommon/json.h"
-#undef JSON_IMPLEMENTATION
-
 /*
 
 Loads and prepares a map file for scene rendering.
@@ -2228,67 +2224,15 @@ bool R_ParseSpawnVars(char* spawnVarChars, int maxSpawnVarChars, int* numSpawnVa
 	return true;
 }
 
-void R_LoadEnvironmentJson(const char* baseName) {
-	char filename[MAX_QPATH];
-
-	union {
-		char* c;
-		void* v;
-	} buffer;
-	char* bufferEnd;
-
-	const char* cubemapArrayJson;
-	int filelen, i;
-
-	Com_sprintf(filename, MAX_QPATH, "cubemaps/%s/env.json", baseName);
-
-	filelen = ri.FS_ReadFile(filename, &buffer.v);
-	if(!buffer.c) return;
-	bufferEnd = buffer.c + filelen;
-
-	if(JSON_ValueGetType(buffer.c, bufferEnd) != JSONTYPE_OBJECT) {
-		ri.Printf(PRINT_ALL, "Bad %s: does not start with a object\n", filename);
-		ri.FS_FreeFile(buffer.v);
-		return;
-	}
-
-	cubemapArrayJson = JSON_ObjectGetNamedValue(buffer.c, bufferEnd, "Cubemaps");
-	if(!cubemapArrayJson) {
-		ri.Printf(PRINT_ALL, "Bad %s: no Cubemaps\n", filename);
-		ri.FS_FreeFile(buffer.v);
-		return;
-	}
-
-	if(JSON_ValueGetType(cubemapArrayJson, bufferEnd) != JSONTYPE_ARRAY) {
-		ri.Printf(PRINT_ALL, "Bad %s: Cubemaps not an array\n", filename);
-		ri.FS_FreeFile(buffer.v);
-		return;
-	}
-
-	tr.numCubemaps = JSON_ArrayGetIndex(cubemapArrayJson, bufferEnd, NULL, 0);
+void R_CreateBaseCubemap(void) {
+	tr.numCubemaps = 1;
 	tr.cubemaps = ri.Hunk_Alloc(tr.numCubemaps * sizeof(*tr.cubemaps), h_low);
 	memset(tr.cubemaps, 0, tr.numCubemaps * sizeof(*tr.cubemaps));
+	cubemap_t* cubemap = &tr.cubemaps[0];
 
-	for(i = 0; i < tr.numCubemaps; i++) {
-		cubemap_t* cubemap = &tr.cubemaps[i];
-		const char *cubemapJson, *keyValueJson, *indexes[3];
-		int j;
-
-		cubemapJson = JSON_ArrayGetValue(cubemapArrayJson, bufferEnd, i);
-
-		keyValueJson = JSON_ObjectGetNamedValue(cubemapJson, bufferEnd, "Name");
-		if(!JSON_ValueGetString(keyValueJson, bufferEnd, cubemap->name, MAX_QPATH)) cubemap->name[0] = '\0';
-
-		keyValueJson = JSON_ObjectGetNamedValue(cubemapJson, bufferEnd, "Position");
-		JSON_ArrayGetIndex(keyValueJson, bufferEnd, indexes, 3);
-		for(j = 0; j < 3; j++) cubemap->const_origin[j] = JSON_ValueGetFloat(indexes[j], bufferEnd);
-
-		cubemap->parallaxRadius = 1000.0f;
-		keyValueJson = JSON_ObjectGetNamedValue(cubemapJson, bufferEnd, "Radius");
-		if(keyValueJson) cubemap->parallaxRadius = JSON_ValueGetFloat(keyValueJson, bufferEnd);
-	}
-
-	ri.FS_FreeFile(buffer.v);
+	strcpy(cubemap->name, "base_cubemap\0");
+	VectorClear(cubemap->const_origin);
+	cubemap->parallaxRadius = 65535.0f;
 }
 
 void R_LoadCubemapEntities(char* cubemapEntityName) {
@@ -2355,6 +2299,8 @@ void R_AssignCubemapsToWorldSurfaces(void) {
 	for(i = 0; i < w->numsurfaces; i++) {
 		msurface_t* surf = &w->surfaces[i];
 		vec3_t surfOrigin;
+
+		surf->cubemapIndex = 0;
 
 		if(!(surf->shader->surfaceFlags & SURF_CUBEMAP)) continue;
 
@@ -2691,10 +2637,9 @@ void RE_LoadWorldMap(const char* name) {
 
 	// load cubemaps
 	if(r_cubeMapping->integer) {
-		// Try loading an env.json file first
-		R_LoadEnvironmentJson(s_worldData.baseName);
-
-		if(tr.numCubemaps) R_AssignCubemapsToWorldSurfaces();
+		R_LoadCubemapEntities("misc_cubemap");
+		if(!tr.numCubemaps) R_CreateBaseCubemap();
+		R_AssignCubemapsToWorldSurfaces();
 	}
 
 	s_worldData.dataSize = (byte*)ri.Hunk_Alloc(0, h_low) - startMarker;
