@@ -473,8 +473,10 @@ void RE_RenderScene(const refdef_t* fd) {
 	}
 
 	if(r_cubeMapping->integer && tr.cubemap) {
-		for(int i = 0; i < 3; i++) tr.cubemap->origin[i] = tr.refdef.vieworg[i];
-		for(int i = 0; i < 6; i++) R_RenderCubemapSide(i, true);
+		VectorCopy(tr.refdef.vieworg, tr.cubemap->origin);
+		static int current_side = 0;
+		R_RenderCubemapSide(current_side, true);
+		current_side = (current_side + 1) % 6;
 	}
 
 	// setup view parms for the initial view
