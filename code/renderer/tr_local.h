@@ -587,6 +587,8 @@ typedef enum {
 	UNIFORM_PRIMARYLIGHTAMBIENT,
 	UNIFORM_PRIMARYLIGHTRADIUS,
 
+	UNIFORM_CUBEMAPINFO,
+
 	UNIFORM_ALPHATEST,
 
 	UNIFORM_BONEMATRIX,
@@ -750,6 +752,7 @@ typedef enum {
 typedef struct drawSurf_s {
 	unsigned int sort;  // bit combination for fast compares
 	bool useCubemap;
+	float cubemapZOffset;
 	surfaceType_t* surface;  // any of surface*_t
 } drawSurf_t;
 
@@ -978,6 +981,7 @@ typedef struct msurface_s {
 	struct shader_s* shader;
 	int fogIndex;
 	bool useCubemap;
+	float cubemapZOffset;
 	cullinfo_t cullinfo;
 
 	surfaceType_t* data;  // any of srf*_t
@@ -1894,6 +1898,7 @@ typedef struct shaderCommands_s {
 	double shaderTime;
 	int fogNum;
 	bool useCubemap;
+	float cubemapZOffset;
 
 	int dlightBits;  // or together of all vertexDlightBits
 	int pshadowBits;

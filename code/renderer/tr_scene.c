@@ -474,6 +474,7 @@ void RE_RenderScene(const refdef_t* fd) {
 
 	if(r_cubeMapping->integer && tr.cubemap) {
 		VectorCopy(tr.refdef.vieworg, tr.cubemap->origin);
+		Com_Printf("cubemap origin: %f", tr.cubemap->origin[2]);
 		static int current_side = 0;
 		R_RenderCubemapSide(current_side, true);
 		current_side = (current_side + 1) % 6;

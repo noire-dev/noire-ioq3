@@ -39,6 +39,12 @@ uniform vec4      u_NormalScale;
 uniform vec4      u_SpecularScale;
 #endif
 
+#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_CUBEMAP)
+uniform vec4      u_CubeMapInfo;
+#endif
+#endif
+
 uniform int       u_AlphaTest;
 
 varying vec4      var_TexCoords;
@@ -402,7 +408,9 @@ void main()
 	reflectance = EnvironmentBRDF(roughness, NE, specular.rgb);
 
 	vec3 R = reflect(E, N);
-	vec3 cubeLightColor = textureCubeLod(u_CubeMap, R, ROUGHNESS_MIPS * roughness).rgb * u_EnableTextures.w;
+	vec3 modifiedR = R;
+	modifiedR.z += 0.0268; // когда между игроком и поверхностью 100 юнитов оно выравнивает все до идеала нужно найти формулу, для этого нужен ORIGIN камеры и ORIGIN поверхности
+	vec3 cubeLightColor = textureCubeLod(u_CubeMap, modifiedR, ROUGHNESS_MIPS * roughness).rgb * u_EnableTextures.w;
 
     #if defined(USE_PBR)
 	cubeLightColor *= cubeLightColor;

@@ -149,6 +149,8 @@ static uniformInfo_t uniformsInfo[] = {{"u_DiffuseMap", GLSL_INT},
                                        {"u_PrimaryLightAmbient", GLSL_VEC3},
                                        {"u_PrimaryLightRadius", GLSL_FLOAT},
 
+                                       {"u_CubeMapInfo", GLSL_VEC4},
+
                                        {"u_AlphaTest", GLSL_INT},
 
                                        {"u_BoneMatrix", GLSL_MAT16_BONEMATRIX},
