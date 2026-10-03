@@ -42,6 +42,7 @@ uniform vec4      u_SpecularScale;
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 #if defined(USE_CUBEMAP)
 uniform vec4      u_CubeMapInfo;
+uniform vec4      u_CubeMapParallaxInfo;
 #endif
 #endif
 
@@ -225,6 +226,36 @@ float CalcLightAttenuation(float point, float normDist)
 	return attenuation;
 }
 
+vec4 hitCube(vec3 ray, vec3 pos, vec3 invSize, float lod, samplerCube tex)
+{
+	// find any hits on cubemap faces facing the camera
+	vec3 scale = (sign(ray) - pos) / ray;
+
+	// find the nearest hit
+	float minScale = min(min(scale.x, scale.y), scale.z);
+
+	// if the nearest hit is behind the camera, ignore
+	// should not be necessary as long as pos is inside the cube
+	//if (minScale < 0.0)
+		//return vec4(0.0);
+
+	// calculate the hit position, that's our texture coordinates
+	vec3 tc = pos + ray * minScale;
+
+	// if the texture coordinates are outside the cube, ignore
+	// necessary since we're not fading out outside the cube
+	if (any(greaterThan(abs(tc), vec3(1.00001))))
+		return vec4(0.0);
+
+	// fade out when approaching the cubemap edges
+	//vec3 fade3 = abs(pos);
+	//float fade = max(max(fade3.x, fade3.y), fade3.z);
+	//fade = clamp(1.0 - fade, 0.0, 1.0);
+			
+	//return vec4(textureCubeLod(tex, tc, lod).rgb * fade, fade);
+	return vec4(textureCubeLod(tex, tc, lod).rgb, 1.0);
+}
+
 void main()
 {
 	vec3 viewDir, lightColor, ambientColor, reflectance;
@@ -403,14 +434,16 @@ void main()
 
 	gl_FragColor.rgb  = lightColor   * reflectance * (attenuation * NL);
 	gl_FragColor.rgb += ambientColor * diffuse.rgb;
-
+    
   #if defined(USE_CUBEMAP)
 	reflectance = EnvironmentBRDF(roughness, NE, specular.rgb);
 
 	vec3 R = reflect(E, N);
 	vec3 modifiedR = R;
-	modifiedR.z += 0.0268; // когда между игроком и поверхностью 100 юнитов оно выравнивает все до идеала нужно найти формулу, для этого нужен ORIGIN камеры и ORIGIN поверхности
-	vec3 cubeLightColor = textureCubeLod(u_CubeMap, modifiedR, ROUGHNESS_MIPS * roughness).rgb * u_EnableTextures.w;
+	modifiedR.z += (abs(u_CubeMapInfo.x - u_CubeMapInfo.y) / (1024+u_CubeMapInfo.w));
+
+	vec3 parallax = u_CubeMapParallaxInfo.xyz + u_CubeMapParallaxInfo.w * viewDir;
+	vec3 cubeLightColor = hitCube(modifiedR * u_CubeMapParallaxInfo.w, parallax, u_CubeMapParallaxInfo.www, ROUGHNESS_MIPS * roughness, u_CubeMap).rgb * u_EnableTextures.w;
 
     #if defined(USE_PBR)
 	cubeLightColor *= cubeLightColor;

@@ -236,17 +236,7 @@ void R_MDRAddAnimSurfaces(trRefEntity_t* ent) {
 
 		useCubemap = R_CubemapForShader(shader->surfaceFlags & SURF_CUBEMAP);
 
-		// stencil shadows can't do personal models unless I polyhedron clip
-		if(!personalModel && r_shadows->integer == 2 && fogNum == 0 && !(ent->e.renderfx & (RF_NOSHADOW | RF_DEPTHHACK)) && shader->sort == SS_OPAQUE) {
-			R_AddDrawSurf((void*)surface, tr.shadowShader, 0, false, false, false);
-		}
-
-		// projection shadows work fine with personal models
-		if(r_shadows->integer == 3 && fogNum == 0 && (ent->e.renderfx & RF_SHADOW_PLANE) && shader->sort == SS_OPAQUE) {
-			R_AddDrawSurf((void*)surface, tr.projectionShadowShader, 0, false, false, false);
-		}
-
-		if(!personalModel) R_AddDrawSurf((void*)surface, shader, fogNum, false, false, useCubemap);
+		if(!personalModel) R_AddDrawSurf((void*)surface, shader, fogNum, false, false, useCubemap, vec3_origin);
 
 		surface = (mdrSurface_t*)((byte*)surface + surface->ofsEnd);
 	}

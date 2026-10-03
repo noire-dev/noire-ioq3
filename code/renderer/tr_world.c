@@ -293,7 +293,7 @@ static void R_AddWorldSurface(msurface_t* surf, int dlightBits, int pshadowBits)
 		pshadowBits = (pshadowBits != 0);
 	}
 
-	R_AddDrawSurf(surf->data, surf->shader, surf->fogIndex, dlightBits, pshadowBits, surf->useCubemap);
+	R_AddDrawSurf(surf->data, surf->shader, surf->fogIndex, dlightBits, pshadowBits, surf->useCubemap, surf->cubemapOrigin);
 }
 
 /*

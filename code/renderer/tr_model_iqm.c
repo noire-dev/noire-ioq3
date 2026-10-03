@@ -1199,18 +1199,8 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 
 		useCubemap = R_CubemapForShader(shader->surfaceFlags & SURF_CUBEMAP);
 
-		// stencil shadows can't do personal models unless I polyhedron clip
-		if(!personalModel && r_shadows->integer == 2 && fogNum == 0 && !(ent->e.renderfx & (RF_NOSHADOW | RF_DEPTHHACK)) && shader->sort == SS_OPAQUE) {
-			R_AddDrawSurf(drawSurf, tr.shadowShader, 0, 0, 0, 0);
-		}
-
-		// projection shadows work fine with personal models
-		if(r_shadows->integer == 3 && fogNum == 0 && (ent->e.renderfx & RF_SHADOW_PLANE) && shader->sort == SS_OPAQUE) {
-			R_AddDrawSurf(drawSurf, tr.projectionShadowShader, 0, 0, 0, 0);
-		}
-
 		if(!personalModel) {
-			R_AddDrawSurf(drawSurf, shader, fogNum, 0, 0, useCubemap);
+			R_AddDrawSurf(drawSurf, shader, fogNum, 0, 0, useCubemap, vec3_origin);
 		}
 
 		surface++;
@@ -1528,7 +1518,7 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 
 	// RB_CheckVao(surface->vao);
 	RB_EndSurface();
-	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap);
+	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin);
 
 	R_BindVao(surface->vao);
 

@@ -345,6 +345,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	int dlighted, oldDlighted;
 	int pshadowed, oldPshadowed;
 	bool useCubemap, oldCubemapIndex;
+	vec3_t cubemapOrigin;
 	bool depthRange, oldDepthRange, isCrosshair, wasCrosshair;
 	int i;
 	drawSurf_t* drawSurf;
@@ -382,6 +383,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 		oldSort = (int)drawSurf->sort;
 		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted, &pshadowed);
 		useCubemap = drawSurf->useCubemap;
+		VectorCopy(drawSurf->cubemapOrigin, cubemapOrigin);
 
 		//
 		// change the tess parameters if needed
@@ -391,7 +393,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 			if(oldShader != NULL) {
 				RB_EndSurface();
 			}
-			RB_BeginSurface(shader, fogNum, useCubemap);
+			RB_BeginSurface(shader, fogNum, useCubemap, cubemapOrigin);
 			backEnd.pc.c_surfBatches++;
 			oldShader = shader;
 			oldFogNum = fogNum;
@@ -713,7 +715,7 @@ const void* RB_StretchPic(const void* data) {
 			RB_EndSurface();
 		}
 		backEnd.currentEntity = &backEnd.entity2D;
-		RB_BeginSurface(shader, 0, false);
+		RB_BeginSurface(shader, 0, false, vec3_origin);
 	}
 
 	RB_CHECKOVERFLOW(4, 6);

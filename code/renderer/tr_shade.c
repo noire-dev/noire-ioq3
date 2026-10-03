@@ -277,7 +277,7 @@ because a surface may be forced to perform a RB_End due
 to overflow.
 ==============
 */
-void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap) {
+void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t cubemapOrigin) {
 	shader_t* state = (shader->remappedShader) ? shader->remappedShader : shader;
 
 	tess.numIndexes = 0;
@@ -286,6 +286,7 @@ void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap) {
 	tess.shader = state;
 	tess.fogNum = fogNum;
 	tess.useCubemap = useCubemap;
+	VectorCopy(cubemapOrigin, tess.cubemapOrigin);
 	tess.dlightBits = 0;   // will be OR'd in by surface functions
 	tess.pshadowBits = 0;  // will be OR'd in by surface functions
 	tess.xstages = state->stages;
@@ -1346,14 +1347,33 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 		// testing cube map
 		if(!(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap && r_cubeMapping->integer) {
 			vec4_t vec;
+
 			cubemap_t* cubemap = tr.cubemap;
 
 			if(cubemap->image) GL_BindToTMU(cubemap->image, TB_CUBEMAP);
 
-			vec[0] = backEnd.viewParms.or.origin[2];
-			vec[3] = 1.0f;
+			// 1. Дельты по осям X, Y и Z
+			float dx = backEnd.viewParms.or.origin[0] - input->cubemapOrigin[0];
+			float dy = backEnd.viewParms.or.origin[1] - input->cubemapOrigin[1];
+			float dz = backEnd.viewParms.or.origin[2] - input->cubemapOrigin[2];
 
+			// 2. Расстояние по плоскости XY (длина 2D-вектора)
+			float distXY = sqrtf(dx * dx + dy * dy);
+
+			// 3. Полное 3D-расстояние (длина 3D-вектора)
+			float distXYZ = sqrtf(dx * dx + dy * dy + dz * dz);
+
+			// Раскладываем по элементам вектора:
+			vec[0] = input->cubemapOrigin[2];         // Z поверхности
+			vec[1] = backEnd.viewParms.or.origin[2];  // Z камеры
+			vec[2] = distXY;                          // 2D-расстояние по XY
+			vec[3] = distXYZ;                         // Полное 3D-расстояние (distXYZ)
 			GLSL_SetUniformVec4(sp, UNIFORM_CUBEMAPINFO, vec);
+
+			VectorSubtract(cubemap->origin, backEnd.viewParms.or.origin, vec);
+			vec[3] = 1.0f;
+			VectorScale4(vec, 1.0f / cubemap->parallaxRadius, vec);
+			GLSL_SetUniformVec4(sp, UNIFORM_CUBEMAPPARALLAXINFO, vec);
 		}
 
 		//

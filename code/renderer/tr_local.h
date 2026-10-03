@@ -588,6 +588,7 @@ typedef enum {
 	UNIFORM_PRIMARYLIGHTRADIUS,
 
 	UNIFORM_CUBEMAPINFO,
+	UNIFORM_CUBEMAPPARALLAXINFO,
 
 	UNIFORM_ALPHATEST,
 
@@ -752,7 +753,7 @@ typedef enum {
 typedef struct drawSurf_s {
 	unsigned int sort;  // bit combination for fast compares
 	bool useCubemap;
-	float cubemapZOffset;
+	vec3_t cubemapOrigin;
 	surfaceType_t* surface;  // any of surface*_t
 } drawSurf_t;
 
@@ -981,7 +982,7 @@ typedef struct msurface_s {
 	struct shader_s* shader;
 	int fogIndex;
 	bool useCubemap;
-	float cubemapZOffset;
+	vec3_t cubemapOrigin;
 	cullinfo_t cullinfo;
 
 	surfaceType_t* data;  // any of srf*_t
@@ -1730,7 +1731,7 @@ void R_AddPolygonSurfaces(void);
 
 void R_DecomposeSort(unsigned sort, int* entityNum, shader_t** shader, int* fogNum, int* dlightMap, int* pshadowMap);
 
-void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, int pshadowMap, bool useCubemap);
+void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, int pshadowMap, bool useCubemap, vec3_t cubemapOrigin);
 
 void R_CalcTexDirs(vec3_t sdir, vec3_t tdir, const vec3_t v1, const vec3_t v2, const vec3_t v3, const vec2_t w1, const vec2_t w2, const vec2_t w3);
 vec_t R_CalcTangentSpace(vec3_t tangent, vec3_t bitangent, const vec3_t normal, const vec3_t sdir, const vec3_t tdir);
@@ -1898,7 +1899,7 @@ typedef struct shaderCommands_s {
 	double shaderTime;
 	int fogNum;
 	bool useCubemap;
-	float cubemapZOffset;
+	vec3_t cubemapOrigin;
 
 	int dlightBits;  // or together of all vertexDlightBits
 	int pshadowBits;
@@ -1915,7 +1916,7 @@ typedef struct shaderCommands_s {
 
 extern shaderCommands_t tess;
 
-void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap);
+void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t cubemapOrigin);
 void RB_EndSurface(void);
 void RB_CheckOverflow(int verts, int indexes);
 #define RB_CHECKOVERFLOW(v, i)                                                                         \

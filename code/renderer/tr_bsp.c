@@ -2245,7 +2245,17 @@ void R_AssignCubemapsToWorldSurfaces(void) {
 		surf->useCubemap = false;
 
 		if(!(surf->shader->surfaceFlags & SURF_CUBEMAP)) continue;
-		if((surf->cullinfo.type & CULLINFO_SPHERE) || (surf->cullinfo.type & CULLINFO_BOX)) surf->useCubemap = R_CubemapForShader(true);
+		if((surf->cullinfo.type & CULLINFO_SPHERE) || (surf->cullinfo.type & CULLINFO_BOX)) {
+			surf->useCubemap = R_CubemapForShader(true);
+
+			if(surf->cullinfo.type & CULLINFO_BOX) {
+				surf->cubemapOrigin[0] = (surf->cullinfo.bounds[0][0] + surf->cullinfo.bounds[1][0]) * 0.5f;
+				surf->cubemapOrigin[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
+				surf->cubemapOrigin[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
+			} else if(surf->cullinfo.type & CULLINFO_SPHERE) {
+				VectorCopy(surf->cullinfo.localOrigin, surf->cubemapOrigin);
+			}
+		}
 	}
 }
 

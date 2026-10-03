@@ -1137,7 +1137,7 @@ static bool SurfIsOffscreen(const drawSurf_t* drawSurf, vec4_t clipDest[128]) {
 	R_RotateForViewer();
 
 	R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted, &pshadowed);
-	RB_BeginSurface(shader, fogNum, drawSurf->useCubemap);
+	RB_BeginSurface(shader, fogNum, drawSurf->useCubemap, drawSurf->cubemapOrigin);
 	rb_surfaceTable[*drawSurf->surface](drawSurf->surface);
 
 	assert(tess.numVertexes < 128);
@@ -1364,7 +1364,7 @@ static void R_RadixSort(drawSurf_t* source, int size) {
 R_AddDrawSurf
 =================
 */
-void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, int pshadowMap, bool useCubemap) {
+void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, int pshadowMap, bool useCubemap, vec3_t cubemapOrigin) {
 	int index;
 
 	// instead of checking for overflow, we just mask the index
@@ -1374,6 +1374,7 @@ void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int d
 	// compared quickly during the qsorting process
 	tr.refdef.drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT) | tr.shiftedEntityNum | (fogIndex << QSORT_FOGNUM_SHIFT) | ((int)pshadowMap << QSORT_PSHADOW_SHIFT) | (int)dlightMap;
 	tr.refdef.drawSurfs[index].useCubemap = useCubemap;
+	VectorCopy(cubemapOrigin, tr.refdef.drawSurfs[index].cubemapOrigin);
 	tr.refdef.drawSurfs[index].surface = surface;
 	tr.refdef.numDrawSurfs++;
 }
@@ -1486,7 +1487,7 @@ static void R_AddEntitySurface(int entityNum) {
 				return;
 			}
 			shader = R_GetShaderByHandle(ent->e.customShader);
-			R_AddDrawSurf(&entitySurface, shader, R_SpriteFogNum(ent), 0, 0, 0);
+			R_AddDrawSurf(&entitySurface, shader, R_SpriteFogNum(ent), 0, 0, 0, vec3_origin);
 			break;
 
 		case RT_MODEL:
@@ -1495,7 +1496,7 @@ static void R_AddEntitySurface(int entityNum) {
 
 			tr.currentModel = R_GetModelByHandle(ent->e.hModel);
 			if(!tr.currentModel) {
-				R_AddDrawSurf(&entitySurface, tr.defaultShader, 0, 0, 0, 0);
+				R_AddDrawSurf(&entitySurface, tr.defaultShader, 0, 0, 0, 0, vec3_origin);
 			} else {
 				switch(tr.currentModel->type) {
 					case MOD_MESH: R_AddMD3Surfaces(ent); break;
@@ -1506,7 +1507,7 @@ static void R_AddEntitySurface(int entityNum) {
 						if((ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal) {
 							break;
 						}
-						R_AddDrawSurf(&entitySurface, tr.defaultShader, 0, 0, 0, 0);
+						R_AddDrawSurf(&entitySurface, tr.defaultShader, 0, 0, 0, 0, vec3_origin);
 						break;
 					default: ri.Error(ERR_DROP, "R_AddEntitySurfaces: Bad modeltype"); break;
 				}
