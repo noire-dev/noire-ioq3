@@ -1470,7 +1470,6 @@ static void R_AddEntitySurface(int entityNum) {
 			} else {
 				switch(tr.currentModel->type) {
 					case MOD_MESH: R_AddMD3Surfaces(ent); break;
-					case MOD_MDR: R_MDRAddAnimSurfaces(ent); break;
 					case MOD_IQM: R_AddIQMSurfaces(ent); break;
 					case MOD_BRUSH: R_AddBrushModelSurfaces(ent); break;
 					case MOD_BAD:  // null model axis

@@ -6,7 +6,6 @@ include(utils/set_output_dirs)
 include(renderer_common)
 
 set(RENDERER_GL2_SOURCES
-    ${SOURCE_DIR}/renderer/tr_animation.c
     ${SOURCE_DIR}/renderer/tr_backend.c
     ${SOURCE_DIR}/renderer/tr_bsp.c
     ${SOURCE_DIR}/renderer/tr_cmds.c

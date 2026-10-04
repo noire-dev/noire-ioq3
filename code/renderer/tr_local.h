@@ -730,7 +730,6 @@ typedef enum {
 	SF_TRIANGLES,
 	SF_POLY,
 	SF_MDV,
-	SF_MDR,
 	SF_IQM,
 	SF_FLARE,
 	SF_ENTITY,  // beams, rails, lightning, etc that can be determined by entity
@@ -1093,7 +1092,7 @@ typedef struct mdvModel_s {
 
 //======================================================================
 
-typedef enum { MOD_BAD, MOD_BRUSH, MOD_MESH, MOD_MDR, MOD_IQM } modtype_t;
+typedef enum { MOD_BAD, MOD_BRUSH, MOD_MESH, MOD_IQM } modtype_t;
 
 typedef struct model_s {
 	char name[MAX_QPATH];
@@ -1103,7 +1102,7 @@ typedef struct model_s {
 	int dataSize;                   // just for listing purposes
 	bmodel_t* bmodel;               // only if type == MOD_BRUSH
 	mdvModel_t* mdv[MD3_MAX_LODS];  // only if type == MOD_MESH
-	void* modelData;                // only if type == (MOD_MDR | MOD_IQM)
+	void* modelData;                // only if type == MOD_IQM
 
 	int numLods;
 } model_t;
@@ -2057,8 +2056,6 @@ ANIMATED MODELS
 =============================================================
 */
 
-void R_MDRAddAnimSurfaces(trRefEntity_t* ent);
-void RB_MDRSurfaceAnim(mdrSurface_t* surface);
 bool R_LoadIQM(model_t* mod, void* buffer, int filesize, const char* name);
 void R_AddIQMSurfaces(trRefEntity_t* ent);
 void RB_IQMSurfaceAnim(surfaceType_t* surface);
