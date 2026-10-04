@@ -179,7 +179,6 @@ cvar_t* r_colorMipLevels;
 cvar_t* r_picmip;
 cvar_t* r_showtris;
 cvar_t* r_showsky;
-cvar_t* r_shownormals;
 cvar_t* r_swapInterval;
 cvar_t* r_textureMode;
 cvar_t* r_offsetFactor;
@@ -1185,7 +1184,6 @@ void R_Register(void) {
 	r_nobind = ri.Cvar_Get("r_nobind", "0", CVAR_CHEAT);
 	r_showtris = ri.Cvar_Get("r_showtris", "0", CVAR_CHEAT);
 	r_showsky = ri.Cvar_Get("r_showsky", "0", CVAR_CHEAT);
-	r_shownormals = ri.Cvar_Get("r_shownormals", "0", CVAR_CHEAT);
 	r_offsetFactor = ri.Cvar_Get("r_offsetfactor", "-1", CVAR_CHEAT);
 	r_offsetUnits = ri.Cvar_Get("r_offsetunits", "-2", CVAR_CHEAT);
 	r_drawBuffer = ri.Cvar_Get("r_drawBuffer", "GL_BACK", CVAR_CHEAT);
@@ -1194,7 +1192,7 @@ void R_Register(void) {
 
 	r_marksOnTriangleMeshes = ri.Cvar_Get("r_marksOnTriangleMeshes", "0", CVAR_ARCHIVE);
 
-	r_vaoCache = ri.Cvar_Get("r_vaoCache", "0", CVAR_ARCHIVE);
+	r_vaoCache = ri.Cvar_Get("r_vaoCache", "1", CVAR_ARCHIVE);
 
 	r_aviMotionJpegQuality = ri.Cvar_Get("r_aviMotionJpegQuality", "90", CVAR_ARCHIVE);
 	r_screenshotJpegQuality = ri.Cvar_Get("r_screenshotJpegQuality", "90", CVAR_ARCHIVE);

@@ -1534,10 +1534,9 @@ extern cvar_t* r_fullbright;    // avoid lightmap pass
 extern cvar_t* r_lightmap;      // render lightmaps only
 extern cvar_t* r_uiFullScreen;  // ui is running fullscreen
 
-extern cvar_t* r_logFile;      // number of frames to emit GL logs
-extern cvar_t* r_showtris;     // enables wireframe rendering of the world
-extern cvar_t* r_showsky;      // forces sky in front of all surfaces
-extern cvar_t* r_shownormals;  // draws wireframe normals
+extern cvar_t* r_logFile;   // number of frames to emit GL logs
+extern cvar_t* r_showtris;  // enables wireframe rendering of the world
+extern cvar_t* r_showsky;   // forces sky in front of all surface
 
 extern cvar_t* r_flares;  // light flares
 
