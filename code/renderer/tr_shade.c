@@ -1314,63 +1314,6 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 	}
 }
 
-static void RB_RenderShadowmap(shaderCommands_t* input) {
-	int deformGen;
-	vec5_t deformParams;
-
-	ComputeDeformValues(&deformGen, deformParams);
-
-	{
-		shaderProgram_t* sp = &tr.shadowmapShader[0];
-
-		if(glState.vertexAnimation) {
-			sp = &tr.shadowmapShader[SHADOWMAPDEF_USE_VERTEX_ANIMATION];
-		} else if(glState.boneAnimation) {
-			sp = &tr.shadowmapShader[SHADOWMAPDEF_USE_BONE_ANIMATION];
-		}
-
-		vec4_t vector;
-
-		GLSL_BindProgram(sp);
-
-		GLSL_SetUniformMat4(sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
-
-		GLSL_SetUniformMat4(sp, UNIFORM_MODELMATRIX, backEnd.or.transformMatrix);
-
-		GLSL_SetUniformFloat(sp, UNIFORM_VERTEXLERP, glState.vertexAttribsInterpolation);
-
-		if(glState.boneAnimation) {
-			GLSL_SetUniformMat4BoneMatrix(sp, UNIFORM_BONEMATRIX, glState.boneMatrix, glState.boneAnimation);
-		}
-
-		GLSL_SetUniformInt(sp, UNIFORM_DEFORMGEN, deformGen);
-		if(deformGen != DGEN_NONE) {
-			GLSL_SetUniformFloat5(sp, UNIFORM_DEFORMPARAMS, deformParams);
-			GLSL_SetUniformFloat(sp, UNIFORM_TIME, tess.shaderTime);
-		}
-
-		VectorCopy(backEnd.viewParms.or.origin, vector);
-		vector[3] = 1.0f;
-		GLSL_SetUniformVec4(sp, UNIFORM_LIGHTORIGIN, vector);
-		GLSL_SetUniformFloat(sp, UNIFORM_LIGHTRADIUS, backEnd.viewParms.zFar);
-
-		GL_State(0);
-		GLSL_SetUniformInt(sp, UNIFORM_ALPHATEST, 0);
-
-		//
-		// do multitexture
-		//
-		// if ( pStage->glslShaderGroup )
-		{
-			//
-			// draw
-			//
-
-			R_DrawElements(input->numIndexes, input->firstIndex);
-		}
-	}
-}
-
 /*
 ** RB_StageIteratorGeneric
 */

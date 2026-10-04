@@ -481,7 +481,7 @@ static void CG_Draw2D(void) {
 	if(!(catcher & KEYCATCH_UI)) CG_DrawScoreboard();
 }
 
-void CG_DrawActive(stereoFrame_t stereoView) {
+void CG_DrawActive(void) {
 	if(!cg.snap) {
 		CG_DrawInformation();
 		return;

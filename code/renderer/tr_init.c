@@ -58,17 +58,12 @@ cvar_t* r_detailTextures;
 
 cvar_t* r_znear;
 cvar_t* r_zproj;
-cvar_t* r_stereoSeparation;
 
 cvar_t* r_skipBackEnd;
-
-cvar_t* r_stereoEnabled;
-cvar_t* r_anaglyphMode;
 
 cvar_t* r_greyscale;
 
 cvar_t* r_ignorehwgamma;
-cvar_t* r_measureOverdraw;
 
 cvar_t* r_inGameVideo;
 cvar_t* r_fastsky;
@@ -174,7 +169,6 @@ cvar_t* r_ext_multisample;
 
 cvar_t* r_drawBuffer;
 cvar_t* r_lightmap;
-cvar_t* r_vertexLight;
 cvar_t* r_uiFullScreen;
 cvar_t* r_flares;
 cvar_t* r_mode;
@@ -186,8 +180,6 @@ cvar_t* r_picmip;
 cvar_t* r_showtris;
 cvar_t* r_showsky;
 cvar_t* r_shownormals;
-cvar_t* r_finish;
-cvar_t* r_clear;
 cvar_t* r_swapInterval;
 cvar_t* r_textureMode;
 cvar_t* r_offsetFactor;
@@ -956,18 +948,6 @@ void GfxInfo_f(void) {
 	ri.Printf(PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[qglLockArraysEXT != 0]);
 	ri.Printf(PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0]);
 	ri.Printf(PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression != TC_NONE]);
-	if(r_vertexLight->integer || glConfig.hardwareType == GLHW_PERMEDIA2) {
-		ri.Printf(PRINT_ALL, "HACK: using vertex lightmap approximation\n");
-	}
-	if(glConfig.hardwareType == GLHW_RAGEPRO) {
-		ri.Printf(PRINT_ALL, "HACK: ragePro approximations\n");
-	}
-	if(glConfig.hardwareType == GLHW_RIVA128) {
-		ri.Printf(PRINT_ALL, "HACK: riva128 approximations\n");
-	}
-	if(r_finish->integer) {
-		ri.Printf(PRINT_ALL, "Forcing glFinish\n");
-	}
 }
 
 /*
@@ -1063,10 +1043,8 @@ void R_Register(void) {
 	r_customheight = ri.Cvar_Get("r_customheight", "1024", CVAR_ARCHIVE | CVAR_LATCH);
 	r_customPixelAspect = ri.Cvar_Get("r_customPixelAspect", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_simpleMipMaps = ri.Cvar_Get("r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_vertexLight = ri.Cvar_Get("r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_uiFullScreen = ri.Cvar_Get("r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
-	r_stereoEnabled = ri.Cvar_Get("r_stereoEnabled", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	ri.Cvar_CheckRange(r_greyscale, 0, 1, false);
 
@@ -1148,14 +1126,12 @@ void R_Register(void) {
 	r_znear = ri.Cvar_Get("r_znear", "4", CVAR_CHEAT);
 	ri.Cvar_CheckRange(r_znear, 0.001f, 200, false);
 	r_zproj = ri.Cvar_Get("r_zproj", "64", CVAR_ARCHIVE);
-	r_stereoSeparation = ri.Cvar_Get("r_stereoSeparation", "64", CVAR_ARCHIVE);
 	r_ignoreGLErrors = ri.Cvar_Get("r_ignoreGLErrors", "1", CVAR_ARCHIVE);
 	r_fastsky = ri.Cvar_Get("r_fastsky", "0", CVAR_ARCHIVE);
 	r_inGameVideo = ri.Cvar_Get("r_inGameVideo", "1", CVAR_ARCHIVE);
 	r_drawSun = ri.Cvar_Get("r_drawSun", "0", CVAR_ARCHIVE);
 	r_dynamiclight = ri.Cvar_Get("r_dynamiclight", "1", CVAR_ARCHIVE);
 	r_dlightBacks = ri.Cvar_Get("r_dlightBacks", "1", CVAR_ARCHIVE);
-	r_finish = ri.Cvar_Get("r_finish", "0", CVAR_ARCHIVE);
 	r_textureMode = ri.Cvar_Get("r_textureMode", "GL_LINEAR_MIPMAP_LINEAR", CVAR_ARCHIVE);
 #ifdef __EMSCRIPTEN__
 	// Under Emscripten we don't throttle framerate with com_maxfps by default, so enable
@@ -1173,8 +1149,6 @@ void R_Register(void) {
 
 	r_ambientScale = ri.Cvar_Get("r_ambientScale", "0.6", CVAR_CHEAT);
 	r_directedScale = ri.Cvar_Get("r_directedScale", "1", CVAR_CHEAT);
-
-	r_anaglyphMode = ri.Cvar_Get("r_anaglyphMode", "0", CVAR_ARCHIVE);
 
 	//
 	// temporary variables that can change at any time
@@ -1197,7 +1171,6 @@ void R_Register(void) {
 
 	r_skipBackEnd = ri.Cvar_Get("r_skipBackEnd", "0", CVAR_CHEAT);
 
-	r_measureOverdraw = ri.Cvar_Get("r_measureOverdraw", "0", CVAR_CHEAT);
 	r_lodscale = ri.Cvar_Get("r_lodscale", "5", CVAR_CHEAT);
 	r_norefresh = ri.Cvar_Get("r_norefresh", "0", CVAR_CHEAT);
 	r_drawentities = ri.Cvar_Get("r_drawentities", "1", CVAR_CHEAT);
@@ -1213,7 +1186,6 @@ void R_Register(void) {
 	r_showtris = ri.Cvar_Get("r_showtris", "0", CVAR_CHEAT);
 	r_showsky = ri.Cvar_Get("r_showsky", "0", CVAR_CHEAT);
 	r_shownormals = ri.Cvar_Get("r_shownormals", "0", CVAR_CHEAT);
-	r_clear = ri.Cvar_Get("r_clear", "0", CVAR_CHEAT);
 	r_offsetFactor = ri.Cvar_Get("r_offsetfactor", "-1", CVAR_CHEAT);
 	r_offsetUnits = ri.Cvar_Get("r_offsetunits", "-2", CVAR_CHEAT);
 	r_drawBuffer = ri.Cvar_Get("r_drawBuffer", "GL_BACK", CVAR_CHEAT);
@@ -1273,7 +1245,7 @@ void R_Init(void) {
 	Com_Memset(&backEnd, 0, sizeof(backEnd));
 	Com_Memset(&tess, 0, sizeof(tess));
 
-	if(sizeof(glconfig_t) != 11324) ri.Error(ERR_FATAL, "Mod ABI incompatible: sizeof(glconfig_t) == %u != 11324", (unsigned int)sizeof(glconfig_t));
+	if(sizeof(glconfig_t) != 11316) ri.Error(ERR_FATAL, "Mod ABI incompatible: sizeof(glconfig_t) == %u != 11316", (unsigned int)sizeof(glconfig_t));
 
 	//	Swap_Init();
 

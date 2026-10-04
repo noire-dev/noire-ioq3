@@ -143,7 +143,7 @@ typedef enum {
 	// command is not known to the game
 
 	CG_DRAW_ACTIVE_FRAME,
-	//	void (*CG_DrawActiveFrame)( int serverTime, stereoFrame_t stereoView, bool demoPlayback );
+	//	void (*CG_DrawActiveFrame)( int serverTime, bool demoPlayback );
 	// Generates and draws a game scene and status information at the given time.
 	// If demoPlayback is set, local movement prediction will not be enabled
 

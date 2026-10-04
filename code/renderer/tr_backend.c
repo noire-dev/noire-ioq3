@@ -250,14 +250,7 @@ to actually render the visible surfaces for this view
 void RB_BeginDrawingView(void) {
 	int clearBits = 0;
 
-	// sync with gl if needed
-	if(r_finish->integer == 1 && !glState.finishCalled) {
-		qglFinish();
-		glState.finishCalled = true;
-	}
-	if(r_finish->integer == 0) {
-		glState.finishCalled = true;
-	}
+	glState.finishCalled = true;
 
 	// we will need to change the projection matrix before drawing
 	// 2D images again
@@ -446,27 +439,8 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 			//
 			if(oldDepthRange != depthRange || wasCrosshair != isCrosshair) {
 				if(depthRange) {
-					if(backEnd.viewParms.stereoFrame != STEREO_CENTER) {
-						if(isCrosshair) {
-							if(oldDepthRange) {
-								// was not a crosshair but now is, change back proj matrix
-								GL_SetProjectionMatrix(backEnd.viewParms.projectionMatrix);
-							}
-						} else {
-							viewParms_t temp = backEnd.viewParms;
-
-							R_SetupProjection(&temp, r_znear->value, 0, false);
-
-							GL_SetProjectionMatrix(temp.projectionMatrix);
-						}
-					}
-
 					if(!oldDepthRange) qglDepthRange(0, 0.3);
 				} else {
-					if(!wasCrosshair && backEnd.viewParms.stereoFrame != STEREO_CENTER) {
-						GL_SetProjectionMatrix(backEnd.viewParms.projectionMatrix);
-					}
-
 					qglDepthRange(0, 1);
 				}
 
@@ -1082,40 +1056,11 @@ const void* RB_DrawBuffer(const void* data) {
 
 	qglDrawBuffer(cmd->buffer);
 
-	// clear screen for debugging
-	if(r_clear->integer) {
-		if(glRefConfig.framebufferObject && tr.renderFbo) {
-			FBO_Bind(tr.renderFbo);
-		}
+	// clear screen
+	if(glRefConfig.framebufferObject && tr.renderFbo) FBO_Bind(tr.renderFbo);
 
-		qglClearColor(1, 0, 0.5, 1);
-		qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	}
-
-	return (const void*)(cmd + 1);
-}
-
-/*
-=============
-RB_ColorMask
-
-=============
-*/
-const void* RB_ColorMask(const void* data) {
-	const colorMaskCommand_t* cmd = data;
-
-	// finish any 2D drawing if needed
-	if(tess.numIndexes) RB_EndSurface();
-
-	if(glRefConfig.framebufferObject) {
-		// reverse color mask, so 0 0 0 0 is the default
-		backEnd.colorMask[0] = !cmd->rgba[0];
-		backEnd.colorMask[1] = !cmd->rgba[1];
-		backEnd.colorMask[2] = !cmd->rgba[2];
-		backEnd.colorMask[3] = !cmd->rgba[3];
-	}
-
-	qglColorMask(cmd->rgba[0], cmd->rgba[1], cmd->rgba[2], cmd->rgba[3]);
+	qglClearColor(0, 0, 0, 1);
+	qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	return (const void*)(cmd + 1);
 }
@@ -1227,24 +1172,6 @@ const void* RB_SwapBuffers(const void* data) {
 	}
 
 	cmd = (const swapBuffersCommand_t*)data;
-
-	// we measure overdraw by reading back the stencil buffer and
-	// counting up the number of increments that have happened
-	if(r_measureOverdraw->integer) {
-		int i;
-		long sum = 0;
-		unsigned char* stencilReadback;
-
-		stencilReadback = ri.Hunk_AllocateTempMemory(glConfig.vidWidth * glConfig.vidHeight);
-		qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback);
-
-		for(i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++) {
-			sum += stencilReadback[i];
-		}
-
-		backEnd.pc.c_overDraw += sum;
-		ri.Hunk_FreeTempMemory(stencilReadback);
-	}
 
 	RB_PresentToScreen();
 
@@ -1389,7 +1316,6 @@ void RB_ExecuteRenderCommands(const void* data) {
 			case RC_SWAP_BUFFERS: data = RB_SwapBuffers(data); break;
 			case RC_SCREENSHOT: data = RB_TakeScreenshotCmd(data); break;
 			case RC_VIDEOFRAME: data = RB_TakeVideoFrameCmd(data); break;
-			case RC_COLORMASK: data = RB_ColorMask(data); break;
 			case RC_CLEARDEPTH: data = RB_ClearDepth(data); break;
 			case RC_POSTPROCESS: data = RB_PostProcess(data); break;
 			case RC_END_OF_LIST:

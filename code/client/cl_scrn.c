@@ -108,10 +108,10 @@ void SCR_Init(void) {
 	scr_initialized = true;
 }
 
-void SCR_DrawScreenField(stereoFrame_t stereoFrame) {
+void SCR_DrawScreenField(void) {
 	bool uiFullscreen;
 
-	re.BeginFrame(stereoFrame);
+	re.BeginFrame();
 
 	uiFullscreen = (uivm && VM_Call(uivm, UI_IS_FULLSCREEN));
 
@@ -147,7 +147,7 @@ void SCR_DrawScreenField(stereoFrame_t stereoFrame) {
 			case CA_LOADING:
 			case CA_PRIMED:
 				// draw the game information screen and loading progress
-				CL_CGameRendering(stereoFrame);
+				CL_CGameRendering();
 
 				// also draw the connection information, so it doesn't
 				// flash away too briefly on local or lan games
@@ -156,8 +156,8 @@ void SCR_DrawScreenField(stereoFrame_t stereoFrame) {
 				VM_Call(uivm, UI_DRAW_CONNECT_SCREEN, true);
 				break;
 			case CA_ACTIVE:
-				// always supply STEREO_CENTER as vieworg offset is now done by the engine.
-				CL_CGameRendering(stereoFrame);
+				// draw active
+				CL_CGameRendering();
 				SCR_DrawDemoRecording();
 #ifdef USE_VOIP
 				SCR_DrawVoipMeter();
@@ -191,15 +191,7 @@ void SCR_UpdateScreen(void) {
 	// If there is no VM, there are also no rendering commands issued. Stop the renderer in
 	// that case.
 	if(uivm || com_dedicated->integer) {
-		// XXX
-		int in_anaglyphMode = Cvar_VariableIntegerValue("r_anaglyphMode");
-		// if running in stereo, we need to draw the frame twice
-		if(cls.glconfig.stereoEnabled || in_anaglyphMode) {
-			SCR_DrawScreenField(STEREO_LEFT);
-			SCR_DrawScreenField(STEREO_RIGHT);
-		} else {
-			SCR_DrawScreenField(STEREO_CENTER);
-		}
+		SCR_DrawScreenField();
 
 		if(com_speeds->integer)
 			re.EndFrame(&time_frontend, &time_backend);

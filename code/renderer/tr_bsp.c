@@ -535,10 +535,6 @@ static shader_t* ShaderForShaderNum(int shaderNum, int lightmapNum) {
 	}
 	dsh = &s_worldData.shaders[_shaderNum];
 
-	if(r_vertexLight->integer || glConfig.hardwareType == GLHW_PERMEDIA2) {
-		lightmapNum = LIGHTMAP_BY_VERTEX;
-	}
-
 	if(r_fullbright->integer) {
 		lightmapNum = LIGHTMAP_WHITEIMAGE;
 	}
@@ -2091,20 +2087,6 @@ void R_LoadEntities(lump_t* l) {
 		}
 		Q_strncpyz(value, token, sizeof(value));
 
-		// check for remapping of shaders for vertex lighting
-		s = "vertexremapshader";
-		if(!Q_strncmp(keyname, s, strlen(s))) {
-			s = strchr(value, ';');
-			if(!s) {
-				ri.Printf(PRINT_WARNING, "WARNING: no semi colon in vertexshaderremap '%s'\n", value);
-				break;
-			}
-			*s++ = 0;
-			if(r_vertexLight->integer) {
-				R_RemapShader(value, s, "0");
-			}
-			continue;
-		}
 		// check for remapping of shaders
 		s = "remapshader";
 		if(!Q_strncmp(keyname, s, strlen(s))) {

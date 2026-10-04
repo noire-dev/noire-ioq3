@@ -614,13 +614,7 @@ static int GLimp_SetMode(int mode, bool fullscreen, bool noborder, bool fixedFun
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, samples ? 1 : 0);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, samples);
 
-		if(r_stereoEnabled->integer) {
-			glConfig.stereoEnabled = true;
-			SDL_GL_SetAttribute(SDL_GL_STEREO, 1);
-		} else {
-			glConfig.stereoEnabled = false;
-			SDL_GL_SetAttribute(SDL_GL_STEREO, 0);
-		}
+		SDL_GL_SetAttribute(SDL_GL_STEREO, 0);
 
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
@@ -973,9 +967,6 @@ void GLimp_Init(bool fixedFunction) {
 	ri.Error(ERR_FATAL, "GLimp_Init() - could not load OpenGL subsystem");
 
 success:
-	// These values force the UI to disable driver selection
-	glConfig.driverType = GLDRV_ICD;
-	glConfig.hardwareType = GLHW_GENERIC;
 
 	// Only using SDL_SetWindowBrightness to determine if hardware gamma is supported
 	glConfig.deviceSupportsGamma = !r_ignorehwgamma->integer && SDL_SetWindowBrightness(SDL_window, 1.0f) >= 0;

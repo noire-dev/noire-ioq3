@@ -425,8 +425,6 @@ void CG_AddParticleToScene(cparticle_t* p, vec3_t org, float alpha) {
 		} else
 			invratio = 1 * p->alpha;
 
-		if(cgs.glconfig.hardwareType == GLHW_RAGEPRO) invratio = 1;
-
 		if(invratio > 1) invratio = 1;
 
 		width = p->width + (ratio * (p->endwidth - p->width));
@@ -510,8 +508,6 @@ void CG_AddParticleToScene(cparticle_t* p, vec3_t org, float alpha) {
 		float pAlpha;
 
 		pAlpha = p->alpha;
-
-		if(cgs.glconfig.hardwareType == GLHW_RAGEPRO) pAlpha = 1;
 
 		if(p->roll) {
 			vectoangles(cg.refdef.viewaxis[0], rotate_ang);

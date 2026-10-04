@@ -2344,92 +2344,6 @@ static shader_t* GeneratePermanentShader(void) {
 
 /*
 =================
-VertexLightingCollapse
-
-If vertex lighting is enabled, only render a single
-pass, trying to guess which is the correct one to best approximate
-what it is supposed to look like.
-=================
-*/
-static void VertexLightingCollapse(void) {
-	int stage;
-	shaderStage_t* bestStage;
-	int bestImageRank;
-	int rank;
-
-	// if we aren't opaque, just use the first pass
-	if(shader.sort == SS_OPAQUE) {
-		// pick the best texture for the single pass
-		bestStage = &stages[0];
-		bestImageRank = -999999;
-
-		for(stage = 0; stage < MAX_SHADER_STAGES; stage++) {
-			shaderStage_t* pStage = &stages[stage];
-
-			if(!pStage->active) {
-				break;
-			}
-			rank = 0;
-
-			if(pStage->bundle[0].isLightmap) {
-				rank -= 100;
-			}
-			if(pStage->bundle[0].tcGen != TCGEN_TEXTURE) {
-				rank -= 5;
-			}
-			if(pStage->bundle[0].numTexMods) {
-				rank -= 5;
-			}
-			if(pStage->rgbGen != CGEN_IDENTITY && pStage->rgbGen != CGEN_IDENTITY_LIGHTING) {
-				rank -= 3;
-			}
-
-			if(rank > bestImageRank) {
-				bestImageRank = rank;
-				bestStage = pStage;
-			}
-		}
-
-		stages[0].bundle[0] = bestStage->bundle[0];
-		stages[0].stateBits &= ~(GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS);
-		stages[0].stateBits |= GLS_DEPTHMASK_TRUE;
-		if(shader.lightmapIndex == LIGHTMAP_NONE) {
-			stages[0].rgbGen = CGEN_LIGHTING_DIFFUSE;
-		} else {
-			stages[0].rgbGen = CGEN_EXACT_VERTEX;
-		}
-		stages[0].alphaGen = AGEN_SKIP;
-	} else {
-		// don't use a lightmap (tesla coils)
-		if(stages[0].bundle[0].isLightmap) {
-			stages[0] = stages[1];
-		}
-
-		// if we were in a cross-fade cgen, hack it to normal
-		if(stages[0].rgbGen == CGEN_ONE_MINUS_ENTITY || stages[1].rgbGen == CGEN_ONE_MINUS_ENTITY) {
-			stages[0].rgbGen = CGEN_IDENTITY_LIGHTING;
-		}
-		if((stages[0].rgbGen == CGEN_WAVEFORM && stages[0].rgbWave.func == GF_SAWTOOTH) && (stages[1].rgbGen == CGEN_WAVEFORM && stages[1].rgbWave.func == GF_INVERSE_SAWTOOTH)) {
-			stages[0].rgbGen = CGEN_IDENTITY_LIGHTING;
-		}
-		if((stages[0].rgbGen == CGEN_WAVEFORM && stages[0].rgbWave.func == GF_INVERSE_SAWTOOTH) && (stages[1].rgbGen == CGEN_WAVEFORM && stages[1].rgbWave.func == GF_SAWTOOTH)) {
-			stages[0].rgbGen = CGEN_IDENTITY_LIGHTING;
-		}
-	}
-
-	for(stage = 1; stage < MAX_SHADER_STAGES; stage++) {
-		shaderStage_t* pStage = &stages[stage];
-
-		if(!pStage->active) {
-			break;
-		}
-
-		Com_Memset(pStage, 0, sizeof(*pStage));
-	}
-}
-
-/*
-=================
 FixFatLightmapTexCoords
 
 Handle edge cases of altering lightmap texcoords for fat lightmap atlas
@@ -2568,11 +2482,7 @@ from the current global working shader
 */
 static shader_t* FinishShader(void) {
 	int stage;
-	bool hasLightmapStage;
-	bool vertexLightmap;
-
-	hasLightmapStage = false;
-	vertexLightmap = false;
+	bool hasLightmapStage = false;
 
 	//
 	// set sky stuff appropriate
@@ -2641,12 +2551,6 @@ static shader_t* FinishShader(void) {
 			}
 		}
 
-		// not a true lightmap but we want to leave existing
-		// behaviour in place and not print out a warning
-		// if (pStage->rgbGen == CGEN_VERTEX) {
-		//  vertexLightmap = true;
-		//}
-
 		//
 		// determine sort order and fog color adjustment
 		//
@@ -2695,14 +2599,6 @@ static shader_t* FinishShader(void) {
 		shader.sort = SS_OPAQUE;
 	}
 
-	//
-	// if we are in r_vertexLight mode, never use a lightmap texture
-	//
-	if(stage > 1 && ((r_vertexLight->integer && !r_uiFullScreen->integer) || glConfig.hardwareType == GLHW_PERMEDIA2)) {
-		VertexLightingCollapse();
-		hasLightmapStage = false;
-	}
-
 	FixFatLightmapTexCoords();
 
 	//
@@ -2711,13 +2607,7 @@ static shader_t* FinishShader(void) {
 	stage = CollapseStagesToGLSL();
 
 	if(shader.lightmapIndex >= 0 && !hasLightmapStage) {
-		if(vertexLightmap) {
-			ri.Printf(PRINT_DEVELOPER, "WARNING: shader '%s' has VERTEX forced lightmap!\n", shader.name);
-		} else {
-			ri.Printf(PRINT_DEVELOPER, "WARNING: shader '%s' has lightmap but no lightmap stage!\n", shader.name);
-			// Don't set this, it will just add duplicate shaders to the hash
-			// shader.lightmapIndex = LIGHTMAP_NONE;
-		}
+		ri.Printf(PRINT_DEVELOPER, "WARNING: shader '%s' has lightmap but no lightmap stage!\n", shader.name);
 	}
 
 	//

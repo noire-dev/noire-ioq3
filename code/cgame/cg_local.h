@@ -963,7 +963,7 @@ void CG_ZoomDown_f(void);
 void CG_ZoomUp_f(void);
 void CG_AddBufferedSound(sfxHandle_t sfx);
 
-void CG_DrawActiveFrame(int serverTime, stereoFrame_t stereoView, bool demoPlayback);
+void CG_DrawActiveFrame(int serverTime, bool demoPlayback);
 
 // cg_drawtools.c
 void CG_DrawProgressBar(float x, float y, float width, float height, float progress, float segmentWidth, const float* barColor, const float* bgColor);
@@ -974,7 +974,7 @@ void CG_Add3DString(float x, float y, float z, const char* str, int style, const
 void CG_DrawHead(float x, float y, float w, float h, int clientNum);
 void CG_AddToGenericConsole(const char* str, console_t* console);
 void CG_AddNotify(const char* text, int type, int number, const char* picPath);
-void CG_DrawActive(stereoFrame_t stereoView);
+void CG_DrawActive(void);
 
 //
 // cg_player.c

@@ -298,24 +298,6 @@ the above locations, if desired.
                                       plane in quake3 standard units
   r_greyscale                       - desaturate textures, useful for anaglyph,
                                       supports values in the range of 0 to 1
-  r_stereoEnabled                   - enable stereo rendering for techniques
-                                      like shutter glasses (untested)
-  r_anaglyphMode                    - Enable rendering of anaglyph images
-                                      red-cyan glasses:    1
-                                      red-blue:            2
-                                      red-green:           3
-                                      green-magenta:       4
-                                      To swap the colors for left and right eye
-                                      just add 4 to the value for the wanted
-                                      color combination. For red-blue and
-                                      red-green you probably want to enable
-                                      r_greyscale
-  r_stereoSeparation                - Control eye separation. Resulting
-                                      separation is r_zProj divided by this
-                                      value in quake3 standard units.
-                                      See also
-                                      http://wiki.ioquake3.org/Stereo_Rendering
-                                      for more information
   r_marksOnTriangleMeshes           - Support impact marks on md3 models, MOD
                                       developers should increase the mark
                                       triangle limits in cg_marks.c if they

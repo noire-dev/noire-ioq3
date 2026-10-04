@@ -619,8 +619,6 @@ typedef struct {
 	vec3_t vieworg;
 	vec3_t viewaxis[3];  // transformation matrix
 
-	stereoFrame_t stereoFrame;
-
 	int time;     // time in milliseconds for shader effects and other time dependent rendering issues
 	int rdflags;  // RDF_NOWORLDMODEL, etc
 
@@ -712,7 +710,6 @@ typedef struct {
 	vec3_t visBounds[2];
 	float zFar;
 	float zNear;
-	stereoFrame_t stereoFrame;
 } viewParms_t;
 
 /*
@@ -1492,11 +1489,8 @@ extern cvar_t* r_railSegmentLength;
 extern cvar_t* r_ignore;   // used for debugging anything
 extern cvar_t* r_verbose;  // used for verbose debug spew
 
-extern cvar_t* r_znear;             // near Z clip plane
-extern cvar_t* r_zproj;             // z distance of projection plane
-extern cvar_t* r_stereoSeparation;  // separation of cameras for stereo rendering
-
-extern cvar_t* r_measureOverdraw;  // enables stencil buffer overdraw measurement
+extern cvar_t* r_znear;  // near Z clip plane
+extern cvar_t* r_zproj;  // z distance of projection plane
 
 extern cvar_t* r_lodbias;  // push/pull LOD transitions
 extern cvar_t* r_lodscale;
@@ -1533,21 +1527,18 @@ extern cvar_t* r_singleShader;  // make most world faces use default shader
 extern cvar_t* r_roundImagesDown;
 extern cvar_t* r_colorMipLevels;  // development aid to see texture mip usage
 extern cvar_t* r_picmip;          // controls picmip values
-extern cvar_t* r_finish;
 extern cvar_t* r_textureMode;
 extern cvar_t* r_offsetFactor;
 extern cvar_t* r_offsetUnits;
 
 extern cvar_t* r_fullbright;    // avoid lightmap pass
 extern cvar_t* r_lightmap;      // render lightmaps only
-extern cvar_t* r_vertexLight;   // vertex lighting mode for better performance
 extern cvar_t* r_uiFullScreen;  // ui is running fullscreen
 
 extern cvar_t* r_logFile;      // number of frames to emit GL logs
 extern cvar_t* r_showtris;     // enables wireframe rendering of the world
 extern cvar_t* r_showsky;      // forces sky in front of all surfaces
 extern cvar_t* r_shownormals;  // draws wireframe normals
-extern cvar_t* r_clear;        // force screen clear every frame
 
 extern cvar_t* r_flares;  // light flares
 
@@ -1560,8 +1551,6 @@ extern cvar_t* r_portalOnly;
 extern cvar_t* r_subdivisions;
 extern cvar_t* r_lodCurveError;
 extern cvar_t* r_skipBackEnd;
-
-extern cvar_t* r_anaglyphMode;
 
 extern cvar_t* r_externalGLSL;
 
@@ -1751,7 +1740,7 @@ void GL_Cull(int cullType);
 void RE_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte* data, int client, bool dirty);
 void RE_UploadCinematic(int w, int h, int cols, int rows, const byte* data, int client, bool dirty);
 
-void RE_BeginFrame(stereoFrame_t stereoFrame);
+void RE_BeginFrame(void);
 void RE_BeginRegistration(glconfig_t* glconfig);
 void RE_LoadWorldMap(const char* mapname);
 void RE_SetWorldVisData(const byte* vis);
@@ -2188,12 +2177,6 @@ typedef struct {
 
 typedef struct {
 	int commandId;
-
-	GLboolean rgba[4];
-} colorMaskCommand_t;
-
-typedef struct {
-	int commandId;
 } clearDepthCommand_t;
 
 typedef struct {
@@ -2202,7 +2185,7 @@ typedef struct {
 	viewParms_t viewParms;
 } postProcessCommand_t;
 
-typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_DRAW_BUFFER, RC_SWAP_BUFFERS, RC_SCREENSHOT, RC_VIDEOFRAME, RC_COLORMASK, RC_CLEARDEPTH, RC_POSTPROCESS } renderCommand_t;
+typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_DRAW_BUFFER, RC_SWAP_BUFFERS, RC_SCREENSHOT, RC_VIDEOFRAME, RC_CLEARDEPTH, RC_POSTPROCESS } renderCommand_t;
 
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --
@@ -2236,7 +2219,7 @@ void R_AddPostProcessCmd(void);
 
 void RE_SetColor(const float* rgba);
 void RE_StretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader);
-void RE_BeginFrame(stereoFrame_t stereoFrame);
+void RE_BeginFrame(void);
 void RE_EndFrame(int* frontEndMsec, int* backEndMsec);
 void RE_SaveJPG(char* filename, int quality, int image_width, int image_height, unsigned char* image_buffer, int padding);
 size_t RE_SaveJPGToBuffer(byte* buffer, size_t bufSize, int quality, int image_width, int image_height, byte* image_buffer, int padding);
