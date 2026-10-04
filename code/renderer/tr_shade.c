@@ -287,8 +287,7 @@ void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t
 	tess.fogNum = fogNum;
 	tess.useCubemap = useCubemap;
 	VectorCopy(cubemapOrigin, tess.cubemapOrigin);
-	tess.dlightBits = 0;   // will be OR'd in by surface functions
-	tess.pshadowBits = 0;  // will be OR'd in by surface functions
+	tess.dlightBits = 0;  // will be OR'd in by surface functions
 	tess.xstages = state->stages;
 	tess.numPasses = state->numUnfoggedPasses;
 	tess.currentStageIteratorFunc = state->optimalStageIteratorFunc;
@@ -298,10 +297,6 @@ void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t
 	tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
 	if(tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime) {
 		tess.shaderTime = tess.shader->clampTime;
-	}
-
-	if(backEnd.viewParms.flags & VPF_SHADOWMAP) {
-		tess.currentStageIteratorFunc = RB_StageIteratorGeneric;
 	}
 }
 
@@ -840,15 +835,12 @@ static void ForwardDlight(void) {
 			R_BindAnimatedImageToTMU(&pStage->bundle[TB_SPECULARMAP], TB_SPECULARMAP);
 		} else if(r_specularMapping->integer)
 			GL_BindToTMU(tr.whiteImage, TB_SPECULARMAP);
-
 		{
 			vec4_t enableTextures;
 
 			VectorSet4(enableTextures, 0.0f, 0.0f, 0.0f, 0.0f);
 			GLSL_SetUniformVec4(sp, UNIFORM_ENABLETEXTURES, enableTextures);
 		}
-
-		if(r_dlightMode->integer >= 2) GL_BindToTMU(tr.shadowCubemaps[l], TB_SHADOWMAP);
 
 		ComputeTexMods(pStage, TB_DIFFUSEMAP, texMatrix);
 		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX0, texMatrix[0]);
@@ -871,74 +863,6 @@ static void ForwardDlight(void) {
 		backEnd.pc.c_totalIndexes += tess.numIndexes;
 		backEnd.pc.c_dlightIndexes += tess.numIndexes;
 		backEnd.pc.c_dlightVertexes += tess.numVertexes;
-	}
-}
-
-static void ProjectPshadowVBOGLSL(void) {
-	int l;
-	vec3_t origin;
-	float radius;
-
-	int deformGen;
-	vec5_t deformParams;
-
-	shaderCommands_t* input = &tess;
-
-	if(!backEnd.refdef.num_pshadows) {
-		return;
-	}
-
-	ComputeDeformValues(&deformGen, deformParams);
-
-	for(l = 0; l < backEnd.refdef.num_pshadows; l++) {
-		pshadow_t* ps;
-		shaderProgram_t* sp;
-		vec4_t vector;
-
-		if(!(tess.pshadowBits & (1 << l))) {
-			continue;  // this surface definitely doesn't have any of this shadow
-		}
-
-		ps = &backEnd.refdef.pshadows[l];
-		VectorCopy(ps->lightOrigin, origin);
-		radius = ps->lightRadius;
-
-		sp = &tr.pshadowShader;
-
-		GLSL_BindProgram(sp);
-
-		GLSL_SetUniformMat4(sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
-
-		VectorCopy(origin, vector);
-		vector[3] = 1.0f;
-		GLSL_SetUniformVec4(sp, UNIFORM_LIGHTORIGIN, vector);
-
-		VectorScale(ps->lightViewAxis[0], 1.0f / ps->viewRadius, vector);
-		GLSL_SetUniformVec3(sp, UNIFORM_LIGHTFORWARD, vector);
-
-		VectorScale(ps->lightViewAxis[1], 1.0f / ps->viewRadius, vector);
-		GLSL_SetUniformVec3(sp, UNIFORM_LIGHTRIGHT, vector);
-
-		VectorScale(ps->lightViewAxis[2], 1.0f / ps->viewRadius, vector);
-		GLSL_SetUniformVec3(sp, UNIFORM_LIGHTUP, vector);
-
-		GLSL_SetUniformFloat(sp, UNIFORM_LIGHTRADIUS, radius);
-
-		// include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light
-		// where they aren't rendered
-		GL_State(GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL);
-		GLSL_SetUniformInt(sp, UNIFORM_ALPHATEST, 0);
-
-		GL_BindToTMU(tr.pshadowMaps[l], TB_DIFFUSEMAP);
-
-		//
-		// draw
-		//
-
-		R_DrawElements(input->numIndexes, input->firstIndex);
-
-		backEnd.pc.c_totalIndexes += tess.numIndexes;
-		// backEnd.pc.c_dlightIndexes += tess.numIndexes;
 	}
 }
 
@@ -1523,40 +1447,16 @@ void RB_StageIteratorGeneric(void) {
 	}
 
 	//
-	// render shadowmap if in shadowmap mode
-	//
-	if(backEnd.viewParms.flags & VPF_SHADOWMAP) {
-		if(input->shader->sort == SS_OPAQUE) {
-			RB_RenderShadowmap(input);
-		}
-		//
-		// reset polygon offset
-		//
-		if(input->shader->polygonOffset) {
-			qglDisable(GL_POLYGON_OFFSET_FILL);
-		}
-
-		return;
-	}
-
-	//
 	//
 	// call shader function
 	//
 	RB_IterateStagesGeneric(input);
 
 	//
-	// pshadows!
-	//
-	if(glRefConfig.framebufferObject && r_shadows->integer == 4 && tess.pshadowBits && tess.shader->sort <= SS_OPAQUE && !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY))) {
-		ProjectPshadowVBOGLSL();
-	}
-
-	//
 	// now do any dynamic lighting needed
 	//
 	if(tess.dlightBits && tess.shader->sort <= SS_OPAQUE && r_lightmap->integer == 0 && !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY))) {
-		if(tess.shader->numUnfoggedPasses == 1 && tess.xstages[0]->glslShaderGroup == tr.lightallShader && (tess.xstages[0]->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK) && r_dlightMode->integer) {
+		if(tess.shader->numUnfoggedPasses == 1 && tess.xstages[0]->glslShaderGroup == tr.lightallShader && (tess.xstages[0]->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK)) {
 			ForwardDlight();
 		} else {
 			ProjectDlightTexture();
@@ -1595,11 +1495,6 @@ void RB_EndSurface(void) {
 	}
 	if(input->xyz[SHADER_MAX_VERTEXES - 1][0] != 0) {
 		ri.Error(ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit");
-	}
-
-	if(tess.shader == tr.shadowShader) {
-		RB_ShadowTessEnd();
-		return;
 	}
 
 	// for debugging of sort order issues, stop rendering after a given sort value

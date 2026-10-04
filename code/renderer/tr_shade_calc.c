@@ -524,7 +524,6 @@ void RB_DeformTessGeometry(void) {
 			case DEFORM_WAVE: RB_CalcDeformVertexes(ds); break;
 			case DEFORM_BULGE: RB_CalcBulgeVertexes(ds); break;
 			case DEFORM_MOVE: RB_CalcMoveVertexes(ds); break;
-			case DEFORM_PROJECTION_SHADOW: RB_ProjectionShadowDeform(); break;
 			case DEFORM_AUTOSPRITE: AutospriteDeform(); break;
 			case DEFORM_AUTOSPRITE2: Autosprite2Deform(); break;
 			case DEFORM_TEXT0:

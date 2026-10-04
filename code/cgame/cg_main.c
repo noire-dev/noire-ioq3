@@ -69,7 +69,6 @@ vmCvar_t cg_bobup;
 vmCvar_t cg_bobpitch;
 vmCvar_t cg_bobroll;
 vmCvar_t cg_swingSpeed;
-vmCvar_t cg_shadows;
 vmCvar_t cg_gibs;
 vmCvar_t cg_drawTimer;
 vmCvar_t cg_drawFPS;
@@ -148,7 +147,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_zoomFov, "cg_zoomfov", "22.5", CVAR_ARCHIVE},
     {&cg_fov, "cg_fov", "90", CVAR_ARCHIVE},
     {&cg_viewsize, "cg_viewsize", "100", CVAR_ARCHIVE},
-    {&cg_shadows, "cg_shadows", "1", CVAR_ARCHIVE},
     {&cg_gibs, "cg_gibs", "1", CVAR_ARCHIVE},
     {&cg_draw2D, "cg_draw2D", "1", CVAR_ARCHIVE},
     {&cg_drawStatus, "cg_drawStatus", "1", CVAR_ARCHIVE},
@@ -627,7 +625,6 @@ static void CG_RegisterGraphics(void) {
 	cgs.media.burnMarkShader = trap_R_RegisterShader("gfx/damage/burn_med_mrk");
 	cgs.media.holeMarkShader = trap_R_RegisterShader("gfx/damage/hole_lg_mrk");
 	cgs.media.energyMarkShader = trap_R_RegisterShader("gfx/damage/plasma_mrk");
-	cgs.media.shadowMarkShader = trap_R_RegisterShader("markShadow");
 	cgs.media.wakeMarkShader = trap_R_RegisterShader("wake");
 	cgs.media.bloodMarkShader = trap_R_RegisterShader("bloodMark");
 

@@ -31,7 +31,6 @@ set(RENDERER_GL2_SOURCES
     ${SOURCE_DIR}/renderer/tr_shade.c
     ${SOURCE_DIR}/renderer/tr_shade_calc.c
     ${SOURCE_DIR}/renderer/tr_shader.c
-    ${SOURCE_DIR}/renderer/tr_shadows.c
     ${SOURCE_DIR}/renderer/tr_sky.c
     ${SOURCE_DIR}/renderer/tr_surface.c
     ${SOURCE_DIR}/renderer/tr_vbo.c

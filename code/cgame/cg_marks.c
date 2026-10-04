@@ -192,7 +192,7 @@ void CG_ImpactMark(qhandle_t markShader, const vec3_t origin, const vec3_t dir, 
 			*(int*)v->modulate = *(int*)colors;
 		}
 
-		// if it is a temporary (shadow) mark, add it immediately and forget about it
+		// if it is a temporary mark, add it immediately and forget about it
 		if(temporary) {
 			trap_R_AddPolyToScene(markShader, mf->numPoints, verts);
 			continue;

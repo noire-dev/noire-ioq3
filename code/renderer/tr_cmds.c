@@ -160,25 +160,6 @@ void R_AddDrawSurfCmd(drawSurf_t* drawSurfs, int numDrawSurfs) {
 
 /*
 =============
-R_AddCapShadowmapCmd
-
-=============
-*/
-void R_AddCapShadowmapCmd(int map, int cubeSide) {
-	capShadowmapCommand_t* cmd;
-
-	cmd = R_GetCommandBuffer(sizeof(*cmd));
-	if(!cmd) {
-		return;
-	}
-	cmd->commandId = RC_CAPSHADOWMAP;
-
-	cmd->map = map;
-	cmd->cubeSide = cubeSide;
-}
-
-/*
-=============
 R_AddPostProcessCmd
 
 =============
@@ -309,40 +290,6 @@ void RE_BeginFrame(stereoFrame_t stereoFrame) {
 
 	tr.frameCount++;
 	tr.frameSceneNum = 0;
-
-	//
-	// do overdraw measurement
-	//
-	if(r_measureOverdraw->integer) {
-		if(qglesMajorVersion >= 1 && !glRefConfig.readStencil) {
-			ri.Printf(PRINT_WARNING, "OpenGL ES needs GL_NV_read_stencil to read stencil bits to measure overdraw\n");
-			ri.Cvar_Set("r_measureOverdraw", "0");
-			r_measureOverdraw->modified = false;
-		} else if(glConfig.stencilBits < 4) {
-			ri.Printf(PRINT_ALL, "Warning: not enough stencil bits to measure overdraw: %d\n", glConfig.stencilBits);
-			ri.Cvar_Set("r_measureOverdraw", "0");
-			r_measureOverdraw->modified = false;
-		} else if(r_shadows->integer == 2) {
-			ri.Printf(PRINT_ALL, "Warning: stencil shadows and overdraw measurement are mutually exclusive\n");
-			ri.Cvar_Set("r_measureOverdraw", "0");
-			r_measureOverdraw->modified = false;
-		} else {
-			R_IssuePendingRenderCommands();
-			qglEnable(GL_STENCIL_TEST);
-			qglStencilMask(~0U);
-			qglClearStencil(0U);
-			qglStencilFunc(GL_ALWAYS, 0U, ~0U);
-			qglStencilOp(GL_KEEP, GL_INCR, GL_INCR);
-		}
-		r_measureOverdraw->modified = false;
-	} else {
-		// this is only reached if it was on and is now off
-		if(r_measureOverdraw->modified) {
-			R_IssuePendingRenderCommands();
-			qglDisable(GL_STENCIL_TEST);
-		}
-		r_measureOverdraw->modified = false;
-	}
 
 	//
 	// texturemode stuff

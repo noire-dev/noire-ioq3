@@ -650,8 +650,6 @@ typedef struct {
 
 	qhandle_t numberShaders[11];
 
-	qhandle_t shadowMarkShader;
-
 	qhandle_t botSkillShaders[5];
 
 	// wall mark shaders
@@ -872,7 +870,6 @@ extern vmCvar_t cg_bobup;
 extern vmCvar_t cg_bobpitch;
 extern vmCvar_t cg_bobroll;
 extern vmCvar_t cg_swingSpeed;
-extern vmCvar_t cg_shadows;
 extern vmCvar_t cg_gibs;
 extern vmCvar_t cg_drawTimer;
 extern vmCvar_t cg_drawFPS;

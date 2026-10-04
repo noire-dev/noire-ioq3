@@ -1134,7 +1134,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 	surface = data->surfaces;
 
 	// don't add third_person objects if not in a portal
-	personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !(tr.viewParms.isPortal || (tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)));
+	personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !(tr.viewParms.isPortal || (tr.viewParms.flags & VPF_DEPTHSHADOW));
 
 	if(ent->e.renderfx & RF_WRAP_FRAMES) {
 		ent->e.frame %= data->num_frames;
@@ -1165,9 +1165,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 	//
 	// set up lighting now that we know we aren't culled
 	//
-	if(!personalModel || r_shadows->integer > 1) {
-		R_SetupEntityLighting(&tr.refdef, ent);
-	}
+	if(!personalModel) R_SetupEntityLighting(&tr.refdef, ent);
 
 	//
 	// see if we are in a fog volume
@@ -1200,7 +1198,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 		useCubemap = R_CubemapForShader(shader->surfaceFlags & SURF_CUBEMAP);
 
 		if(!personalModel) {
-			R_AddDrawSurf(drawSurf, shader, fogNum, 0, 0, useCubemap, vec3_origin);
+			R_AddDrawSurf(drawSurf, shader, fogNum, 0, useCubemap, vec3_origin);
 		}
 
 		surface++;

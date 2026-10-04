@@ -167,7 +167,7 @@ void R_MDRAddAnimSurfaces(trRefEntity_t* ent) {
 
 	header = (mdrHeader_t*)tr.currentModel->modelData;
 
-	personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !(tr.viewParms.isPortal || (tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)));
+	personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !(tr.viewParms.isPortal || (tr.viewParms.flags & VPF_DEPTHSHADOW));
 
 	if(ent->e.renderfx & RF_WRAP_FRAMES) {
 		ent->e.frame %= header->numFrames;
@@ -207,9 +207,7 @@ void R_MDRAddAnimSurfaces(trRefEntity_t* ent) {
 	}
 
 	// set up lighting
-	if(!personalModel || r_shadows->integer > 1) {
-		R_SetupEntityLighting(&tr.refdef, ent);
-	}
+	if(!personalModel) R_SetupEntityLighting(&tr.refdef, ent);
 
 	// fogNum?
 	fogNum = R_MDRComputeFogNum(header, ent);
@@ -236,7 +234,7 @@ void R_MDRAddAnimSurfaces(trRefEntity_t* ent) {
 
 		useCubemap = R_CubemapForShader(shader->surfaceFlags & SURF_CUBEMAP);
 
-		if(!personalModel) R_AddDrawSurf((void*)surface, shader, fogNum, false, false, useCubemap, vec3_origin);
+		if(!personalModel) R_AddDrawSurf((void*)surface, shader, fogNum, false, useCubemap, vec3_origin);
 
 		surface = (mdrSurface_t*)((byte*)surface + surface->ofsEnd);
 	}

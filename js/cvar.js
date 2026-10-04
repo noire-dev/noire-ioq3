@@ -56,7 +56,6 @@ cvar.register("cg_postprocess", "", 0);
 cvar.register("cg_drawGun", "1", CVAR.ARCHIVE);
 cvar.register("cg_zoomfov", "22", CVAR.ARCHIVE);
 cvar.register("cg_fov", "110", CVAR.ARCHIVE);
-cvar.register("cg_shadows", "1", CVAR.ARCHIVE);
 cvar.register("cg_draw2D", "1", CVAR.ARCHIVE);
 cvar.register("cg_drawTimer", "0", CVAR.ARCHIVE);
 cvar.register("cg_drawFPS", "0", CVAR.ARCHIVE);

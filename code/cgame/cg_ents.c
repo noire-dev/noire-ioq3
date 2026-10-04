@@ -297,7 +297,6 @@ static void CG_Item(centity_t* cent) {
 		barrel.hModel = wi->barrelModel;
 
 		VectorCopy(ent.lightingOrigin, barrel.lightingOrigin);
-		barrel.shadowPlane = ent.shadowPlane;
 		barrel.renderfx = ent.renderfx;
 
 		angles[YAW] = 0;
@@ -369,7 +368,7 @@ static void CG_Missile(centity_t* cent) {
 	// flicker between two skins
 	ent.skinNum = cg.clientFrame & 1;
 	ent.hModel = weapon->missileModel;
-	ent.renderfx = weapon->missileRenderfx | RF_NOSHADOW;
+	ent.renderfx = weapon->missileRenderfx;
 
 	// convert direction of travel into axis
 	if(VectorNormalize2(s1->pos.trDelta, ent.axis[0]) == 0) {
@@ -404,8 +403,6 @@ static void CG_Mover(centity_t* cent) {
 	VectorCopy(cent->lerpOrigin, ent.origin);
 	VectorCopy(cent->lerpOrigin, ent.oldorigin);
 	AnglesToAxis(cent->lerpAngles, ent.axis);
-
-	ent.renderfx = RF_NOSHADOW;
 
 	// flicker between two skins (FIXME?)
 	ent.skinNum = (cg.time >> 6) & 1;
@@ -447,8 +444,6 @@ void CG_Beam(centity_t* cent) {
 	VectorCopy(s1->origin2, ent.oldorigin);
 	AxisClear(ent.axis);
 	ent.reType = RT_BEAM;
-
-	ent.renderfx = RF_NOSHADOW;
 
 	// add to refresh list
 	trap_R_AddRefEntityToScene(&ent);

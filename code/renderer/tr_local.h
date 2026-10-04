@@ -65,10 +65,6 @@ typedef unsigned int vaoCacheGlIndex_t;
 #define MAX_VISCOUNTS 5
 #define MAX_VAOS 4096
 
-#define MAX_CALC_PSHADOWS 64
-#define MAX_DRAWN_PSHADOWS 16  // do not increase past 32, because bit flags are used on surfaces
-#define PSHADOW_MAP_SIZE 512
-
 typedef struct cubemap_s {
 	vec3_t origin;
 	float parallaxRadius;
@@ -182,7 +178,7 @@ typedef enum {
 
 } genFunc_t;
 
-typedef enum { DEFORM_NONE, DEFORM_WAVE, DEFORM_NORMALS, DEFORM_BULGE, DEFORM_MOVE, DEFORM_PROJECTION_SHADOW, DEFORM_AUTOSPRITE, DEFORM_AUTOSPRITE2, DEFORM_TEXT0, DEFORM_TEXT1, DEFORM_TEXT2, DEFORM_TEXT3, DEFORM_TEXT4, DEFORM_TEXT5, DEFORM_TEXT6, DEFORM_TEXT7 } deform_t;
+typedef enum { DEFORM_NONE, DEFORM_WAVE, DEFORM_NORMALS, DEFORM_BULGE, DEFORM_MOVE, DEFORM_AUTOSPRITE, DEFORM_AUTOSPRITE2, DEFORM_TEXT0, DEFORM_TEXT1, DEFORM_TEXT2, DEFORM_TEXT3, DEFORM_TEXT4, DEFORM_TEXT5, DEFORM_TEXT6, DEFORM_TEXT7 } deform_t;
 
 // deformVertexes types that can be handled by the GPU
 typedef enum {
@@ -652,8 +648,6 @@ typedef struct {
 	struct drawSurf_s* drawSurfs;
 
 	unsigned int dlightMask;
-	int num_pshadows;
-	struct pshadow_s* pshadows;
 
 	float sunShadowMvp[4][16];
 	float sunDir[4];
@@ -697,7 +691,7 @@ typedef struct {
 	float surface[4];
 } fog_t;
 
-typedef enum { VPF_NONE = 0x00, VPF_NOVIEWMODEL = 0x01, VPF_SHADOWMAP = 0x02, VPF_DEPTHSHADOW = 0x04, VPF_DEPTHCLAMP = 0x08, VPF_ORTHOGRAPHIC = 0x10, VPF_USESUNLIGHT = 0x20, VPF_FARPLANEFRUSTUM = 0x40, VPF_NOCUBEMAPS = 0x80 } viewParmFlags_t;
+typedef enum { VPF_NONE = 0x00, VPF_NOVIEWMODEL = 0x01, VPF_DEPTHSHADOW = 0x02, VPF_DEPTHCLAMP = 0x04, VPF_ORTHOGRAPHIC = 0x08, VPF_USESUNLIGHT = 0x10, VPF_FARPLANEFRUSTUM = 0x20, VPF_NOCUBEMAPS = 0x40 } viewParmFlags_t;
 
 typedef struct {
 	orientationr_t or ;
@@ -801,7 +795,6 @@ typedef struct srfBspSurface_s {
 
 	// dynamic lighting information
 	int dlightBits;
-	int pshadowBits;
 
 	// culling information
 	vec3_t cullBounds[2];
@@ -926,31 +919,6 @@ extern void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void*);
 /*
 ==============================================================================
 
-SHADOWS
-
-==============================================================================
-*/
-
-typedef struct pshadow_s {
-	float sort;
-
-	int numEntities;
-	int entityNums[8];
-	vec3_t entityOrigins[8];
-	float entityRadiuses[8];
-
-	float viewRadius;
-	vec3_t viewOrigin;
-
-	vec3_t lightViewAxis[3];
-	vec3_t lightOrigin;
-	float lightRadius;
-	cplane_t cullPlane;
-} pshadow_t;
-
-/*
-==============================================================================
-
 BRUSH MODELS
 
 ==============================================================================
@@ -1039,7 +1007,6 @@ typedef struct {
 	msurface_t* surfaces;
 	int* surfacesViewCount;
 	int* surfacesDlightBits;
-	int* surfacesPshadowBits;
 
 	int nummarksurfaces;
 	int* marksurfaces;
@@ -1179,21 +1146,13 @@ the bits are allocated as follows:
 2-6   : fog index
 7-16  : entity index
 17-30 : sorted shader index
-
-    SmileTheory - for pshadows
-17-31 : sorted shader index
-7-16  : entity index
-2-6   : fog index
-1     : pshadow flag
-0     : dlight flag
 */
-#define QSORT_FOGNUM_SHIFT 2
-#define QSORT_REFENTITYNUM_SHIFT 7
+#define QSORT_FOGNUM_SHIFT 1
+#define QSORT_REFENTITYNUM_SHIFT 6
 #define QSORT_SHADERNUM_SHIFT (QSORT_REFENTITYNUM_SHIFT + REFENTITYNUM_BITS)
 #if (QSORT_SHADERNUM_SHIFT + SHADERNUM_BITS) > 32
 #error "Need to update sorting, too many bits."
 #endif
-#define QSORT_PSHADOW_SHIFT 1
 
 extern int gl_filter_min, gl_filter_max;
 
@@ -1376,12 +1335,9 @@ typedef struct {
 	image_t* whiteImage;          // full of 0xff
 	image_t* identityLightImage;  // full of tr.identityLightByte
 
-	image_t* shadowCubemaps[MAX_DLIGHTS];
-
 	image_t* renderImage;
 	image_t* sunRaysImage;
 	image_t* renderDepthImage;
-	image_t* pshadowMaps[MAX_DRAWN_PSHADOWS];
 	image_t* screenScratchImage;
 	image_t* textureScratchImage[2];
 	image_t* quarterImage[2];
@@ -1400,7 +1356,6 @@ typedef struct {
 	FBO_t* msaaResolveFbo;
 	FBO_t* sunRaysFbo;
 	FBO_t* depthFbo;
-	FBO_t* pshadowFbos[MAX_DRAWN_PSHADOWS];
 	FBO_t* screenScratchFbo;
 	FBO_t* textureScratchFbo[2];
 	FBO_t* quarterFbo[2];
@@ -1413,8 +1368,6 @@ typedef struct {
 	FBO_t* renderCubeFbo;
 
 	shader_t* defaultShader;
-	shader_t* shadowShader;
-	shader_t* projectionShadowShader;
 
 	shader_t* flareShader;
 	shader_t* sunShader;
@@ -1445,7 +1398,6 @@ typedef struct {
 	shaderProgram_t dlightShader[DLIGHTDEF_COUNT];
 	shaderProgram_t lightallShader[LIGHTDEF_COUNT];
 	shaderProgram_t shadowmapShader[SHADOWMAPDEF_COUNT];
-	shaderProgram_t pshadowShader;
 	shaderProgram_t down4xShader;
 	shaderProgram_t bokehShader;
 	shaderProgram_t tonemapShader;
@@ -1597,8 +1549,7 @@ extern cvar_t* r_showsky;      // forces sky in front of all surfaces
 extern cvar_t* r_shownormals;  // draws wireframe normals
 extern cvar_t* r_clear;        // force screen clear every frame
 
-extern cvar_t* r_shadows;  // controls shadows: 0 = none, 1 = blur, 2 = stencil, 3 = black planar projection
-extern cvar_t* r_flares;   // light flares
+extern cvar_t* r_flares;  // light flares
 
 extern cvar_t* r_intensity;
 
@@ -1650,8 +1601,6 @@ extern cvar_t* r_baseParallax;
 extern cvar_t* r_baseSpecular;
 extern cvar_t* r_baseGloss;
 extern cvar_t* r_glossType;
-extern cvar_t* r_dlightMode;
-extern cvar_t* r_pshadowDist;
 extern cvar_t* r_mergeLightmaps;
 extern cvar_t* r_imageUpsample;
 extern cvar_t* r_imageUpsampleMaxSize;
@@ -1716,8 +1665,6 @@ static ID_INLINE bool ShaderRequiresCPUDeforms(const shader_t* shader) {
 void R_SwapBuffers(int);
 
 void R_RenderView(viewParms_t* parms);
-void R_RenderDlightCubemaps(const refdef_t* fd);
-void R_RenderPshadowMaps(const refdef_t* fd);
 void R_RenderSunShadowMaps(const refdef_t* fd, int level);
 void R_RenderCubemapSide(int cubemapSide, bool subscene);
 
@@ -1729,9 +1676,9 @@ void R_AddLightningBoltSurfaces(trRefEntity_t* e);
 
 void R_AddPolygonSurfaces(void);
 
-void R_DecomposeSort(unsigned sort, int* entityNum, shader_t** shader, int* fogNum, int* dlightMap, int* pshadowMap);
+void R_DecomposeSort(unsigned sort, int* entityNum, shader_t** shader, int* fogNum, int* dlightMap);
 
-void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, int pshadowMap, bool useCubemap, vec3_t cubemapOrigin);
+void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, bool useCubemap, vec3_t cubemapOrigin);
 
 void R_CalcTexDirs(vec3_t sdir, vec3_t tdir, const vec3_t v1, const vec3_t v2, const vec3_t v3, const vec2_t w1, const vec2_t w2, const vec2_t w3);
 vec_t R_CalcTangentSpace(vec3_t tangent, vec3_t bitangent, const vec3_t normal, const vec3_t sdir, const vec3_t tdir);
@@ -1902,7 +1849,6 @@ typedef struct shaderCommands_s {
 	vec3_t cubemapOrigin;
 
 	int dlightBits;  // or together of all vertexDlightBits
-	int pshadowBits;
 
 	int firstIndex;
 	int numIndexes;
@@ -1975,18 +1921,6 @@ void R_TransformDlights(int count, dlight_t* dl, orientationr_t* or);
 int R_LightForPoint(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir);
 int R_LightDirForPoint(vec3_t point, vec3_t lightDir, vec3_t normal, world_t* world);
 bool R_CubemapForShader(bool applyCubemap);
-
-/*
-============================================================
-
-SHADOWS
-
-============================================================
-*/
-
-void RB_ShadowTessEnd(void);
-void RB_ShadowFinish(void);
-void RB_ProjectionShadowDeform(void);
 
 /*
 ============================================================
@@ -2264,17 +2198,11 @@ typedef struct {
 
 typedef struct {
 	int commandId;
-	int map;
-	int cubeSide;
-} capShadowmapCommand_t;
-
-typedef struct {
-	int commandId;
 	trRefdef_t refdef;
 	viewParms_t viewParms;
 } postProcessCommand_t;
 
-typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_DRAW_BUFFER, RC_SWAP_BUFFERS, RC_SCREENSHOT, RC_VIDEOFRAME, RC_COLORMASK, RC_CLEARDEPTH, RC_CAPSHADOWMAP, RC_POSTPROCESS } renderCommand_t;
+typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_DRAW_BUFFER, RC_SWAP_BUFFERS, RC_SCREENSHOT, RC_VIDEOFRAME, RC_COLORMASK, RC_CLEARDEPTH, RC_POSTPROCESS } renderCommand_t;
 
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --
@@ -2290,7 +2218,6 @@ typedef struct {
 	trRefEntity_t entities[MAX_REFENTITIES];
 	srfPoly_t* polys;       //[MAX_POLYS];
 	polyVert_t* polyVerts;  //[MAX_POLYVERTS];
-	pshadow_t pshadows[MAX_CALC_PSHADOWS];
 	renderCommandList_t commands;
 } backEndData_t;
 
@@ -2305,7 +2232,6 @@ void RB_ExecuteRenderCommands(const void* data);
 void R_IssuePendingRenderCommands(void);
 
 void R_AddDrawSurfCmd(drawSurf_t* drawSurfs, int numDrawSurfs);
-void R_AddCapShadowmapCmd(int dlight, int cubeSide);
 void R_AddPostProcessCmd(void);
 
 void RE_SetColor(const float* rgba);

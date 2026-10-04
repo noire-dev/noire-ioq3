@@ -342,18 +342,6 @@ Cvars that you probably don't care about or shouldn't mess with:
 *  `r_shadowCascadeZBias`           - Z-bias for shadow cascade frustums.
                                      -256 - Default.
 
-Cvars that have broken bits:
-
-*  `r_dlightMode`                   - Change how dynamic lights look.
-                                     0 - Quake 3 style dlights, fake
-                                         brightening. (default)
-                                     1 - Actual lighting, no shadows.
-                                     2 - Light and shadows. (broken)
-
-*  `r_pshadowDist`                  - Virtual camera distance when creating shadowmaps for projected shadows.  Deprecated.
-
-*  `cg_shadows`                     - Old shadow code.  Deprecated.
-
 
 -------------------------------------------------------------------------------
   MATERIALS

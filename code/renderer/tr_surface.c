@@ -296,7 +296,7 @@ static void RB_SurfacePolychain(srfPoly_t* p) {
 	tess.numVertexes = numv;
 }
 
-static void RB_SurfaceVertsAndIndexes(int numVerts, srfVert_t* verts, int numIndexes, glIndex_t* indexes, int dlightBits, int pshadowBits) {
+static void RB_SurfaceVertsAndIndexes(int numVerts, srfVert_t* verts, int numIndexes, glIndex_t* indexes, int dlightBits) {
 	int i;
 	glIndex_t* inIndex;
 	srfVert_t* dv;
@@ -367,12 +367,11 @@ static void RB_SurfaceVertsAndIndexes(int numVerts, srfVert_t* verts, int numInd
 #endif
 
 	tess.dlightBits |= dlightBits;
-	tess.pshadowBits |= pshadowBits;
 
 	tess.numVertexes += numVerts;
 }
 
-static bool RB_SurfaceVaoCached(int numVerts, srfVert_t* verts, int numIndexes, glIndex_t* indexes, int dlightBits, int pshadowBits) {
+static bool RB_SurfaceVaoCached(int numVerts, srfVert_t* verts, int numIndexes, glIndex_t* indexes, int dlightBits) {
 	bool recycleVertexBuffer = false;
 	bool recycleIndexBuffer = false;
 	bool endSurface = false;
@@ -386,7 +385,6 @@ static bool RB_SurfaceVaoCached(int numVerts, srfVert_t* verts, int numIndexes, 
 	VaoCache_BindVao();
 
 	tess.dlightBits |= dlightBits;
-	tess.pshadowBits |= pshadowBits;
 
 	VaoCache_CheckAdd(&endSurface, &recycleVertexBuffer, &recycleIndexBuffer, numVerts, numIndexes);
 
@@ -417,11 +415,11 @@ RB_SurfaceTriangles
 =============
 */
 static void RB_SurfaceTriangles(srfBspSurface_t* srf) {
-	if(RB_SurfaceVaoCached(srf->numVerts, srf->verts, srf->numIndexes, srf->indexes, srf->dlightBits, srf->pshadowBits)) {
+	if(RB_SurfaceVaoCached(srf->numVerts, srf->verts, srf->numIndexes, srf->indexes, srf->dlightBits)) {
 		return;
 	}
 
-	RB_SurfaceVertsAndIndexes(srf->numVerts, srf->verts, srf->numIndexes, srf->indexes, srf->dlightBits, srf->pshadowBits);
+	RB_SurfaceVertsAndIndexes(srf->numVerts, srf->verts, srf->numIndexes, srf->indexes, srf->dlightBits);
 }
 
 /*
@@ -825,11 +823,11 @@ RB_SurfaceFace
 ==============
 */
 static void RB_SurfaceFace(srfBspSurface_t* srf) {
-	if(RB_SurfaceVaoCached(srf->numVerts, srf->verts, srf->numIndexes, srf->indexes, srf->dlightBits, srf->pshadowBits)) {
+	if(RB_SurfaceVaoCached(srf->numVerts, srf->verts, srf->numIndexes, srf->indexes, srf->dlightBits)) {
 		return;
 	}
 
-	RB_SurfaceVertsAndIndexes(srf->numVerts, srf->verts, srf->numIndexes, srf->indexes, srf->dlightBits, srf->pshadowBits);
+	RB_SurfaceVertsAndIndexes(srf->numVerts, srf->verts, srf->numIndexes, srf->indexes, srf->dlightBits);
 }
 
 static float LodErrorForVolume(vec3_t local, float radius) {
@@ -883,20 +881,13 @@ static void RB_SurfaceGrid(srfBspSurface_t* srf) {
 	int lodWidth, lodHeight;
 	int numVertexes;
 	int dlightBits;
-	int pshadowBits;
-	// int		*vDlightBits;
 
-	if(RB_SurfaceVaoCached(srf->numVerts, srf->verts, srf->numIndexes, srf->indexes, srf->dlightBits, srf->pshadowBits)) {
-		return;
-	}
+	if(RB_SurfaceVaoCached(srf->numVerts, srf->verts, srf->numIndexes, srf->indexes, srf->dlightBits)) return;
 
 	RB_CheckVao(tess.vao);
 
 	dlightBits = srf->dlightBits;
 	tess.dlightBits |= dlightBits;
-
-	pshadowBits = srf->pshadowBits;
-	tess.pshadowBits |= pshadowBits;
 
 	// determine the allowable discrepance
 	lodError = LodErrorForVolume(srf->lodOrigin, srf->lodRadius);

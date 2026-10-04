@@ -97,7 +97,7 @@ void R_AddPolygonSurfaces(void) {
 
 	for(i = 0, poly = tr.refdef.polys; i < tr.refdef.numPolys; i++, poly++) {
 		sh = R_GetShaderByHandle(poly->hShader);
-		R_AddDrawSurf((void*)poly, sh, poly->fogIndex & fogMask, false, false, false, vec3_origin);
+		R_AddDrawSurf((void*)poly, sh, poly->fogIndex & fogMask, false, false, vec3_origin);
 	}
 }
 
@@ -382,9 +382,6 @@ void RE_BeginScene(const refdef_t* fd) {
 	tr.refdef.numPolys = r_numpolys - r_firstScenePoly;
 	tr.refdef.polys = &backEndData->polys[r_firstScenePoly];
 
-	tr.refdef.num_pshadows = 0;
-	tr.refdef.pshadows = &backEndData->pshadows[0];
-
 	// turn off dynamic lighting globally by clearing all the
 	// dlights if it needs to be disabled or if vertex lighting is enabled
 	if(r_dynamiclight->integer == 0 || r_vertexLight->integer == 1 || glConfig.hardwareType == GLHW_PERMEDIA2) {
@@ -439,16 +436,6 @@ void RE_RenderScene(const refdef_t* fd) {
 	}
 
 	RE_BeginScene(fd);
-
-	// SmileTheory: playing with shadow mapping
-	if(!(fd->rdflags & RDF_NOWORLDMODEL) && tr.refdef.num_dlights && r_dlightMode->integer >= 2) {
-		R_RenderDlightCubemaps(fd);
-	}
-
-	/* playing with more shadows */
-	if(glRefConfig.framebufferObject && !(fd->rdflags & RDF_NOWORLDMODEL) && r_shadows->integer == 4) {
-		R_RenderPshadowMaps(fd);
-	}
 
 	// playing with even more shadows
 	if(glRefConfig.framebufferObject && r_sunlightMode->integer && !(fd->rdflags & RDF_NOWORLDMODEL) && (r_forceSun->integer || tr.sunShadows)) {

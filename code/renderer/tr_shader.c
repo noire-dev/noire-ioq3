@@ -1164,11 +1164,6 @@ static void ParseDeform(char** text) {
 	ds = &shader.deforms[shader.numDeforms];
 	shader.numDeforms++;
 
-	if(!Q_stricmp(token, "projectionShadow")) {
-		ds->deformation = DEFORM_PROJECTION_SHADOW;
-		return;
-	}
-
 	if(!Q_stricmp(token, "autosprite")) {
 		ds->deformation = DEFORM_AUTOSPRITE;
 		return;
@@ -1779,7 +1774,6 @@ static void ComputeVertexAttribs(void) {
 				default:
 				case DEFORM_NONE:
 				case DEFORM_MOVE:
-				case DEFORM_PROJECTION_SHADOW:
 				case DEFORM_AUTOSPRITE2: break;
 			}
 		}
@@ -2226,16 +2220,15 @@ static void FixRenderCommandList(int newShader) {
 					int fogNum;
 					int entityNum;
 					int dlightMap;
-					int pshadowMap;
 					int sortedIndex;
 					const drawSurfsCommand_t* ds_cmd = (const drawSurfsCommand_t*)curCmd;
 
 					for(i = 0, drawSurf = ds_cmd->drawSurfs; i < ds_cmd->numDrawSurfs; i++, drawSurf++) {
-						R_DecomposeSort(drawSurf->sort, &entityNum, &pShader, &fogNum, &dlightMap, &pshadowMap);
+						R_DecomposeSort(drawSurf->sort, &entityNum, &pShader, &fogNum, &dlightMap);
 						sortedIndex = ((drawSurf->sort >> QSORT_SHADERNUM_SHIFT) & (MAX_SHADERS - 1));
 						if(sortedIndex >= newShader) {
 							sortedIndex++;
-							drawSurf->sort = (sortedIndex << QSORT_SHADERNUM_SHIFT) | entityNum | (fogNum << QSORT_FOGNUM_SHIFT) | ((int)pshadowMap << QSORT_PSHADOW_SHIFT) | (int)dlightMap;
+							drawSurf->sort = (sortedIndex << QSORT_SHADERNUM_SHIFT) | entityNum | (fogNum << QSORT_FOGNUM_SHIFT) | (int)dlightMap;
 						}
 					}
 					curCmd = (const void*)(ds_cmd + 1);
@@ -3426,15 +3419,9 @@ static void CreateInternalShaders(void) {
 	stages[0].active = true;
 	stages[0].stateBits = GLS_DEFAULT;
 	tr.defaultShader = FinishShader();
-
-	// shadow shader is just a marker
-	Q_strncpyz(shader.name, "<stencil shadow>", sizeof(shader.name));
-	shader.sort = SS_STENCIL_SHADOW;
-	tr.shadowShader = FinishShader();
 }
 
 static void CreateExternalShaders(void) {
-	tr.projectionShadowShader = R_FindShader("projectionShadow", LIGHTMAP_NONE, true);
 	tr.flareShader = R_FindShader("flareShader", LIGHTMAP_NONE, true);
 
 	// Hack to make fogging work correctly on flares. Fog colors are calculated

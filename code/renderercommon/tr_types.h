@@ -44,17 +44,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	        // projection matrix won't be hacked to reduce the stereo separation as
 	        // is done for the gun.
 
-#define RF_NOSHADOW 0x0040  // don't add stencil shadows
-
 #define RF_LIGHTING_ORIGIN \
-	0x0080  // use refEntity->lightingOrigin instead of refEntity->origin
+	0x0020  // use refEntity->lightingOrigin instead of refEntity->origin
 	        // for lighting.  This allows entities to sink into the floor
 	        // with their origin going solid, and allows all parts of a
 	        // player to get the same lighting
 
-#define RF_SHADOW_PLANE 0x0100  // use refEntity->shadowPlane
 #define RF_WRAP_FRAMES \
-	0x0200  // mod the model frames by the maxframes to allow continuous
+	0x0040  // mod the model frames by the maxframes to allow continuous
 	        // animation without needing to know the frame count
 
 // refdef flags
@@ -94,7 +91,6 @@ typedef struct {
 
 	// most recent data
 	vec3_t lightingOrigin;  // so multi-part models can be lit identically (RF_LIGHTING_ORIGIN)
-	float shadowPlane;      // projection shadows go here, stencils go slightly lower
 
 	vec3_t axis[3];          // rotation vectors
 	bool nonNormalizedAxes;  // axis are not normalized, i.e. they have scale

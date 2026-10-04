@@ -1294,7 +1294,6 @@ static void CG_PlayerFlag(centity_t* cent, qhandle_t hSkin, refEntity_t* torso) 
 	memset(&pole, 0, sizeof(pole));
 	pole.hModel = cgs.media.flagPoleModel;
 	VectorCopy(torso->lightingOrigin, pole.lightingOrigin);
-	pole.shadowPlane = torso->shadowPlane;
 	pole.renderfx = torso->renderfx;
 	CG_PositionEntityOnTag(&pole, torso, torso->hModel, "tag_flag");
 	trap_R_AddRefEntityToScene(&pole);
@@ -1304,7 +1303,6 @@ static void CG_PlayerFlag(centity_t* cent, qhandle_t hSkin, refEntity_t* torso) 
 	flag.hModel = cgs.media.flagFlapModel;
 	flag.customSkin = hSkin;
 	VectorCopy(torso->lightingOrigin, flag.lightingOrigin);
-	flag.shadowPlane = torso->shadowPlane;
 	flag.renderfx = torso->renderfx;
 
 	VectorClear(angles);
@@ -1420,144 +1418,6 @@ static void CG_PlayerFloatSprite(centity_t* cent, qhandle_t shader) {
 }
 
 /*
-===============
-CG_PlayerShadow
-
-Returns the Z component of the surface being shadowed
-
-  should it return a full plane instead of a Z?
-===============
-*/
-#define SHADOW_DISTANCE 128
-static bool CG_PlayerShadow(centity_t* cent, float* shadowPlane) {
-	vec3_t end, mins = {-15, -15, 0}, maxs = {15, 15, 2};
-	trace_t trace;
-	float alpha;
-
-	*shadowPlane = 0;
-
-	if(cg_shadows.integer == 0) {
-		return false;
-	}
-
-	// send a trace down from the player to the ground
-	VectorCopy(cent->lerpOrigin, end);
-	end[2] -= SHADOW_DISTANCE;
-
-	trap_CM_BoxTrace(&trace, cent->lerpOrigin, end, mins, maxs, 0, MASK_PLAYERSOLID);
-
-	// no shadow if too high
-	if(trace.fraction == 1.0 || trace.startsolid || trace.allsolid) {
-		return false;
-	}
-
-	*shadowPlane = trace.endpos[2] + 1;
-
-	if(cg_shadows.integer != 1) {  // no mark for stencil or projection shadows
-		return true;
-	}
-
-	// fade the shadow out with height
-	alpha = 1.0 - trace.fraction;
-
-	// hack / FPE - bogus planes?
-	// assert( DotProduct( trace.plane.normal, trace.plane.normal ) != 0.0f )
-
-	// add the mark as a temporary, so it goes directly to the renderer
-	// without taking a spot in the cg_marks array
-	CG_ImpactMark(cgs.media.shadowMarkShader, trace.endpos, trace.plane.normal, cent->pe.legs.yawAngle, alpha, alpha, alpha, 1, false, 24, true);
-
-	return true;
-}
-
-/*
-===============
-CG_PlayerSplash
-
-Draw a mark at the water surface
-===============
-*/
-static void CG_PlayerSplash(centity_t* cent) {
-	vec3_t start, end;
-	trace_t trace;
-	int contents;
-	polyVert_t verts[4];
-
-	if(!cg_shadows.integer) {
-		return;
-	}
-
-	VectorCopy(cent->lerpOrigin, end);
-	end[2] -= 24;
-
-	// if the feet aren't in liquid, don't make a mark
-	// this won't handle moving water brushes, but they wouldn't draw right anyway...
-	contents = CG_PointContents(end, 0);
-	if(!(contents & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA))) {
-		return;
-	}
-
-	VectorCopy(cent->lerpOrigin, start);
-	start[2] += 32;
-
-	// if the head isn't out of liquid, don't make a mark
-	contents = CG_PointContents(start, 0);
-	if(contents & (CONTENTS_SOLID | CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA)) {
-		return;
-	}
-
-	// trace down to find the surface
-	trap_CM_BoxTrace(&trace, start, end, NULL, NULL, 0, (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA));
-
-	if(trace.fraction == 1.0) {
-		return;
-	}
-
-	// create a mark polygon
-	VectorCopy(trace.endpos, verts[0].xyz);
-	verts[0].xyz[0] -= 32;
-	verts[0].xyz[1] -= 32;
-	verts[0].st[0] = 0;
-	verts[0].st[1] = 0;
-	verts[0].modulate[0] = 255;
-	verts[0].modulate[1] = 255;
-	verts[0].modulate[2] = 255;
-	verts[0].modulate[3] = 255;
-
-	VectorCopy(trace.endpos, verts[1].xyz);
-	verts[1].xyz[0] -= 32;
-	verts[1].xyz[1] += 32;
-	verts[1].st[0] = 0;
-	verts[1].st[1] = 1;
-	verts[1].modulate[0] = 255;
-	verts[1].modulate[1] = 255;
-	verts[1].modulate[2] = 255;
-	verts[1].modulate[3] = 255;
-
-	VectorCopy(trace.endpos, verts[2].xyz);
-	verts[2].xyz[0] += 32;
-	verts[2].xyz[1] += 32;
-	verts[2].st[0] = 1;
-	verts[2].st[1] = 1;
-	verts[2].modulate[0] = 255;
-	verts[2].modulate[1] = 255;
-	verts[2].modulate[2] = 255;
-	verts[2].modulate[3] = 255;
-
-	VectorCopy(trace.endpos, verts[3].xyz);
-	verts[3].xyz[0] += 32;
-	verts[3].xyz[1] -= 32;
-	verts[3].st[0] = 1;
-	verts[3].st[1] = 0;
-	verts[3].modulate[0] = 255;
-	verts[3].modulate[1] = 255;
-	verts[3].modulate[2] = 255;
-	verts[3].modulate[3] = 255;
-
-	trap_R_AddPolyToScene(cgs.media.wakeMarkShader, 4, verts);
-}
-
-/*
 =================
 CG_LightVerts
 =================
@@ -1616,7 +1476,6 @@ void CG_Player(centity_t* cent) {
 	int clientNum;
 	int renderfx;
 	bool shadow;
-	float shadowPlane;
 
 	// the client number is stored in clientNum.  It can't be derived
 	// from the entity number, because a single client may have
@@ -1655,15 +1514,6 @@ void CG_Player(centity_t* cent) {
 	// get the animation state (after rotation, to allow feet shuffle)
 	CG_PlayerAnimation(cent, &legs.oldframe, &legs.frame, &legs.backlerp, &torso.oldframe, &torso.frame, &torso.backlerp);
 
-	// add the shadow
-	shadow = CG_PlayerShadow(cent, &shadowPlane);
-
-	// add a water splash if partially in and out of water
-	CG_PlayerSplash(cent);
-
-	if(cg_shadows.integer == 3 && shadow) {
-		renderfx |= RF_SHADOW_PLANE;
-	}
 	renderfx |= RF_LIGHTING_ORIGIN;  // use the same origin for all
 	//
 	// add the legs
@@ -1674,7 +1524,6 @@ void CG_Player(centity_t* cent) {
 	VectorCopy(cent->lerpOrigin, legs.origin);
 
 	VectorCopy(cent->lerpOrigin, legs.lightingOrigin);
-	legs.shadowPlane = shadowPlane;
 	legs.renderfx = renderfx;
 	VectorCopy(legs.origin, legs.oldorigin);  // don't positionally lerp at all
 
@@ -1699,7 +1548,6 @@ void CG_Player(centity_t* cent) {
 
 	CG_PositionRotatedEntityOnTag(&torso, &legs, ci->legsModel, "tag_torso");
 
-	torso.shadowPlane = shadowPlane;
 	torso.renderfx = renderfx;
 
 	trap_R_AddRefEntityToScene(&torso);
@@ -1717,7 +1565,6 @@ void CG_Player(centity_t* cent) {
 
 	CG_PositionRotatedEntityOnTag(&head, &torso, ci->torsoModel, "tag_head");
 
-	head.shadowPlane = shadowPlane;
 	head.renderfx = renderfx;
 
 	trap_R_AddRefEntityToScene(&head);

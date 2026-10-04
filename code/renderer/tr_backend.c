@@ -286,9 +286,6 @@ void RB_BeginDrawingView(void) {
 	// clear relevant buffers
 	clearBits = GL_DEPTH_BUFFER_BIT;
 
-	if(r_measureOverdraw->integer || r_shadows->integer == 2) {
-		clearBits |= GL_STENCIL_BUFFER_BIT;
-	}
 	if(r_fastsky->integer && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) {
 		clearBits |= GL_COLOR_BUFFER_BIT;  // FIXME: only if sky shaders have been used
 	}
@@ -343,7 +340,6 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	int fogNum, oldFogNum;
 	int entityNum, oldEntityNum;
 	int dlighted, oldDlighted;
-	int pshadowed, oldPshadowed;
 	bool useCubemap, oldCubemapIndex;
 	vec3_t cubemapOrigin;
 	bool depthRange, oldDepthRange, isCrosshair, wasCrosshair;
@@ -366,7 +362,6 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	oldDepthRange = false;
 	wasCrosshair = false;
 	oldDlighted = false;
-	oldPshadowed = false;
 	oldCubemapIndex = -1;
 	oldSort = -1;
 
@@ -381,7 +376,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 			continue;
 		}
 		oldSort = (int)drawSurf->sort;
-		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted, &pshadowed);
+		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted);
 		useCubemap = drawSurf->useCubemap;
 		VectorCopy(drawSurf->cubemapOrigin, cubemapOrigin);
 
@@ -389,7 +384,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 		// change the tess parameters if needed
 		// a "entityMergable" shader is a shader that can have surfaces from separate
 		// entities merged into a single batch, like smoke and blood puff sprites
-		if(shader != NULL && (shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted || pshadowed != oldPshadowed || useCubemap != oldCubemapIndex || (entityNum != oldEntityNum && !shader->entityMergable))) {
+		if(shader != NULL && (shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted || useCubemap != oldCubemapIndex || (entityNum != oldEntityNum && !shader->entityMergable))) {
 			if(oldShader != NULL) {
 				RB_EndSurface();
 			}
@@ -398,7 +393,6 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 			oldShader = shader;
 			oldFogNum = fogNum;
 			oldDlighted = dlighted;
-			oldPshadowed = pshadowed;
 			oldCubemapIndex = useCubemap;
 		}
 
@@ -1049,9 +1043,6 @@ const void* RB_DrawSurfs(const void* data) {
 			FBO_Bind(oldFbo);
 		}
 
-		// darken down any stencil shadows
-		RB_ShadowFinish();
-
 		// add light flares on lights that aren't obscured
 		RB_RenderFlares();
 	}
@@ -1272,33 +1263,6 @@ const void* RB_SwapBuffers(const void* data) {
 
 /*
 =============
-RB_CapShadowMap
-
-=============
-*/
-const void* RB_CapShadowMap(const void* data) {
-	const capShadowmapCommand_t* cmd = data;
-
-	// finish any 2D drawing if needed
-	if(tess.numIndexes) RB_EndSurface();
-
-	if(cmd->map != -1) {
-		if(cmd->cubeSide != -1) {
-			if(tr.shadowCubemaps[cmd->map]) {
-				qglCopyTextureSubImage2DEXT(tr.shadowCubemaps[cmd->map]->texnum, GL_TEXTURE_CUBE_MAP_POSITIVE_X + cmd->cubeSide, 0, 0, 0, backEnd.refdef.x, glConfig.vidHeight - (backEnd.refdef.y + PSHADOW_MAP_SIZE), PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE);
-			}
-		} else {
-			if(tr.pshadowMaps[cmd->map]) {
-				qglCopyTextureSubImage2DEXT(tr.pshadowMaps[cmd->map]->texnum, GL_TEXTURE_2D, 0, 0, 0, backEnd.refdef.x, glConfig.vidHeight - (backEnd.refdef.y + PSHADOW_MAP_SIZE), PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE);
-			}
-		}
-	}
-
-	return (const void*)(cmd + 1);
-}
-
-/*
-=============
 RB_PostProcess
 
 =============
@@ -1387,18 +1351,6 @@ const void* RB_PostProcess(const void* data) {
 		FBO_BlitFromTexture(tr.sunShadowDepthImage[3], NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
 	}
 
-	if(0 && r_shadows->integer == 4) {
-		ivec4_t dstBox2;
-		VectorSet4(dstBox2, 512 + 0, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[0], NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
-		VectorSet4(dstBox2, 512 + 128, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[1], NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
-		VectorSet4(dstBox2, 512 + 256, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[2], NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
-		VectorSet4(dstBox2, 512 + 384, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[3], NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
-	}
-
 	if(0) {
 		ivec4_t dstBox2;
 		VectorSet4(dstBox2, 256, glConfig.vidHeight - 256, 256, 256);
@@ -1439,7 +1391,6 @@ void RB_ExecuteRenderCommands(const void* data) {
 			case RC_VIDEOFRAME: data = RB_TakeVideoFrameCmd(data); break;
 			case RC_COLORMASK: data = RB_ColorMask(data); break;
 			case RC_CLEARDEPTH: data = RB_ClearDepth(data); break;
-			case RC_CAPSHADOWMAP: data = RB_CapShadowMap(data); break;
 			case RC_POSTPROCESS: data = RB_PostProcess(data); break;
 			case RC_END_OF_LIST:
 			default:

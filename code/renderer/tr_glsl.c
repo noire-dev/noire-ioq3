@@ -40,8 +40,6 @@ extern const char* fallbackShader_generic_vp;
 extern const char* fallbackShader_generic_fp;
 extern const char* fallbackShader_lightall_vp;
 extern const char* fallbackShader_lightall_fp;
-extern const char* fallbackShader_pshadow_vp;
-extern const char* fallbackShader_pshadow_fp;
 extern const char* fallbackShader_shadowfill_vp;
 extern const char* fallbackShader_shadowfill_fp;
 extern const char* fallbackShader_shadowmask_vp;
@@ -951,8 +949,6 @@ void GLSL_InitGPUShaders(void) {
 
 		extradefines[0] = '\0';
 
-		if(r_dlightMode->integer >= 2) Q_strcat(extradefines, 1024, "#define USE_SHADOWMAP\n");
-
 		if(glRefConfig.swizzleNormalmap) Q_strcat(extradefines, 1024, "#define SWIZZLE_NORMALMAP\n");
 
 		if(lightType) {
@@ -1086,23 +1082,6 @@ void GLSL_InitGPUShaders(void) {
 
 		numEtcShaders++;
 	}
-
-	attribs = ATTR_POSITION | ATTR_NORMAL;
-	extradefines[0] = '\0';
-
-	Q_strcat(extradefines, 1024, "#define USE_PCF\n#define USE_DISCARD\n");
-
-	if(!GLSL_InitGPUShader(&tr.pshadowShader, "pshadow", attribs, true, extradefines, true, fallbackShader_pshadow_vp, fallbackShader_pshadow_fp)) {
-		ri.Error(ERR_FATAL, "Could not load pshadow shader!");
-	}
-
-	GLSL_InitUniforms(&tr.pshadowShader);
-
-	GLSL_SetUniformInt(&tr.pshadowShader, UNIFORM_SHADOWMAP, TB_DIFFUSEMAP);
-
-	GLSL_FinishGPUShader(&tr.pshadowShader);
-
-	numEtcShaders++;
 
 	attribs = ATTR_POSITION | ATTR_TEXCOORD;
 	extradefines[0] = '\0';
@@ -1309,7 +1288,6 @@ void GLSL_ShutdownGPUShaders(void) {
 
 	for(i = 0; i < SHADOWMAPDEF_COUNT; i++) GLSL_DeleteGPUShader(&tr.shadowmapShader[i]);
 
-	GLSL_DeleteGPUShader(&tr.pshadowShader);
 	GLSL_DeleteGPUShader(&tr.down4xShader);
 	GLSL_DeleteGPUShader(&tr.bokehShader);
 	GLSL_DeleteGPUShader(&tr.tonemapShader);
