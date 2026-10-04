@@ -1121,7 +1121,7 @@ void R_Modellist_f(void);
 #define MAX_DRAWIMAGES 2048
 #define MAX_SKINS 1024
 
-#define MAX_DRAWSURFS 0x10000
+#define MAX_DRAWSURFS 0x100000
 #define DRAWSURF_MASK (MAX_DRAWSURFS - 1)
 
 /*
@@ -2102,7 +2102,7 @@ RENDERER BACK END COMMAND QUEUE
 =============================================================
 */
 
-#define MAX_RENDER_COMMANDS 0x800000
+#define MAX_RENDER_COMMANDS 0x2000000
 
 typedef struct {
 	byte cmds[MAX_RENDER_COMMANDS];

@@ -861,6 +861,11 @@ void VaoCache_RecycleIndexBuffer(void) {
 	vc.indexOffset = 0;
 	vc.numSurfaces = 0;
 	vc.numBatches = 0;
+	// Сбрасываем и вершинный буфер, чтобы избежать фрагментации:
+	// все батчи в кэше аннулируются, старые данные вершин больше не нужны
+	qglBindBuffer(GL_ARRAY_BUFFER, vc.vao->vertexesVBO);
+	qglBufferData(GL_ARRAY_BUFFER, vc.vao->vertexesSize, NULL, GL_DYNAMIC_DRAW);
+	vc.vertexOffset = 0;
 }
 
 void VaoCache_InitQueue(void) {
