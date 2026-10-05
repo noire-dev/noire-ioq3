@@ -42,3 +42,4 @@ profile
 *.suo
 /.vs
 patch.txt
+merged.txt
