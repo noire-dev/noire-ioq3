@@ -1,5 +1,6 @@
 Complete the request using CPL (Code Patch Language).
 Give exactly ONE CODE_PATCH block when finished.
+COMMENTS IN CODE_PATCH FILE not supported
 
 Format:
 CODE_PATCH
