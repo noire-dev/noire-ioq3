@@ -1,13 +1,19 @@
-Execute the request using CPL.
-# CPL — Code Patch Language
-"""
+Complete the request using CPL (Code Patch Language).
+Give exactly ONE CODE_PATCH block when finished.
+
+Format:
 CODE_PATCH
 
 REPLACE->
-oldcode
+exact_old_code_here
 WITH->
-newcode
+new_code_here
 END
-"""
+
+REPLACE->
+another_old_code_here
+WITH->
+another_new_code_here
+END
 
 Request:
