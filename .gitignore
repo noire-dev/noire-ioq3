@@ -41,3 +41,4 @@ profile
 *.opensdf
 *.suo
 /.vs
+patch.txt
