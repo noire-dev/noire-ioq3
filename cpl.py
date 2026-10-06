@@ -124,6 +124,18 @@ def collect_files(root: Path, exts: list[str], recursive: bool) -> list[Path]:
         if f.is_file() and f.suffix.lower() in exts
     ]
 
+def find_lines(text: str, sub: str) -> list[int]:
+    lines = []
+    start = 0
+    while True:
+        idx = text.find(sub, start)
+        if idx == -1:
+            break
+        line_no = text.count('\n', 0, idx) + 1
+        lines.append(line_no)
+        start = idx + len(sub)
+    return lines
+
 def main():
     script_dir = Path(__file__).resolve().parent
     patch_path = script_dir / PATCH_FILE
@@ -155,6 +167,7 @@ def main():
             print(f"SKIP {f}: {e}")
             continue
 
+        rel = f.relative_to(script_dir) if script_dir in f.parents else f
         result = original
         file_changed = False
 
@@ -165,6 +178,8 @@ def main():
             rule_seen[idx] = True
             if count > 1:
                 rule_conflict[idx] = True
+                line_nos = find_lines(result, p.old)
+                print(f"CONFLICT {rel}: patch line {p.line}, {count} matches at source lines: {', '.join(map(str, line_nos))}")
                 continue
             result = result.replace(p.old, p.new)
             rule_replaced[idx] = True
@@ -173,7 +188,6 @@ def main():
         if file_changed and not DRY_RUN:
             f.write_text(result, encoding=enc)
 
-        rel = f.relative_to(script_dir) if script_dir in f.parents else f
         if file_changed:
             status = "DRY" if DRY_RUN else "OK"
             print(f"{status} {rel}")
@@ -191,6 +205,13 @@ def main():
     print(f"   Conflict  : {total_conflict}")
     print(f"   Total     : {total}")
     print("=" * 50)
+
+    if total_not_found:
+        print("\nNOT FOUND RULES:")
+        for idx, p in enumerate(patches):
+            if not rule_seen[idx] and not rule_conflict[idx]:
+                first_line = p.old.splitlines()[0] if p.old.splitlines() else ""
+                print(f"   patch.txt line {p.line}: {first_line[:70]}{'...' if len(first_line) > 70 else ''}")
 
     if total_conflict:
         sys.exit(2)
