@@ -1,4 +1,5 @@
 Complete the request using CPL (Code Patch Language).
+!plain text without markdown and code blocks layout!
 
 # CPL — Code Patch Language
 # The order of `REPLACE->` blocks in `patch.txt` matters,
