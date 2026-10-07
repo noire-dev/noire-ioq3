@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_map.c
 
+#include <stdbool.h>
 #include "tr_local.h"
 
 /*
@@ -1669,10 +1670,40 @@ R_SetParent
 =================
 */
 static void R_SetParent(mnode_t* node, mnode_t* parent) {
+	//  set parent
 	node->parent = parent;
-	if(node->contents != -1) return;
+
+	// handle leaf nodes
+	if(node->isLeaf) {
+		// add node surfaces to bounds
+		if(node->nummarksurfaces > 0) {
+			int c;
+			msurface_t* surf;
+			surfaceType_t surfaceType;
+
+			for(c = 0; c < node->nummarksurfaces; c++) {
+				surf = s_worldData.surfaces + *(s_worldData.marksurfaces + node->firstmarksurface + c);
+				surfaceType = *surf->data;
+				if(surfaceType == SF_FACE || surfaceType == SF_GRID || surfaceType == SF_TRIANGLES) {
+					AddPointToBounds(surf->cullinfo.bounds[0], node->surfMins, node->surfMaxs);
+					AddPointToBounds(surf->cullinfo.bounds[1], node->surfMins, node->surfMaxs);
+				}
+			}
+		}
+
+		// go back
+		return;
+	}
+
+	// recurse to child nodes
 	R_SetParent(node->children[0], node);
 	R_SetParent(node->children[1], node);
+
+	// surface bounds
+	AddPointToBounds(node->children[0]->surfMins, node->surfMins, node->surfMaxs);
+	AddPointToBounds(node->children[0]->surfMaxs, node->surfMins, node->surfMaxs);
+	AddPointToBounds(node->children[1]->surfMins, node->surfMins, node->surfMaxs);
+	AddPointToBounds(node->children[1]->surfMaxs, node->surfMins, node->surfMaxs);
 }
 
 /*
@@ -1707,10 +1738,15 @@ static void R_LoadNodesAndLeafs(lump_t* nodeLump, lump_t* leafLump) {
 			out->maxs[j] = LittleLong(in->maxs[j]);
 		}
 
+		// surface bounds
+		VectorCopy(out->mins, out->surfMins);
+		VectorCopy(out->maxs, out->surfMaxs);
+
 		p = LittleLong(in->planeNum);
 		out->plane = s_worldData.planes + p;
 
 		out->contents = CONTENTS_NODE;  // differentiate from leafs
+		out->isLeaf = false;            // differentiate from leafs
 
 		for(j = 0; j < 2; j++) {
 			p = LittleLong(in->children[j]);
@@ -1728,6 +1764,11 @@ static void R_LoadNodesAndLeafs(lump_t* nodeLump, lump_t* leafLump) {
 			out->mins[j] = LittleLong(inLeaf->mins[j]);
 			out->maxs[j] = LittleLong(inLeaf->maxs[j]);
 		}
+
+		// surface bounds
+		ClearBounds(out->surfMins, out->surfMaxs);
+
+		out->isLeaf = true;
 
 		out->cluster = LittleLong(inLeaf->cluster);
 		out->area = LittleLong(inLeaf->area);
