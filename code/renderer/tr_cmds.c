@@ -139,7 +139,6 @@ void* R_GetCommandBuffer(int bytes) { return R_GetCommandBufferReserved(bytes, P
 /*
 =============
 R_AddDrawSurfCmd
-
 =============
 */
 void R_AddDrawSurfCmd(drawSurf_t* drawSurfs, int numDrawSurfs) {
@@ -161,7 +160,6 @@ void R_AddDrawSurfCmd(drawSurf_t* drawSurfs, int numDrawSurfs) {
 /*
 =============
 R_AddPostProcessCmd
-
 =============
 */
 void R_AddPostProcessCmd(void) {

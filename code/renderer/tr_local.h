@@ -71,13 +71,18 @@ typedef struct cubemap_s {
 	image_t* image;
 } cubemap_t;
 
+#define DLIGHT_SHADOW_SIZE 512
+
 typedef struct dlight_s {
 	vec3_t origin;
 	vec3_t color;  // range from 0.0 to 1.0, should be color normalized
 	float radius;
+	float radiusInverseCubed;  // attenuation optimization
+	float intensity;           // 1.0 = fullbright, > 1.0 = overbright
+	int flags;
+	struct shader_s* dlshader;
 
 	vec3_t transformed;  // origin in local coordinate system
-	int additive;        // texture detail is lost tho when the lightmap is dark
 } dlight_t;
 
 // a trRefEntity_t has all the information passed in by
@@ -209,6 +214,7 @@ typedef enum {
 	AGEN_WAVEFORM,
 	AGEN_PORTAL,
 	AGEN_CONST,
+	AGEN_NORMALZFADE,
 } alphaGen_t;
 
 typedef enum {
@@ -222,10 +228,12 @@ typedef enum {
 	CGEN_EXACT_VERTEX_LIT,   // like CGEN_EXACT_VERTEX but takes a light direction from the lightgrid
 	CGEN_VERTEX_LIT,         // like CGEN_VERTEX but takes a light direction from the lightgrid
 	CGEN_ONE_MINUS_VERTEX,
-	CGEN_WAVEFORM,  // programmatically generated
+	CGEN_WAVEFORM,        // programmatically generated
+	CGEN_COLOR_WAVEFORM,  // constant RGB color multiplied times waveform
 	CGEN_LIGHTING_DIFFUSE,
-	CGEN_FOG,   // standard fog
-	CGEN_CONST  // fixed color
+	CGEN_LIGHTING_DIFFUSE_ENTITY,  // entity RGB color multiplied times lighting diffuse
+	CGEN_FOG,                      // standard fog
+	CGEN_CONST                     // fixed color
 } colorGen_t;
 
 typedef enum {
@@ -337,7 +345,10 @@ typedef struct {
 
 	acff_t adjustColorsForFog;
 
+	float zFadeBounds[2];
+
 	bool isDetail;
+	bool isFogged;  // used only for shaders that have fog disabled, so we can enable it for individual stages
 
 	stageType_t type;
 	struct shaderProgram_s* glslShaderGroup;
@@ -405,6 +416,8 @@ typedef struct shader_s {
 	fogPass_t fogPass;  // draw a blended pass, possibly with depth test equals
 
 	int vertexAttribs;  // not all shaders will need all data to be gathered
+
+	bool noFog;
 
 	int numDeforms;
 	deformStage_t deforms[MAX_SHADER_DEFORMS];
@@ -518,6 +531,8 @@ typedef enum {
 	UNIFORM_SHADOWMVP3,
 	UNIFORM_SHADOWMVP4,
 
+	UNIFORM_DLIGHTSHADOWMAP,
+
 	UNIFORM_ENABLETEXTURES,
 
 	UNIFORM_DIFFUSETEXMATRIX0,
@@ -590,10 +605,28 @@ typedef enum {
 
 	UNIFORM_BONEMATRIX,
 
+	UNIFORM_ALPHATESTREF,
+	UNIFORM_INTENSITY,
+
 	UNIFORM_GREYSCALE,
+
+	UNIFORM_FIRERISEDIR,
+	UNIFORM_ZFADELOWEST,
+	UNIFORM_ZFADEHIGHEST,
 
 	UNIFORM_COUNT
 } uniform_t;
+
+// values for UNIFORM_ALPHATEST. 0-3 match ioquake3's opengl2 renderer.
+enum {
+	U_ATEST_NONE = 0,
+	U_ATEST_NOTEQUAL = 1,
+	U_ATEST_LESS = 2,
+	U_ATEST_GREATEREQUAL = 3,
+	U_ATEST_EQUAL,
+	U_ATEST_LESSEQUAL,
+	U_ATEST_GREATER,
+};
 
 // shaderProgram_t represents a pair of one
 // GLSL vertex and one GLSL fragment shader
@@ -704,6 +737,7 @@ typedef struct {
 	int viewportX, viewportY, viewportWidth, viewportHeight;
 	FBO_t* targetFbo;
 	int targetFboLayer;
+	int targetFboCubemapIndex;
 	float fovX, fovY;
 	float projectionMatrix[16];
 	cplane_t frustum[5];
@@ -1171,6 +1205,15 @@ typedef struct {
 #define FUNCTABLE_SIZE2 10
 #define FUNCTABLE_MASK (FUNCTABLE_SIZE - 1)
 
+// dlight flags
+#define REF_ADDITIVE_DLIGHT 0x01  // texture detail is lost tho when the lightmap is dark
+#define REF_GRID_DLIGHT 0x02      // affect dynamic light grid
+#define REF_SURFACE_DLIGHT 0x04   // affect world surfaces
+#define REF_DIRECTED_DLIGHT 0x08  // global directional light, origin should be interpreted as a normal vector
+#define REF_VERTEX_DLIGHT 0x10    // ET style spherical dlight using vertex light rendering
+#define REF_FORCE_DLIGHT 0x20     // force this dlight under all conditions
+#define REF_FLARE_DLIGHT 0x40     // allow displaying a flare at dlight origin
+
 // the renderer front end should never modify glstate_t
 typedef struct {
 	bool finishCalled;
@@ -1331,6 +1374,8 @@ typedef struct {
 	image_t* whiteImage;          // full of 0xff
 	image_t* identityLightImage;  // full of tr.identityLightByte
 
+	image_t* shadowCubemaps[MAX_DLIGHTS];
+
 	image_t* renderImage;
 	image_t* sunRaysImage;
 	image_t* renderDepthImage;
@@ -1352,6 +1397,7 @@ typedef struct {
 	FBO_t* msaaResolveFbo;
 	FBO_t* sunRaysFbo;
 	FBO_t* depthFbo;
+	FBO_t* dlightShadowFbo;
 	FBO_t* screenScratchFbo;
 	FBO_t* textureScratchFbo[2];
 	FBO_t* quarterFbo[2];
@@ -1571,6 +1617,7 @@ extern cvar_t* r_cameraExposure;
 
 extern cvar_t* r_depthPrepass;
 extern cvar_t* r_ssao;
+extern cvar_t* r_dlightMode;
 
 extern cvar_t* r_normalMapping;
 extern cvar_t* r_specularMapping;
@@ -1728,10 +1775,27 @@ void GL_Cull(int cullType);
 #define GLS_DEPTHFUNC_GREATER 0x00040000
 #define GLS_DEPTHFUNC_BITS 0x00060000
 
-#define GLS_ATEST_GT_0 0x10000000
-#define GLS_ATEST_LT_80 0x20000000
-#define GLS_ATEST_GE_80 0x40000000
-#define GLS_ATEST_BITS 0x70000000
+// Alpha test reference value (0 to 100, 7 bits).
+#define GLS_ATEST_REF_SHIFT 20
+#define GLS_ATEST_REF_BITS 0x07F00000
+
+// Alpha test function (3 bits).
+#define GLS_ATEST_GREATER 0x10000000
+#define GLS_ATEST_LESS 0x20000000
+#define GLS_ATEST_GREATEREQUAL 0x30000000
+#define GLS_ATEST_LESSEQUAL 0x40000000
+#define GLS_ATEST_EQUAL 0x50000000
+#define GLS_ATEST_NOTEQUAL 0x60000000
+#define GLS_ATEST_FUNC_BITS 0x70000000
+
+// Alpha test function and reference value bits.
+#define GLS_ATEST_BITS 0x77F00000
+
+// Macros for Quake 3's alpha tests to reduce code changes.
+#define GLS_ATEST_GT_0 (GLS_ATEST_GREATER | (0 << GLS_ATEST_REF_SHIFT))
+#define GLS_ATEST_LT_80 (GLS_ATEST_LESS | (50 << GLS_ATEST_REF_SHIFT))
+#define GLS_ATEST_GE_80 (GLS_ATEST_GREATEREQUAL | (50 << GLS_ATEST_REF_SHIFT))
+#define GLS_ATEST_GE_C0 (GLS_ATEST_GREATEREQUAL | (75 << GLS_ATEST_REF_SHIFT))
 
 #define GLS_DEFAULT GLS_DEPTHMASK_TRUE
 
@@ -2022,8 +2086,11 @@ void R_InitNextFrame(void);
 void RE_ClearScene(void);
 void RE_AddRefEntityToScene(const refEntity_t* ent);
 void RE_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num);
-void RE_AddLightToScene(const vec3_t org, float intensity, float r, float g, float b);
-void RE_AddAdditiveLightToScene(const vec3_t org, float intensity, float r, float g, float b);
+void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
+void RE_AddAdditiveLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b);
+void RE_AddVertexLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b);
+void RE_AddJuniorLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b);
+void RE_AddDirectedLightToScene(const vec3_t normal, float intensity, float r, float g, float b);
 void RE_BeginScene(const refdef_t* fd);
 void RE_RenderScene(const refdef_t* fd);
 void RE_EndScene(void);

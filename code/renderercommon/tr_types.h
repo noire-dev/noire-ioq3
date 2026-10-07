@@ -115,6 +115,8 @@ typedef struct {
 	// extra sprite information
 	float radius;
 	float rotation;
+
+	vec3_t fireRiseDir;
 } refEntity_t;
 
 #define MAX_RENDER_STRINGS 8

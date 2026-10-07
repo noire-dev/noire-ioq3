@@ -56,7 +56,6 @@ void trap_R_LoadWorldMap(const char* mapname) { syscall(CG_R_LOADWORLDMAP, mapna
 void trap_R_RegisterFont(const char* fontName, int pointSize, fontInfo_t* font) { syscall(CG_R_REGISTERFONT, fontName, pointSize, font); }
 void trap_R_AddPolysToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num) { syscall(CG_R_ADDPOLYSTOSCENE, hShader, numVerts, verts, num); }
 int trap_R_LightForPoint(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir) { return syscall(CG_R_LIGHTFORPOINT, point, ambientLight, directedLight, lightDir); }
-void trap_R_AddAdditiveLightToScene(const vec3_t org, float intensity, float r, float g, float b) { syscall(CG_R_ADDADDITIVELIGHTTOSCENE, org, PASSFLOAT(intensity), PASSFLOAT(r), PASSFLOAT(g), PASSFLOAT(b)); }
 void trap_GetGameState(gameState_t* gamestate) { syscall(CG_GETGAMESTATE, gamestate); }
 void trap_GetCurrentSnapshotNumber(int* snapshotNumber, int* serverTime) { syscall(CG_GETCURRENTSNAPSHOTNUMBER, snapshotNumber, serverTime); }
 bool trap_GetSnapshot(int snapshotNumber, snapshot_t* snapshot) { return syscall(CG_GETSNAPSHOT, snapshotNumber, snapshot); }

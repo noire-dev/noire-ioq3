@@ -1,5 +1,6 @@
 // Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
 
+#include "q_shared.h"
 void trap_UpdateScreen(void);
 void trap_GetGlconfig(glconfig_t* glconfig);
 qhandle_t trap_R_RegisterModel(const char* name);
@@ -10,7 +11,7 @@ qhandle_t trap_R_RegisterShaderNoMip(const char* name);
 void trap_R_ClearScene(void);
 void trap_R_AddRefEntityToScene(const refEntity_t* re);
 void trap_R_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts);
-void trap_R_AddLightToScene(const vec3_t org, float intensity, float r, float g, float b);
+void trap_R_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t shader);
 void trap_R_RenderScene(const refdef_t* fd);
 void trap_R_SetColor(const float* rgba);
 void trap_R_DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader);

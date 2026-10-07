@@ -266,6 +266,10 @@ void RB_BeginDrawingView(void) {
 			FBO_AttachImage(fbo, cubemap->image, GL_COLOR_ATTACHMENT0_EXT, backEnd.viewParms.targetFboLayer);
 		}
 
+		if(tr.dlightShadowFbo && fbo == tr.dlightShadowFbo) {
+			FBO_AttachImage(fbo, tr.shadowCubemaps[backEnd.viewParms.targetFboCubemapIndex], GL_DEPTH_ATTACHMENT, backEnd.viewParms.targetFboLayer);
+		}
+
 		FBO_Bind(fbo);
 	}
 

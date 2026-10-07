@@ -219,45 +219,63 @@ void RE_AddRefEntityToScene(const refEntity_t* ent) {
 /*
 =====================
 RE_AddDynamicLightToScene
-
 =====================
 */
-void RE_AddDynamicLightToScene(const vec3_t org, float intensity, float r, float g, float b, int additive) {
+void RE_AddDynamicLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, int flags, qhandle_t hShader) {
 	dlight_t* dl;
 
-	if(!tr.registered) {
+	// early out
+	if(!tr.registered || r_numdlights >= MAX_DLIGHTS || radius <= 0 || intensity <= 0) {
 		return;
 	}
-	if(r_numdlights >= MAX_DLIGHTS) {
+
+	// allow forcing some dlights under all circumstances
+	if(r_dynamiclight->integer == 0 && !(flags & REF_FORCE_DLIGHT)) {
 		return;
 	}
-	if(intensity <= 0) {
-		return;
-	}
+
+	// set up a new dlight
 	dl = &backEndData->dlights[r_numdlights++];
 	VectorCopy(org, dl->origin);
-	dl->radius = intensity;
+	VectorCopy(org, dl->transformed);
+	dl->radius = radius;
+	dl->radiusInverseCubed = (1.0 / dl->radius);
+	dl->radiusInverseCubed = dl->radiusInverseCubed * dl->radiusInverseCubed * dl->radiusInverseCubed;
+	dl->intensity = intensity;
 	dl->color[0] = r;
 	dl->color[1] = g;
 	dl->color[2] = b;
-	dl->additive = additive;
+	dl->flags = flags;
+	if(hShader) {
+		dl->dlshader = R_GetShaderByHandle(hShader);
+	} else {
+		dl->dlshader = NULL;
+	}
+
+	if(r_greyscale->integer) {
+		float scale;
+
+		scale = LUMA(dl->color[0], dl->color[1], dl->color[2]);
+		dl->color[0] = dl->color[1] = dl->color[2] = scale;
+	} else if(r_greyscale->value) {
+		float scale;
+
+		scale = LUMA(dl->color[0], dl->color[1], dl->color[2]);
+		dl->color[0] = LERP(dl->color[0], scale, r_greyscale->value);
+		dl->color[1] = LERP(dl->color[1], scale, r_greyscale->value);
+		dl->color[2] = LERP(dl->color[2], scale, r_greyscale->value);
+	}
 }
 
-/*
-=====================
-RE_AddLightToScene
+void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_FLARE_DLIGHT, hShader); }
 
-=====================
-*/
-void RE_AddLightToScene(const vec3_t org, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, intensity, r, g, b, false); }
+void RE_AddAdditiveLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_FLARE_DLIGHT | REF_ADDITIVE_DLIGHT, 0); }
 
-/*
-=====================
-RE_AddAdditiveLightToScene
+void RE_AddVertexLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_FLARE_DLIGHT | REF_VERTEX_DLIGHT, 0); }
 
-=====================
-*/
-void RE_AddAdditiveLightToScene(const vec3_t org, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, intensity, r, g, b, true); }
+void RE_AddJuniorLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT, 0); }
+
+void RE_AddDirectedLightToScene(const vec3_t normal, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(normal, 256, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_DIRECTED_DLIGHT, 0); }
 
 void RE_BeginScene(const refdef_t* fd) {
 	Com_Memcpy(tr.refdef.text, fd->text, sizeof(tr.refdef.text));

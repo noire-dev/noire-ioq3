@@ -2530,6 +2530,13 @@ void R_CreateBuiltinImages(void) {
 	Com_Memset(data, 255, sizeof(data));
 	tr.whiteImage = R_CreateImage("*white", (byte*)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0);
 
+	if(r_dlightMode->integer >= 2) {
+		for(x = 0; x < MAX_DLIGHTS; x++) {
+			tr.shadowCubemaps[x] = R_CreateImage(va("*shadowcubemap%i", x), NULL, DLIGHT_SHADOW_SIZE, DLIGHT_SHADOW_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_CUBEMAP, GL_DEPTH_COMPONENT24);
+			qglTextureParameterfEXT(tr.shadowCubemaps[x]->texnum, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+		}
+	}
+
 	// with overbright bits active, we need an image which is some fraction of full color,
 	// for default lightmaps, etc
 	for(x = 0; x < DEFAULT_SIZE; x++) {

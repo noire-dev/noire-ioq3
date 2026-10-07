@@ -59,101 +59,113 @@ typedef struct uniformInfo_s {
 } uniformInfo_t;
 
 // These must be in the same order as in uniform_t in tr_local.h.
-static uniformInfo_t uniformsInfo[] = {{"u_DiffuseMap", GLSL_INT},
-                                       {"u_LightMap", GLSL_INT},
-                                       {"u_NormalMap", GLSL_INT},
-                                       {"u_DeluxeMap", GLSL_INT},
-                                       {"u_SpecularMap", GLSL_INT},
+static uniformInfo_t uniformsInfo[] = {
+    {"u_DiffuseMap", GLSL_INT},
+    {"u_LightMap", GLSL_INT},
+    {"u_NormalMap", GLSL_INT},
+    {"u_DeluxeMap", GLSL_INT},
+    {"u_SpecularMap", GLSL_INT},
 
-                                       {"u_TextureMap", GLSL_INT},
-                                       {"u_LevelsMap", GLSL_INT},
-                                       {"u_CubeMap", GLSL_INT},
+    {"u_TextureMap", GLSL_INT},
+    {"u_LevelsMap", GLSL_INT},
+    {"u_CubeMap", GLSL_INT},
 
-                                       {"u_ScreenImageMap", GLSL_INT},
-                                       {"u_ScreenDepthMap", GLSL_INT},
+    {"u_ScreenImageMap", GLSL_INT},
+    {"u_ScreenDepthMap", GLSL_INT},
 
-                                       {"u_ShadowMap", GLSL_INT},
-                                       {"u_ShadowMap2", GLSL_INT},
-                                       {"u_ShadowMap3", GLSL_INT},
-                                       {"u_ShadowMap4", GLSL_INT},
+    {"u_ShadowMap", GLSL_INT},
+    {"u_ShadowMap2", GLSL_INT},
+    {"u_ShadowMap3", GLSL_INT},
+    {"u_ShadowMap4", GLSL_INT},
 
-                                       {"u_ShadowMvp", GLSL_MAT16},
-                                       {"u_ShadowMvp2", GLSL_MAT16},
-                                       {"u_ShadowMvp3", GLSL_MAT16},
-                                       {"u_ShadowMvp4", GLSL_MAT16},
+    {"u_ShadowMvp", GLSL_MAT16},
+    {"u_ShadowMvp2", GLSL_MAT16},
+    {"u_ShadowMvp3", GLSL_MAT16},
+    {"u_ShadowMvp4", GLSL_MAT16},
 
-                                       {"u_EnableTextures", GLSL_VEC4},
+    {"u_DlightShadowMap", GLSL_INT},
 
-                                       {"u_DiffuseTexMatrix0", GLSL_VEC4},
-                                       {"u_DiffuseTexMatrix1", GLSL_VEC4},
-                                       {"u_DiffuseTexMatrix2", GLSL_VEC4},
-                                       {"u_DiffuseTexMatrix3", GLSL_VEC4},
-                                       {"u_DiffuseTexMatrix4", GLSL_VEC4},
-                                       {"u_DiffuseTexMatrix5", GLSL_VEC4},
-                                       {"u_DiffuseTexMatrix6", GLSL_VEC4},
-                                       {"u_DiffuseTexMatrix7", GLSL_VEC4},
+    {"u_EnableTextures", GLSL_VEC4},
 
-                                       {"u_TCGen0", GLSL_INT},
-                                       {"u_TCGen0Vector0", GLSL_VEC3},
-                                       {"u_TCGen0Vector1", GLSL_VEC3},
+    {"u_DiffuseTexMatrix0", GLSL_VEC4},
+    {"u_DiffuseTexMatrix1", GLSL_VEC4},
+    {"u_DiffuseTexMatrix2", GLSL_VEC4},
+    {"u_DiffuseTexMatrix3", GLSL_VEC4},
+    {"u_DiffuseTexMatrix4", GLSL_VEC4},
+    {"u_DiffuseTexMatrix5", GLSL_VEC4},
+    {"u_DiffuseTexMatrix6", GLSL_VEC4},
+    {"u_DiffuseTexMatrix7", GLSL_VEC4},
 
-                                       {"u_DeformGen", GLSL_INT},
-                                       {"u_DeformParams", GLSL_FLOAT5},
+    {"u_TCGen0", GLSL_INT},
+    {"u_TCGen0Vector0", GLSL_VEC3},
+    {"u_TCGen0Vector1", GLSL_VEC3},
 
-                                       {"u_ColorGen", GLSL_INT},
-                                       {"u_AlphaGen", GLSL_INT},
-                                       {"u_Color", GLSL_VEC4},
-                                       {"u_BaseColor", GLSL_VEC4},
-                                       {"u_VertColor", GLSL_VEC4},
+    {"u_DeformGen", GLSL_INT},
+    {"u_DeformParams", GLSL_FLOAT5},
 
-                                       {"u_DlightInfo", GLSL_VEC4},
-                                       {"u_LightForward", GLSL_VEC3},
-                                       {"u_LightUp", GLSL_VEC3},
-                                       {"u_LightRight", GLSL_VEC3},
-                                       {"u_LightOrigin", GLSL_VEC4},
-                                       {"u_ModelLightDir", GLSL_VEC3},
-                                       {"u_LightRadius", GLSL_FLOAT},
-                                       {"u_AmbientLight", GLSL_VEC3},
-                                       {"u_DirectedLight", GLSL_VEC3},
+    {"u_ColorGen", GLSL_INT},
+    {"u_AlphaGen", GLSL_INT},
+    {"u_Color", GLSL_VEC4},
+    {"u_BaseColor", GLSL_VEC4},
+    {"u_VertColor", GLSL_VEC4},
 
-                                       {"u_PortalRange", GLSL_FLOAT},
+    {"u_DlightInfo", GLSL_VEC4},
+    {"u_LightForward", GLSL_VEC3},
+    {"u_LightUp", GLSL_VEC3},
+    {"u_LightRight", GLSL_VEC3},
+    {"u_LightOrigin", GLSL_VEC4},
+    {"u_ModelLightDir", GLSL_VEC3},
+    {"u_LightRadius", GLSL_FLOAT},
+    {"u_AmbientLight", GLSL_VEC3},
+    {"u_DirectedLight", GLSL_VEC3},
 
-                                       {"u_FogDistance", GLSL_VEC4},
-                                       {"u_FogDepth", GLSL_VEC4},
-                                       {"u_FogEyeT", GLSL_FLOAT},
-                                       {"u_FogColorMask", GLSL_VEC4},
+    {"u_PortalRange", GLSL_FLOAT},
 
-                                       {"u_ModelMatrix", GLSL_MAT16},
-                                       {"u_ModelViewProjectionMatrix", GLSL_MAT16},
+    {"u_FogDistance", GLSL_VEC4},
+    {"u_FogDepth", GLSL_VEC4},
+    {"u_FogEyeT", GLSL_FLOAT},
+    {"u_FogColorMask", GLSL_VEC4},
 
-                                       {"u_Time", GLSL_FLOAT},
-                                       {"u_VertexLerp", GLSL_FLOAT},
-                                       {"u_NormalScale", GLSL_VEC4},
-                                       {"u_SpecularScale", GLSL_VEC4},
+    {"u_ModelMatrix", GLSL_MAT16},
+    {"u_ModelViewProjectionMatrix", GLSL_MAT16},
 
-                                       {"u_ViewInfo", GLSL_VEC4},
-                                       {"u_ViewOrigin", GLSL_VEC3},
-                                       {"u_LocalViewOrigin", GLSL_VEC3},
-                                       {"u_ViewForward", GLSL_VEC3},
-                                       {"u_ViewLeft", GLSL_VEC3},
-                                       {"u_ViewUp", GLSL_VEC3},
+    {"u_Time", GLSL_FLOAT},
+    {"u_VertexLerp", GLSL_FLOAT},
+    {"u_NormalScale", GLSL_VEC4},
+    {"u_SpecularScale", GLSL_VEC4},
 
-                                       {"u_InvTexRes", GLSL_VEC2},
-                                       {"u_AutoExposureMinMax", GLSL_VEC2},
-                                       {"u_ToneMinAvgMaxLinear", GLSL_VEC3},
+    {"u_ViewInfo", GLSL_VEC4},
+    {"u_ViewOrigin", GLSL_VEC3},
+    {"u_LocalViewOrigin", GLSL_VEC3},
+    {"u_ViewForward", GLSL_VEC3},
+    {"u_ViewLeft", GLSL_VEC3},
+    {"u_ViewUp", GLSL_VEC3},
 
-                                       {"u_PrimaryLightOrigin", GLSL_VEC4},
-                                       {"u_PrimaryLightColor", GLSL_VEC3},
-                                       {"u_PrimaryLightAmbient", GLSL_VEC3},
-                                       {"u_PrimaryLightRadius", GLSL_FLOAT},
+    {"u_InvTexRes", GLSL_VEC2},
+    {"u_AutoExposureMinMax", GLSL_VEC2},
+    {"u_ToneMinAvgMaxLinear", GLSL_VEC3},
 
-                                       {"u_CubeMapInfo", GLSL_VEC4},
-                                       {"u_CubeMapParallaxInfo", GLSL_VEC4},
+    {"u_PrimaryLightOrigin", GLSL_VEC4},
+    {"u_PrimaryLightColor", GLSL_VEC3},
+    {"u_PrimaryLightAmbient", GLSL_VEC3},
+    {"u_PrimaryLightRadius", GLSL_FLOAT},
 
-                                       {"u_AlphaTest", GLSL_INT},
+    {"u_CubeMapInfo", GLSL_VEC4},
+    {"u_CubeMapParallaxInfo", GLSL_VEC4},
 
-                                       {"u_BoneMatrix", GLSL_MAT16_BONEMATRIX},
-                                       {"u_Greyscale", GLSL_FLOAT}};
+    {"u_AlphaTest", GLSL_INT},
+
+    {"u_BoneMatrix", GLSL_MAT16_BONEMATRIX},
+
+    {"u_AlphaTestRef", GLSL_FLOAT},
+    {"u_Intensity", GLSL_FLOAT},
+
+    {"u_Greyscale", GLSL_FLOAT},
+
+    {"u_FireRiseDir", GLSL_VEC3},
+    {"u_ZFadeLowest", GLSL_FLOAT},
+    {"u_ZFadeHighest", GLSL_FLOAT},
+};
 
 typedef enum { GLSL_PRINTLOG_PROGRAM_INFO, GLSL_PRINTLOG_SHADER_INFO, GLSL_PRINTLOG_SHADER_SOURCE } glslPrintLog_t;
 
@@ -342,6 +354,26 @@ static void GLSL_GetShaderHeader(GLenum shaderType, const GLchar* extra, char* d
 	            "#endif\n",
 	            AGEN_LIGHTING_SPECULAR,
 	            AGEN_PORTAL));
+
+	Q_strcat(dest,
+	         size,
+	         va("#ifndef alphaTest_t\n"
+	            "#define alphaTest_t\n"
+	            "#define U_ATEST_NONE %i\n"
+	            "#define U_ATEST_EQUAL %i\n"
+	            "#define U_ATEST_GREATEREQUAL %i\n"
+	            "#define U_ATEST_LESS %i\n"
+	            "#define U_ATEST_LESSEQUAL %i\n"
+	            "#define U_ATEST_NOTEQUAL %i\n"
+	            "#define U_ATEST_GREATER %i\n"
+	            "#endif\n",
+	            U_ATEST_NONE,
+	            U_ATEST_EQUAL,
+	            U_ATEST_GREATEREQUAL,
+	            U_ATEST_LESS,
+	            U_ATEST_LESSEQUAL,
+	            U_ATEST_NOTEQUAL,
+	            U_ATEST_GREATER));
 
 	fbufWidthScale = 1.0f / ((float)glConfig.vidWidth);
 	fbufHeightScale = 1.0f / ((float)glConfig.vidHeight);
@@ -949,6 +981,10 @@ void GLSL_InitGPUShaders(void) {
 
 		extradefines[0] = '\0';
 
+		if(r_dlightMode->integer >= 2 && lightType == LIGHTDEF_USE_LIGHT_VECTOR) {
+			Q_strcat(extradefines, 1024, "#define USE_DLIGHT_SHADOWMAP\n");
+		}
+
 		if(glRefConfig.swizzleNormalmap) Q_strcat(extradefines, 1024, "#define SWIZZLE_NORMALMAP\n");
 
 		if(lightType) {
@@ -1046,6 +1082,7 @@ void GLSL_InitGPUShaders(void) {
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_SPECULARMAP, TB_SPECULARMAP);
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_SHADOWMAP, TB_SHADOWMAP);
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_CUBEMAP, TB_CUBEMAP);
+		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_DLIGHTSHADOWMAP, TB_SHADOWMAP4);
 
 		GLSL_FinishGPUShader(&tr.lightallShader[i]);
 
@@ -1063,6 +1100,8 @@ void GLSL_InitGPUShaders(void) {
 
 		extradefines[0] = '\0';
 
+		Q_strcat(extradefines, 1024, "#define USE_DEPTH\n");
+
 		if(i & SHADOWMAPDEF_USE_VERTEX_ANIMATION) {
 			Q_strcat(extradefines, 1024, "#define USE_VERTEX_ANIMATION\n");
 			attribs |= ATTR_POSITION2 | ATTR_NORMAL2;
@@ -1078,6 +1117,7 @@ void GLSL_InitGPUShaders(void) {
 		}
 
 		GLSL_InitUniforms(&tr.shadowmapShader[i]);
+		GLSL_SetUniformInt(&tr.shadowmapShader[i], UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP);
 		GLSL_FinishGPUShader(&tr.shadowmapShader[i]);
 
 		numEtcShaders++;

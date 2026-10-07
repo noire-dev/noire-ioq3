@@ -1120,7 +1120,6 @@ void trap_S_StartBackgroundTrack(const char* intro, const char* loop);  // empty
 void trap_S_StopBackgroundTrack(void);
 void trap_R_LoadWorldMap(const char* mapname);
 void trap_R_AddPolysToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int numPolys);
-void trap_R_AddAdditiveLightToScene(const vec3_t org, float intensity, float r, float g, float b);
 int trap_R_LightForPoint(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir);
 bool trap_R_inPVS(const vec3_t p1, const vec3_t p2);
 void trap_GetGameState(gameState_t* gamestate);
