@@ -1195,15 +1195,19 @@ RB_FogPass
 Blends a fog texture on top of everything else
 ===================
 */
-static void RB_FogPass(void) {
+void RB_FogPass(void) {
 	fog_t* fog;
 	vec4_t color;
 	vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
 	float eyeT = 0;
 	shaderProgram_t* sp;
+	bool dynamic;
 
 	int deformGen;
 	vec5_t deformParams;
+
+	// Dynamic fog applies to surfaces that do not belong to a BSP fog volume
+	dynamic = (tess.fogNum == 0 && r_dynamicFog->integer && tr.world != NULL);
 
 	ComputeDeformValues(&deformGen, deformParams);
 
@@ -1224,8 +1228,6 @@ static void RB_FogPass(void) {
 
 	GLSL_BindProgram(sp);
 
-	fog = tr.world->fogs + tess.fogNum;
-
 	GLSL_SetUniformMat4(sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
 
 	GLSL_SetUniformFloat(sp, UNIFORM_VERTEXLERP, glState.vertexAttribsInterpolation);
@@ -1240,13 +1242,52 @@ static void RB_FogPass(void) {
 		GLSL_SetUniformFloat(sp, UNIFORM_TIME, tess.shaderTime);
 	}
 
-	color[0] = ((unsigned char*)(&fog->colorInt))[0] / 255.0f;
-	color[1] = ((unsigned char*)(&fog->colorInt))[1] / 255.0f;
-	color[2] = ((unsigned char*)(&fog->colorInt))[2] / 255.0f;
-	color[3] = ((unsigned char*)(&fog->colorInt))[3] / 255.0f;
-	GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
+	if(dynamic) {
+		// Global dynamic fog: distance based falloff between Start and End distances.
+		// We fold the density cvar into the distance scale so a single knob controls overall thickness.
+		float startDist = r_dynamicFogStart->value;
+		float endDist = r_dynamicFogEnd->value;
+		float range = endDist - startDist;
+		float scale;
+		vec3_t local;
 
-	ComputeFogValues(fogDistanceVector, fogDepthVector, &eyeT);
+		if(range < 1.0f) range = 1.0f;
+
+		// The fog vertex shader multiplies the distance dot-product by 8.0, so 1/8 of
+		// the 0..1 ramp range per unit distance is used here for a linear falloff.
+		scale = r_dynamicFogDensity->value / (8.0f * range);
+
+		color[0] = r_dynamicFogColorR->value;
+		color[1] = r_dynamicFogColorG->value;
+		color[2] = r_dynamicFogColorB->value;
+		color[3] = 1.0f;
+		GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
+
+		VectorSubtract(backEnd.or.origin, backEnd.viewParms.or.origin, local);
+
+		fogDistanceVector[0] = -backEnd.or.modelMatrix[2] * scale;
+		fogDistanceVector[1] = -backEnd.or.modelMatrix[6] * scale;
+		fogDistanceVector[2] = -backEnd.or.modelMatrix[10] * scale;
+		fogDistanceVector[3] = (DotProduct(local, backEnd.viewParms.or.axis[0]) - startDist) * scale;
+
+		// No fog depth plane for dynamic fog
+		fogDepthVector[0] = 0.0f;
+		fogDepthVector[1] = 0.0f;
+		fogDepthVector[2] = 0.0f;
+		fogDepthVector[3] = 1.0f;
+
+		eyeT = 1.0f;
+	} else {
+		fog = tr.world->fogs + tess.fogNum;
+
+		color[0] = ((unsigned char*)(&fog->colorInt))[0] / 255.0f;
+		color[1] = ((unsigned char*)(&fog->colorInt))[1] / 255.0f;
+		color[2] = ((unsigned char*)(&fog->colorInt))[2] / 255.0f;
+		color[3] = ((unsigned char*)(&fog->colorInt))[3] / 255.0f;
+		GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
+
+		ComputeFogValues(fogDistanceVector, fogDepthVector, &eyeT);
+	}
 
 	GLSL_SetUniformVec4(sp, UNIFORM_FOGDISTANCE, fogDistanceVector);
 	GLSL_SetUniformVec4(sp, UNIFORM_FOGDEPTH, fogDepthVector);
@@ -1959,12 +2000,8 @@ void RB_StageIteratorGeneric(void) {
 	//
 	RB_IterateStagesGeneric(input);
 
-	//
 	// now do fog
-	//
-	if(tess.fogNum && tess.shader->fogPass) {
-		RB_FogPass();
-	}
+	if((tess.fogNum || (r_dynamicFog->integer && tr.world)) && tess.shader->fogPass) RB_FogPass();
 
 	//
 	// reset polygon offset

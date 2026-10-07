@@ -419,6 +419,41 @@ static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs
 	// R_BindNullVBO();
 	// R_BindNullIBO();
 
+	// Dynamic fog support for sky: since the skybox is always rendered at zFar,
+	// we overlay the fog color with alpha derived from the fog density at the
+	// far plane. This lets sky respond to r_dynamicFog just like world geometry.
+	if(r_dynamicFog->integer && tess.numIndexes > tess.firstIndex) {
+		float startDist = r_dynamicFogStart->value;
+		float endDist = r_dynamicFogEnd->value;
+		float fogAlpha;
+
+		if(endDist <= startDist) endDist = startDist + 1.0f;
+
+		fogAlpha = (backEnd.viewParms.zFar - startDist) / (endDist - startDist);
+		fogAlpha = CLAMP(fogAlpha, 0.0f, 1.0f) * r_dynamicFogDensity->value;
+		fogAlpha = CLAMP(fogAlpha, 0.0f, 1.0f);
+
+		if(fogAlpha > 0.001f) {
+			shaderProgram_t* fogSp = &tr.textureColorShader;
+			vec4_t fogColor;
+
+			fogColor[0] = r_dynamicFogColorR->value;
+			fogColor[1] = r_dynamicFogColorG->value;
+			fogColor[2] = r_dynamicFogColorB->value;
+			fogColor[3] = fogAlpha;
+
+			GL_State(GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL);
+			GL_BindToTMU(tr.whiteImage, TB_COLORMAP);
+
+			GLSL_BindProgram(fogSp);
+			GLSL_SetUniformMat4(fogSp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
+			GLSL_SetUniformVec4(fogSp, UNIFORM_COLOR, fogColor);
+			GLSL_SetUniformInt(fogSp, UNIFORM_ALPHATEST, 0);
+
+			R_DrawElements(tess.numIndexes - tess.firstIndex, tess.firstIndex);
+		}
+	}
+
 	tess.numIndexes = tess.firstIndex;
 	tess.numVertexes = firstVertex;
 	tess.firstIndex = 0;

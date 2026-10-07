@@ -1661,6 +1661,14 @@ extern cvar_t* r_shadowCascadeZFar;
 extern cvar_t* r_shadowCascadeZBias;
 extern cvar_t* r_ignoreDstAlpha;
 
+extern cvar_t* r_dynamicFog;
+extern cvar_t* r_dynamicFogDensity;
+extern cvar_t* r_dynamicFogColorR;
+extern cvar_t* r_dynamicFogColorG;
+extern cvar_t* r_dynamicFogColorB;
+extern cvar_t* r_dynamicFogStart;
+extern cvar_t* r_dynamicFogEnd;
+
 extern cvar_t* r_greyscale;
 
 extern cvar_t* r_ignoreGLErrors;
@@ -1923,6 +1931,7 @@ extern shaderCommands_t tess;
 
 void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t cubemapOrigin);
 void RB_EndSurface(void);
+void RB_FogPass(void);
 void RB_CheckOverflow(int verts, int indexes);
 #define RB_CHECKOVERFLOW(v, i)                                                                         \
 	if(tess.numVertexes + (v) >= SHADER_MAX_VERTEXES || tess.numIndexes + (i) >= SHADER_MAX_INDEXES) { \

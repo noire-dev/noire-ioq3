@@ -159,6 +159,14 @@ cvar_t* r_shadowCascadeZFar;
 cvar_t* r_shadowCascadeZBias;
 cvar_t* r_ignoreDstAlpha;
 
+cvar_t* r_dynamicFog;
+cvar_t* r_dynamicFogDensity;
+cvar_t* r_dynamicFogColorR;
+cvar_t* r_dynamicFogColorG;
+cvar_t* r_dynamicFogColorB;
+cvar_t* r_dynamicFogStart;
+cvar_t* r_dynamicFogEnd;
+
 cvar_t* r_ignoreGLErrors;
 cvar_t* r_logFile;
 
@@ -1107,6 +1115,14 @@ void R_Register(void) {
 	r_shadowCascadeZFar = ri.Cvar_Get("r_shadowCascadeZFar", "1024", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowCascadeZBias = ri.Cvar_Get("r_shadowCascadeZBias", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ignoreDstAlpha = ri.Cvar_Get("r_ignoreDstAlpha", "0", CVAR_ARCHIVE | CVAR_LATCH);
+
+	r_dynamicFog = ri.Cvar_Get("r_dynamicFog", "0", CVAR_ARCHIVE);
+	r_dynamicFogDensity = ri.Cvar_Get("r_dynamicFogDensity", "1.0", CVAR_ARCHIVE);
+	r_dynamicFogColorR = ri.Cvar_Get("r_dynamicFogColorR", "0.5", CVAR_ARCHIVE);
+	r_dynamicFogColorG = ri.Cvar_Get("r_dynamicFogColorG", "0.5", CVAR_ARCHIVE);
+	r_dynamicFogColorB = ri.Cvar_Get("r_dynamicFogColorB", "0.5", CVAR_ARCHIVE);
+	r_dynamicFogStart = ri.Cvar_Get("r_dynamicFogStart", "256", CVAR_ARCHIVE);
+	r_dynamicFogEnd = ri.Cvar_Get("r_dynamicFogEnd", "4096", CVAR_ARCHIVE);
 
 	//
 	// temporary latched variables that can only change over a restart
