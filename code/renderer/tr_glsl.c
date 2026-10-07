@@ -96,6 +96,8 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_DiffuseTexMatrix6", GLSL_VEC4},
     {"u_DiffuseTexMatrix7", GLSL_VEC4},
 
+    {"u_Texture1Env", GLSL_INT},
+
     {"u_TCGen0", GLSL_INT},
     {"u_TCGen0Vector0", GLSL_VEC3},
     {"u_TCGen0Vector1", GLSL_VEC3},
@@ -159,6 +161,7 @@ static uniformInfo_t uniformsInfo[] = {
 
     {"u_AlphaTestRef", GLSL_FLOAT},
     {"u_Intensity", GLSL_FLOAT},
+    {"u_DiffuseColor", GLSL_VEC3},
 
     {"u_Greyscale", GLSL_FLOAT},
 

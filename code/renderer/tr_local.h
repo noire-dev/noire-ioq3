@@ -333,6 +333,8 @@ typedef struct {
 
 	textureBundle_t bundle[NUM_TEXTURE_BUNDLES];
 
+	int multitextureEnv;
+
 	waveForm_t rgbWave;
 	colorGen_t rgbGen;
 
@@ -544,6 +546,8 @@ typedef enum {
 	UNIFORM_DIFFUSETEXMATRIX6,
 	UNIFORM_DIFFUSETEXMATRIX7,
 
+	UNIFORM_TEXTURE1ENV,
+
 	UNIFORM_TCGEN0,
 	UNIFORM_TCGEN0VECTOR0,
 	UNIFORM_TCGEN0VECTOR1,
@@ -607,6 +611,7 @@ typedef enum {
 
 	UNIFORM_ALPHATESTREF,
 	UNIFORM_INTENSITY,
+	UNIFORM_DIFFUSECOLOR,
 
 	UNIFORM_GREYSCALE,
 
@@ -722,7 +727,7 @@ typedef struct {
 	float surface[4];
 } fog_t;
 
-typedef enum { VPF_NONE = 0x00, VPF_NOVIEWMODEL = 0x01, VPF_DEPTHSHADOW = 0x02, VPF_DEPTHCLAMP = 0x04, VPF_ORTHOGRAPHIC = 0x08, VPF_USESUNLIGHT = 0x10, VPF_FARPLANEFRUSTUM = 0x20, VPF_NOCUBEMAPS = 0x40 } viewParmFlags_t;
+typedef enum { VPF_NONE = 0x00, VPF_NOVIEWMODEL = 0x01, VPF_SHADOWMAP = 0x02, VPF_DEPTHSHADOW = 0x04, VPF_DEPTHCLAMP = 0x08, VPF_DLIGHTSHADOW = 0x10, VPF_ORTHOGRAPHIC = 0x20, VPF_USESUNLIGHT = 0x40, VPF_FARPLANEFRUSTUM = 0x80, VPF_NOCUBEMAPS = 0x100 } viewParmFlags_t;
 
 typedef struct {
 	orientationr_t or ;
@@ -989,9 +994,11 @@ typedef struct msurface_s {
 #define CONTENTS_NODE -1
 typedef struct mnode_s {
 	// common with leaf and node
+	bool isLeaf;
 	int contents;                  // -1 for nodes, to differentiate from leafs
 	int visCounts[MAX_VISCOUNTS];  // node needs to be traversed if current
 	vec3_t mins, maxs;             // for bounding box culling
+	vec3_t surfMins, surfMaxs;
 	struct mnode_s* parent;
 
 	// node specific
@@ -1699,6 +1706,7 @@ static ID_INLINE bool ShaderRequiresCPUDeforms(const shader_t* shader) {
 void R_SwapBuffers(int);
 
 void R_RenderView(viewParms_t* parms);
+void R_RenderDlightCubemaps(const refdef_t* fd);
 void R_RenderSunShadowMaps(const refdef_t* fd, int level);
 void R_RenderCubemapSide(int cubemapSide, bool subscene);
 

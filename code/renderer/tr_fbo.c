@@ -274,6 +274,12 @@ void FBO_Init(void) {
 		R_CheckFBO(tr.sunRaysFbo);
 	}
 
+	if(tr.shadowCubemaps[0]) {
+		tr.dlightShadowFbo = FBO_Create("_dlightShadow", DLIGHT_SHADOW_SIZE, DLIGHT_SHADOW_SIZE);
+		FBO_CreateBuffer(tr.dlightShadowFbo, GL_RGBA8, 0, 0);
+		R_CheckFBO(tr.dlightShadowFbo);
+	}
+
 	if(tr.sunShadowDepthImage[0]) {
 		for(i = 0; i < 4; i++) {
 			tr.sunShadowFbo[i] = FBO_Create("_sunshadowmap", tr.sunShadowDepthImage[i]->width, tr.sunShadowDepthImage[i]->height);

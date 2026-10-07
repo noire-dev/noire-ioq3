@@ -27,6 +27,7 @@ uniform mat4 u_BoneMatrix[MAX_GLSL_BONES];
 #endif
 
 varying vec3    var_Position;
+varying vec2 	var_TexCoords;
 
 vec3 DeformPosition(const vec3 pos, const vec3 normal, const vec2 st)
 {
@@ -105,4 +106,5 @@ void main()
 	gl_Position = u_ModelViewProjectionMatrix * vec4(position, 1.0);
 	
 	var_Position  = (u_ModelMatrix * vec4(position, 1.0)).xyz;
+	var_TexCoords = attr_TexCoord0.st;
 }

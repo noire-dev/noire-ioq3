@@ -445,6 +445,11 @@ void RE_RenderScene(const refdef_t* fd) {
 
 	RE_BeginScene(fd);
 
+	// SmileTheory: playing with shadow mapping
+	if(!(fd->rdflags & RDF_NOWORLDMODEL) && tr.refdef.num_dlights && r_dlightMode->integer >= 2) {
+		R_RenderDlightCubemaps(fd);
+	}
+
 	// playing with even more shadows
 	if(glRefConfig.framebufferObject && r_sunlightMode->integer && !(fd->rdflags & RDF_NOWORLDMODEL) && (r_forceSun->integer || tr.sunShadows)) {
 		if(r_shadowCascadeZFar->integer != 0) {

@@ -1629,6 +1629,100 @@ void R_RenderView(viewParms_t* parms) {
 	R_DebugGraphics();
 }
 
+void R_RenderDlightCubemaps(const refdef_t* fd) {
+	int i;
+	int savedNumDrawSurfs;
+
+	R_IssuePendingRenderCommands();
+
+	savedNumDrawSurfs = tr.refdef.numDrawSurfs;
+
+	for(i = 0; i < tr.refdef.num_dlights; i++) {
+		viewParms_t shadowParms;
+		int j;
+
+		if(!tr.shadowCubemaps[i]) continue;
+
+		if(tr.refdef.dlightMask & (1 << i)) continue;
+
+		Com_Memset(&shadowParms, 0, sizeof(shadowParms));
+
+		shadowParms.viewportX = 0;
+		shadowParms.viewportY = 0;
+		shadowParms.viewportWidth = DLIGHT_SHADOW_SIZE;
+		shadowParms.viewportHeight = DLIGHT_SHADOW_SIZE;
+
+		shadowParms.isPortal = false;
+		shadowParms.isMirror = true;
+
+		shadowParms.fovX = 90;
+		shadowParms.fovY = 90;
+
+		shadowParms.targetFbo = tr.dlightShadowFbo;
+
+		shadowParms.flags = VPF_SHADOWMAP | VPF_DEPTHSHADOW | VPF_DLIGHTSHADOW | VPF_NOVIEWMODEL;
+
+		shadowParms.zFar = tr.refdef.dlights[i].radius;
+
+		VectorCopy(tr.refdef.dlights[i].origin, shadowParms.or.origin);
+
+		VectorCopy(tr.refdef.dlights[i].origin, shadowParms.pvsOrigin);
+
+		for(j = 0; j < 6; j++) {
+			switch(j) {
+				case 0:
+					VectorSet(shadowParms.or.axis[0], -1, 0, 0);
+					VectorSet(shadowParms.or.axis[1], 0, 0, -1);
+					VectorSet(shadowParms.or.axis[2], 0, 1, 0);
+					break;
+
+				case 1:
+					VectorSet(shadowParms.or.axis[0], 1, 0, 0);
+					VectorSet(shadowParms.or.axis[1], 0, 0, 1);
+					VectorSet(shadowParms.or.axis[2], 0, 1, 0);
+					break;
+
+				case 2:
+					VectorSet(shadowParms.or.axis[0], 0, -1, 0);
+					VectorSet(shadowParms.or.axis[1], 1, 0, 0);
+					VectorSet(shadowParms.or.axis[2], 0, 0, -1);
+					break;
+
+				case 3:
+					VectorSet(shadowParms.or.axis[0], 0, 1, 0);
+					VectorSet(shadowParms.or.axis[1], 1, 0, 0);
+					VectorSet(shadowParms.or.axis[2], 0, 0, 1);
+					break;
+
+				case 4:
+					VectorSet(shadowParms.or.axis[0], 0, 0, -1);
+					VectorSet(shadowParms.or.axis[1], 1, 0, 0);
+					VectorSet(shadowParms.or.axis[2], 0, 1, 0);
+					break;
+
+				case 5:
+					VectorSet(shadowParms.or.axis[0], 0, 0, 1);
+					VectorSet(shadowParms.or.axis[1], -1, 0, 0);
+					VectorSet(shadowParms.or.axis[2], 0, 1, 0);
+					break;
+			}
+
+			shadowParms.targetFboLayer = j;
+			shadowParms.targetFboCubemapIndex = i;
+
+			tr.refdef.numDrawSurfs = savedNumDrawSurfs;
+
+			R_RenderView(&shadowParms);
+
+			R_IssuePendingRenderCommands();
+
+			tr.refdef.numDrawSurfs = savedNumDrawSurfs;
+		}
+	}
+
+	tr.refdef.numDrawSurfs = savedNumDrawSurfs;
+}
+
 static float CalcSplit(float n, float f, float i, float m) { return (n * pow(f / n, i / m) + (f - n) * i / m) / 2.0f; }
 
 void R_RenderSunShadowMaps(const refdef_t* fd, int level) {

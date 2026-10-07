@@ -20,6 +20,10 @@ uniform sampler2D u_SpecularMap;
 uniform sampler2D u_ShadowMap;
 #endif
 
+#if defined(USE_DLIGHT_SHADOWMAP)
+uniform samplerCube u_DlightShadowMap;
+#endif
+
 #if defined(USE_CUBEMAP)
 uniform samplerCube u_CubeMap;
 #endif
@@ -67,6 +71,12 @@ varying vec4      var_LightDir;
 
 #if defined(USE_PRIMARY_LIGHT) || defined(USE_SHADOWMAP)
 varying vec4      var_PrimaryLightDir;
+#endif
+
+#if defined(USE_DLIGHT_SHADOWMAP)
+varying vec3      var_WorldPosition;
+uniform vec4      u_LightOrigin;
+uniform float     u_LightRadius;
 #endif
 
 
@@ -256,6 +266,132 @@ vec4 hitCube(vec3 ray, vec3 pos, vec3 invSize, float lod, samplerCube tex)
 	return vec4(textureCubeLod(tex, tc, lod).rgb, 1.0);
 }
 
+#if defined(USE_DLIGHT_SHADOWMAP)
+
+float randomDlight(vec2 p)
+{
+	const vec2 r = vec2(
+		23.1406926327792690,
+		2.6651441426902251
+	);
+
+	return mod(
+		123456789.0,
+		1e-7 + 256.0 * dot(p, r)
+	);
+}
+
+float CalcDlightShadow()
+{
+	vec3 toSurface =
+		var_WorldPosition - u_LightOrigin.xyz;
+
+	float distanceToLight = length(toSurface);
+
+	if (distanceToLight <= 0.0001)
+		return 1.0;
+
+	float currentDepth =
+		distanceToLight / u_LightRadius;
+
+	if (currentDepth >= 1.0)
+		return 1.0;
+
+	vec3 direction =
+		-toSurface / distanceToLight;
+
+	const float bias = 0.0015;
+	const float filterSize = 0.015;
+
+	/*
+	 * Build a tangent space around the cubemap direction.
+	 */
+	vec3 tangent = normalize(cross(
+		direction,
+		abs(direction.z) < 0.999
+			? vec3(0.0, 0.0, 1.0)
+			: vec3(0.0, 1.0, 0.0)
+	));
+
+	vec3 bitangent = cross(direction, tangent);
+
+	/*
+	 * Same Poisson kernel as the sun shadow PCF.
+	 */
+	float r = randomDlight(
+		var_WorldPosition.xy
+	);
+
+	float sinr = sin(r) * filterSize;
+	float cosr = cos(r) * filterSize;
+
+	mat2 rmat = mat2(
+		cosr, sinr,
+		-sinr, cosr
+	);
+
+	float shadow = 0.0;
+	vec2 offset;
+
+	offset = rmat * vec2(-0.7055767, 0.1965150);
+	shadow += currentDepth <= textureCube(
+		u_DlightShadowMap,
+		normalize(direction + tangent * offset.x + bitangent * offset.y)
+	).r + bias ? 1.0 : 0.0;
+
+	offset = rmat * vec2(0.3524343, -0.7791386);
+	shadow += currentDepth <= textureCube(
+		u_DlightShadowMap,
+		normalize(direction + tangent * offset.x + bitangent * offset.y)
+	).r + bias ? 1.0 : 0.0;
+
+	offset = rmat * vec2(0.2391056, 0.9189604);
+	shadow += currentDepth <= textureCube(
+		u_DlightShadowMap,
+		normalize(direction + tangent * offset.x + bitangent * offset.y)
+	).r + bias ? 1.0 : 0.0;
+
+	offset = rmat * vec2(-0.07580382, -0.09224417);
+	shadow += currentDepth <= textureCube(
+		u_DlightShadowMap,
+		normalize(direction + tangent * offset.x + bitangent * offset.y)
+	).r + bias ? 1.0 : 0.0;
+
+	offset = rmat * vec2(0.5784913, -0.002528916);
+	shadow += currentDepth <= textureCube(
+		u_DlightShadowMap,
+		normalize(direction + tangent * offset.x + bitangent * offset.y)
+	).r + bias ? 1.0 : 0.0;
+
+	offset = rmat * vec2(0.1928880, 0.4064181);
+	shadow += currentDepth <= textureCube(
+		u_DlightShadowMap,
+		normalize(direction + tangent * offset.x + bitangent * offset.y)
+	).r + bias ? 1.0 : 0.0;
+
+	offset = rmat * vec2(-0.6335801, -0.5247476);
+	shadow += currentDepth <= textureCube(
+		u_DlightShadowMap,
+		normalize(direction + tangent * offset.x + bitangent * offset.y)
+	).r + bias ? 1.0 : 0.0;
+
+	offset = rmat * vec2(-0.5579782, 0.7491854);
+	shadow += currentDepth <= textureCube(
+		u_DlightShadowMap,
+		normalize(direction + tangent * offset.x + bitangent * offset.y)
+	).r + bias ? 1.0 : 0.0;
+
+	offset = rmat * vec2(0.7320465, 0.6317794);
+	shadow += currentDepth <= textureCube(
+		u_DlightShadowMap,
+		normalize(direction + tangent * offset.x + bitangent * offset.y)
+	).r + bias ? 1.0 : 0.0;
+
+	return shadow * 0.111111;
+}
+
+#endif
+
 void main()
 {
 	vec3 viewDir, lightColor, ambientColor, reflectance;
@@ -339,6 +475,12 @@ void main()
   #endif
 
 	N = normalize(N);
+
+	float dlightShadow = 1.0;
+
+#if defined(USE_DLIGHT_SHADOWMAP)
+	dlightShadow = CalcDlightShadow();
+#endif
 
   #if defined(USE_SHADOWMAP) 
 	vec2 shadowTex = gl_FragCoord.xy * r_FBufScale;
@@ -432,7 +574,7 @@ void main()
     #endif
   #endif
 
-	gl_FragColor.rgb  = lightColor   * reflectance * (attenuation * NL);
+	gl_FragColor.rgb = lightColor * reflectance * (attenuation * NL) * dlightShadow;
 	gl_FragColor.rgb += ambientColor * diffuse.rgb;
     
   #if defined(USE_CUBEMAP)

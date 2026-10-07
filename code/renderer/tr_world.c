@@ -202,8 +202,10 @@ static void R_AddWorldSurface(msurface_t* surf, int dlightBits) {
 	// FIXME: bmodel fog?
 
 	// try to cull before dlighting or adding
-	if(R_CullSurface(surf)) {
-		return;
+	if(!(tr.viewParms.targetFbo == tr.dlightShadowFbo && (tr.viewParms.flags & VPF_DEPTHSHADOW))) {
+		if(R_CullSurface(surf)) {
+			return;
+		}
 	}
 
 	// check for dlighting
@@ -264,158 +266,151 @@ void R_AddBrushModelSurfaces(trRefEntity_t* ent) {
 =============================================================
 */
 
-/*
-================
-R_RecursiveWorldNode
-================
-*/
-static void R_RecursiveWorldNode(mnode_t* node, uint32_t planeBits, uint32_t dlightBits) {
-	do {
-		uint32_t newDlights[2];
+static bool R_CullDlightShadowNode(const mnode_t* node) {
+	int index;
+	dlight_t* dl;
 
-		// if the node wasn't marked as potentially visible, exit
-		// pvs is skipped for depth shadows
-		if(!(tr.viewParms.flags & VPF_DEPTHSHADOW) && node->visCounts[tr.visIndex] != tr.visCounts[tr.visIndex]) {
-			return;
+	if(!(tr.viewParms.flags & VPF_DLIGHTSHADOW)) return false;
+
+	index = tr.viewParms.targetFboCubemapIndex;
+
+	if(index < 0 || index >= tr.refdef.num_dlights) return true;
+
+	dl = &tr.refdef.dlights[index];
+
+	if(node->surfMaxs[0] <= dl->origin[0] - dl->radius || node->surfMins[0] >= dl->origin[0] + dl->radius || node->surfMaxs[1] <= dl->origin[1] - dl->radius || node->surfMins[1] >= dl->origin[1] + dl->radius || node->surfMaxs[2] <= dl->origin[2] - dl->radius || node->surfMins[2] >= dl->origin[2] + dl->radius) {
+		return true;
+	}
+
+	return false;
+}
+
+static void R_RecursiveWorldNode(mnode_t* node, uint32_t planeBits, uint32_t dlightBits) {
+	int i, r;
+	dlight_t* dl;
+
+	do {
+		/*
+		 * Dlight shadow uses light volume + frustum.
+		 * Do not use PVS here.
+		 */
+		if(tr.viewParms.flags & VPF_DLIGHTSHADOW) {
+			if(R_CullDlightShadowNode(node)) return;
+		} else if(!(tr.viewParms.flags & VPF_DEPTHSHADOW)) {
+			if(node->visCounts[tr.visIndex] != tr.visCounts[tr.visIndex]) return;
 		}
 
-		// if the bounding volume is outside the frustum, nothing
-		// inside can be visible OPTIMIZE: don't do this all the way to leafs?
-
+		/*
+		 * Normal view frustum culling.
+		 */
 		if(!r_nocull->integer) {
-			int r;
-
 			if(planeBits & 1) {
 				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[0]);
-				if(r == 2) {
-					return;  // culled
-				}
-				if(r == 1) {
-					planeBits &= ~1;  // all descendants will also be in front
-				}
+
+				if(r == 2) return;
+
+				if(r == 1) planeBits &= ~1;
 			}
 
 			if(planeBits & 2) {
 				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[1]);
-				if(r == 2) {
-					return;  // culled
-				}
-				if(r == 1) {
-					planeBits &= ~2;  // all descendants will also be in front
-				}
+
+				if(r == 2) return;
+
+				if(r == 1) planeBits &= ~2;
 			}
 
 			if(planeBits & 4) {
 				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[2]);
-				if(r == 2) {
-					return;  // culled
-				}
-				if(r == 1) {
-					planeBits &= ~4;  // all descendants will also be in front
-				}
+
+				if(r == 2) return;
+
+				if(r == 1) planeBits &= ~4;
 			}
 
 			if(planeBits & 8) {
 				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[3]);
-				if(r == 2) {
-					return;  // culled
-				}
-				if(r == 1) {
-					planeBits &= ~8;  // all descendants will also be in front
-				}
+
+				if(r == 2) return;
+
+				if(r == 1) planeBits &= ~8;
 			}
 
 			if(planeBits & 16) {
 				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[4]);
-				if(r == 2) {
-					return;  // culled
-				}
-				if(r == 1) {
-					planeBits &= ~16;  // all descendants will also be in front
-				}
+
+				if(r == 2) return;
+
+				if(r == 1) planeBits &= ~16;
 			}
 		}
 
-		if(node->contents != -1) {
-			break;
-		}
-
-		// node is just a decision point, so go down both sides
-		// since we don't care about sort orders, just go positive to negative
-
-		// determine which dlights are needed
-		newDlights[0] = 0;
-		newDlights[1] = 0;
+		/*
+		 * Normal dynamic light culling.
+		 * Not used by dlight shadow views.
+		 */
 		if(dlightBits) {
-			int i;
-
 			for(i = 0; i < tr.refdef.num_dlights; i++) {
-				dlight_t* dl;
-				float dist;
-
 				if(dlightBits & (1 << i)) {
-					dl = &tr.refdef.dlights[i];
-					dist = DotProduct(dl->origin, node->plane->normal) - node->plane->dist;
+					if(tr.refdef.dlights[i].flags & REF_DIRECTED_DLIGHT) continue;
 
-					if(dist > -dl->radius) {
-						newDlights[0] |= (1 << i);
-					}
-					if(dist < dl->radius) {
-						newDlights[1] |= (1 << i);
+					dl = &tr.refdef.dlights[i];
+
+					if(node->surfMins[0] >= (dl->origin[0] + dl->radius) || node->surfMaxs[0] <= (dl->origin[0] - dl->radius) || node->surfMins[1] >= (dl->origin[1] + dl->radius) || node->surfMaxs[1] <= (dl->origin[1] - dl->radius) || node->surfMins[2] >= (dl->origin[2] + dl->radius) || node->surfMaxs[2] <= (dl->origin[2] - dl->radius)) {
+						dlightBits &= ~(1 << i);
 					}
 				}
 			}
 		}
 
-		// recurse down the children, front side first
-		R_RecursiveWorldNode(node->children[0], planeBits, newDlights[0]);
+		if(node->isLeaf) break;
 
-		// tail recurse
+		R_RecursiveWorldNode(node->children[0], planeBits, dlightBits);
+
 		node = node->children[1];
-		dlightBits = newDlights[1];
+
 	} while(1);
 
 	{
-		// leaf node, so add mark surfaces
 		int c;
 		int surf, *view;
 
 		tr.pc.c_leafs++;
 
-		// add to z buffer bounds
-		if(node->mins[0] < tr.viewParms.visBounds[0][0]) {
-			tr.viewParms.visBounds[0][0] = node->mins[0];
-		}
-		if(node->mins[1] < tr.viewParms.visBounds[0][1]) {
-			tr.viewParms.visBounds[0][1] = node->mins[1];
-		}
-		if(node->mins[2] < tr.viewParms.visBounds[0][2]) {
-			tr.viewParms.visBounds[0][2] = node->mins[2];
-		}
+		if(node->mins[0] < tr.viewParms.visBounds[0][0]) tr.viewParms.visBounds[0][0] = node->mins[0];
 
-		if(node->maxs[0] > tr.viewParms.visBounds[1][0]) {
-			tr.viewParms.visBounds[1][0] = node->maxs[0];
-		}
-		if(node->maxs[1] > tr.viewParms.visBounds[1][1]) {
-			tr.viewParms.visBounds[1][1] = node->maxs[1];
-		}
-		if(node->maxs[2] > tr.viewParms.visBounds[1][2]) {
-			tr.viewParms.visBounds[1][2] = node->maxs[2];
-		}
+		if(node->mins[1] < tr.viewParms.visBounds[0][1]) tr.viewParms.visBounds[0][1] = node->mins[1];
 
-		// add surfaces
+		if(node->mins[2] < tr.viewParms.visBounds[0][2]) tr.viewParms.visBounds[0][2] = node->mins[2];
+
+		if(node->maxs[0] > tr.viewParms.visBounds[1][0]) tr.viewParms.visBounds[1][0] = node->maxs[0];
+
+		if(node->maxs[1] > tr.viewParms.visBounds[1][1]) tr.viewParms.visBounds[1][1] = node->maxs[1];
+
+		if(node->maxs[2] > tr.viewParms.visBounds[1][2]) tr.viewParms.visBounds[1][2] = node->maxs[2];
+
 		view = tr.world->marksurfaces + node->firstmarksurface;
-
 		c = node->nummarksurfaces;
+
 		while(c--) {
-			// just mark it as visible, so we don't jump out of the cache derefencing the surface
 			surf = *view;
+
 			if(tr.world->surfacesViewCount[surf] != tr.viewCount) {
 				tr.world->surfacesViewCount[surf] = tr.viewCount;
-				tr.world->surfacesDlightBits[surf] = dlightBits;
-			} else {
+
+				if(tr.viewParms.flags & VPF_DLIGHTSHADOW) {
+					msurface_t* msurf;
+
+					msurf = &tr.world->surfaces[surf];
+
+					R_AddWorldSurface(msurf, 0);
+				} else {
+					tr.world->surfacesDlightBits[surf] = dlightBits;
+				}
+			} else if(!(tr.viewParms.flags & VPF_DLIGHTSHADOW)) {
 				tr.world->surfacesDlightBits[surf] |= dlightBits;
 			}
+
 			view++;
 		}
 	}

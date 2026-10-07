@@ -754,6 +754,7 @@ RB_DrawSurfs
 */
 const void* RB_DrawSurfs(const void* data) {
 	const drawSurfsCommand_t* cmd;
+	bool isDlightShadowView;
 	bool isShadowView;
 
 	// finish any 2D drawing if needed
@@ -767,6 +768,7 @@ const void* RB_DrawSurfs(const void* data) {
 	backEnd.viewParms = cmd->viewParms;
 
 	isShadowView = !!(backEnd.viewParms.flags & VPF_DEPTHSHADOW);
+	isDlightShadowView = isShadowView && backEnd.viewParms.targetFbo == tr.dlightShadowFbo;
 
 	// clear the z buffer, set the modelview, etc
 	RB_BeginDrawingView();
@@ -775,7 +777,7 @@ const void* RB_DrawSurfs(const void* data) {
 		qglEnable(GL_DEPTH_CLAMP);
 	}
 
-	if(glRefConfig.framebufferObject && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) && (r_depthPrepass->integer || isShadowView)) {
+	if(glRefConfig.framebufferObject && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) && !isDlightShadowView) {
 		FBO_t* oldFbo = glState.currentFBO;
 		vec4_t viewInfo;
 
@@ -993,7 +995,11 @@ const void* RB_DrawSurfs(const void* data) {
 		qglDisable(GL_DEPTH_CLAMP);
 	}
 
-	if(!isShadowView) {
+	if(isDlightShadowView) {
+		qglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		RB_RenderDrawSurfList(cmd->drawSurfs, cmd->numDrawSurfs);
+		qglColorMask(!backEnd.colorMask[0], !backEnd.colorMask[1], !backEnd.colorMask[2], !backEnd.colorMask[3]);
+	} else if(!isShadowView) {
 		RB_RenderDrawSurfList(cmd->drawSurfs, cmd->numDrawSurfs);
 
 		if(r_drawSun->integer) {

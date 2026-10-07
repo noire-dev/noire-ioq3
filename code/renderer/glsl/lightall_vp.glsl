@@ -94,6 +94,10 @@ varying vec4   var_LightDir;
 varying vec4   var_PrimaryLightDir;
 #endif
 
+#if defined(USE_DLIGHT_SHADOWMAP)
+varying vec3 var_WorldPosition;
+#endif
+
 #if defined(USE_TCGEN)
 vec2 GenTexCoords(int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec3 TCGenVector1)
 {
@@ -220,6 +224,10 @@ void main()
   #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 	tangent   = (u_ModelMatrix * vec4(tangent,  0.0)).xyz;
   #endif
+#endif
+
+#if defined(USE_DLIGHT_SHADOWMAP)
+    var_WorldPosition = position;
 #endif
 
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
