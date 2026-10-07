@@ -1388,7 +1388,7 @@ void R_SortDrawSurfs(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	R_RadixSort(drawSurfs, numDrawSurfs);
 
 	// skip pass through drawing if rendering a shadow map
-	if(tr.viewParms.flags & (VPF_DEPTHSHADOW)) {
+	if(tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) {
 		R_AddDrawSurfCmd(drawSurfs, numDrawSurfs);
 		return;
 	}
@@ -1518,7 +1518,9 @@ void R_GenerateDrawSurfs(void) {
 	// matrix for lod calculation
 
 	// dynamically compute far clip plane distance
-	R_SetFarClip();
+	if(!(tr.viewParms.flags & VPF_SHADOWMAP)) {
+		R_SetFarClip();
+	}
 
 	// we know the size of the clipping volume. Now set the rest of the projection matrix.
 	R_SetupProjectionZ(&tr.viewParms);

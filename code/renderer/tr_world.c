@@ -54,7 +54,7 @@ static bool R_CullSurface(msurface_t* surf) {
 		}
 
 		// shadowmaps draw back surfaces
-		if(tr.viewParms.flags & (VPF_DEPTHSHADOW)) {
+		if(tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) {
 			if(ct == CT_FRONT_SIDED) {
 				ct = CT_BACK_SIDED;
 			} else {
@@ -136,11 +136,27 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 	int i;
 	dlight_t* dl;
 
+	for(i = 0; i < tr.refdef.num_dlights; i++) {
+		if(!(dlightBits & (1 << i))) {
+			continue;
+		}
+
+		if(!(tr.refdef.dlights[i].flags & REF_SURFACE_DLIGHT)) {
+			dlightBits &= ~(1 << i);
+		}
+	}
+
 	if(surf->cullinfo.type & CULLINFO_PLANE) {
 		for(i = 0; i < tr.refdef.num_dlights; i++) {
 			if(!(dlightBits & (1 << i))) {
 				continue;
 			}
+
+			// lightning dlights affect all surfaces
+			if(tr.refdef.dlights[i].flags & REF_DIRECTED_DLIGHT) {
+				continue;
+			}
+
 			dl = &tr.refdef.dlights[i];
 			d = DotProduct(dl->origin, surf->cullinfo.plane.normal) - surf->cullinfo.plane.dist;
 			if(d < -dl->radius || d > dl->radius) {
@@ -155,6 +171,12 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 			if(!(dlightBits & (1 << i))) {
 				continue;
 			}
+
+			// lightning dlights affect all surfaces
+			if(tr.refdef.dlights[i].flags & REF_DIRECTED_DLIGHT) {
+				continue;
+			}
+
 			dl = &tr.refdef.dlights[i];
 			if(dl->origin[0] - dl->radius > surf->cullinfo.bounds[1][0] || dl->origin[0] + dl->radius < surf->cullinfo.bounds[0][0] || dl->origin[1] - dl->radius > surf->cullinfo.bounds[1][1] || dl->origin[1] + dl->radius < surf->cullinfo.bounds[0][1] || dl->origin[2] - dl->radius > surf->cullinfo.bounds[1][2] || dl->origin[2] + dl->radius < surf->cullinfo.bounds[0][2]) {
 				// dlight doesn't reach the bounds
@@ -168,6 +190,12 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 			if(!(dlightBits & (1 << i))) {
 				continue;
 			}
+
+			// lightning dlights affect all surfaces
+			if(tr.refdef.dlights[i].flags & REF_DIRECTED_DLIGHT) {
+				continue;
+			}
+
 			dl = &tr.refdef.dlights[i];
 			if(!SpheresIntersect(dl->origin, dl->radius, surf->cullinfo.localOrigin, surf->cullinfo.radius)) {
 				// dlight doesn't reach the bounds
@@ -179,7 +207,12 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 	switch(*surf->data) {
 		case SF_FACE:
 		case SF_GRID:
-		case SF_TRIANGLES: ((srfBspSurface_t*)surf->data)->dlightBits = dlightBits; break;
+		case SF_TRIANGLES:
+			// shadows shouldn't change surface data
+			if(tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) break;
+
+			((srfBspSurface_t*)surf->data)->dlightBits = dlightBits;
+			break;
 
 		default: dlightBits = 0; break;
 	}
@@ -592,6 +625,8 @@ void R_AddWorldSurfaces(void) {
 
 	if(tr.viewParms.flags & VPF_DEPTHSHADOW) {
 		dlightBits = 0;
+	} else if(!(tr.viewParms.flags & VPF_SHADOWMAP)) {
+		dlightBits = (1ULL << tr.refdef.num_dlights) - 1;
 	} else {
 		dlightBits = (1ULL << tr.refdef.num_dlights) - 1;
 	}
