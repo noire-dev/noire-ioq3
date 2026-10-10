@@ -327,8 +327,6 @@ and after local prediction on the client
 ========================
 */
 void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, bool snap) {
-	int i;
-
 	if(ps->stats[STAT_HEALTH] <= GIB_HEALTH) {
 		s->eType = ET_INVISIBLE;
 	} else {
@@ -394,8 +392,6 @@ and after local prediction on the client
 ========================
 */
 void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s, int time, bool snap) {
-	int i;
-
 	if(ps->stats[STAT_HEALTH] <= GIB_HEALTH) {
 		s->eType = ET_INVISIBLE;
 	} else {

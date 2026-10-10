@@ -1368,6 +1368,25 @@ void ParseSort(char** text) {
 	}
 }
 
+/*
+=================
+ParseDetailLevel
+=================
+*/
+void ParseDetailLevel(char** text) {
+	char* token;
+
+	token = COM_ParseExt(text, false);
+	if(token[0] == 0) {
+		ri.Printf(PRINT_WARNING, "WARNING: missing detailLevel parameter in shader '%s'\n", shader.name);
+		return;
+	}
+
+	shader.detailLevel = atoi(token);
+	if(shader.detailLevel < 0) shader.detailLevel = 0;
+	if(shader.detailLevel > 16) shader.detailLevel = 16;
+}
+
 // this table is also present in q3map
 
 typedef struct {
@@ -1385,7 +1404,7 @@ infoParm_t infoParms[] = {
     {"nodrop", 1, 0, CONTENTS_NODROP},  // don't drop items or leave bodies (death fog, lava, etc)
     {"nonsolid", 1, SURF_NONSOLID, 0},  // clears the solid flag
 
-    // utility relevant attributes
+	// utility relevant attributes
     {"origin", 1, 0, CONTENTS_ORIGIN},                // center of rotating brushes
     {"trans", 0, 0, CONTENTS_TRANSLUCENT},            // don't eat contained surfaces
     {"detail", 0, 0, CONTENTS_DETAIL},                // don't include in structural bsp
@@ -1400,7 +1419,7 @@ infoParm_t infoParms[] = {
     {"alphashadow", 0, SURF_ALPHASHADOW, 0},  // test light on a per-pixel basis
     {"hint", 0, SURF_HINT, 0},                // use as a primary splitter
 
-    // server attributes
+	// server attributes
     {"slick", 0, SURF_SLICK, 0},
     {"noimpact", 0, SURF_NOIMPACT, 0},  // don't make impact explosions or marks
     {"nomarks", 0, SURF_NOMARKS, 0},    // don't make impact marks, but still explode
@@ -1681,6 +1700,9 @@ static bool ParseShader(char** text) {
 		else if(!Q_stricmp(token, "sort")) {
 			ParseSort(text);
 			continue;
+		} else if(!Q_stricmp(token, "detailLevel")) {
+			ParseDetailLevel(text);
+			continue;
 		} else {
 			ri.Printf(PRINT_WARNING, "WARNING: unknown general shader parameter '%s' in '%s'\n", token, shader.name);
 			return false;
@@ -1903,7 +1925,6 @@ static void CollapseStagesToLightall(shaderStage_t* diffuse, shaderStage_t* norm
 	if(r_specularMapping->integer) {
 		image_t* diffuseImg;
 		if(specular) {
-			// ri.Printf(PRINT_ALL, ", specularmap %s", specular->bundle[0].image[0]->imgName);
 			diffuse->bundle[TB_SPECULARMAP] = specular->bundle[0];
 			VectorCopy4(specular->specularScale, diffuse->specularScale);
 		} else if((lightmap || useLightVector || useLightVertex) && (diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0])) {
@@ -3083,6 +3104,20 @@ shader_t* R_GetShaderByHandle(qhandle_t hShader) {
 		return tr.defaultShader;
 	}
 	return tr.shaders[hShader];
+}
+
+bool R_ShaderRequiresCubemap(const shader_t* sh) {
+	if(!sh) return false;
+
+	if(sh->surfaceFlags & SURF_CUBEMAP) return true;
+
+	for(int i = 0; i < sh->numUnfoggedPasses; i++) {
+		if(sh->stages[i] && sh->stages[i]->bundle[TB_SPECULARMAP].image[0] != NULL) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 /*

@@ -278,12 +278,14 @@ static void SV_AddEntToSnapshot(svEntity_t* svEnt, sharedEntity_t* gEnt, snapsho
 	eNums->numSnapshotEntities++;
 }
 
+bool IsEntityVisibleType(sharedEntity_t* ent) { return (ent->s.eType == ET_PORTAL); }
+
 /*
 ===============
 SV_AddEntitiesVisibleFromPoint
 ===============
 */
-static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t* frame, snapshotEntityNumbers_t* eNums, bool portal) {
+static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t* frame, snapshotEntityNumbers_t* eNums, bool portal, int viewDistance) {
 	int e, i;
 	sharedEntity_t* ent;
 	svEntity_t* svEnt;
@@ -292,6 +294,9 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t* fram
 	int leafnum;
 	byte* clientpvs;
 	byte* bitvector;
+	vec3_t dir;
+	float distanceSquared;
+	float maxViewDistanceSquared;
 
 	// during an error shutdown message we may need to transmit
 	// the shutdown message after the server has shutdown, so
@@ -308,6 +313,8 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t* fram
 	frame->areabytes = CM_WriteAreaBits(frame->areabits, clientarea);
 
 	clientpvs = CM_ClusterPVS(clientcluster);
+
+	maxViewDistanceSquared = (viewDistance * SNAPSHOT_RECOVER_STEP) * (viewDistance * SNAPSHOT_RECOVER_STEP);
 
 	for(e = 0; e < sv.num_entities; e++) {
 		ent = SV_GentityNum(e);
@@ -399,6 +406,74 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t* fram
 			}
 		}
 
+		// calculate distance from the entity to the client
+		VectorSubtract(ent->r.currentOrigin, origin, dir);
+		distanceSquared = VectorLengthSquared(dir);
+
+		// check if the entity is within the max view distance
+		if(distanceSquared > maxViewDistanceSquared) {
+			if(ent->s.eType != ET_MOVER) {
+				continue;
+			}
+		}
+
+		// Anticheat engine: Trace to check if the entity is visible from the player's POV
+		if(1 && IsEntityVisibleType(ent)) {
+			trace_t trace;
+			vec3_t corners[8];
+			bool visible = false;
+			int k;
+
+			SV_Trace(&trace, origin, NULL, NULL, ent->r.currentOrigin, frame->ps.clientNum, CONTENTS_SOLID, 0);
+			if(trace.fraction < 1.0f && trace.entityNum != ent->s.number) {
+				if(trace.contents & CONTENTS_TRANSLUCENT) {
+					visible = true;
+				}
+			} else {
+				visible = true;
+			}
+			if(!visible && ent->s.eType == ET_PLAYER && 0) {
+				corners[0][0] = ent->r.currentOrigin[0] + ent->r.mins[0];
+				corners[0][1] = ent->r.currentOrigin[1] + ent->r.mins[1];
+				corners[0][2] = ent->r.currentOrigin[2] + ent->r.mins[2];  // Min по X, Y, Z
+				corners[1][0] = ent->r.currentOrigin[0] + ent->r.mins[0];
+				corners[1][1] = ent->r.currentOrigin[1] + ent->r.mins[1];
+				corners[1][2] = ent->r.currentOrigin[2] + ent->r.maxs[2];  // Min по X, Y, Max по Z
+				corners[2][0] = ent->r.currentOrigin[0] + ent->r.mins[0];
+				corners[2][1] = ent->r.currentOrigin[1] + ent->r.maxs[1];
+				corners[2][2] = ent->r.currentOrigin[2] + ent->r.mins[2];  // Min по X, Max по Y, Min по Z
+				corners[3][0] = ent->r.currentOrigin[0] + ent->r.mins[0];
+				corners[3][1] = ent->r.currentOrigin[1] + ent->r.maxs[1];
+				corners[3][2] = ent->r.currentOrigin[2] + ent->r.maxs[2];  // Min по X, Max по Y, Max по Z
+				corners[4][0] = ent->r.currentOrigin[0] + ent->r.maxs[0];
+				corners[4][1] = ent->r.currentOrigin[1] + ent->r.mins[1];
+				corners[4][2] = ent->r.currentOrigin[2] + ent->r.mins[2];  // Max по X, Min по Y, Min по Z
+				corners[5][0] = ent->r.currentOrigin[0] + ent->r.maxs[0];
+				corners[5][1] = ent->r.currentOrigin[1] + ent->r.mins[1];
+				corners[5][2] = ent->r.currentOrigin[2] + ent->r.maxs[2];  // Max по X, Min по Y, Max по Z
+				corners[6][0] = ent->r.currentOrigin[0] + ent->r.maxs[0];
+				corners[6][1] = ent->r.currentOrigin[1] + ent->r.maxs[1];
+				corners[6][2] = ent->r.currentOrigin[2] + ent->r.mins[2];  // Max по X, Max по Y, Min по Z
+				corners[7][0] = ent->r.currentOrigin[0] + ent->r.maxs[0];
+				corners[7][1] = ent->r.currentOrigin[1] + ent->r.maxs[1];
+				corners[7][2] = ent->r.currentOrigin[2] + ent->r.maxs[2];  // Max по X, Max по Y, Max по Z
+				for(k = 0; k < 8; k++) {
+					SV_Trace(&trace, origin, NULL, NULL, corners[k], frame->ps.clientNum, CONTENTS_SOLID, 0);
+					if(trace.fraction < 1.0f && trace.entityNum != ent->s.number) {
+						if(trace.contents & CONTENTS_TRANSLUCENT) {
+							visible = true;
+						}
+					} else {
+						visible = true;
+						break;
+					}
+				}
+			}
+			if(!visible) {  // if object not visible
+				continue;   // Entity blocked
+			}
+		}
+
 		// add it
 		SV_AddEntToSnapshot(svEnt, ent, eNums);
 
@@ -411,7 +486,7 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t* fram
 					continue;
 				}
 			}
-			SV_AddEntitiesVisibleFromPoint(ent->s.origin2, frame, eNums, true);
+			SV_AddEntitiesVisibleFromPoint(ent->s.origin2, frame, eNums, true, viewDistance);
 		}
 	}
 }
@@ -477,9 +552,16 @@ static void SV_BuildClientSnapshot(client_t* client) {
 	VectorCopy(ps->origin, org);
 	org[2] += ps->viewheight;
 
-	// add all the entities directly visible to the eye, which
-	// may include portal entities that merge other viewpoints
-	SV_AddEntitiesVisibleFromPoint(org, frame, &entityNumbers, false);
+	if(client->netError) {
+		SV_AddEntitiesVisibleFromPoint(org, frame, &entityNumbers, false, client->dynamicViewDistance);
+		client->dynamicViewDistance++;
+		if(client->dynamicViewDistance >= client->viewDistance) {
+			client->netError = false;
+			client->dynamicViewDistance = 0;
+		}
+	} else {
+		SV_AddEntitiesVisibleFromPoint(org, frame, &entityNumbers, false, client->viewDistance);
+	}
 
 	// if there were portals visible, there may be out of order entities
 	// in the list which will need to be resorted for the delta compression

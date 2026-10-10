@@ -3,6 +3,7 @@ include_guard(GLOBAL)
 set(RENDERER_COMMON_SOURCES
     ${SOURCE_DIR}/renderercommon/tr_font.c
     ${SOURCE_DIR}/renderercommon/tr_image_bmp.c
+    ${SOURCE_DIR}/renderercommon/tr_image_dds.c
     ${SOURCE_DIR}/renderercommon/tr_image_jpg.c
     ${SOURCE_DIR}/renderercommon/tr_image_pcx.c
     ${SOURCE_DIR}/renderercommon/tr_image_png.c

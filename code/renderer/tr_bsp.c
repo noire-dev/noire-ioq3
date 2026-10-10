@@ -2266,7 +2266,8 @@ void R_AssignCubemapsToWorldSurfaces(void) {
 
 		surf->useCubemap = false;
 
-		if(!(surf->shader->surfaceFlags & SURF_CUBEMAP)) continue;
+		if(!R_ShaderRequiresCubemap(surf->shader)) continue;
+
 		if((surf->cullinfo.type & CULLINFO_SPHERE) || (surf->cullinfo.type & CULLINFO_BOX)) {
 			surf->useCubemap = R_CubemapForShader(true);
 

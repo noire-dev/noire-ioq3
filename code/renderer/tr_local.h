@@ -420,6 +420,7 @@ typedef struct shader_s {
 	int vertexAttribs;  // not all shaders will need all data to be gathered
 
 	bool noFog;
+	int detailLevel;
 
 	int numDeforms;
 	deformStage_t deforms[MAX_SHADER_DEFORMS];
@@ -1636,6 +1637,7 @@ extern cvar_t* r_cubeMapping;
 extern cvar_t* r_cubemapSize;
 extern cvar_t* r_deluxeSpecular;
 extern cvar_t* r_pbr;
+extern cvar_t* r_detailLevel;
 extern cvar_t* r_baseNormalX;
 extern cvar_t* r_baseNormalY;
 extern cvar_t* r_baseParallax;
@@ -1860,6 +1862,7 @@ const void* RB_TakeVideoFrameCmd(const void* data);
 shader_t* R_FindShader(const char* name, int lightmapIndex, bool mipRawImage);
 shader_t* R_FindShaderEx(const char* name, int lightmapIndex, bool mipRawImage, int realLightmapIndex);
 shader_t* R_GetShaderByHandle(qhandle_t hShader);
+bool R_ShaderRequiresCubemap(const shader_t* sh);
 shader_t* R_GetShaderByState(int index, long* cycleTime);
 shader_t* R_FindShaderByName(const char* name);
 void R_InitShaders(void);

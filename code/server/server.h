@@ -192,6 +192,10 @@ typedef struct client_s {
 	int oldServerTime;
 	bool csUpdated[MAX_CONFIGSTRINGS];
 
+	bool netError;
+	int viewDistance;
+	int dynamicViewDistance;
+
 #ifdef LEGACY_PROTOCOL
 	bool compat;
 #endif

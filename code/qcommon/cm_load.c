@@ -553,7 +553,6 @@ void CM_LoadMap(const char* name, bool clientload, int* checksum) {
 
 	// free old stuff
 	Com_Memset(&cm, 0, sizeof(cm));
-	CM_ClearLevelPatches();
 
 	if(!name[0]) {
 		cm.numLeafs = 1;
@@ -625,7 +624,6 @@ CM_ClearMap
 */
 void CM_ClearMap(void) {
 	Com_Memset(&cm, 0, sizeof(cm));
-	CM_ClearLevelPatches();
 }
 
 /*

@@ -1312,6 +1312,17 @@ void SV_UserinfoChanged(client_t* cl) {
 	int i;
 	int len;
 
+	val = Info_ValueForKey(cl->userinfo, "viewdistance");
+	i = atoi(val);
+
+	// range check
+	if(i < 1)
+		i = 1;
+	else if(i > 180)
+		i = 180;
+
+	cl->viewDistance = i;
+
 	// name for C code
 	Q_strncpyz(cl->name, Info_ValueForKey(cl->userinfo, "name"), sizeof(cl->name));
 

@@ -3080,7 +3080,6 @@ void CL_InitRef(void) {
 	ri.Hunk_FreeTempMemory = Hunk_FreeTempMemory;
 
 	ri.CM_ClusterPVS = CM_ClusterPVS;
-	ri.CM_DrawDebugSurface = CM_DrawDebugSurface;
 
 	ri.FS_ReadFile = FS_ReadFile;
 	ri.FS_FreeFile = FS_FreeFile;
@@ -3850,8 +3849,8 @@ void CL_Init(void) {
 	Cvar_Get("teamtask", "0", CVAR_USERINFO);
 	Cvar_Get("sex", "male", CVAR_USERINFO | CVAR_ARCHIVE);
 	Cvar_Get("cl_anonymous", "0", CVAR_USERINFO | CVAR_ARCHIVE);
-
 	Cvar_Get("password", "", CVAR_USERINFO);
+	Cvar_Get("viewdistance", "180", CVAR_USERINFO);
 
 #ifdef USE_MUMBLE
 	cl_useMumble = Cvar_Get("cl_useMumble", "0", CVAR_ARCHIVE | CVAR_LATCH);

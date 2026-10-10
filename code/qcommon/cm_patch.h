@@ -26,11 +26,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 This file does not reference any globals, and has these entry points:
 
-void CM_ClearLevelPatches( void );
 struct patchCollide_s	*CM_GeneratePatchCollide( int width, int height, const vec3_t *points );
 void CM_TraceThroughPatchCollide( traceWork_t *tw, const struct patchCollide_s *pc );
 bool CM_PositionTestInPatchCollide( traceWork_t *tw, const struct patchCollide_s *pc );
-void CM_DrawDebugSurface( void (*drawPoly)(int color, int numPoints, flaot *points) );
 
 
 Issues for collision against curved surfaces:

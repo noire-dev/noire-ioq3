@@ -1195,7 +1195,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 			drawSurf = surface;
 		}
 
-		useCubemap = R_CubemapForShader(shader->surfaceFlags & SURF_CUBEMAP);
+		useCubemap = R_ShaderRequiresCubemap(shader);
 
 		if(!personalModel) {
 			R_AddDrawSurf(drawSurf, shader, fogNum, 0, useCubemap, vec3_origin);

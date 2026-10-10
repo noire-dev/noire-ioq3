@@ -1563,28 +1563,6 @@ void R_DebugPolygon(int color, int numPoints, float* points) {
 }
 
 /*
-====================
-R_DebugGraphics
-
-Visualization aid for movement clipping debugging
-====================
-*/
-void R_DebugGraphics(void) {
-	if(tr.refdef.rdflags & RDF_NOWORLDMODEL) {
-		return;
-	}
-	if(!r_debugSurface->integer) {
-		return;
-	}
-
-	R_IssuePendingRenderCommands();
-
-	GL_BindToTMU(tr.whiteImage, TB_COLORMAP);
-	GL_Cull(CT_FRONT_SIDED);
-	ri.CM_DrawDebugSurface(R_DebugPolygon);
-}
-
-/*
 ================
 R_RenderView
 
@@ -1626,9 +1604,6 @@ void R_RenderView(viewParms_t* parms) {
 	}
 
 	R_SortDrawSurfs(tr.refdef.drawSurfs + firstDrawSurf, numDrawSurfs - firstDrawSurf);
-
-	// draw main system development information (surface outlines, etc)
-	R_DebugGraphics();
 }
 
 void R_RenderDlightCubemaps(const refdef_t* fd) {

@@ -226,13 +226,36 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 	return dlightBits;
 }
 
-/*
-======================
-R_AddWorldSurface
-======================
-*/
+static bool R_FogCullSurface(msurface_t* surf) {
+	vec3_t center;
+	float dist;
+	float fogEnd = r_dynamicFogEnd->value;
+
+	if(surf->cullinfo.type & CULLINFO_SPHERE) {
+		VectorCopy(surf->cullinfo.localOrigin, center);
+		dist = Distance(center, backEnd.viewParms.or.origin) - surf->cullinfo.radius;
+	} else if(surf->cullinfo.type & CULLINFO_BOX) {
+		// центр bounding box
+		center[0] = (surf->cullinfo.bounds[0][0] + surf->cullinfo.bounds[1][0]) * 0.5f;
+		center[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
+		center[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
+		dist = Distance(center, backEnd.viewParms.or.origin) - VectorLength(surf->cullinfo.bounds[1]) * 0.5f;
+	} else if(surf->cullinfo.type & CULLINFO_PLANE) {
+		// расстояние до плоскости (может быть отрицательным — это ок)
+		dist = DotProduct(backEnd.viewParms.or.origin, surf->cullinfo.plane.normal) - surf->cullinfo.plane.dist;
+		if(dist < 0) dist = -dist;
+	} else {
+		return false;  // нечего мерить
+	}
+
+	return dist > fogEnd;
+}
+
 static void R_AddWorldSurface(msurface_t* surf, int dlightBits) {
 	// FIXME: bmodel fog?
+
+	if(r_detailLevel->integer < surf->shader->detailLevel) return;
+	if(R_FogCullSurface(surf)) return;
 
 	// try to cull before dlighting or adding
 	if(!(tr.viewParms.targetFbo == tr.dlightShadowFbo && (tr.viewParms.flags & VPF_DEPTHSHADOW))) {
