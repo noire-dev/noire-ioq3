@@ -809,7 +809,6 @@ R_LerpTag
 */
 int R_LerpTag(orientation_t* tag, qhandle_t handle, int startFrame, int endFrame, float frac, const char* tagName) {
 	mdvTag_t *start, *end;
-	mdvTag_t start_space, end_space;
 	int i;
 	float frontLerp, backLerp;
 	model_t* model;

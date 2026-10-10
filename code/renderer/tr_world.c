@@ -136,6 +136,13 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 	int i;
 	dlight_t* dl;
 
+	// fast path when no dlights touch this surface.
+	// Avoids a full num_dlights loop of useless work per surface.
+	if(!dlightBits) {
+		tr.pc.c_dlightSurfacesCulled++;
+		return 0;
+	}
+
 	for(i = 0; i < tr.refdef.num_dlights; i++) {
 		if(!(dlightBits & (1 << i))) {
 			continue;
@@ -229,23 +236,23 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 static bool R_FogCullSurface(msurface_t* surf) {
 	vec3_t center;
 	float dist;
-	float fogEnd = r_dynamicFogEnd->value;
+	float fogEnd = r_dynamicFogEnd->value * 1.10;
+
+	if(!r_dynamicFog->integer) return false;
 
 	if(surf->cullinfo.type & CULLINFO_SPHERE) {
 		VectorCopy(surf->cullinfo.localOrigin, center);
 		dist = Distance(center, backEnd.viewParms.or.origin) - surf->cullinfo.radius;
 	} else if(surf->cullinfo.type & CULLINFO_BOX) {
-		// центр bounding box
 		center[0] = (surf->cullinfo.bounds[0][0] + surf->cullinfo.bounds[1][0]) * 0.5f;
 		center[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
 		center[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
 		dist = Distance(center, backEnd.viewParms.or.origin) - VectorLength(surf->cullinfo.bounds[1]) * 0.5f;
 	} else if(surf->cullinfo.type & CULLINFO_PLANE) {
-		// расстояние до плоскости (может быть отрицательным — это ок)
 		dist = DotProduct(backEnd.viewParms.or.origin, surf->cullinfo.plane.normal) - surf->cullinfo.plane.dist;
 		if(dist < 0) dist = -dist;
 	} else {
-		return false;  // нечего мерить
+		return false;
 	}
 
 	return dist > fogEnd;
