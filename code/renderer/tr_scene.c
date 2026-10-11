@@ -251,20 +251,6 @@ void RE_AddDynamicLightToScene(const vec3_t org, float radius, float intensity, 
 	} else {
 		dl->dlshader = NULL;
 	}
-
-	if(r_greyscale->integer) {
-		float scale;
-
-		scale = LUMA(dl->color[0], dl->color[1], dl->color[2]);
-		dl->color[0] = dl->color[1] = dl->color[2] = scale;
-	} else if(r_greyscale->value) {
-		float scale;
-
-		scale = LUMA(dl->color[0], dl->color[1], dl->color[2]);
-		dl->color[0] = LERP(dl->color[0], scale, r_greyscale->value);
-		dl->color[1] = LERP(dl->color[1], scale, r_greyscale->value);
-		dl->color[2] = LERP(dl->color[2], scale, r_greyscale->value);
-	}
 }
 
 void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_FLARE_DLIGHT, hShader); }
@@ -320,7 +306,7 @@ void RE_BeginScene(const refdef_t* fd) {
 	tr.refdef.sunAmbCol[3] = 1.0f;
 
 	VectorCopy(tr.sunDirection, tr.refdef.sunDir);
-	if((tr.refdef.rdflags & RDF_NOWORLDMODEL) || !(r_depthPrepass->value)) {
+	if(tr.refdef.rdflags & RDF_NOWORLDMODEL) {
 		VectorSet(tr.refdef.sunCol, 0, 0, 0);
 		VectorSet(tr.refdef.sunAmbCol, 0, 0, 0);
 	} else {
@@ -452,23 +438,25 @@ void RE_RenderScene(const refdef_t* fd) {
 
 	// playing with even more shadows
 	if(glRefConfig.framebufferObject && r_sunlightMode->integer && !(fd->rdflags & RDF_NOWORLDMODEL) && (r_forceSun->integer || tr.sunShadows)) {
-		if(r_shadowCascadeZFar->integer != 0) {
-			R_RenderSunShadowMaps(fd, 0);
-			R_RenderSunShadowMaps(fd, 1);
-			R_RenderSunShadowMaps(fd, 2);
-		} else {
-			Mat4Zero(tr.refdef.sunShadowMvp[0]);
-			Mat4Zero(tr.refdef.sunShadowMvp[1]);
-			Mat4Zero(tr.refdef.sunShadowMvp[2]);
-		}
+		if((tr.frameCount & 1) == 0) {
+			if(r_shadowCascadeZFar->integer != 0) {
+				R_RenderSunShadowMaps(fd, 0);
+				R_RenderSunShadowMaps(fd, 1);
+				R_RenderSunShadowMaps(fd, 2);
+			} else {
+				Mat4Zero(tr.refdef.sunShadowMvp[0]);
+				Mat4Zero(tr.refdef.sunShadowMvp[1]);
+				Mat4Zero(tr.refdef.sunShadowMvp[2]);
+			}
 
-		// only rerender last cascade if sun has changed position
-		if(r_forceSun->integer == 2 || !VectorCompare(tr.refdef.sunDir, tr.lastCascadeSunDirection)) {
-			VectorCopy(tr.refdef.sunDir, tr.lastCascadeSunDirection);
-			R_RenderSunShadowMaps(fd, 3);
-			Mat4Copy(tr.refdef.sunShadowMvp[3], tr.lastCascadeSunMvp);
-		} else {
-			Mat4Copy(tr.lastCascadeSunMvp, tr.refdef.sunShadowMvp[3]);
+			// only rerender last cascade if sun has changed position
+			if(r_forceSun->integer == 2 || !VectorCompare(tr.refdef.sunDir, tr.lastCascadeSunDirection)) {
+				VectorCopy(tr.refdef.sunDir, tr.lastCascadeSunDirection);
+				R_RenderSunShadowMaps(fd, 3);
+				Mat4Copy(tr.refdef.sunShadowMvp[3], tr.lastCascadeSunMvp);
+			} else {
+				Mat4Copy(tr.lastCascadeSunMvp, tr.refdef.sunShadowMvp[3]);
+			}
 		}
 	}
 
@@ -502,7 +490,7 @@ void RE_RenderScene(const refdef_t* fd) {
 
 	VectorCopy(fd->vieworg, parms.pvsOrigin);
 
-	if(!(fd->rdflags & RDF_NOWORLDMODEL) && r_depthPrepass->value && ((r_forceSun->integer) || tr.sunShadows)) {
+	if(!(fd->rdflags & RDF_NOWORLDMODEL) && (r_forceSun->integer || tr.sunShadows)) {
 		parms.flags = VPF_USESUNLIGHT;
 	}
 

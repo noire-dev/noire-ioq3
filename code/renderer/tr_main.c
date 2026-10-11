@@ -27,25 +27,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 trGlobals_t tr;
 
-static float s_flipMatrix[16] = {
-    // convert from our coordinate system (looking down X)
-    // to OpenGL's coordinate system (looking down -Z)
-    0,
-    0,
-    -1,
-    0,
-    -1,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1};
+static float s_flipMatrix[16] = {// convert from our coordinate system (looking down X)
+                                 // to OpenGL's coordinate system (looking down -Z)
+                                 0,
+                                 0,
+                                 -1,
+                                 0,
+                                 -1,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 1,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 1};
 
 refimport_t ri;
 
@@ -2119,12 +2118,6 @@ void R_RenderCubemapSide(int cubemapSide, bool subscene) {
 	VectorCopy(refdef.viewaxis[2], parms.or.axis[2]);
 
 	VectorCopy(refdef.vieworg, parms.pvsOrigin);
-
-	// FIXME: sun shadows aren't rendered correctly in cubemaps
-	// fix involves changing r_FBufScale to fit smaller cubemap image size, or rendering cubemap to framebuffer first
-	// if(r_depthPrepass->value && ((r_forceSun->integer) || tr.sunShadows)) {
-	//	parms.flags = VPF_USESUNLIGHT;
-	//}
 
 	parms.targetFbo = tr.renderCubeFbo;
 	parms.targetFboLayer = cubemapSide;

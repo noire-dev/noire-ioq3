@@ -1638,20 +1638,6 @@ static bool ParseShader(char** text) {
 				return false;
 			}
 
-			if(r_greyscale->integer) {
-				float luminance;
-
-				luminance = LUMA(shader.fogParms.color[0], shader.fogParms.color[1], shader.fogParms.color[2]);
-				VectorSet(shader.fogParms.color, luminance, luminance, luminance);
-			} else if(r_greyscale->value) {
-				float luminance;
-
-				luminance = LUMA(shader.fogParms.color[0], shader.fogParms.color[1], shader.fogParms.color[2]);
-				shader.fogParms.color[0] = LERP(shader.fogParms.color[0], luminance, r_greyscale->value);
-				shader.fogParms.color[1] = LERP(shader.fogParms.color[1], luminance, r_greyscale->value);
-				shader.fogParms.color[2] = LERP(shader.fogParms.color[2], luminance, r_greyscale->value);
-			}
-
 			token = COM_ParseExt(text, false);
 			if(!token[0]) {
 				ri.Printf(PRINT_WARNING, "WARNING: missing parm for 'fogParms' keyword in shader '%s'\n", shader.name);
@@ -2377,9 +2363,7 @@ static void FixFatLightmapTexCoords(void) {
 	int size;
 	int i;
 
-	if(!r_mergeLightmaps->integer || tr.fatLightmapCols <= 0) {
-		return;
-	}
+	if(tr.fatLightmapCols <= 0) return;
 
 	if(shader.lightmapIndex < 0) {
 		// no internal lightmap, texcoords were not modified
@@ -2416,7 +2400,7 @@ static void FixFatLightmapTexCoords(void) {
 			// this is done last so other tcMods are applied first in the 0.0 to 1.0 space
 			if(pStage->bundle[0].tcGen == TCGEN_ENVIRONMENT_MAPPED) {
 				if(pStage->bundle[0].numTexMods == TR_MAX_TEXMODS) {
-					ri.Printf(PRINT_DEVELOPER, "WARNING: too many tcmods to fix lightmap texcoords for r_mergeLightmaps in shader '%s'", shader.name);
+					ri.Printf(PRINT_DEVELOPER, "WARNING: too many tcmods to fix lightmap texcoords for mergeLightmaps in shader '%s'", shader.name);
 				} else {
 					tmi = &pStage->bundle[0].texMods[pStage->bundle[0].numTexMods];
 					pStage->bundle[0].numTexMods++;
@@ -2436,7 +2420,7 @@ static void FixFatLightmapTexCoords(void) {
 		// add a tcMod transform for external lightmaps to convert back to the original texcoords
 		else if(pStage->bundle[0].tcGen == TCGEN_LIGHTMAP) {
 			if(pStage->bundle[0].numTexMods == TR_MAX_TEXMODS) {
-				ri.Printf(PRINT_DEVELOPER, "WARNING: too many tcmods to fix lightmap texcoords for r_mergeLightmaps in shader '%s'", shader.name);
+				ri.Printf(PRINT_DEVELOPER, "WARNING: too many tcmods to fix lightmap texcoords for mergeLightmaps in shader '%s'", shader.name);
 			} else {
 				size = pStage->bundle[0].numTexMods * sizeof(texModInfo_t);
 

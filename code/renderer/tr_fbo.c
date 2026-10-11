@@ -267,13 +267,6 @@ void FBO_Init(void) {
 		R_CheckFBO(tr.screenScratchFbo);
 	}
 
-	if(tr.sunRaysImage) {
-		tr.sunRaysFbo = FBO_Create("_sunRays", tr.renderDepthImage->width, tr.renderDepthImage->height);
-		FBO_AttachImage(tr.sunRaysFbo, tr.sunRaysImage, GL_COLOR_ATTACHMENT0, 0);
-		FBO_AttachImage(tr.sunRaysFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT, 0);
-		R_CheckFBO(tr.sunRaysFbo);
-	}
-
 	if(tr.shadowCubemaps[0]) {
 		tr.dlightShadowFbo = FBO_Create("_dlightShadow", DLIGHT_SHADOW_SIZE, DLIGHT_SHADOW_SIZE);
 		FBO_CreateBuffer(tr.dlightShadowFbo, GL_RGBA8, 0, 0);
@@ -323,18 +316,6 @@ void FBO_Init(void) {
 			FBO_AttachImage(tr.quarterFbo[i], tr.quarterImage[i], GL_COLOR_ATTACHMENT0, 0);
 			R_CheckFBO(tr.quarterFbo[i]);
 		}
-	}
-
-	if(tr.hdrDepthImage) {
-		tr.hdrDepthFbo = FBO_Create("_hdrDepth", tr.hdrDepthImage->width, tr.hdrDepthImage->height);
-		FBO_AttachImage(tr.hdrDepthFbo, tr.hdrDepthImage, GL_COLOR_ATTACHMENT0, 0);
-		R_CheckFBO(tr.hdrDepthFbo);
-	}
-
-	if(tr.screenSsaoImage) {
-		tr.screenSsaoFbo = FBO_Create("_screenssao", tr.screenSsaoImage->width, tr.screenSsaoImage->height);
-		FBO_AttachImage(tr.screenSsaoFbo, tr.screenSsaoImage, GL_COLOR_ATTACHMENT0, 0);
-		R_CheckFBO(tr.screenSsaoFbo);
 	}
 
 	if(tr.renderCubeImage) {

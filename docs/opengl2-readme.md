@@ -84,12 +84,6 @@ Cvars for simple rendering features:
                                      1-16 - Some.
                                      17+  - Too much!
 
-*  `r_ssao`                         - Enable screen-space ambient occlusion.
-                                   Currently eats framerate and has some
-                                   visible artifacts.
-                                     0 - No. (default)
-                                     1 - Yes.
-
 Cvars for HDR and tonemapping:
 
  * `r_hdr`                          - Do scene rendering in a framebuffer with
@@ -319,19 +313,6 @@ Cvars for the sunlight and cascaded shadow maps:
                                             2048.
 
 Cvars that you probably don't care about or shouldn't mess with:
-
-*  `r_depthPrepass`                 - Do a depth-only pass before rendering.
-                                   Speeds up rendering in cases where advanced
-                                   features are used.  Required for
-                                   r_sunShadows.
-                                     0 - No.
-                                     1 - Yes. (default)
-
-*  `r_mergeLightmaps`               - Merge the small (128x128) lightmaps into 
-                                   2 or fewer giant (4096x4096) lightmaps.
-                                   Easy speedup.
-                                     0 - Don't.
-                                     1 - Do. (default)
 
 *  `r_shadowCascadeZNear`           - Near plane for shadow cascade frustums.
                                      4 - Default.

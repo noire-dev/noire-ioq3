@@ -44,14 +44,10 @@ extern const char* fallbackShader_shadowfill_vp;
 extern const char* fallbackShader_shadowfill_fp;
 extern const char* fallbackShader_shadowmask_vp;
 extern const char* fallbackShader_shadowmask_fp;
-extern const char* fallbackShader_ssao_vp;
-extern const char* fallbackShader_ssao_fp;
 extern const char* fallbackShader_texturecolor_vp;
 extern const char* fallbackShader_texturecolor_fp;
 extern const char* fallbackShader_tonemap_vp;
 extern const char* fallbackShader_tonemap_fp;
-extern const char* fallbackShader_greyscale_vp;
-extern const char* fallbackShader_greyscale_fp;
 
 typedef struct uniformInfo_s {
 	char* name;
@@ -1226,16 +1222,6 @@ void GLSL_InitGPUShaders(void) {
 		numEtcShaders++;
 	}
 
-	if(!GLSL_InitGPUShader(&tr.greyscaleShader, "greyscale", attribs, true, extradefines, true, fallbackShader_greyscale_vp, fallbackShader_greyscale_fp)) {
-		ri.Error(ERR_FATAL, "Unable to load greyscale shader");
-	}
-
-	GLSL_InitUniforms(&tr.greyscaleShader);
-	GLSL_SetUniformInt(&tr.greyscaleShader, UNIFORM_TEXTUREMAP, TB_DIFFUSEMAP);
-	GLSL_FinishGPUShader(&tr.greyscaleShader);
-
-	numEtcShaders++;
-
 	// GLSL 1.10+ or GL_OES_standard_derivatives extension are required for dFdx() and dFdy() GLSL functions
 	if(glRefConfig.glslMajorVersion > 1 || (glRefConfig.glslMajorVersion == 1 && glRefConfig.glslMinorVersion >= 10) || glRefConfig.standardDerivatives) {
 		attribs = ATTR_POSITION | ATTR_TEXCOORD;
@@ -1244,18 +1230,6 @@ void GLSL_InitGPUShaders(void) {
 		if(qglesMajorVersion < 3 && glRefConfig.standardDerivatives) {
 			Q_strcat(extradefines, 1024, "#extension GL_OES_standard_derivatives : enable\n");
 		}
-
-		if(!GLSL_InitGPUShader(&tr.ssaoShader, "ssao", attribs, true, extradefines, true, fallbackShader_ssao_vp, fallbackShader_ssao_fp)) {
-			ri.Error(ERR_FATAL, "Could not load ssao shader!");
-		}
-
-		GLSL_InitUniforms(&tr.ssaoShader);
-
-		GLSL_SetUniformInt(&tr.ssaoShader, UNIFORM_SCREENDEPTHMAP, TB_COLORMAP);
-
-		GLSL_FinishGPUShader(&tr.ssaoShader);
-
-		numEtcShaders++;
 
 		for(i = 0; i < 4; i++) {
 			attribs = ATTR_POSITION | ATTR_TEXCOORD;
@@ -1338,7 +1312,6 @@ void GLSL_ShutdownGPUShaders(void) {
 	for(i = 0; i < 2; i++) GLSL_DeleteGPUShader(&tr.calclevels4xShader[i]);
 
 	GLSL_DeleteGPUShader(&tr.shadowmaskShader);
-	GLSL_DeleteGPUShader(&tr.ssaoShader);
 
 	for(i = 0; i < 4; i++) GLSL_DeleteGPUShader(&tr.depthBlurShader[i]);
 }

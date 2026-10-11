@@ -26,25 +26,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 backEndData_t* backEndData;
 backEndState_t backEnd;
 
-static float s_flipMatrix[16] = {
-    // convert from our coordinate system (looking down X)
-    // to OpenGL's coordinate system (looking down -Z)
-    0,
-    0,
-    -1,
-    0,
-    -1,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1};
+static float s_flipMatrix[16] = {// convert from our coordinate system (looking down X)
+                                 // to OpenGL's coordinate system (looking down -Z)
+                                 0,
+                                 0,
+                                 -1,
+                                 0,
+                                 -1,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 1,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 1};
 
 /*
 ** GL_BindToTMU
@@ -303,9 +302,6 @@ void RB_BeginDrawingView(void) {
 
 	// we will only draw a sun if there was sky rendered in this view
 	backEnd.skyRenderedThisView = false;
-
-	// cache the clamped greyscale value
-	backEnd.greyscale = Com_Clamp(0.0f, 1.0f, r_greyscale->value);
 
 	// clip to the plane of the portal
 	if(backEnd.viewParms.isPortal) {
@@ -887,102 +883,6 @@ const void* RB_DrawSurfs(const void* data) {
 				}
 
 				RB_InstantQuad2(quadVerts, texCoords);  //, color, shaderProgram, invTexRes);
-
-				if(r_shadowBlur->integer) {
-					viewInfo[2] = 1.0f / (float)(tr.screenScratchFbo->width);
-					viewInfo[3] = 1.0f / (float)(tr.screenScratchFbo->height);
-
-					FBO_Bind(tr.screenScratchFbo);
-
-					GLSL_BindProgram(&tr.depthBlurShader[0]);
-
-					GL_BindToTMU(tr.screenShadowImage, TB_COLORMAP);
-					GL_BindToTMU(tr.hdrDepthImage, TB_LIGHTMAP);
-
-					GLSL_SetUniformVec4(&tr.depthBlurShader[0], UNIFORM_VIEWINFO, viewInfo);
-
-					RB_InstantQuad2(quadVerts, texCoords);
-
-					FBO_Bind(tr.screenShadowFbo);
-
-					GLSL_BindProgram(&tr.depthBlurShader[1]);
-
-					GL_BindToTMU(tr.screenScratchImage, TB_COLORMAP);
-					GL_BindToTMU(tr.hdrDepthImage, TB_LIGHTMAP);
-
-					GLSL_SetUniformVec4(&tr.depthBlurShader[1], UNIFORM_VIEWINFO, viewInfo);
-
-					RB_InstantQuad2(quadVerts, texCoords);
-				}
-			}
-
-			if(r_ssao->integer) {
-				vec4_t quadVerts[4];
-				vec2_t texCoords[4];
-
-				viewInfo[2] = 1.0f / ((float)(tr.quarterImage[0]->width) * tan(backEnd.viewParms.fovX * M_PI / 360.0f) * 2.0f);
-				viewInfo[3] = 1.0f / ((float)(tr.quarterImage[0]->height) * tan(backEnd.viewParms.fovY * M_PI / 360.0f) * 2.0f);
-				viewInfo[3] *= (float)backEnd.viewParms.viewportHeight / (float)backEnd.viewParms.viewportWidth;
-
-				FBO_Bind(tr.quarterFbo[0]);
-
-				qglViewport(0, 0, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height);
-				qglScissor(0, 0, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height);
-
-				VectorSet4(quadVerts[0], -1, 1, 0, 1);
-				VectorSet4(quadVerts[1], 1, 1, 0, 1);
-				VectorSet4(quadVerts[2], 1, -1, 0, 1);
-				VectorSet4(quadVerts[3], -1, -1, 0, 1);
-
-				texCoords[0][0] = 0;
-				texCoords[0][1] = 1;
-				texCoords[1][0] = 1;
-				texCoords[1][1] = 1;
-				texCoords[2][0] = 1;
-				texCoords[2][1] = 0;
-				texCoords[3][0] = 0;
-				texCoords[3][1] = 0;
-
-				GL_State(GLS_DEPTHTEST_DISABLE);
-
-				GLSL_BindProgram(&tr.ssaoShader);
-
-				GL_BindToTMU(tr.hdrDepthImage, TB_COLORMAP);
-
-				GLSL_SetUniformVec4(&tr.ssaoShader, UNIFORM_VIEWINFO, viewInfo);
-
-				RB_InstantQuad2(quadVerts, texCoords);  //, color, shaderProgram, invTexRes);
-
-				viewInfo[2] = 1.0f / (float)(tr.quarterImage[0]->width);
-				viewInfo[3] = 1.0f / (float)(tr.quarterImage[0]->height);
-
-				FBO_Bind(tr.quarterFbo[1]);
-
-				qglViewport(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
-				qglScissor(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
-
-				GLSL_BindProgram(&tr.depthBlurShader[0]);
-
-				GL_BindToTMU(tr.quarterImage[0], TB_COLORMAP);
-				GL_BindToTMU(tr.hdrDepthImage, TB_LIGHTMAP);
-
-				GLSL_SetUniformVec4(&tr.depthBlurShader[0], UNIFORM_VIEWINFO, viewInfo);
-
-				RB_InstantQuad2(quadVerts, texCoords);  //, color, shaderProgram, invTexRes);
-
-				FBO_Bind(tr.screenSsaoFbo);
-
-				qglViewport(0, 0, tr.screenSsaoFbo->width, tr.screenSsaoFbo->height);
-				qglScissor(0, 0, tr.screenSsaoFbo->width, tr.screenSsaoFbo->height);
-
-				GLSL_BindProgram(&tr.depthBlurShader[1]);
-
-				GL_BindToTMU(tr.quarterImage[1], TB_COLORMAP);
-				GL_BindToTMU(tr.hdrDepthImage, TB_LIGHTMAP);
-
-				GLSL_SetUniformVec4(&tr.depthBlurShader[1], UNIFORM_VIEWINFO, viewInfo);
-
-				RB_InstantQuad2(quadVerts, texCoords);  //, color, shaderProgram, invTexRes);
 			}
 		}
 
@@ -1004,27 +904,6 @@ const void* RB_DrawSurfs(const void* data) {
 
 		if(r_drawSun->integer) {
 			RB_DrawSun(0.1f, tr.sunShader);
-		}
-
-		if(glRefConfig.framebufferObject && r_drawSunRays->integer) {
-			FBO_t* oldFbo = glState.currentFBO;
-			FBO_Bind(tr.sunRaysFbo);
-
-			qglClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			qglClear(GL_COLOR_BUFFER_BIT);
-
-			if(glRefConfig.occlusionQuery) {
-				tr.sunFlareQueryActive[tr.sunFlareQueryIndex] = true;
-				qglBeginQuery(glRefConfig.occlusionQueryTarget, tr.sunFlareQuery[tr.sunFlareQueryIndex]);
-			}
-
-			RB_DrawSun(0.3f, tr.sunFlareShader);
-
-			if(glRefConfig.occlusionQuery) {
-				qglEndQuery(glRefConfig.occlusionQueryTarget);
-			}
-
-			FBO_Bind(oldFbo);
 		}
 
 		// add light flares on lights that aren't obscured
@@ -1238,15 +1117,6 @@ const void* RB_PostProcess(const void* data) {
 	dstBox[2] = backEnd.viewParms.viewportWidth;
 	dstBox[3] = backEnd.viewParms.viewportHeight;
 
-	if(r_ssao->integer) {
-		srcBox[0] = backEnd.viewParms.viewportX * tr.screenSsaoImage->width / (float)glConfig.vidWidth;
-		srcBox[1] = backEnd.viewParms.viewportY * tr.screenSsaoImage->height / (float)glConfig.vidHeight;
-		srcBox[2] = backEnd.viewParms.viewportWidth * tr.screenSsaoImage->width / (float)glConfig.vidWidth;
-		srcBox[3] = backEnd.viewParms.viewportHeight * tr.screenSsaoImage->height / (float)glConfig.vidHeight;
-
-		FBO_Blit(tr.screenSsaoFbo, srcBox, NULL, srcFbo, dstBox, NULL, NULL, GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO);
-	}
-
 	srcBox[0] = backEnd.viewParms.viewportX;
 	srcBox[1] = backEnd.viewParms.viewportY;
 	srcBox[2] = backEnd.viewParms.viewportWidth;
@@ -1270,8 +1140,6 @@ const void* RB_PostProcess(const void* data) {
 		}
 	}
 
-	if(r_drawSunRays->integer) RB_SunRays(srcFbo, srcBox, srcFbo, srcBox);
-
 	RB_BokehBlur(srcFbo, srcBox, srcFbo, srcBox, backEnd.refdef.blurFactor);
 
 	if(srcFbo != dstFbo) FBO_FastBlit(srcFbo, srcBox, dstFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -1294,12 +1162,6 @@ const void* RB_PostProcess(const void* data) {
 		FBO_BlitFromTexture(tr.renderDepthImage, NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
 		VectorSet4(dstBox2, 512, glConfig.vidHeight - 256, 256, 256);
 		FBO_BlitFromTexture(tr.screenShadowImage, NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
-	}
-
-	if(0) {
-		ivec4_t dstBox2;
-		VectorSet4(dstBox2, 256, glConfig.vidHeight - 256, 256, 256);
-		FBO_BlitFromTexture(tr.sunRaysImage, NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
 	}
 
 	return (const void*)(cmd + 1);

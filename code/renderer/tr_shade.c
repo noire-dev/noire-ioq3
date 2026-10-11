@@ -455,23 +455,6 @@ static void ComputeShaderColors(shaderStage_t* pStage, vec4_t baseColor, vec4_t 
 			vertColor[3] = 0.0f;
 			break;
 	}
-
-	if(pStage->rgbGen == CGEN_CONST || pStage->rgbGen == CGEN_FOG || pStage->rgbGen == CGEN_ENTITY || pStage->rgbGen == CGEN_ONE_MINUS_ENTITY || pStage->rgbGen == CGEN_COLOR_WAVEFORM) {
-		// if in greyscale rendering mode turn all color values into greyscale.
-		if(r_greyscale->integer) {
-			float scale;
-
-			scale = LUMA(baseColor[0], baseColor[1], baseColor[2]);
-			baseColor[0] = baseColor[1] = baseColor[2] = scale;
-		} else if(r_greyscale->value) {
-			float scale;
-
-			scale = LUMA(baseColor[0], baseColor[1], baseColor[2]);
-			baseColor[0] = LERP(baseColor[0], scale, r_greyscale->value);
-			baseColor[1] = LERP(baseColor[1], scale, r_greyscale->value);
-			baseColor[2] = LERP(baseColor[2], scale, r_greyscale->value);
-		}
-	}
 }
 
 static void ComputeFogValues(vec4_t fogDistanceVector, vec4_t fogDepthVector, float* eyeT) {
@@ -1515,30 +1498,6 @@ void RB_StageIteratorGeneric(void) {
 	vertexAttribs = RB_CalcShaderVertexAttribs(input);
 
 	if(tess.useInternalVao) {
-		if(vertexAttribs & ATTR_COLOR) {
-			// if in greyscale rendering mode turn all color values into greyscale.
-			if(r_greyscale->integer) {
-				uint16_t* color = tess.color[0];
-				int i;
-				int scale;
-				for(i = 0; i < tess.numVertexes; i++, color += 4) {
-					scale = LUMA(color[0], color[1], color[2]);
-					color[0] = color[1] = color[2] = scale;
-				}
-			} else if(r_greyscale->value) {
-				uint16_t* color = tess.color[0];
-				int i;
-				float scale;
-
-				for(i = 0; i < tess.numVertexes; i++, color += 4) {
-					scale = LUMA(color[0], color[1], color[2]);
-					color[0] = LERP(color[0], scale, r_greyscale->value);
-					color[1] = LERP(color[1], scale, r_greyscale->value);
-					color[2] = LERP(color[2], scale, r_greyscale->value);
-				}
-			}
-		}
-
 		RB_UpdateTessVao(vertexAttribs);
 	} else {
 		backEnd.pc.c_staticVaoDraws++;

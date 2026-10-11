@@ -1385,7 +1385,6 @@ typedef struct {
 	image_t* shadowCubemaps[MAX_DLIGHTS];
 
 	image_t* renderImage;
-	image_t* sunRaysImage;
 	image_t* renderDepthImage;
 	image_t* screenScratchImage;
 	image_t* textureScratchImage[2];
@@ -1395,8 +1394,6 @@ typedef struct {
 	image_t* fixedLevelsImage;
 	image_t* sunShadowDepthImage[4];
 	image_t* screenShadowImage;
-	image_t* screenSsaoImage;
-	image_t* hdrDepthImage;
 	image_t* renderCubeImage;
 
 	image_t* textureDepthImage;
@@ -1413,7 +1410,6 @@ typedef struct {
 	FBO_t* targetLevelsFbo;
 	FBO_t* sunShadowFbo[4];
 	FBO_t* screenShadowFbo;
-	FBO_t* screenSsaoFbo;
 	FBO_t* hdrDepthFbo;
 	FBO_t* renderCubeFbo;
 
@@ -1453,7 +1449,6 @@ typedef struct {
 	shaderProgram_t tonemapShader;
 	shaderProgram_t calclevels4xShader[2];
 	shaderProgram_t shadowmaskShader;
-	shaderProgram_t ssaoShader;
 	shaderProgram_t depthBlurShader[4];
 	shaderProgram_t testcubeShader;
 	shaderProgram_t greyscaleShader;
@@ -1623,8 +1618,6 @@ extern cvar_t* r_forceAutoExposureMax;
 
 extern cvar_t* r_cameraExposure;
 
-extern cvar_t* r_depthPrepass;
-extern cvar_t* r_ssao;
 extern cvar_t* r_dlightMode;
 
 extern cvar_t* r_normalMapping;
@@ -1644,7 +1637,6 @@ extern cvar_t* r_baseParallax;
 extern cvar_t* r_baseSpecular;
 extern cvar_t* r_baseGloss;
 extern cvar_t* r_glossType;
-extern cvar_t* r_mergeLightmaps;
 extern cvar_t* r_imageUpsample;
 extern cvar_t* r_imageUpsampleMaxSize;
 extern cvar_t* r_imageUpsampleType;
@@ -1653,10 +1645,8 @@ extern cvar_t* r_forceSun;
 extern cvar_t* r_forceSunLightScale;
 extern cvar_t* r_forceSunAmbientScale;
 extern cvar_t* r_sunlightMode;
-extern cvar_t* r_drawSunRays;
 extern cvar_t* r_sunShadows;
 extern cvar_t* r_shadowFilter;
-extern cvar_t* r_shadowBlur;
 extern cvar_t* r_shadowMapSize;
 extern cvar_t* r_shadowCascadeZNear;
 extern cvar_t* r_shadowCascadeZFar;
@@ -1671,8 +1661,6 @@ extern cvar_t* r_dynamicFogColorB;
 extern cvar_t* r_dynamicFogStart;
 extern cvar_t* r_dynamicFogEnd;
 
-extern cvar_t* r_greyscale;
-
 extern cvar_t* r_ignoreGLErrors;
 
 extern cvar_t* r_overBrightBits;
@@ -1685,10 +1673,6 @@ extern cvar_t* r_showImages;
 extern cvar_t* r_debugSort;
 
 extern cvar_t* r_printShaders;
-
-extern cvar_t* r_marksOnTriangleMeshes;
-
-extern cvar_t* r_vaoCache;
 
 //====================================================================
 

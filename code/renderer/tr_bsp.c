@@ -231,23 +231,19 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 	if(tr.worldDeluxeMapping) numLightmaps >>= 1;
 
 	// Use fat lightmaps of an appropriate size.
-	if(r_mergeLightmaps->integer) {
-		int maxLightmapsPerAxis = glConfig.maxTextureSize / tr.lightmapSize;
-		int lightmapCols = 4, lightmapRows = 4;
+	int maxLightmapsPerAxis = glConfig.maxTextureSize / tr.lightmapSize;
+	int lightmapCols = 4, lightmapRows = 4;
 
-		// Increase width at first, then height.
-		while(lightmapCols * lightmapRows < numLightmaps && lightmapCols != maxLightmapsPerAxis) lightmapCols <<= 1;
+	// Increase width at first, then height.
+	while(lightmapCols * lightmapRows < numLightmaps && lightmapCols != maxLightmapsPerAxis) lightmapCols <<= 1;
 
-		while(lightmapCols * lightmapRows < numLightmaps && lightmapRows != maxLightmapsPerAxis) lightmapRows <<= 1;
+	while(lightmapCols * lightmapRows < numLightmaps && lightmapRows != maxLightmapsPerAxis) lightmapRows <<= 1;
 
-		tr.fatLightmapCols = lightmapCols;
-		tr.fatLightmapRows = lightmapRows;
-		numLightmapsPerPage = lightmapCols * lightmapRows;
+	tr.fatLightmapCols = lightmapCols;
+	tr.fatLightmapRows = lightmapRows;
+	numLightmapsPerPage = lightmapCols * lightmapRows;
 
-		tr.numLightmaps = (numLightmaps + (numLightmapsPerPage - 1)) / numLightmapsPerPage;
-	} else {
-		tr.numLightmaps = numLightmaps;
-	}
+	tr.numLightmaps = (numLightmaps + (numLightmapsPerPage - 1)) / numLightmapsPerPage;
 
 	tr.lightmaps = ri.Hunk_Alloc(tr.numLightmaps * sizeof(image_t*), h_low);
 
@@ -262,15 +258,13 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 		if(ri.FS_FileExists(filename)) textureInternalFormat = GL_RGBA16;
 	}
 
-	if(r_mergeLightmaps->integer) {
-		int width = tr.fatLightmapCols * tr.lightmapSize;
-		int height = tr.fatLightmapRows * tr.lightmapSize;
+	int width = tr.fatLightmapCols * tr.lightmapSize;
+	int height = tr.fatLightmapRows * tr.lightmapSize;
 
-		for(i = 0; i < tr.numLightmaps; i++) {
-			tr.lightmaps[i] = R_CreateImage(va("_fatlightmap%d", i), NULL, width, height, IMGTYPE_COLORALPHA, imgFlags, textureInternalFormat);
+	for(i = 0; i < tr.numLightmaps; i++) {
+		tr.lightmaps[i] = R_CreateImage(va("_fatlightmap%d", i), NULL, width, height, IMGTYPE_COLORALPHA, imgFlags, textureInternalFormat);
 
-			if(tr.worldDeluxeMapping) tr.deluxemaps[i] = R_CreateImage(va("_fatdeluxemap%d", i), NULL, width, height, IMGTYPE_DELUXE, imgFlags, 0);
-		}
+		if(tr.worldDeluxeMapping) tr.deluxemaps[i] = R_CreateImage(va("_fatdeluxemap%d", i), NULL, width, height, IMGTYPE_DELUXE, imgFlags, 0);
 	}
 
 	for(i = 0; i < numLightmaps; i++) {
@@ -278,13 +272,11 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 		int lightmapnum = i;
 		// expand the 24 bit on-disk to 32 bit
 
-		if(r_mergeLightmaps->integer) {
-			int lightmaponpage = i % numLightmapsPerPage;
-			xoff = (lightmaponpage % tr.fatLightmapCols) * tr.lightmapSize;
-			yoff = (lightmaponpage / tr.fatLightmapCols) * tr.lightmapSize;
+		int lightmaponpage = i % numLightmapsPerPage;
+		xoff = (lightmaponpage % tr.fatLightmapCols) * tr.lightmapSize;
+		yoff = (lightmaponpage / tr.fatLightmapCols) * tr.lightmapSize;
 
-			lightmapnum /= numLightmapsPerPage;
-		}
+		lightmapnum /= numLightmapsPerPage;
 
 		// if (tr.worldLightmapping)
 		{
@@ -403,10 +395,7 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 				}
 			}
 
-			if(r_mergeLightmaps->integer)
-				R_UpdateSubImage(tr.lightmaps[lightmapnum], image, xoff, yoff, tr.lightmapSize, tr.lightmapSize, textureInternalFormat);
-			else
-				tr.lightmaps[i] = R_CreateImage(va("*lightmap%d", i), image, tr.lightmapSize, tr.lightmapSize, IMGTYPE_COLORALPHA, imgFlags, textureInternalFormat);
+			R_UpdateSubImage(tr.lightmaps[lightmapnum], image, xoff, yoff, tr.lightmapSize, tr.lightmapSize, textureInternalFormat);
 
 			if(hdrLightmap) ri.FS_FreeFile(hdrLightmap);
 		}
@@ -427,10 +416,7 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 				image[j * 4 + 3] = 255;
 			}
 
-			if(r_mergeLightmaps->integer)
-				R_UpdateSubImage(tr.deluxemaps[lightmapnum], image, xoff, yoff, tr.lightmapSize, tr.lightmapSize, GL_RGBA8);
-			else
-				tr.deluxemaps[i] = R_CreateImage(va("*deluxemap%d", i), image, tr.lightmapSize, tr.lightmapSize, IMGTYPE_DELUXE, imgFlags, 0);
+			R_UpdateSubImage(tr.deluxemaps[lightmapnum], image, xoff, yoff, tr.lightmapSize, tr.lightmapSize, GL_RGBA8);
 		}
 	}
 

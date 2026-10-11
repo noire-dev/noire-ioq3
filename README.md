@@ -296,12 +296,6 @@ the above locations, if desired.
   r_ext_texture_filter_anisotropic  - anisotropic texture filtering
   r_zProj                           - distance of observer camera to projection
                                       plane in quake3 standard units
-  r_greyscale                       - desaturate textures, useful for anaglyph,
-                                      supports values in the range of 0 to 1
-  r_marksOnTriangleMeshes           - Support impact marks on md3 models, MOD
-                                      developers should increase the mark
-                                      triangle limits in cg_marks.c if they
-                                      intend to use this.
   r_sdlDriver                       - read only, indicates the SDL driver
                                       backend being used
   r_noborder                        - Remove window decoration from window

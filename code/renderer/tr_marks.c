@@ -38,8 +38,7 @@ Out must have space for two more vertexes than in
 #define SIDE_FRONT 0
 #define SIDE_BACK 1
 #define SIDE_ON 2
-static void R_ChopPolyBehindPlane(
-    int numInPoints, vec3_t inPoints[MAX_VERTS_ON_POLY], int* numOutPoints, vec3_t outPoints[MAX_VERTS_ON_POLY], vec3_t normal, vec_t dist, vec_t epsilon) {
+static void R_ChopPolyBehindPlane(int numInPoints, vec3_t inPoints[MAX_VERTS_ON_POLY], int* numOutPoints, vec3_t outPoints[MAX_VERTS_ON_POLY], vec3_t normal, vec_t dist, vec_t epsilon) {
 	float dists[MAX_VERTS_ON_POLY + 4] = {0};
 	int sides[MAX_VERTS_ON_POLY + 4] = {0};
 	int counts[3];
@@ -191,19 +190,7 @@ R_AddMarkFragments
 
 =================
 */
-void R_AddMarkFragments(int numClipPoints,
-                        vec3_t clipPoints[2][MAX_VERTS_ON_POLY],
-                        int numPlanes,
-                        vec3_t* normals,
-                        float* dists,
-                        int maxPoints,
-                        vec3_t pointBuffer,
-                        int maxFragments,
-                        markFragment_t* fragmentBuffer,
-                        int* returnedPoints,
-                        int* returnedFragments,
-                        vec3_t mins,
-                        vec3_t maxs) {
+void R_AddMarkFragments(int numClipPoints, vec3_t clipPoints[2][MAX_VERTS_ON_POLY], int numPlanes, vec3_t* normals, float* dists, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t* fragmentBuffer, int* returnedPoints, int* returnedFragments, vec3_t mins, vec3_t maxs) {
 	int pingPong, i;
 	markFragment_t* mf;
 
@@ -254,8 +241,7 @@ R_MarkFragments
 
 =================
 */
-int R_MarkFragments(
-    int numPoints, const vec3_t* points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t* fragmentBuffer) {
+int R_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t* fragmentBuffer) {
 	int numsurfaces, numPlanes;
 	int i, j, k, m, n;
 	surfaceType_t* surfaces[64];
@@ -369,19 +355,7 @@ int R_MarkFragments(
 					VectorNormalizeFast(normal);
 					if(DotProduct(normal, projectionDir) < -0.1) {
 						// add the fragments of this triangle
-						R_AddMarkFragments(numClipPoints,
-						                   clipPoints,
-						                   numPlanes,
-						                   normals,
-						                   dists,
-						                   maxPoints,
-						                   pointBuffer,
-						                   maxFragments,
-						                   fragmentBuffer,
-						                   &returnedPoints,
-						                   &returnedFragments,
-						                   mins,
-						                   maxs);
+						R_AddMarkFragments(numClipPoints, clipPoints, numPlanes, normals, dists, maxPoints, pointBuffer, maxFragments, fragmentBuffer, &returnedPoints, &returnedFragments, mins, maxs);
 
 						if(returnedFragments == maxFragments) {
 							return returnedFragments;  // not enough space for more fragments
@@ -404,19 +378,7 @@ int R_MarkFragments(
 					VectorNormalizeFast(normal);
 					if(DotProduct(normal, projectionDir) < -0.05) {
 						// add the fragments of this triangle
-						R_AddMarkFragments(numClipPoints,
-						                   clipPoints,
-						                   numPlanes,
-						                   normals,
-						                   dists,
-						                   maxPoints,
-						                   pointBuffer,
-						                   maxFragments,
-						                   fragmentBuffer,
-						                   &returnedPoints,
-						                   &returnedFragments,
-						                   mins,
-						                   maxs);
+						R_AddMarkFragments(numClipPoints, clipPoints, numPlanes, normals, dists, maxPoints, pointBuffer, maxFragments, fragmentBuffer, &returnedPoints, &returnedFragments, mins, maxs);
 
 						if(returnedFragments == maxFragments) {
 							return returnedFragments;  // not enough space for more fragments
@@ -439,24 +401,12 @@ int R_MarkFragments(
 				}
 
 				// add the fragments of this face
-				R_AddMarkFragments(3,
-				                   clipPoints,
-				                   numPlanes,
-				                   normals,
-				                   dists,
-				                   maxPoints,
-				                   pointBuffer,
-				                   maxFragments,
-				                   fragmentBuffer,
-				                   &returnedPoints,
-				                   &returnedFragments,
-				                   mins,
-				                   maxs);
+				R_AddMarkFragments(3, clipPoints, numPlanes, normals, dists, maxPoints, pointBuffer, maxFragments, fragmentBuffer, &returnedPoints, &returnedFragments, mins, maxs);
 				if(returnedFragments == maxFragments) {
 					return returnedFragments;  // not enough space for more fragments
 				}
 			}
-		} else if(*surfaces[i] == SF_TRIANGLES && r_marksOnTriangleMeshes->integer) {
+		} else if(*surfaces[i] == SF_TRIANGLES) {
 			srfBspSurface_t* surf = (srfBspSurface_t*)surfaces[i];
 
 			for(k = 0, tri = surf->indexes; k < surf->numIndexes; k += 3, tri += 3) {
@@ -468,19 +418,7 @@ int R_MarkFragments(
 				}
 
 				// add the fragments of this face
-				R_AddMarkFragments(3,
-				                   clipPoints,
-				                   numPlanes,
-				                   normals,
-				                   dists,
-				                   maxPoints,
-				                   pointBuffer,
-				                   maxFragments,
-				                   fragmentBuffer,
-				                   &returnedPoints,
-				                   &returnedFragments,
-				                   mins,
-				                   maxs);
+				R_AddMarkFragments(3, clipPoints, numPlanes, normals, dists, maxPoints, pointBuffer, maxFragments, fragmentBuffer, &returnedPoints, &returnedFragments, mins, maxs);
 				if(returnedFragments == maxFragments) {
 					return returnedFragments;  // not enough space for more fragments
 				}

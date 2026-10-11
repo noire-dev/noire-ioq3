@@ -375,7 +375,6 @@ static int GLimp_SetMode(int mode, bool fullscreen, bool noborder, bool fixedFun
 	const char* glstring;
 	int perChannelColorBits;
 	int colorBits, depthBits, stencilBits;
-	int samples;
 	int i = 0;
 	SDL_Surface* icon = NULL;
 	Uint32 flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL;
@@ -484,7 +483,6 @@ static int GLimp_SetMode(int mode, bool fullscreen, bool noborder, bool fixedFun
 		depthBits = r_depthbits->value;
 
 	stencilBits = r_stencilbits->value;
-	samples = r_ext_multisample->value;
 
 	numContexts = 0;
 
@@ -611,8 +609,8 @@ static int GLimp_SetMode(int mode, bool fullscreen, bool noborder, bool fixedFun
 		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, testDepthBits);
 		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, testStencilBits);
 
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, samples ? 1 : 0);
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, samples);
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
 
 		SDL_GL_SetAttribute(SDL_GL_STEREO, 0);
 

@@ -376,8 +376,6 @@ static bool RB_SurfaceVaoCached(int numVerts, srfVert_t* verts, int numIndexes, 
 	bool recycleIndexBuffer = false;
 	bool endSurface = false;
 
-	if(!r_vaoCache->integer) return false;
-
 	if(!(!ShaderRequiresCPUDeforms(tess.shader) && !tess.shader->isSky && !tess.shader->isPortal)) return false;
 
 	if(!numIndexes || !numVerts) return false;
