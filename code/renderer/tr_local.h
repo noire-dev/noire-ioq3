@@ -67,7 +67,6 @@ typedef unsigned int vaoCacheGlIndex_t;
 
 typedef struct cubemap_s {
 	vec3_t origin;
-	float parallaxRadius;
 	image_t* image;
 } cubemap_t;
 
@@ -604,7 +603,6 @@ typedef enum {
 	UNIFORM_PRIMARYLIGHTRADIUS,
 
 	UNIFORM_CUBEMAPINFO,
-	UNIFORM_CUBEMAPPARALLAXINFO,
 
 	UNIFORM_ALPHATEST,
 

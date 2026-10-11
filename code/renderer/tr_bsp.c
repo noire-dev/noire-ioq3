@@ -2238,7 +2238,6 @@ void R_CreateBaseCubemap(void) {
 	cubemap_t* cubemap = tr.cubemap;
 
 	VectorClear(cubemap->origin);
-	cubemap->parallaxRadius = 65535.0f;
 }
 
 void R_AssignCubemapsToWorldSurfaces(void) {
