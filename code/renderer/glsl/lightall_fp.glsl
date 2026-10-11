@@ -581,11 +581,8 @@ void main()
 	reflectance = EnvironmentBRDF(roughness, NE, specular.rgb);
 
 	vec3 R = reflect(E, N);
-	vec3 modifiedR = R;
-	modifiedR.z += (abs(u_CubeMapInfo.x - u_CubeMapInfo.y) / (1024+u_CubeMapInfo.w));
-
 	vec3 parallax = u_CubeMapParallaxInfo.xyz + u_CubeMapParallaxInfo.w * viewDir;
-	vec3 cubeLightColor = hitCube(modifiedR * u_CubeMapParallaxInfo.w, parallax, u_CubeMapParallaxInfo.www, ROUGHNESS_MIPS * roughness, u_CubeMap).rgb * u_EnableTextures.w;
+	vec3 cubeLightColor = hitCube(R * u_CubeMapParallaxInfo.w, parallax, u_CubeMapParallaxInfo.www, ROUGHNESS_MIPS * roughness, u_CubeMap).rgb * u_EnableTextures.w;
 
     #if defined(USE_PBR)
 	cubeLightColor *= cubeLightColor;
