@@ -840,9 +840,8 @@ static void ParseFlare(dsurface_t* ds, drawVert_t* verts, msurface_t* surf, int*
 		surf->shader = tr.defaultShader;
 	}
 
-	// flare = ri.Hunk_Alloc( sizeof( *flare ), h_low );
 	flare = (void*)surf->data;
-	flare->surfaceType = SF_FLARE;
+	flare->surfaceType = SF_SKIP;
 
 	surf->data = (surfaceType_t*)flare;
 
@@ -2250,18 +2249,28 @@ void R_AssignCubemapsToWorldSurfaces(void) {
 		msurface_t* surf = &w->surfaces[i];
 
 		surf->useCubemap = false;
+		surf->cubemapBound = 0.0f;
 
 		if(!R_ShaderRequiresCubemap(surf->shader)) continue;
+
+		bool cubemapCorrection = surf->shader->surfaceFlags & SURF_CUBEMAP_CORRECTION;
 
 		if((surf->cullinfo.type & CULLINFO_SPHERE) || (surf->cullinfo.type & CULLINFO_BOX)) {
 			surf->useCubemap = R_CubemapForShader(true);
 
 			if(surf->cullinfo.type & CULLINFO_BOX) {
+				vec3_t size;
+
+				VectorSubtract(surf->cullinfo.bounds[1], surf->cullinfo.bounds[0], size);
+
 				surf->cubemapOrigin[0] = (surf->cullinfo.bounds[0][0] + surf->cullinfo.bounds[1][0]) * 0.5f;
 				surf->cubemapOrigin[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
 				surf->cubemapOrigin[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
+
+				if(cubemapCorrection) surf->cubemapBound = (size[0] + size[1]) * 0.16f;
 			} else if(surf->cullinfo.type & CULLINFO_SPHERE) {
 				VectorCopy(surf->cullinfo.localOrigin, surf->cubemapOrigin);
+				if(cubemapCorrection) surf->cubemapBound = surf->cullinfo.radius * 0.32f;
 			}
 		}
 	}

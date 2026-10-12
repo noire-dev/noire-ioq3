@@ -14,7 +14,6 @@ set(RENDERER_GL2_SOURCES
     ${SOURCE_DIR}/renderer/tr_extramath.c
     ${SOURCE_DIR}/renderer/tr_extensions.c
     ${SOURCE_DIR}/renderer/tr_fbo.c
-    ${SOURCE_DIR}/renderer/tr_flares.c
     ${SOURCE_DIR}/renderer/tr_glsl.c
     ${SOURCE_DIR}/renderer/tr_image.c
     ${SOURCE_DIR}/renderer/tr_init.c

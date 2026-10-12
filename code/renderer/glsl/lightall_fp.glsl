@@ -46,6 +46,7 @@ uniform vec4      u_SpecularScale;
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 #if defined(USE_CUBEMAP)
 uniform vec4      u_CubeMapInfo;
+uniform vec3      u_CubeMapParallaxInfo;
 #endif
 #endif
 
@@ -550,8 +551,10 @@ void main()
 	reflectance = EnvironmentBRDF(roughness, NE, specular.rgb);
 
 	vec3 R = reflect(E, N);
-	vec3 parallax = u_CubeMapInfo.xyz + u_CubeMapInfo.w * viewDir;
-	vec3 cubeLightColor = textureCubeLod(u_CubeMap, R + parallax, ROUGHNESS_MIPS * roughness).rgb * u_EnableTextures.w;
+	vec3 modifiedR = R;
+	modifiedR.z -= (u_CubeMapInfo.y - u_CubeMapInfo.x) / ((u_CubeMapInfo.z + 0.5) + u_CubeMapInfo.w);
+	vec3 parallax = u_CubeMapParallaxInfo.xyz + 1.0f / 65536 * viewDir;
+	vec3 cubeLightColor = textureCubeLod(u_CubeMap, modifiedR + parallax, ROUGHNESS_MIPS * roughness).rgb * u_EnableTextures.w;
 
     #if defined(USE_PBR)
 	cubeLightColor *= cubeLightColor;

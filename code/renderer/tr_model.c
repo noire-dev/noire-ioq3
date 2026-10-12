@@ -726,7 +726,6 @@ void RE_BeginRegistration(glconfig_t* glconfigOut) {
 		tr.visClusters[i] = -2;
 	}
 
-	R_ClearFlares();
 	RE_ClearScene();
 
 	tr.registered = true;

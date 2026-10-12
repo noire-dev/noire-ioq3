@@ -749,7 +749,7 @@ void RB_DrawSun(float scale, shader_t* shader) {
 	// farthest depth range
 	qglDepthRange(1.0, 1.0);
 
-	RB_BeginSurface(shader, 0, false, vec3_origin);
+	RB_BeginSurface(shader, 0, false, vec3_origin, 0.0f);
 
 	RB_AddQuadStamp(origin, vec1, vec2, colorWhite);
 

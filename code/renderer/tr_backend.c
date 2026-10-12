@@ -335,6 +335,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	int dlighted, oldDlighted;
 	bool useCubemap, oldCubemapIndex;
 	vec3_t cubemapOrigin;
+	float cubemapBound;
 	bool depthRange, oldDepthRange, isCrosshair, wasCrosshair;
 	int i;
 	drawSurf_t* drawSurf;
@@ -372,6 +373,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted);
 		useCubemap = drawSurf->useCubemap;
 		VectorCopy(drawSurf->cubemapOrigin, cubemapOrigin);
+		cubemapBound = drawSurf->cubemapBound;
 
 		//
 		// change the tess parameters if needed
@@ -381,7 +383,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 			if(oldShader != NULL) {
 				RB_EndSurface();
 			}
-			RB_BeginSurface(shader, fogNum, useCubemap, cubemapOrigin);
+			RB_BeginSurface(shader, fogNum, useCubemap, cubemapOrigin, cubemapBound);
 			backEnd.pc.c_surfBatches++;
 			oldShader = shader;
 			oldFogNum = fogNum;
@@ -683,7 +685,7 @@ const void* RB_StretchPic(const void* data) {
 			RB_EndSurface();
 		}
 		backEnd.currentEntity = &backEnd.entity2D;
-		RB_BeginSurface(shader, 0, false, vec3_origin);
+		RB_BeginSurface(shader, 0, false, vec3_origin, 0.0f);
 	}
 
 	RB_CHECKOVERFLOW(4, 6);
@@ -905,9 +907,6 @@ const void* RB_DrawSurfs(const void* data) {
 		if(r_drawSun->integer) {
 			RB_DrawSun(0.1f, tr.sunShader);
 		}
-
-		// add light flares on lights that aren't obscured
-		RB_RenderFlares();
 	}
 
 	if(glRefConfig.framebufferObject && tr.renderCubeFbo && backEnd.viewParms.targetFbo == tr.renderCubeFbo) {

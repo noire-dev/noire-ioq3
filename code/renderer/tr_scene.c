@@ -97,7 +97,7 @@ void R_AddPolygonSurfaces(void) {
 
 	for(i = 0, poly = tr.refdef.polys; i < tr.refdef.numPolys; i++, poly++) {
 		sh = R_GetShaderByHandle(poly->hShader);
-		R_AddDrawSurf((void*)poly, sh, poly->fogIndex & fogMask, false, false, vec3_origin);
+		R_AddDrawSurf((void*)poly, sh, poly->fogIndex & fogMask, false, false, vec3_origin, 0.0f);
 	}
 }
 
@@ -253,11 +253,11 @@ void RE_AddDynamicLightToScene(const vec3_t org, float radius, float intensity, 
 	}
 }
 
-void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_FLARE_DLIGHT, hShader); }
+void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT, hShader); }
 
-void RE_AddAdditiveLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_FLARE_DLIGHT | REF_ADDITIVE_DLIGHT, 0); }
+void RE_AddAdditiveLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_ADDITIVE_DLIGHT, 0); }
 
-void RE_AddVertexLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_FLARE_DLIGHT | REF_VERTEX_DLIGHT, 0); }
+void RE_AddVertexLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_VERTEX_DLIGHT, 0); }
 
 void RE_AddJuniorLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT, 0); }
 

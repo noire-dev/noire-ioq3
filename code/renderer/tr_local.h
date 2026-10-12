@@ -603,6 +603,7 @@ typedef enum {
 	UNIFORM_PRIMARYLIGHTRADIUS,
 
 	UNIFORM_CUBEMAPINFO,
+	UNIFORM_CUBEMAPARALLAXINFO,
 
 	UNIFORM_ALPHATEST,
 
@@ -769,7 +770,6 @@ typedef enum {
 	SF_POLY,
 	SF_MDV,
 	SF_IQM,
-	SF_FLARE,
 	SF_ENTITY,  // beams, rails, lightning, etc that can be determined by entity
 	SF_VAO_MDVMESH,
 	SF_VAO_IQM,
@@ -782,6 +782,7 @@ typedef struct drawSurf_s {
 	unsigned int sort;  // bit combination for fast compares
 	bool useCubemap;
 	vec3_t cubemapOrigin;
+	float cubemapBound;
 	surfaceType_t* surface;  // any of surface*_t
 } drawSurf_t;
 
@@ -985,6 +986,7 @@ typedef struct msurface_s {
 	int fogIndex;
 	bool useCubemap;
 	vec3_t cubemapOrigin;
+	float cubemapBound;
 	cullinfo_t cullinfo;
 
 	surfaceType_t* data;  // any of srf*_t
@@ -1218,7 +1220,6 @@ typedef struct {
 #define REF_DIRECTED_DLIGHT 0x08  // global directional light, origin should be interpreted as a normal vector
 #define REF_VERTEX_DLIGHT 0x10    // ET style spherical dlight using vertex light rendering
 #define REF_FORCE_DLIGHT 0x20     // force this dlight under all conditions
-#define REF_FLARE_DLIGHT 0x40     // allow displaying a flare at dlight origin
 
 // the renderer front end should never modify glstate_t
 typedef struct {
@@ -1307,10 +1308,6 @@ typedef struct {
 	int c_dlightVertexes;
 	int c_dlightIndexes;
 
-	int c_flareAdds;
-	int c_flareTests;
-	int c_flareRenders;
-
 	int c_glslShaderBinds;
 	int c_genericDraws;
 	int c_lightallDraws;
@@ -1375,8 +1372,7 @@ typedef struct {
 	image_t* defaultImage;
 	image_t* scratchImage[32];
 	image_t* fogImage;
-	image_t* dlightImage;  // inverse-quare highlight for projective adding
-	image_t* flareImage;
+	image_t* dlightImage;         // inverse-quare highlight for projective adding
 	image_t* whiteImage;          // full of 0xff
 	image_t* identityLightImage;  // full of tr.identityLightByte
 
@@ -1413,9 +1409,7 @@ typedef struct {
 
 	shader_t* defaultShader;
 
-	shader_t* flareShader;
 	shader_t* sunShader;
-	shader_t* sunFlareShader;
 
 	int numLightmaps;
 	int lightmapSize;
@@ -1502,10 +1496,6 @@ typedef struct {
 	int numSkins;
 	skin_t* skins[MAX_SKINS];
 
-	GLuint sunFlareQuery[2];
-	int sunFlareQueryIndex;
-	bool sunFlareQueryActive[2];
-
 	float sinTable[FUNCTABLE_SIZE];
 	float squareTable[FUNCTABLE_SIZE];
 	float triangleTable[FUNCTABLE_SIZE];
@@ -1522,12 +1512,6 @@ extern glRefConfig_t glRefConfig;
 //
 // cvars
 //
-extern cvar_t* r_flareSize;
-extern cvar_t* r_flareFade;
-// coefficient for the flare intensity falloff function.
-#define FLARE_STDCOEFF "150"
-extern cvar_t* r_flareCoeff;
-
 extern cvar_t* r_railWidth;
 extern cvar_t* r_railCoreWidth;
 extern cvar_t* r_railSegmentLength;
@@ -1584,8 +1568,6 @@ extern cvar_t* r_uiFullScreen;  // ui is running fullscreen
 extern cvar_t* r_logFile;   // number of frames to emit GL logs
 extern cvar_t* r_showtris;  // enables wireframe rendering of the world
 extern cvar_t* r_showsky;   // forces sky in front of all surface
-
-extern cvar_t* r_flares;  // light flares
 
 extern cvar_t* r_intensity;
 
@@ -1712,7 +1694,7 @@ void R_AddPolygonSurfaces(void);
 
 void R_DecomposeSort(unsigned sort, int* entityNum, shader_t** shader, int* fogNum, int* dlightMap);
 
-void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, bool useCubemap, vec3_t cubemapOrigin);
+void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, bool useCubemap, vec3_t cubemapOrigin, float cubemapBound);
 
 void R_CalcTexDirs(vec3_t sdir, vec3_t tdir, const vec3_t v1, const vec3_t v2, const vec3_t v3, const vec2_t w1, const vec2_t w2, const vec2_t w3);
 vec_t R_CalcTangentSpace(vec3_t tangent, vec3_t bitangent, const vec3_t normal, const vec3_t sdir, const vec3_t tdir);
@@ -1899,6 +1881,7 @@ typedef struct shaderCommands_s {
 	int fogNum;
 	bool useCubemap;
 	vec3_t cubemapOrigin;
+	float cubemapBound;
 
 	int dlightBits;  // or together of all vertexDlightBits
 
@@ -1914,7 +1897,7 @@ typedef struct shaderCommands_s {
 
 extern shaderCommands_t tess;
 
-void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t cubemapOrigin);
+void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t cubemapOrigin, const float cubemapBound);
 void RB_EndSurface(void);
 void RB_FogPass(void);
 void RB_CheckOverflow(int verts, int indexes);
@@ -1945,20 +1928,6 @@ WORLD MAP
 void R_AddBrushModelSurfaces(trRefEntity_t* e);
 void R_AddWorldSurfaces(void);
 bool R_inPVS(const vec3_t p1, const vec3_t p2);
-
-/*
-============================================================
-
-FLARES
-
-============================================================
-*/
-
-void R_ClearFlares(void);
-
-void RB_AddFlare(void* surface, int fogNum, vec3_t point, vec3_t color, vec3_t normal);
-void RB_AddDlightFlares(void);
-void RB_RenderFlares(void);
 
 /*
 ============================================================

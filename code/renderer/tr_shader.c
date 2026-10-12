@@ -1384,7 +1384,7 @@ void ParseDetailLevel(char** text) {
 
 	shader.detailLevel = atoi(token);
 	if(shader.detailLevel < 0) shader.detailLevel = 0;
-	if(shader.detailLevel > 16) shader.detailLevel = 16;
+	if(shader.detailLevel > 5) shader.detailLevel = 5;
 }
 
 // this table is also present in q3map
@@ -1430,12 +1430,13 @@ infoParm_t infoParms[] = {
     {"nosteps", 0, SURF_NOSTEPS, 0},
 
     // drawsurf attributes
-    {"nodraw", 0, SURF_NODRAW, 0},          // don't generate a drawsurface (or a lightmap)
-    {"pointlight", 0, SURF_POINTLIGHT, 0},  // sample lighting at vertexes
-    {"nolightmap", 0, SURF_NOLIGHTMAP, 0},  // don't generate a lightmap
-    {"nodlight", 0, SURF_NODLIGHT, 0},      // don't ever add dynamic lights
-    {"dust", 0, SURF_DUST, 0},              // leave a dust trail when walking on this surface
-    {"cubemap", 0, SURF_CUBEMAP, 0},        // reflective?
+    {"nodraw", 0, SURF_NODRAW, 0},                         // don't generate a drawsurface (or a lightmap)
+    {"pointlight", 0, SURF_POINTLIGHT, 0},                 // sample lighting at vertexes
+    {"nolightmap", 0, SURF_NOLIGHTMAP, 0},                 // don't generate a lightmap
+    {"nodlight", 0, SURF_NODLIGHT, 0},                     // don't ever add dynamic lights
+    {"dust", 0, SURF_DUST, 0},                             // leave a dust trail when walking on this surface
+    {"cubemap", 0, SURF_CUBEMAP, 0},                       // reflective?
+    {"cubemapCorrection", 0, SURF_CUBEMAP_CORRECTION, 0},  // correct reflect?
 };
 
 /*
@@ -3330,40 +3331,7 @@ static void CreateInternalShaders(void) {
 	tr.defaultShader = FinishShader();
 }
 
-static void CreateExternalShaders(void) {
-	tr.flareShader = R_FindShader("flareShader", LIGHTMAP_NONE, true);
-
-	// Hack to make fogging work correctly on flares. Fog colors are calculated
-	// in tr_flare.c already.
-	if(!tr.flareShader->defaultShader) {
-		int index;
-
-		for(index = 0; index < tr.flareShader->numUnfoggedPasses; index++) {
-			tr.flareShader->stages[index]->adjustColorsForFog = ACFF_NONE;
-			tr.flareShader->stages[index]->stateBits |= GLS_DEPTHTEST_DISABLE;
-		}
-	}
-
-	tr.sunShader = R_FindShader("sun", LIGHTMAP_NONE, true);
-
-	tr.sunFlareShader = R_FindShader("gfx/2d/sunflare", LIGHTMAP_NONE, true);
-
-	// HACK: if sunflare is missing, make one using the flare image or dlight image
-	if(tr.sunFlareShader->defaultShader) {
-		image_t* image;
-
-		if(!tr.flareShader->defaultShader && tr.flareShader->stages[0] && tr.flareShader->stages[0]->bundle[0].image[0])
-			image = tr.flareShader->stages[0]->bundle[0].image[0];
-		else
-			image = tr.dlightImage;
-
-		InitShader("gfx/2d/sunflare", LIGHTMAP_NONE);
-		stages[0].bundle[0].image[0] = image;
-		stages[0].active = true;
-		stages[0].stateBits = GLS_DEFAULT;
-		tr.sunFlareShader = FinishShader();
-	}
-}
+static void CreateExternalShaders(void) { tr.sunShader = R_FindShader("sun", LIGHTMAP_NONE, true); }
 
 /*
 ==================

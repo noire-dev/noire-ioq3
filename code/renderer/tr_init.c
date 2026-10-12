@@ -41,10 +41,6 @@ static void GfxMemInfo_f(void);
 cvar_t* com_altivec;
 #endif
 
-cvar_t* r_flareSize;
-cvar_t* r_flareFade;
-cvar_t* r_flareCoeff;
-
 cvar_t* r_railWidth;
 cvar_t* r_railCoreWidth;
 cvar_t* r_railSegmentLength;
@@ -172,7 +168,6 @@ cvar_t* r_texturebits;
 cvar_t* r_drawBuffer;
 cvar_t* r_lightmap;
 cvar_t* r_uiFullScreen;
-cvar_t* r_flares;
 cvar_t* r_mode;
 cvar_t* r_nobind;
 cvar_t* r_singleShader;
@@ -1072,7 +1067,8 @@ void R_Register(void) {
 	r_cubemapSize = ri.Cvar_Get("r_cubemapSize", "256", CVAR_ARCHIVE | CVAR_LATCH);
 	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.3", CVAR_ARCHIVE | CVAR_LATCH);
 	r_pbr = ri.Cvar_Get("r_pbr", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_detailLevel = ri.Cvar_Get("r_detailLevel", "16", CVAR_ARCHIVE);
+	r_detailLevel = ri.Cvar_Get("r_detailLevel", "5", CVAR_ARCHIVE);
+	ri.Cvar_CheckRange(r_detailLevel, 0, 5, true);
 	r_baseNormalX = ri.Cvar_Get("r_baseNormalX", "1.0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_baseNormalY = ri.Cvar_Get("r_baseNormalY", "1.0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_baseParallax = ri.Cvar_Get("r_baseParallax", "0.05", CVAR_ARCHIVE | CVAR_LATCH);
@@ -1085,7 +1081,7 @@ void R_Register(void) {
 	r_genNormalMaps = ri.Cvar_Get("r_genNormalMaps", "0", CVAR_ARCHIVE | CVAR_LATCH);
 
 	r_forceSun = ri.Cvar_Get("r_forceSun", "1", CVAR_ARCHIVE);
-	r_forceSunLightScale = ri.Cvar_Get("r_forceSunLightScale", "0.56", CVAR_ARCHIVE);
+	r_forceSunLightScale = ri.Cvar_Get("r_forceSunLightScale", "1.00", CVAR_ARCHIVE);
 	r_forceSunAmbientScale = ri.Cvar_Get("r_forceSunAmbientScale", "0.5", CVAR_ARCHIVE);
 	r_sunlightMode = ri.Cvar_Get("r_sunlightMode", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
@@ -1120,7 +1116,6 @@ void R_Register(void) {
 	//
 	r_lodCurveError = ri.Cvar_Get("r_lodCurveError", "250", CVAR_ARCHIVE | CVAR_CHEAT);
 	r_lodbias = ri.Cvar_Get("r_lodbias", "0", CVAR_ARCHIVE);
-	r_flares = ri.Cvar_Get("r_flares", "0", CVAR_ARCHIVE);
 	r_znear = ri.Cvar_Get("r_znear", "4", CVAR_CHEAT);
 	ri.Cvar_CheckRange(r_znear, 0.001f, 200, false);
 	r_zproj = ri.Cvar_Get("r_zproj", "64", CVAR_ARCHIVE);
@@ -1162,10 +1157,6 @@ void R_Register(void) {
 	r_drawworld = ri.Cvar_Get("r_drawworld", "1", CVAR_CHEAT);
 	r_lightmap = ri.Cvar_Get("r_lightmap", "0", 0);
 	r_portalOnly = ri.Cvar_Get("r_portalOnly", "0", CVAR_CHEAT);
-
-	r_flareSize = ri.Cvar_Get("r_flareSize", "40", CVAR_CHEAT);
-	r_flareFade = ri.Cvar_Get("r_flareFade", "7", CVAR_CHEAT);
-	r_flareCoeff = ri.Cvar_Get("r_flareCoeff", FLARE_STDCOEFF, CVAR_CHEAT);
 
 	r_skipBackEnd = ri.Cvar_Get("r_skipBackEnd", "0", CVAR_CHEAT);
 

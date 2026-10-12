@@ -57,13 +57,13 @@ void RB_CheckOverflow(int verts, int indexes) {
 		ri.Error(ERR_DROP, "RB_CheckOverflow: indices > MAX (%d > %d)", indexes, SHADER_MAX_INDEXES);
 	}
 
-	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin);
+	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin, tess.cubemapBound);
 }
 
 void RB_CheckVao(vao_t* vao) {
 	if(vao != glState.currentVao) {
 		RB_EndSurface();
-		RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin);
+		RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin, tess.cubemapBound);
 
 		R_BindVao(vao);
 	}
@@ -388,7 +388,7 @@ static bool RB_SurfaceVaoCached(int numVerts, srfVert_t* verts, int numIndexes, 
 
 	if(endSurface) {
 		RB_EndSurface();
-		RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin);
+		RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin, tess.cubemapBound);
 	}
 
 	if(recycleVertexBuffer) VaoCache_RecycleVertexBuffer();
@@ -927,7 +927,7 @@ static void RB_SurfaceGrid(srfBspSurface_t* srf) {
 			// if we don't have enough space for at least one strip, flush the buffer
 			if(vrows < 2 || irows < 1) {
 				RB_EndSurface();
-				RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin);
+				RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin, tess.cubemapBound);
 			} else {
 				break;
 			}
@@ -1091,10 +1091,6 @@ static void RB_SurfaceEntity(surfaceType_t* surfType) {
 
 static void RB_SurfaceBad(surfaceType_t* surfType) { ri.Printf(PRINT_ALL, "Bad surface tesselated.\n"); }
 
-static void RB_SurfaceFlare(srfFlare_t* surf) {
-	if(r_flares->integer) RB_AddFlare(surf, tess.fogNum, surf->origin, surf->color, surf->normal);
-}
-
 void RB_SurfaceVaoMdvMesh(srfVaoMdvMesh_t* surface) {
 	// mdvModel_t     *mdvModel;
 	// mdvSurface_t   *mdvSurface;
@@ -1111,7 +1107,7 @@ void RB_SurfaceVaoMdvMesh(srfVaoMdvMesh_t* surface) {
 
 	// RB_CheckVao(surface->vao);
 	RB_EndSurface();
-	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin);
+	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin, tess.cubemapBound);
 
 	R_BindVao(surface->vao);
 
@@ -1189,7 +1185,6 @@ void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void*) = {
     (void (*)(void*))RB_SurfacePolychain,   // SF_POLY,
     (void (*)(void*))RB_SurfaceMesh,        // SF_MDV,
     (void (*)(void*))RB_IQMSurfaceAnim,     // SF_IQM,
-    (void (*)(void*))RB_SurfaceFlare,       // SF_FLARE,
     (void (*)(void*))RB_SurfaceEntity,      // SF_ENTITY
     (void (*)(void*))RB_SurfaceVaoMdvMesh,  // SF_VAO_MDVMESH
     (void (*)(void*))RB_IQMSurfaceAnimVao,  // SF_VAO_IQM

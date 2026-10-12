@@ -1,6 +1,6 @@
 var color = {};
 
-color.create = function(vmIndex, id, r, g, b, a) {
+color.create = function (vmIndex, id, r, g, b, a) {
     var normalizedR = r / 255.0;
     var normalizedG = g / 255.0;
     var normalizedB = b / 255.0;
@@ -13,7 +13,7 @@ color.create = function(vmIndex, id, r, g, b, a) {
     return id;
 }
 
-color.copy = function(vmIndex, destID, sourceID) {
+color.copy = function (vmIndex, destID, sourceID) {
     for (var i = 0; i < 4; i++) {
         var val = api.cgui(vmIndex, "colors", null, sourceID, i);
         api.cgui(vmIndex, "colors", val, destID, i);
@@ -21,7 +21,7 @@ color.copy = function(vmIndex, destID, sourceID) {
     return destID;
 }
 
-color.init = function(vmIndex) {
+color.init = function (vmIndex) {
     // Colors
     color.blue1 = color.create(vmIndex, 100, 153, 193, 241, 255);
     color.blue2 = color.create(vmIndex, 101, 98, 160, 234, 255);
@@ -94,16 +94,17 @@ color.init = function(vmIndex) {
     color.debug1 = color.copy(vmIndex, 11, color.red);
     color.debug2 = color.copy(vmIndex, 12, color.green);
     color.loadingIsland = color.create(vmIndex, 13, 34, 34, 38, 255);
-    
+    color.hudColor = color.create(vmIndex, 14, 34, 34, 38, 255);
+
     // Accent colors
     cvar.register("shell.global.accentColor", String(color.blue3), CVAR.ARCHIVE);
     color.enabled = color.copy(vmIndex, 8, cvar.int("shell.global.accentColor"));
-    color.accent1 = color.copy(vmIndex, 595, cvar.int("shell.global.accentColor")-2);
-    color.accent2 = color.copy(vmIndex, 596, cvar.int("shell.global.accentColor")-1);
+    color.accent1 = color.copy(vmIndex, 595, cvar.int("shell.global.accentColor") - 2);
+    color.accent2 = color.copy(vmIndex, 596, cvar.int("shell.global.accentColor") - 1);
     color.accent3 = color.copy(vmIndex, 597, cvar.int("shell.global.accentColor"));
-    color.accent4 = color.copy(vmIndex, 598, cvar.int("shell.global.accentColor")+1);
-    color.accent5 = color.copy(vmIndex, 599, cvar.int("shell.global.accentColor")+2);
-    
+    color.accent4 = color.copy(vmIndex, 598, cvar.int("shell.global.accentColor") + 1);
+    color.accent5 = color.copy(vmIndex, 599, cvar.int("shell.global.accentColor") + 2);
+
     // Shell colors
     color.background = color.create(vmIndex, 600, 25, 25, 32, 180);
     color.window = color.create(vmIndex, 601, 34, 34, 38, 255);

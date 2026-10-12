@@ -149,6 +149,7 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_PrimaryLightRadius", GLSL_FLOAT},
 
     {"u_CubeMapInfo", GLSL_VEC4},
+    {"u_CubeMapParallaxInfo", GLSL_VEC3},
 
     {"u_AlphaTest", GLSL_INT},
 

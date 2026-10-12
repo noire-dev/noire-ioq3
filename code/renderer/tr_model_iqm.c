@@ -1198,7 +1198,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 		useCubemap = R_ShaderRequiresCubemap(shader);
 
 		if(!personalModel) {
-			R_AddDrawSurf(drawSurf, shader, fogNum, 0, useCubemap, vec3_origin);
+			R_AddDrawSurf(drawSurf, shader, fogNum, 0, useCubemap, vec3_origin, 0.0f);
 		}
 
 		surface++;
@@ -1516,7 +1516,7 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 
 	// RB_CheckVao(surface->vao);
 	RB_EndSurface();
-	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin);
+	RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin, tess.cubemapBound);
 
 	R_BindVao(surface->vao);
 

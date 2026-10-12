@@ -234,31 +234,6 @@ static void RB_RadialBlur(FBO_t* srcFbo, FBO_t* dstFbo, int passes, float stretc
 	}
 }
 
-static bool RB_UpdateSunFlareVis(void) {
-	GLuint sampleCount = 0;
-	if(!glRefConfig.occlusionQuery) return true;
-
-	tr.sunFlareQueryIndex ^= 1;
-	if(!tr.sunFlareQueryActive[tr.sunFlareQueryIndex]) return true;
-
-	/* debug code */
-	if(0) {
-		int iter;
-		for(iter = 0;; ++iter) {
-			GLint available = 0;
-			qglGetQueryObjectiv(tr.sunFlareQuery[tr.sunFlareQueryIndex], GL_QUERY_RESULT_AVAILABLE, &available);
-			if(available) break;
-		}
-
-		ri.Printf(PRINT_DEVELOPER, "Waited %d iterations\n", iter);
-	}
-
-	// Note: On desktop OpenGL this is a sample count (glRefConfig.occlusionQueryTarget == GL_SAMPLES_PASSED)
-	// but on OpenGL ES this is a boolean (glRefConfig.occlusionQueryTarget == GL_ANY_SAMPLES_PASSED)
-	qglGetQueryObjectuiv(tr.sunFlareQuery[tr.sunFlareQueryIndex], GL_QUERY_RESULT, &sampleCount);
-	return sampleCount > 0;
-}
-
 static void RB_BlurAxis(FBO_t* srcFbo, FBO_t* dstFbo, float strength, bool horizontal) {
 	float dx, dy;
 	float xmul, ymul;

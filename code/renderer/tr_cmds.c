@@ -48,8 +48,6 @@ void R_PerformanceCounters(void) {
 	} else if(r_speeds->integer == 5) {
 		ri.Printf(PRINT_ALL, "zFar: %.0f\n", tr.viewParms.zFar);
 	} else if(r_speeds->integer == 6) {
-		ri.Printf(PRINT_ALL, "flare adds:%i tests:%i renders:%i\n", backEnd.pc.c_flareAdds, backEnd.pc.c_flareTests, backEnd.pc.c_flareRenders);
-	} else if(r_speeds->integer == 7) {
 		ri.Printf(PRINT_ALL, "VAO draws: static %i dynamic %i\n", backEnd.pc.c_staticVaoDraws, backEnd.pc.c_dynamicVaoDraws);
 		ri.Printf(PRINT_ALL, "GLSL binds: %i  draws: gen %i light %i fog %i dlight %i\n", backEnd.pc.c_glslShaderBinds, backEnd.pc.c_genericDraws, backEnd.pc.c_lightallDraws, backEnd.pc.c_fogDraws, backEnd.pc.c_dlightDraws);
 	}

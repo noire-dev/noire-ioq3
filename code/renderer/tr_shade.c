@@ -133,7 +133,7 @@ because a surface may be forced to perform a RB_End due
 to overflow.
 ==============
 */
-void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t cubemapOrigin) {
+void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t cubemapOrigin, const float cubemapBound) {
 	shader_t* state = (shader->remappedShader) ? shader->remappedShader : shader;
 
 	tess.numIndexes = 0;
@@ -143,6 +143,7 @@ void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t
 	tess.fogNum = fogNum;
 	tess.useCubemap = useCubemap;
 	VectorCopy(cubemapOrigin, tess.cubemapOrigin);
+	tess.cubemapBound = cubemapBound;
 	tess.dlightBits = 0;  // will be OR'd in by surface functions
 	tess.xstages = state->stages;
 	tess.numPasses = state->numUnfoggedPasses;
@@ -1314,16 +1315,33 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 
 		// testing cube map
 		if(!(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap && r_cubeMapping->integer) {
-			vec4_t vec;
+			vec3_t vec3;
+			vec4_t vec4;
 
 			cubemap_t* cubemap = tr.cubemap;
 
 			if(cubemap->image) GL_BindToTMU(cubemap->image, TB_CUBEMAP);
 
-			VectorSubtract(cubemap->origin, backEnd.viewParms.or.origin, vec);
-			vec[3] = 1.0f;
-			VectorScale4(vec, 1.0f / 65536, vec);
-			GLSL_SetUniformVec4(sp, UNIFORM_CUBEMAPINFO, vec);
+			float dx = backEnd.viewParms.or.origin[0] - input->cubemapOrigin[0];
+			float dy = backEnd.viewParms.or.origin[1] - input->cubemapOrigin[1];
+			float dz = backEnd.viewParms.or.origin[2] - input->cubemapOrigin[2];
+			float distXYZ = sqrtf(dx * dx + dy * dy + dz * dz);
+
+			if(input->cubemapBound != 0.0f) {
+				vec4[0] = backEnd.viewParms.or.origin[2];  // Z камеры
+				vec4[1] = input->cubemapOrigin[2];         // Z поверхности
+				vec4[2] = distXYZ;                         // Полное 3D-расстояние (distXYZ)
+			} else {
+				vec4[0] = 0.0f;  // Z камеры
+				vec4[1] = 0.0f;  // Z поверхности
+				vec4[2] = 1.0f;  // Полное 3D-расстояние (distXYZ)
+			}
+			vec4[3] = input->cubemapBound;  // Сторона
+			GLSL_SetUniformVec4(sp, UNIFORM_CUBEMAPINFO, vec4);
+
+			VectorSubtract(cubemap->origin, backEnd.viewParms.or.origin, vec3);
+			VectorScale(vec3, 1.0f / 65536, vec3);
+			GLSL_SetUniformVec3(sp, UNIFORM_CUBEMAPARALLAXINFO, vec3);
 		}
 
 		//
