@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/qcommon.h"
 #include "../game/g_public.h"
 #include "../game/bg_public.h"
+#include "../thirdparty/bullet3-3.25/bt_wrapper.h"
 
 //=============================================================================
 
@@ -92,6 +93,7 @@ typedef struct {
 	int gameClientSize;  // will be > sizeof(playerState_t) due to game private data
 
 	int restartTime;
+	int prevTime;
 	int time;
 } server_t;
 

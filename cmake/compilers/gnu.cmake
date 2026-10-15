@@ -4,10 +4,17 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_C_COMPILER_ID MATCHES "^
     return()
 endif()
 
-add_compile_options(-Wall -Wimplicit -Wshadow
-    -Wstrict-prototypes -Wformat=2  -Wformat-security
+# These warnings are valid only for C. Keep them off C++ compilation units
+# (for example, Bullet Physics sources).
+add_compile_options(-Wall -Wshadow
+    -Wformat=2 -Wformat-security
     -Wstrict-aliasing=2 -Wmissing-format-attribute
-    -Wdisabled-optimization -Werror-implicit-function-declaration)
+    -Wdisabled-optimization)
+add_compile_options(
+    "$<$<COMPILE_LANGUAGE:C>:-Wimplicit>"
+    "$<$<COMPILE_LANGUAGE:C>:-Wstrict-prototypes>"
+    "$<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>"
+)
 
 add_compile_options(-Wno-format-zero-length -Wno-format-nonliteral)
 

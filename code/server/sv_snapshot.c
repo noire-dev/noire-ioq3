@@ -294,7 +294,7 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t* fram
 	int leafnum;
 	byte* clientpvs;
 	byte* bitvector;
-	vec3_t dir;
+	vec3_t entDir;
 	float distanceSquared;
 	float maxViewDistanceSquared;
 
@@ -407,8 +407,8 @@ static void SV_AddEntitiesVisibleFromPoint(vec3_t origin, clientSnapshot_t* fram
 		}
 
 		// calculate distance from the entity to the client
-		VectorSubtract(ent->r.currentOrigin, origin, dir);
-		distanceSquared = VectorLengthSquared(dir);
+		VectorSubtract(ent->r.currentOrigin, origin, entDir);
+		distanceSquared = VectorLengthSquared(entDir);
 
 		// check if the entity is within the max view distance
 		if(distanceSquared > maxViewDistanceSquared) {

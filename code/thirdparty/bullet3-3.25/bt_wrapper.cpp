@@ -28,6 +28,7 @@ btPhysicsWorld_t* BT_Init(void) {
 	phys->m_solver = new btSequentialImpulseConstraintSolver();
 	phys->m_world = new btDiscreteDynamicsWorld(phys->m_dispatcher, phys->m_broadphase, phys->m_solver, phys->m_config);
 
+	phys->m_world->setForceUpdateAllAabbs(false);
 	phys->m_world->getSolverInfo().m_numIterations = phys_solver_iterations->integer;
 	phys->m_world->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER | SOLVER_FRICTION_SEPARATE | SOLVER_USE_2_FRICTION_DIRECTIONS | SOLVER_ENABLE_FRICTION_DIRECTION_CACHING;
 	phys->m_world->getSolverInfo().m_splitImpulse = true;

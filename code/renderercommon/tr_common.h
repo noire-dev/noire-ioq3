@@ -88,7 +88,7 @@ extern cvar_t* r_depthbits;    // number of desired depth bits
 extern cvar_t* r_colorbits;    // number of desired color bits, only relevant for fullscreen
 extern cvar_t* r_texturebits;  // number of desired texture bits
 
-extern cvar_t* r_mode;  // video mode
+extern cvar_t* r_resolution;
 extern cvar_t* r_noborder;
 extern cvar_t* r_fullscreen;
 extern cvar_t* r_ignorehwgamma;  // overrides hardware gamma capabilities
@@ -105,8 +105,6 @@ extern cvar_t* r_ext_texture_filter_anisotropic;
 extern cvar_t* r_ext_max_anisotropy;
 
 extern cvar_t* r_saveFontData;
-
-bool R_GetModeInfo(int* width, int* height, float* windowAspect, int mode);
 
 float R_NoiseGet4f(float x, float y, float z, double t);
 void R_NoiseInit(void);

@@ -109,102 +109,59 @@ void GLimp_LogComment(char* comment) {}
 
 /*
 ===============
-GLimp_CompareModes
-===============
-*/
-static int GLimp_CompareModes(const void* a, const void* b) {
-	const float ASPECT_EPSILON = 0.001f;
-	SDL_Rect* modeA = (SDL_Rect*)a;
-	SDL_Rect* modeB = (SDL_Rect*)b;
-	float aspectA = (float)modeA->w / (float)modeA->h;
-	float aspectB = (float)modeB->w / (float)modeB->h;
-	int areaA = modeA->w * modeA->h;
-	int areaB = modeB->w * modeB->h;
-	float aspectDiffA = fabs(aspectA - displayAspect);
-	float aspectDiffB = fabs(aspectB - displayAspect);
-	float aspectDiffsDiff = aspectDiffA - aspectDiffB;
-
-	if(aspectDiffsDiff > ASPECT_EPSILON)
-		return 1;
-	else if(aspectDiffsDiff < -ASPECT_EPSILON)
-		return -1;
-	else
-		return areaA - areaB;
-}
-
-/*
-===============
 GLimp_DetectAvailableModes
 ===============
 */
+#define MAX_RESOLUTIONS 64
 static void GLimp_DetectAvailableModes(void) {
-	int i, j;
-	char buf[MAX_STRING_CHARS] = {0};
-	int numSDLModes;
-	SDL_Rect* modes;
-	int numModes = 0;
-
-	SDL_DisplayMode windowMode;
 	int display = SDL_GetWindowDisplayIndex(SDL_window);
 	if(display < 0) {
 		ri.Printf(PRINT_WARNING, "Couldn't get window display index, no resolutions detected: %s\n", SDL_GetError());
 		return;
 	}
-	numSDLModes = SDL_GetNumDisplayModes(display);
 
-	if(SDL_GetWindowDisplayMode(SDL_window, &windowMode) < 0 || numSDLModes <= 0) {
+	SDL_DisplayMode windowMode;
+	if(SDL_GetWindowDisplayMode(SDL_window, &windowMode) < 0) {
 		ri.Printf(PRINT_WARNING, "Couldn't get window display mode, no resolutions detected: %s\n", SDL_GetError());
 		return;
 	}
 
-	modes = SDL_calloc((size_t)numSDLModes, sizeof(SDL_Rect));
-	if(!modes) {
-		ri.Error(ERR_FATAL, "Out of memory");
+	int numSDLModes = SDL_GetNumDisplayModes(display);
+	if(numSDLModes < 1) {
+		ri.Printf(PRINT_WARNING, "SDL_GetNumDisplayModes failed: %s\n", SDL_GetError());
+		return;
 	}
 
-	for(i = 0; i < numSDLModes; i++) {
-		SDL_DisplayMode mode;
+	char resList[MAX_RESOLUTIONS][16];
+	int resCount = 0;
 
-		if(SDL_GetDisplayMode(display, i, &mode) < 0) continue;
+	for(int i = 0; i < numSDLModes && resCount < MAX_RESOLUTIONS; ++i) {
+		SDL_DisplayMode mode;
+		if(SDL_GetDisplayMode(display, i, &mode) != 0) continue;
 
 		if(!mode.w || !mode.h) {
 			ri.Printf(PRINT_ALL, "Display supports any resolution\n");
-			SDL_free(modes);
 			return;
 		}
 
 		if(windowMode.format != mode.format) continue;
 
-		// SDL can give the same resolution with different refresh rates.
-		// Only list resolution once.
-		for(j = 0; j < numModes; j++) {
-			if(mode.w == modes[j].w && mode.h == modes[j].h) break;
+		char resStr[16];
+		Com_sprintf(resStr, sizeof(resStr), "%dx%d", mode.w, mode.h);
+
+		bool duplicate = false;
+		for(int j = 0; j < resCount; ++j) {
+			if(Q_stricmp(resList[j], resStr) == 0) {
+				duplicate = true;
+				break;
+			}
 		}
 
-		if(j != numModes) continue;
-
-		modes[numModes].w = mode.w;
-		modes[numModes].h = mode.h;
-		numModes++;
+		if(!duplicate) Q_strncpyz(resList[resCount++], resStr, sizeof(resList[0]));
 	}
 
-	if(numModes > 1) qsort(modes, numModes, sizeof(SDL_Rect), GLimp_CompareModes);
-
-	for(i = 0; i < numModes; i++) {
-		const char* newModeString = va("%ux%u ", modes[i].w, modes[i].h);
-
-		if(strlen(newModeString) < (int)sizeof(buf) - strlen(buf))
-			Q_strcat(buf, sizeof(buf), newModeString);
-		else
-			ri.Printf(PRINT_WARNING, "Skipping mode %ux%u, buffer too small\n", modes[i].w, modes[i].h);
-	}
-
-	if(*buf) {
-		buf[strlen(buf) - 1] = 0;
-		ri.Printf(PRINT_ALL, "Available modes: '%s'\n", buf);
-		ri.Cvar_Set("r_availableModes", buf);
-	}
-	SDL_free(modes);
+	for(int i = 0; i < MAX_RESOLUTIONS; ++i) ri.Cvar_Set(va("displaymode.%i", i), "");
+	for(int i = 0; i < resCount; ++i) ri.Cvar_Set(va("displaymode.%i", i), resList[i]);
 }
 
 /*
@@ -365,7 +322,19 @@ static void GLimp_ClearProcAddresses(void) {
 GLimp_SetMode
 ===============
 */
-static int GLimp_SetMode(int mode, bool fullscreen, bool noborder, bool fixedFunction) {
+bool GLimp_ParseResolution(const char* str, int* width, int* height) {
+	if(!str || !width || !height) return false;
+
+	int w = 0, h = 0;
+	if(sscanf(str, "%dx%d", &w, &h) == 2 && w > 0 && h > 0) {
+		*width = w;
+		*height = h;
+		return true;
+	}
+	return false;
+}
+
+static int GLimp_SetMode(const char* resolution, int fullscreen, bool noborder, bool fixedFunction) {
 	struct GLimp_ContextType {
 		int profileMask;
 		int majorVersion;
@@ -386,26 +355,6 @@ static int GLimp_SetMode(int mode, bool fullscreen, bool noborder, bool fixedFun
 
 	if(r_allowResize->integer) flags |= SDL_WINDOW_RESIZABLE;
 
-#ifdef USE_ICON
-	icon = SDL_CreateRGBSurfaceFrom((void*)CLIENT_WINDOW_ICON.pixel_data,
-	                                CLIENT_WINDOW_ICON.width,
-	                                CLIENT_WINDOW_ICON.height,
-	                                CLIENT_WINDOW_ICON.bytes_per_pixel * 8,
-	                                CLIENT_WINDOW_ICON.bytes_per_pixel * CLIENT_WINDOW_ICON.width,
-#ifdef Q3_LITTLE_ENDIAN
-	                                0x000000FF,
-	                                0x0000FF00,
-	                                0x00FF0000,
-	                                0xFF000000
-#else
-	                                0xFF000000,
-	                                0x00FF0000,
-	                                0x0000FF00,
-	                                0x000000FF
-#endif
-	);
-#endif
-
 	// If a window exists, note its display index
 	if(SDL_window != NULL) {
 		display = SDL_GetWindowDisplayIndex(SDL_window);
@@ -417,17 +366,15 @@ static int GLimp_SetMode(int mode, bool fullscreen, bool noborder, bool fixedFun
 
 	if(SDL_GetDesktopDisplayMode(display, &desktopMode) == 0) {
 		displayAspect = (float)desktopMode.w / (float)desktopMode.h;
-
 		ri.Printf(PRINT_ALL, "Display aspect: %.3f\n", displayAspect);
 	} else {
 		Com_Memset(&desktopMode, 0, sizeof(SDL_DisplayMode));
-
 		ri.Printf(PRINT_ALL, "Cannot determine display aspect, assuming 1.333\n");
 	}
 
-	ri.Printf(PRINT_ALL, "...setting mode %d:", mode);
+	ri.Printf(PRINT_ALL, "...setting resolution %s:", resolution);
 
-	if(mode == -2) {
+	if(fullscreen == 2) {
 		// use desktop video resolution
 		if(desktopMode.h > 0) {
 			glConfig.vidWidth = desktopMode.w;
@@ -439,9 +386,9 @@ static int GLimp_SetMode(int mode, bool fullscreen, bool noborder, bool fixedFun
 		}
 
 		glConfig.windowAspect = (float)glConfig.vidWidth / (float)glConfig.vidHeight;
-	} else if(!R_GetModeInfo(&glConfig.vidWidth, &glConfig.vidHeight, &glConfig.windowAspect, mode)) {
-		ri.Printf(PRINT_ALL, " invalid mode\n");
-		return RSERR_INVALID_MODE;
+	} else {
+		GLimp_ParseResolution(resolution, &glConfig.vidWidth, &glConfig.vidHeight);
+		glConfig.windowAspect = (float)glConfig.vidWidth / (float)glConfig.vidHeight;
 	}
 	ri.Printf(PRINT_ALL, " %d %d\n", glConfig.vidWidth, glConfig.vidHeight);
 
@@ -470,7 +417,6 @@ static int GLimp_SetMode(int mode, bool fullscreen, bool noborder, bool fixedFun
 		glConfig.isFullscreen = true;
 	} else {
 		if(noborder) flags |= SDL_WINDOW_BORDERLESS;
-
 		glConfig.isFullscreen = false;
 	}
 
@@ -753,7 +699,7 @@ static int GLimp_SetMode(int mode, bool fullscreen, bool noborder, bool fixedFun
 GLimp_StartDriverAndSetMode
 ===============
 */
-static bool GLimp_StartDriverAndSetMode(int mode, bool fullscreen, bool noborder, bool gl3Core) {
+static bool GLimp_StartDriverAndSetMode(const char* resolution, int fullscreen, bool noborder, bool gl3Core) {
 	rserr_t err;
 
 	if(!SDL_WasInit(SDL_INIT_VIDEO)) {
@@ -773,14 +719,14 @@ static bool GLimp_StartDriverAndSetMode(int mode, bool fullscreen, bool noborder
 		ri.Printf(PRINT_ALL, "Fullscreen not allowed with in_nograb 1\n");
 		ri.Cvar_Set("r_fullscreen", "0");
 		r_fullscreen->modified = false;
-		fullscreen = false;
+		fullscreen = 0;
 	}
 
-	err = GLimp_SetMode(mode, fullscreen, noborder, gl3Core);
+	err = GLimp_SetMode(resolution, fullscreen, noborder, gl3Core);
 
 	switch(err) {
-		case RSERR_INVALID_FULLSCREEN: ri.Printf(PRINT_ALL, "...WARNING: fullscreen unavailable in this mode\n"); return false;
-		case RSERR_INVALID_MODE: ri.Printf(PRINT_ALL, "...WARNING: could not set the given mode (%d)\n", mode); return false;
+		case RSERR_INVALID_FULLSCREEN: ri.Printf(PRINT_ALL, "...WARNING: fullscreen unavailable in this resolution\n"); return false;
+		case RSERR_INVALID_MODE: ri.Printf(PRINT_ALL, "...WARNING: could not set the given resolution (%s)\n", resolution); return false;
 		default: break;
 	}
 
@@ -918,7 +864,7 @@ static void GLimp_InitExtensions(bool fixedFunction) {
 	}
 }
 
-#define R_MODE_FALLBACK 3  // 640 * 480
+#define R_RESOLUTION_FALLBACK "640x480"
 
 /*
 ===============
@@ -938,7 +884,7 @@ void GLimp_Init(bool fixedFunction) {
 	r_preferOpenGLES = ri.Cvar_Get("r_preferOpenGLES", "-1", CVAR_ARCHIVE | CVAR_LATCH);
 
 	if(ri.Cvar_VariableIntegerValue("com_abnormalExit")) {
-		ri.Cvar_Set("r_mode", va("%d", R_MODE_FALLBACK));
+		ri.Cvar_Set("r_resolution", R_RESOLUTION_FALLBACK);
 		ri.Cvar_Set("r_fullscreen", "0");
 		ri.Cvar_Set("r_centerWindow", "0");
 		ri.Cvar_Set("com_abnormalExit", "0");
@@ -947,18 +893,17 @@ void GLimp_Init(bool fixedFunction) {
 	ri.Sys_GLimpInit();
 
 	// Create the window and set up the context
-	if(GLimp_StartDriverAndSetMode(r_mode->integer, r_fullscreen->integer, r_noborder->integer, fixedFunction)) goto success;
+	if(GLimp_StartDriverAndSetMode(r_resolution->string, r_fullscreen->integer, r_noborder->integer, fixedFunction)) goto success;
 
 	// Try again, this time in a platform specific "safe mode"
 	ri.Sys_GLimpSafeInit();
 
-	if(GLimp_StartDriverAndSetMode(r_mode->integer, r_fullscreen->integer, false, fixedFunction)) goto success;
+	if(GLimp_StartDriverAndSetMode(r_resolution->string, r_fullscreen->integer, false, fixedFunction)) goto success;
 
 	// Finally, try the default screen resolution
-	if(r_mode->integer != R_MODE_FALLBACK) {
-		ri.Printf(PRINT_ALL, "Setting r_mode %d failed, falling back on r_mode %d\n", r_mode->integer, R_MODE_FALLBACK);
-
-		if(GLimp_StartDriverAndSetMode(R_MODE_FALLBACK, false, false, fixedFunction)) goto success;
+	if(strcmp(r_resolution->string, R_RESOLUTION_FALLBACK)) {
+		ri.Printf(PRINT_ALL, "Setting r_resolution %s failed, falling back on r_resolution %s\n", r_resolution->string, R_RESOLUTION_FALLBACK);
+		if(GLimp_StartDriverAndSetMode(R_RESOLUTION_FALLBACK, 0, false, fixedFunction)) goto success;
 	}
 
 	// Nothing worked, give up

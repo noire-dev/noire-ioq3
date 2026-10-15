@@ -304,8 +304,6 @@ the above locations, if desired.
                                       captured using screenshotJPEG
   r_aviMotionJpegQuality            - Controls quality of video capture when
                                       cl_aviMotionJpeg is enabled
-  r_mode -2                         - This new video mode automatically uses the
-                                      desktop resolution.
 ```
 
 ## New commands

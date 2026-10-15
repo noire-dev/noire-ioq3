@@ -178,15 +178,26 @@ typedef enum {
 	// false when all tokens have been parsed.
 	// This should only be done at GAME_INIT time.
 
-	G_FS_GETFILELIST,
-	G_DEBUG_POLYGON_CREATE,
-	G_DEBUG_POLYGON_DELETE,
-
 	G_TRACECAPSULE,           // ( trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask );
 	G_ENTITY_CONTACTCAPSULE,  // ( const vec3_t mins, const vec3_t maxs, const gentity_t *ent );
 
-	// 1.32
-	G_FS_SEEK,
+	PHYS_CREATESHAPE,
+	PHYS_CREATEBOX,
+	PHYS_CREATEMODEL,
+	PHYS_DELETEOBJECT,
+	PHYS_GETPOSITION,
+	PHYS_SETPOSITION,
+	PHYS_GETANGLES,
+	PHYS_SETANGLES,
+	PHYS_GETLINEARVELOCITY,
+	PHYS_SETLINEARVELOCITY,
+	PHYS_GETANGULARVELOCITY,
+	PHYS_SETANGULARVELOCITY,
+	PHYS_APPLYCENTRALFORCE,
+	PHYS_FREEZEOBJECT,
+	PHYS_UNFREEZEOBJECT,
+	PHYS_WELD,
+	PHYS_ISSLEEPING,
 
 	BOTLIB_SETUP = 200,  // ( void );
 	BOTLIB_SHUTDOWN,     // ( void );

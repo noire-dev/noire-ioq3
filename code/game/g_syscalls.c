@@ -82,9 +82,39 @@ void trap_GetUsercmd(int clientNum, usercmd_t* cmd) { syscall(G_GET_USERCMD, cli
 
 bool trap_GetEntityToken(char* buffer, int bufferSize) { return syscall(G_GET_ENTITY_TOKEN, buffer, bufferSize); }
 
-int trap_DebugPolygonCreate(int color, int numPoints, vec3_t* points) { return syscall(G_DEBUG_POLYGON_CREATE, color, numPoints, points); }
+void trap_PhysCreateShape(int modelindex, const char* objPath) { syscall(PHYS_CREATESHAPE, modelindex, objPath); }
 
-void trap_DebugPolygonDelete(int id) { syscall(G_DEBUG_POLYGON_DELETE, id); }
+void trap_PhysCreateBox(int entityID, float x, float y, float z, float mass) { syscall(PHYS_CREATEBOX, entityID, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(z), PASSFLOAT(mass)); }
+
+void trap_PhysCreateModel(int entityID, int modelindex, float x, float y, float z, float mass) { syscall(PHYS_CREATEMODEL, entityID, modelindex, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(z), PASSFLOAT(mass)); }
+
+void trap_PhysDeleteObject(int entityID) { syscall(PHYS_DELETEOBJECT, entityID); }
+
+void trap_PhysGetPosition(int entityID, float* x, float* y, float* z) { syscall(PHYS_GETPOSITION, entityID, x, y, z); }
+
+void trap_PhysSetPosition(int entityID, float x, float y, float z) { syscall(PHYS_SETPOSITION, entityID, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(z)); }
+
+void trap_PhysGetAngles(int entityID, float* pitch, float* yaw, float* roll) { syscall(PHYS_GETANGLES, entityID, pitch, yaw, roll); }
+
+void trap_PhysSetAngles(int entityID, float pitch, float yaw, float roll) { syscall(PHYS_SETANGLES, entityID, PASSFLOAT(pitch), PASSFLOAT(yaw), PASSFLOAT(roll)); }
+
+void trap_PhysGetLinearVelocity(int entityID, float* vx, float* vy, float* vz) { syscall(PHYS_GETLINEARVELOCITY, entityID, vx, vy, vz); }
+
+void trap_PhysSetLinearVelocity(int entityID, float vx, float vy, float vz) { syscall(PHYS_SETLINEARVELOCITY, entityID, PASSFLOAT(vx), PASSFLOAT(vy), PASSFLOAT(vz)); }
+
+void trap_PhysGetAngularVelocity(int entityID, float* vx, float* vy, float* vz) { syscall(PHYS_GETANGULARVELOCITY, entityID, vx, vy, vz); }
+
+void trap_PhysSetAngularVelocity(int entityID, float vx, float vy, float vz) { syscall(PHYS_SETANGULARVELOCITY, entityID, PASSFLOAT(vx), PASSFLOAT(vy), PASSFLOAT(vz)); }
+
+void trap_PhysApplyCentralForce(int entityID, float fx, float fy, float fz) { syscall(PHYS_APPLYCENTRALFORCE, entityID, PASSFLOAT(fx), PASSFLOAT(fy), PASSFLOAT(fz)); }
+
+void trap_PhysFreezeObject(int entityID) { syscall(PHYS_FREEZEOBJECT, entityID); }
+
+void trap_PhysUnfreezeObject(int entityID) { syscall(PHYS_UNFREEZEOBJECT, entityID); }
+
+void trap_PhysWeld(int entA, int entB, float px, float py, float pz) { syscall(PHYS_WELD, entA, entB, PASSFLOAT(px), PASSFLOAT(py), PASSFLOAT(pz)); }
+
+bool trap_PhysIsSleeping(int entityID) { return syscall(PHYS_ISSLEEPING, entityID) != 0; }
 
 // BotLib traps start here
 int trap_BotLibSetup(void) { return syscall(BOTLIB_SETUP); }

@@ -314,8 +314,23 @@ intptr_t SV_GameSystemCalls(intptr_t* args) {
 			}
 		}
 
-		case G_DEBUG_POLYGON_CREATE: return BotImport_DebugPolygonCreate(args[1], args[2], VMA(3));
-		case G_DEBUG_POLYGON_DELETE: BotImport_DebugPolygonDelete(args[1]); return 0;
+		case PHYS_CREATESHAPE: SV_CreateShape(args[1], VMA(2)); return 0;
+		case PHYS_CREATEBOX: SV_PhysicsCreateBox(args[1], VMF(2), VMF(3), VMF(4), VMF(5)); return 0;
+		case PHYS_CREATEMODEL: SV_PhysicsCreateModel(args[1], args[2], VMF(3), VMF(4), VMF(5), VMF(6)); return 0;
+		case PHYS_DELETEOBJECT: SV_PhysicsDeleteObject(args[1]); return 0;
+		case PHYS_GETPOSITION: SV_PhysicsGetPosition(args[1], (float*)VMA(2), (float*)VMA(3), (float*)VMA(4)); return 0;
+		case PHYS_SETPOSITION: SV_PhysicsSetPosition(args[1], VMF(2), VMF(3), VMF(4)); return 0;
+		case PHYS_GETANGLES: SV_PhysicsGetAngles(args[1], (float*)VMA(2), (float*)VMA(3), (float*)VMA(4)); return 0;
+		case PHYS_SETANGLES: SV_PhysicsSetAngles(args[1], VMF(2), VMF(3), VMF(4)); return 0;
+		case PHYS_GETLINEARVELOCITY: SV_PhysicsGetLinearVelocity(args[1], (float*)VMA(2), (float*)VMA(3), (float*)VMA(4)); return 0;
+		case PHYS_SETLINEARVELOCITY: SV_PhysicsSetLinearVelocity(args[1], VMF(2), VMF(3), VMF(4)); return 0;
+		case PHYS_GETANGULARVELOCITY: SV_PhysicsGetAngularVelocity(args[1], (float*)VMA(2), (float*)VMA(3), (float*)VMA(4)); return 0;
+		case PHYS_SETANGULARVELOCITY: SV_PhysicsSetAngularVelocity(args[1], VMF(2), VMF(3), VMF(4)); return 0;
+		case PHYS_APPLYCENTRALFORCE: SV_PhysicsApplyCentralForce(args[1], VMF(2), VMF(3), VMF(4)); return 0;
+		case PHYS_FREEZEOBJECT: SV_PhysicsFreezeObject(args[1]); return 0;
+		case PHYS_UNFREEZEOBJECT: SV_PhysicsUnfreezeObject(args[1]); return 0;
+		case PHYS_WELD: SV_PhysicsWeld(args[1], args[2], VMF(3), VMF(4), VMF(5)); return 0;
+		case PHYS_ISSLEEPING: return SV_PhysicsIsSleeping(args[1]);
 
 		case BOTLIB_SETUP: return SV_BotLibSetup();
 		case BOTLIB_SHUTDOWN: return SV_BotLibShutdown();

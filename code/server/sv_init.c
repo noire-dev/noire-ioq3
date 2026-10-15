@@ -353,20 +353,6 @@ static void SV_ClearServer(void) {
 
 /*
 ================
-SV_TouchFile
-================
-*/
-static void SV_TouchFile(const char* filename) {
-	fileHandle_t f;
-
-	FS_FOpenFileRead(filename, &f, false);
-	if(f) {
-		FS_FCloseFile(f);
-	}
-}
-
-/*
-================
 SV_SpawnServer
 
 Change the server to a new map, taking all connected
@@ -383,6 +369,7 @@ void SV_SpawnServer(char* server, bool killBots) {
 
 	// shut down the existing game if it is running
 	SV_ShutdownGameProgs();
+	SV_PhysicsShutdown();
 
 	Com_Printf("------ Server Initialization ------\n");
 	Com_Printf("Server: %s\n", server);
@@ -469,6 +456,7 @@ void SV_SpawnServer(char* server, bool killBots) {
 
 	// load and spawn all other entities
 	SV_InitGameProgs();
+	SV_PhysicsInit();
 
 	// run a few frames to allow everything to settle
 	for(i = 0; i < 3; i++) {
@@ -594,6 +582,14 @@ void SV_Init(void) {
 
 	SV_AddOperatorCommands();
 
+	// Physics engine
+	phys_fps = Cvar_Get("phys_fps", "120", CVAR_ARCHIVE);
+	phys_steps = Cvar_Get("phys_steps", "8", CVAR_ARCHIVE);
+	phys_solver_iterations = Cvar_Get("phys_solver_iterations", "96", CVAR_ARCHIVE);
+	phys_gravity_x = Cvar_Get("phys_gravity_x", "0", CVAR_ARCHIVE);
+	phys_gravity_y = Cvar_Get("phys_gravity_y", "0", CVAR_ARCHIVE);
+	phys_gravity_z = Cvar_Get("phys_gravity_z", "-800", CVAR_ARCHIVE);
+
 	// serverinfo vars
 	Cvar_Get("dmflags", "0", CVAR_SERVERINFO);
 	Cvar_Get("fraglimit", "20", CVAR_SERVERINFO);
@@ -716,6 +712,7 @@ void SV_Shutdown(char* finalmsg) {
 	SV_RemoveOperatorCommands();
 	SV_MasterShutdown();
 	SV_ShutdownGameProgs();
+	SV_PhysicsShutdown();
 
 	// free current level
 	SV_ClearServer();

@@ -116,10 +116,9 @@ function NoireSettings_UpdateTab(id) {
         ui.spin(id, ctx[id].resolution, 234, y, 800 - 224 - 20, ctx[id].elementHeight, "Resolution", UI.BOLD, color.windowItem, ctx[id].elementFontScale, "r_resolution", EMODE.STRING);
         ctx[id].mode = ui.spin(id, ctx[id].tabEndID += 1, 234, y += ctx[id].elementHeight + ctx[id].elementSpace, 800 - 224 - 20, ctx[id].elementHeight, "Mode", UI.BOLD, color.windowItem, ctx[id].elementFontScale, "r_fullscreen", EMODE.NUMBER);
         api.element(id, ctx[id].mode, "options", "Window", 0);
-        api.element(id, ctx[id].mode, "options", "Borderless window", 1);
-        api.element(id, ctx[id].mode, "options", "Fullscreen", 2);
-        api.element(id, ctx[id].mode, "options", "Full desktop", 3);
-        api.element(id, ctx[id].mode, "optionsCount", 4);
+        api.element(id, ctx[id].mode, "options", "Fullscreen", 1);
+        api.element(id, ctx[id].mode, "options", "Full desktop", 2);
+        api.element(id, ctx[id].mode, "optionsCount", 3);
         ctx[id].anisotropy = ui.checkbox(id, ctx[id].tabEndID += 1, 234, y += ctx[id].elementHeight + ctx[id].elementSpace, 800 - 224 - 20, ctx[id].elementHeight, "Anisotropy", UI.BOLD, color.windowItem, ctx[id].elementFontScale, "r_ext_texture_filter_anisotropic");
         ctx[id].postfx = ui.checkbox(id, ctx[id].tabEndID += 1, 234, y += ctx[id].elementHeight + ctx[id].elementSpace, 800 - 224 - 20, ctx[id].elementHeight, "Post-processing", UI.BOLD, color.windowItem, ctx[id].elementFontScale, "r_postfx");
         ctx[id].hdr = ui.checkbox(id, ctx[id].tabEndID += 1, 234, y += ctx[id].elementHeight + ctx[id].elementSpace, 800 - 224 - 20, ctx[id].elementHeight, "HDR", UI.BOLD, color.windowItem, ctx[id].elementFontScale, "r_hdr");

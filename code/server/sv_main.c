@@ -31,6 +31,13 @@ serverStatic_t svs;  // persistant server info
 server_t sv;         // local server
 vm_t* gvm = NULL;    // game virtual machine
 
+cvar_t* phys_fps;    // bullet tick rate
+cvar_t* phys_steps;  // bullet steps in one tick
+cvar_t* phys_solver_iterations;
+cvar_t* phys_gravity_x;
+cvar_t* phys_gravity_y;
+cvar_t* phys_gravity_z;
+
 cvar_t* sv_fps = NULL;       // time rate for running non-clients
 cvar_t* sv_timeout;          // seconds without any message
 cvar_t* sv_zombietime;       // seconds to sink messages after disconnect
@@ -1006,6 +1013,7 @@ happen before SV_Frame is called
 void SV_Frame(int msec) {
 	int frameMsec;
 	int startTime;
+	int physicsTime;
 
 	// the menu kills the server with this cvar
 	if(sv_killserver->integer) {
@@ -1110,6 +1118,11 @@ void SV_Frame(int msec) {
 
 	// send a heartbeat to the master if needed
 	SV_MasterHeartbeat(HEARTBEAT_FOR_MASTER);
+
+	physicsTime = sv.prevTime;
+	sv.prevTime = sv.time;
+
+	SV_PhysicsStep((float)(sv.time - physicsTime) / 1000.0f);
 }
 
 /*
