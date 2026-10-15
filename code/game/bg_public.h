@@ -367,7 +367,6 @@ typedef enum {
 	EV_GIB_PLAYER,  // gib a previously living player
 	EV_SCOREPLUM,   // score plum
 
-	EV_DEBUG_LINE,
 	EV_STOPLOOPINGSOUND,
 	EV_TAUNT,
 } entity_event_t;
@@ -507,6 +506,7 @@ bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps);
 // content masks
 #define MASK_ALL (-1)
 #define MASK_SOLID (CONTENTS_SOLID)
+#define MASK_SELECT (CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_TRIGGER)
 #define MASK_PLAYERSOLID (CONTENTS_SOLID | CONTENTS_PLAYERCLIP | CONTENTS_BODY)
 #define MASK_DEADSOLID (CONTENTS_SOLID | CONTENTS_PLAYERCLIP)
 #define MASK_WATER (CONTENTS_WATER | CONTENTS_LAVA | CONTENTS_SLIME)
@@ -518,17 +518,16 @@ bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps);
 //
 typedef enum {
 	ET_GENERAL,
+	ET_PHYSICS,
 	ET_PLAYER,
 	ET_ITEM,
 	ET_MISSILE,
 	ET_MOVER,
-	ET_BEAM,
 	ET_PORTAL,
 	ET_SPEAKER,
 	ET_PUSH_TRIGGER,
 	ET_TELEPORT_TRIGGER,
 	ET_INVISIBLE,
-	ET_TEAM,
 
 	ET_EVENTS  // any of the EV_* events can be added freestanding
 	           // by setting eType to ET_EVENTS + eventNum

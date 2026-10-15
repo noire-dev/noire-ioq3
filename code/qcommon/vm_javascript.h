@@ -52,11 +52,13 @@ typedef enum {
 	VM_APIITEM,
 	VM_CMD,
 
-	// game.qvm
+	// game.vm
 	VM_APIGAMEENTITY,
 	VM_GAPIENTITYDELETE,
+	VM_GAPIENTITYSPAWN,
+	VM_GAPIPLAYERCROSHAIRPOINT,
 
-	// cgame.qvm + ui.qvm
+	// cgame.vm + ui.vm
 	VM_APICGUI,
 	VM_APIGLCONFIG,
 	VM_DRAWSTRING,
@@ -64,13 +66,13 @@ typedef enum {
 	VM_DRAWRECTANGLE,
 	VM_DRAWSHADER,
 
-	// cgame.qvm
+	// cgame.vm
 	VM_APIHUD,
 	VM_APICLIENTPLAYER,
 	VM_HUDCOUNTER,
 	VM_NOTIFY,
 
-	// ui.qvm
+	// ui.vm
 	VM_APISHELL,
 	VM_APIWINDOW,
 	VM_APIELEMENT,

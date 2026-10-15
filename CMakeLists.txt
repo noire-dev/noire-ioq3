@@ -11,6 +11,13 @@ include(identity)
 
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
 
+# Release optimization for generic x86-64 CPUs
+add_compile_options(
+    "$<$<CONFIG:Release>:-O3>"
+    "$<$<CONFIG:Release>:-march=x86-64-v2>"
+    "$<$<CONFIG:Release>:-mtune=generic>"
+)
+
 option(BUILD_SERVER "Build dedicated server" OFF)
 option(BUILD_CLIENT "Build client" ON)
 option(BUILD_RENDERER "Build renderer" ON)

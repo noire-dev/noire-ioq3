@@ -66,50 +66,49 @@ vmCvar_t g_banIPs;
 vmCvar_t g_filterBan;
 vmCvar_t g_listEntity;
 
-static cvarTable_t gameCvarTable[] = {
-    // don't override the cheat state set by the system
-    {&g_cheats, "sv_cheats", "", 0, 0, false},
+static cvarTable_t gameCvarTable[] = {// don't override the cheat state set by the system
+                                      {&g_cheats, "sv_cheats", "", 0, 0, false},
 
-    // noset vars
-    {NULL, "gamename", GAMEVERSION, CVAR_SERVERINFO | CVAR_ROM, 0, false},
-    {NULL, "gamedate", PRODUCT_DATE, CVAR_ROM, 0, false},
+                                      // noset vars
+                                      {NULL, "gamename", GAMEVERSION, CVAR_SERVERINFO | CVAR_ROM, 0, false},
+                                      {NULL, "gamedate", PRODUCT_DATE, CVAR_ROM, 0, false},
 
-    {&g_maxclients, "sv_maxclients", "8", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, false},
-    {&g_maxGameClients, "g_maxGameClients", "0", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, false},
+                                      {&g_maxclients, "sv_maxclients", "8", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, false},
+                                      {&g_maxGameClients, "g_maxGameClients", "0", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, false},
 
-    // change anytime vars
-    {&g_dmflags, "dmflags", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, true},
-    {&g_fraglimit, "fraglimit", "20", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, true},
-    {&g_timelimit, "timelimit", "0", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, true},
-    {&g_capturelimit, "capturelimit", "8", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, true},
+                                      // change anytime vars
+                                      {&g_dmflags, "dmflags", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, true},
+                                      {&g_fraglimit, "fraglimit", "20", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, true},
+                                      {&g_timelimit, "timelimit", "0", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, true},
+                                      {&g_capturelimit, "capturelimit", "8", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, true},
 
-    {&g_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO, 0, false},
+                                      {&g_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO, 0, false},
 
-    {&g_friendlyFire, "g_friendlyFire", "0", CVAR_ARCHIVE, 0, true},
+                                      {&g_friendlyFire, "g_friendlyFire", "0", CVAR_ARCHIVE, 0, true},
 
-    {&g_password, "g_password", "", CVAR_USERINFO, 0, false},
+                                      {&g_password, "g_password", "", CVAR_USERINFO, 0, false},
 
-    {&g_banIPs, "g_banIPs", "", CVAR_ARCHIVE, 0, false},
-    {&g_filterBan, "g_filterBan", "1", CVAR_ARCHIVE, 0, false},
+                                      {&g_banIPs, "g_banIPs", "", CVAR_ARCHIVE, 0, false},
+                                      {&g_filterBan, "g_filterBan", "1", CVAR_ARCHIVE, 0, false},
 
-    {&g_needpass, "g_needpass", "0", CVAR_SERVERINFO | CVAR_ROM, 0, false},
+                                      {&g_needpass, "g_needpass", "0", CVAR_SERVERINFO | CVAR_ROM, 0, false},
 
-    {&g_dedicated, "dedicated", "0", 0, 0, false},
+                                      {&g_dedicated, "dedicated", "0", 0, 0, false},
 
-    {&g_speed, "g_speed", "320", 0, 0, true},
-    {&g_gravity, "g_gravity", "800", 0, 0, true},
-    {&g_knockback, "g_knockback", "1000", 0, 0, true},
-    {&g_quadfactor, "g_quadfactor", "3", 0, 0, true},
-    {&g_weaponRespawn, "g_weaponrespawn", "5", 0, 0, true},
-    {&g_weaponTeamRespawn, "g_weaponTeamRespawn", "30", 0, 0, true},
-    {&g_inactivity, "g_inactivity", "60", 0, 0, true},
-    {&g_debugMove, "g_debugMove", "0", 0, 0, false},
-    {&g_debugDamage, "g_debugDamage", "0", 0, 0, false},
-    {&g_debugAlloc, "g_debugAlloc", "0", 0, 0, false},
-    {&g_motd, "g_motd", "", 0, 0, false},
-    {&g_blood, "com_blood", "1", 0, 0, false},
+                                      {&g_speed, "g_speed", "320", 0, 0, true},
+                                      {&g_gravity, "g_gravity", "800", 0, 0, true},
+                                      {&g_knockback, "g_knockback", "1000", 0, 0, true},
+                                      {&g_quadfactor, "g_quadfactor", "3", 0, 0, true},
+                                      {&g_weaponRespawn, "g_weaponrespawn", "5", 0, 0, true},
+                                      {&g_weaponTeamRespawn, "g_weaponTeamRespawn", "30", 0, 0, true},
+                                      {&g_inactivity, "g_inactivity", "60", 0, 0, true},
+                                      {&g_debugMove, "g_debugMove", "0", 0, 0, false},
+                                      {&g_debugDamage, "g_debugDamage", "0", 0, 0, false},
+                                      {&g_debugAlloc, "g_debugAlloc", "0", 0, 0, false},
+                                      {&g_motd, "g_motd", "", 0, 0, false},
+                                      {&g_blood, "com_blood", "1", 0, 0, false},
 
-    {&g_listEntity, "g_listEntity", "0", 0, 0, false}
+                                      {&g_listEntity, "g_listEntity", "0", 0, 0, false}
 
 };
 
@@ -293,6 +292,8 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	// even if they aren't all used, so numbers inside that
 	// range are NEVER anything but clients
 	level.num_entities = MAX_CLIENTS;
+	level.physEntNextFrame = 0;
+	level.physEntNeedsSnapshot = false;
 
 	for(i = 0; i < MAX_CLIENTS; i++) {
 		g_entities[i].classname = "clientslot";
@@ -417,6 +418,41 @@ void G_RunThink(gentity_t* ent) {
 	ent->think(ent);
 }
 
+void G_RunPhysics(gentity_t* ent, int i) {
+	if(!trap_Phys_IsSleeping(ent->s.number)) {
+		vec3_t origin, angles;
+		trap_Phys_GetPosition(ent->s.number, &origin[0], &origin[1], &origin[2]);
+		trap_Phys_GetAngles(ent->s.number, &angles[0], &angles[1], &angles[2]);
+		if(origin[2] < -65535) trap_Phys_SetPosition(ent->s.number, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2]);
+		// trap_Phys_GetPosition(ent->s.number, &ent->s.origin[0], &ent->s.origin[1], &ent->s.origin[2]);
+		// trap_Phys_GetAngles(ent->s.number, &ent->s.angles[0], &ent->s.angles[1], &ent->s.angles[2]);
+		if(i >= level.physEntNextFrame && level.physEntCount < PHYSICS_UPDATE_LIMIT) {  // Курсор для начала чтения массива + лимит по сети
+			ent->s.pos.trType = TR_INTERPOLATE;
+			ent->s.apos.trType = TR_INTERPOLATE;
+			VectorCopy(origin, ent->s.pos.trBase);
+			VectorCopy(angles, ent->s.apos.trBase);
+			level.physEntCount += 1;
+		} else if(i >= level.physEntNextFrame) {  // Достигли сетевого лимита, ждем следующий снапшот
+			if(!level.physEntNeedsSnapshot) level.physEntNextFrame = i;
+			level.physEntNeedsSnapshot = true;
+		}
+		VectorCopy(origin, ent->r.currentOrigin);
+		VectorCopy(angles, ent->r.currentAngles);
+		trap_LinkEntity(ent);
+	} else {
+		if(i >= level.physEntNextFrame && level.physEntCount < PHYSICS_UPDATE_LIMIT) {  // Курсор для начала чтения массива + лимит по сети
+			if(!VectorCompare(ent->r.currentOrigin, ent->s.pos.trBase)) {
+				VectorCopy(ent->r.currentOrigin, ent->s.pos.trBase);
+				VectorCopy(ent->r.currentAngles, ent->s.apos.trBase);
+				level.physEntCount += 1;
+			}
+		} else if(i >= level.physEntNextFrame) {  // Достигли сетевого лимита, ждем следующий снапшот
+			if(!level.physEntNeedsSnapshot) level.physEntNextFrame = i;
+			level.physEntNeedsSnapshot = true;
+		}
+	}
+}
+
 /*
 ================
 G_RunFrame
@@ -445,6 +481,8 @@ void G_RunFrame(int levelTime) {
 	//
 	// go through all allocated objects
 	//
+	level.physEntCount = 0;
+	level.physEntNeedsSnapshot = false;
 	ent = &g_entities[0];
 	for(i = 0; i < level.num_entities; i++, ent++) {
 		if(!ent->inuse) {
@@ -492,6 +530,11 @@ void G_RunFrame(int levelTime) {
 			continue;
 		}
 
+		if(ent->s.eType == ET_PHYSICS) {
+			G_RunPhysics(ent, i);
+			continue;
+		}
+
 		if(i < MAX_CLIENTS) {
 			G_RunClient(ent);
 			continue;
@@ -499,6 +542,8 @@ void G_RunFrame(int levelTime) {
 
 		G_RunThink(ent);
 	}
+
+	if(level.physEntCount < PHYSICS_UPDATE_LIMIT) level.physEntNextFrame = 0;  // Сбрасываем если энтити лимит не достигнут
 
 	// perform final fixups on the players
 	ent = &g_entities[0];

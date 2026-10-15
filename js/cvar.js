@@ -1,4 +1,4 @@
-// game.qvm
+// game.vm
 cvar.register("gamename", "Noire's Mod", 0);
 cvar.register("gamedate", new Date().toISOString().slice(0, 10), 0);
 cvar.register("sv_cheats", "0", 0);
@@ -20,7 +20,7 @@ cvar.register("com_blood", "1", 0);
 cvar.register("g_enableDust", "0", CVAR.SERVERINFO);
 cvar.register("g_enableBreath", "0", CVAR.SERVERINFO);
 cvar.register("sv_fps", "60", CVAR.SYSTEMINFO | CVAR.ARCHIVE);
-// cgame.qvm
+// cgame.vm
 cvar.register("headR", "100", CVAR.USERINFO | CVAR.ARCHIVE);
 cvar.register("headG", "100", CVAR.USERINFO | CVAR.ARCHIVE);
 cvar.register("headB", "100", CVAR.USERINFO | CVAR.ARCHIVE);
@@ -77,7 +77,7 @@ cvar.register("sv_fps", "60", CVAR.SYSTEMINFO);
 cvar.register("cg_crosshairColorRed", "0.5", CVAR.ARCHIVE | CVAR.USERINFO);
 cvar.register("cg_crosshairColorGreen", "0.75", CVAR.ARCHIVE | CVAR.USERINFO);
 cvar.register("cg_crosshairColorBlue", "1.0", CVAR.ARCHIVE | CVAR.USERINFO);
-// ui.qvm
+// ui.vm
 cvar.register("spawn_preset", "spawn_cmd = sl prop props/%s %s 0 25 25 0 %s 1 1 \"none\" -1 0 0 0 0 1 1 1 1 0.40 1.00", 0);
 cvar.register("toolgun_toolset1", "--------:", 0);
 cvar.register("toolgun_toolset2", "--------:", 0);

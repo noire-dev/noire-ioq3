@@ -348,31 +348,53 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 	}
 
 	// figure momentum add, even if the damage won't be taken
-	if(knockback && targ->client) {
+	if(knockback && targ->client || knockback && targ->s.eType == ET_PHYSICS) {
 		vec3_t kvel;
+		vec3_t kvel_angular;
 		float mass;
 
 		mass = 200;
 
-		VectorScale(dir, g_knockback.value * (float)knockback / mass, kvel);
-		VectorAdd(targ->client->ps.velocity, kvel, targ->client->ps.velocity);
+		if(targ->s.eType == ET_PHYSICS) {
+			VectorScale(dir, g_knockback.value * 3.00 * (float)knockback / mass, kvel);
+			VectorScale(dir, g_knockback.value * 0.01 * (float)knockback / mass, kvel_angular);
+		} else {
+			VectorScale(dir, g_knockback.value * (float)knockback / mass, kvel);
+		}
+		if(targ->client) {
+			VectorAdd(targ->client->ps.velocity, kvel, targ->client->ps.velocity);
+		}
+		if(targ->s.eType == ET_PHYSICS) {
+			vec3_t newVelocity;
+			vec3_t newAngularVelocity;
+			trap_Phys_GetLinearVelocity(targ->s.number, &newVelocity[0], &newVelocity[1], &newVelocity[2]);
+			VectorAdd(newVelocity, kvel, kvel);
+			trap_Phys_SetLinearVelocity(targ->s.number, kvel[0], kvel[1], kvel[2]);
+			trap_Phys_GetAngularVelocity(targ->s.number, &newAngularVelocity[0], &newAngularVelocity[1], &newAngularVelocity[2]);
+			VectorAdd(newAngularVelocity, kvel_angular, kvel_angular);
+			trap_Phys_SetAngularVelocity(targ->s.number, kvel_angular[0], kvel_angular[1], kvel_angular[2]);
+		}
 
 		// set the timer so that the other client can't cancel
 		// out the movement immediately
-		if(!targ->client->ps.pm_time) {
-			int t;
+		if(targ->s.eType != ET_PHYSICS) {
+			if(!targ->client->ps.pm_time) {
+				int t;
 
-			t = knockback * 2;
-			if(t < 50) {
-				t = 50;
+				t = knockback * 2;
+				if(t < 50) {
+					t = 50;
+				}
+				if(t > 200) {
+					t = 200;
+				}
+				targ->client->ps.pm_time = t;
+				targ->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
 			}
-			if(t > 200) {
-				t = 200;
-			}
-			targ->client->ps.pm_time = t;
-			targ->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
 		}
 	}
+
+	if(targ->s.eType == ET_PHYSICS && targ->health == -1) return;
 
 	// check for completely getting out of the damage
 	if(!(dflags & DAMAGE_NO_PROTECTION)) {
@@ -440,7 +462,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 			if(targ->health < -999) targ->health = -999;
 
 			targ->enemy = attacker;
-			targ->die(targ, inflictor, attacker, take, mod);
+			if(targ->die) targ->die(targ, inflictor, attacker, take, mod);
 			return;
 		} else if(targ->pain) {
 			targ->pain(targ, attacker, take);

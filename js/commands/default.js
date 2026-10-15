@@ -27,7 +27,20 @@ function ADDITEM(args) {
     item.register(args[2], args[3], args[4], args[5], 0, 1, 0);
 }
 
+function TESTPROP(args) {
+    entity.spawn(0, 0, 0, "props/wood_box");
+}
+
+function SpawnProp(args) {
+    var x = player.crosshairPoint(args[0], 1024, 0);
+    var y = player.crosshairPoint(args[0], 1024, 1);
+    var z = player.crosshairPoint(args[0], 1024, 2);
+    entity.spawn(x, y, z, "props/" + args[2]);
+}
+
 command.register("testCmdJS", TestCmd);
 command.register("addmoney", MoneyAdd);
 command.register("moneycheck", MoneyWhat);
 command.register("additem", ADDITEM);
+command.register("spawntestprop", TESTPROP);
+command.register("spawnprop", SpawnProp);

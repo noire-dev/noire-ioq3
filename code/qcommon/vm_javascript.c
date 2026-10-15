@@ -99,12 +99,87 @@ static void API_GameEntity(int entityID, int fieldID, int i1, int i2, int i3, in
 	bounds(entityID, MAX_GENTITIES, "API_GameEntity - entityID");
 }
 
-static void GAPI_EntityDelete(int entityID) {
-	if(!g_entities[entityID].client) {
-		G_FreeEntity(&g_entities[entityID]);
+static void GAPI_EntityDelete(gentity_t* entity) {
+	if(!entity->client) {
+		G_FreeEntity(entity);
 	} else {
-		// DropClientSilently(g_entities[entityID].client->ps.clientNum);
+		// DropClientSilently(entity->client->ps.clientNum);
 	}
+}
+
+static float GAPI_PlayerCrosshairPoint(gentity_t* player, float distance, int xyz) {
+	vec3_t end, start, forward, up, right;
+	trace_t tr;
+
+	bounds(xyz, 3, "GAPI_PlayerCrosshairPoint - xyz");
+
+	// Set Aiming Directions
+	AngleVectors(player->client->ps.viewangles, forward, right, up);
+	CalcMuzzlePoint(player, forward, right, up, start);
+	VectorMA(start, distance, forward, end);
+
+	// Trace Position
+	trap_Trace(&tr, start, NULL, NULL, end, player->s.number, MASK_SELECT);
+
+	return tr.endpos[xyz];
+}
+
+static void GAPI_SetEntityModel(gentity_t* entity, char* modelName) {
+	int len;
+
+	if(!entity) {
+		Com_Printf("GAPI_SetEntityModel: entity is NULL\n");
+		return;
+	}
+
+	len = strlen(modelName);
+	if(!len) {
+		Com_Printf("GAPI_SetEntityModel: modelName is empty\n");
+		return;
+	}
+
+	entity->s.modelindex = G_ModelIndex(modelName);
+	CopyAlloc(entity->model, modelName);
+
+	if(len >= 4 && !Q_stricmp(entity->model + len - 4, ".md3")) entity->model[len - 4] = '\0';
+
+	trap_Phys_CreateShape(entity->s.modelindex, va("%s.md3", entity->model));
+}
+
+static void GAPI_SetEntityPosition(gentity_t* entity, float x, float y, float z) {
+	if(!entity) {
+		Com_Printf("GAPI_SetEntityPosition: entity is NULL\n");
+		return;
+	}
+
+	entity->s.origin[0] = x;
+	entity->s.origin[1] = y;
+	entity->s.origin[2] = z;
+}
+
+static void GAPI_SetEntityAngles(gentity_t* entity, float x, float y, float z) {
+	if(!entity) {
+		Com_Printf("GAPI_SetEntityAngles: entity is NULL\n");
+		return;
+	}
+
+	entity->s.angles[0] = x;
+	entity->s.angles[1] = y;
+	entity->s.angles[2] = z;
+}
+
+static void GAPI_EntitySpawn(float x, float y, float z, char* modelName) {
+	gentity_t* entity;
+	entity = G_Spawn();
+	entity->s.eType = ET_PHYSICS;
+	entity->takedamage = true;
+	entity->s.pos.trType = TR_INTERPOLATE;
+	GAPI_SetEntityModel(entity, modelName);
+	GAPI_SetEntityPosition(entity, x, y, z);
+	GAPI_SetEntityAngles(entity, 0.0, 0.0, 0.0);
+	trap_Phys_CreateModel(entity->s.number, entity->s.modelindex, entity->s.origin[0], entity->s.origin[1], entity->s.origin[2], 10);
+	trap_Phys_SetAngles(entity->s.number, entity->s.angles[0], entity->s.angles[1], entity->s.angles[2]);
+	trap_Phys_UnfreezeObject(entity->s.number);
 }
 #endif
 
@@ -285,7 +360,12 @@ void VMCall(int func_id) {
 		case VM_CMD: trap_SendConsoleCommand(vmargs.v[0].i, vmargs.v[1].s); break;
 #ifdef GAME
 		case VM_APIGAMEENTITY: API_GameEntity(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
-		case VM_GAPIENTITYDELETE: GAPI_EntityDelete(vmargs.v[0].i); break;
+		case VM_GAPIENTITYDELETE: GAPI_EntityDelete(&g_entities[vmargs.v[0].i]); break;
+		case VM_GAPIENTITYSPAWN: GAPI_EntitySpawn(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].s); break;
+		case VM_GAPIPLAYERCROSHAIRPOINT:
+			vmresult.v.f = GAPI_PlayerCrosshairPoint(&g_entities[vmargs.v[0].i], vmargs.v[1].f, vmargs.v[2].i);
+			vmresult.t = JS_TYPE_FLOAT;
+			break;
 #endif
 #ifndef GAME
 		case VM_APICGUI: API_CGUI(vmargs.v[0].i, vmargs.v[2].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i); break;

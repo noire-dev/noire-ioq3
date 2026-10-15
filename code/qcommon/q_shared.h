@@ -532,6 +532,21 @@ void ByteToDir(int b, vec3_t dir);
 
 #define QuatCopy(a, b) ((b)[0] = (a)[0], (b)[1] = (a)[1], (b)[2] = (a)[2], (b)[3] = (a)[3])
 
+#ifdef GAME
+#define CopyAlloc(dest, src)           \
+	do {                               \
+		if(src) {                      \
+			int len = strlen(src) + 1; \
+			dest = G_Alloc(len);       \
+			if(dest != NULL) {         \
+				strcpy(dest, src);     \
+			}                          \
+		} else {                       \
+			dest = NULL;               \
+		}                              \
+	} while(0)
+#endif
+
 #define SnapVector(v)         \
 	{                         \
 		v[0] = ((int)(v[0])); \
@@ -1006,7 +1021,7 @@ typedef enum {
 #define MAX_CLIENTS 64  // absolute limit
 #define MAX_LOCATIONS 64
 
-#define GENTITYNUM_BITS 10  // don't need to send any more
+#define GENTITYNUM_BITS 12  // don't need to send any more
 #define MAX_GENTITIES (1 << GENTITYNUM_BITS)
 
 // entitynums are communicated with GENTITY_BITS, so any reserved

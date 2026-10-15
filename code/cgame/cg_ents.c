@@ -183,6 +183,39 @@ static void CG_General(centity_t* cent) {
 
 /*
 ==================
+CG_Physics
+==================
+*/
+static void CG_Physics(centity_t* cent) {
+	refEntity_t ent;
+	entityState_t* s1;
+
+	s1 = &cent->currentState;
+
+	// if set to invisible, skip
+	if(!s1->modelindex) return;
+
+	memset(&ent, 0, sizeof(ent));
+
+	// set frame
+	ent.frame = s1->frame;
+	ent.oldframe = ent.frame;
+	ent.backlerp = 0;
+
+	VectorCopy(cent->lerpOrigin, ent.origin);
+	VectorCopy(cent->lerpOrigin, ent.oldorigin);
+
+	ent.hModel = cgs.gameModels[s1->modelindex];
+
+	// convert angles to axis
+	AnglesToAxis(cent->lerpAngles, ent.axis);
+
+	// add to refresh list
+	trap_R_AddRefEntityToScene(&ent);
+}
+
+/*
+==================
 CG_Speaker
 
 Speaker entities can automatically play sounds
@@ -427,30 +460,6 @@ static void CG_Mover(centity_t* cent) {
 
 /*
 ===============
-CG_Beam
-
-Also called as an event
-===============
-*/
-void CG_Beam(centity_t* cent) {
-	refEntity_t ent;
-	entityState_t* s1;
-
-	s1 = &cent->currentState;
-
-	// create the render entity
-	memset(&ent, 0, sizeof(ent));
-	VectorCopy(s1->pos.trBase, ent.origin);
-	VectorCopy(s1->origin2, ent.oldorigin);
-	AxisClear(ent.axis);
-	ent.reType = RT_BEAM;
-
-	// add to refresh list
-	trap_R_AddRefEntityToScene(&ent);
-}
-
-/*
-===============
 CG_Portal
 ===============
 */
@@ -656,11 +665,11 @@ static void CG_AddCEntity(centity_t* cent) {
 		case ET_PUSH_TRIGGER:
 		case ET_TELEPORT_TRIGGER: break;
 		case ET_GENERAL: CG_General(cent); break;
+		case ET_PHYSICS: CG_Physics(cent); break;
 		case ET_PLAYER: CG_Player(cent); break;
 		case ET_ITEM: CG_Item(cent); break;
 		case ET_MISSILE: CG_Missile(cent); break;
 		case ET_MOVER: CG_Mover(cent); break;
-		case ET_BEAM: CG_Beam(cent); break;
 		case ET_PORTAL: CG_Portal(cent); break;
 		case ET_SPEAKER: CG_Speaker(cent); break;
 	}

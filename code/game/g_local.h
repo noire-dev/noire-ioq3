@@ -190,6 +190,7 @@ struct gclient_s {
 //
 #define MAX_SPAWN_VARS 64
 #define MAX_SPAWN_VARS_CHARS 4096
+#define PHYSICS_UPDATE_LIMIT 64
 
 typedef struct {
 	struct gclient_s* clients;  // [maxclients]
@@ -216,6 +217,10 @@ typedef struct {
 
 	int bodyQueIndex;  // dead bodies
 	gentity_t* bodyQue[BODY_QUEUE_SIZE];
+
+	int physEntCount;
+	int physEntNextFrame;
+	bool physEntNeedsSnapshot;
 } level_locals_t;
 
 //
@@ -480,23 +485,23 @@ void trap_BotFreeClient(int clientNum);
 void trap_GetUsercmd(int clientNum, usercmd_t* cmd);
 bool trap_GetEntityToken(char* buffer, int bufferSize);
 
-void trap_PhysCreateShape(int modelindex, const char* objPath);
-void trap_PhysCreateBox(int entityID, float x, float y, float z, float mass);
-void trap_PhysCreateModel(int entityID, int modelindex, float x, float y, float z, float mass);
-void trap_PhysDeleteObject(int entityID);
-void trap_PhysGetPosition(int entityID, float* x, float* y, float* z);
-void trap_PhysSetPosition(int entityID, float x, float y, float z);
-void trap_PhysGetAngles(int entityID, float* pitch, float* yaw, float* roll);
-void trap_PhysSetAngles(int entityID, float pitch, float yaw, float roll);
-void trap_PhysGetLinearVelocity(int entityID, float* vx, float* vy, float* vz);
-void trap_PhysSetLinearVelocity(int entityID, float vx, float vy, float vz);
-void trap_PhysGetAngularVelocity(int entityID, float* vx, float* vy, float* vz);
-void trap_PhysSetAngularVelocity(int entityID, float vx, float vy, float vz);
-void trap_PhysApplyCentralForce(int entityID, float fx, float fy, float fz);
-void trap_PhysFreezeObject(int entityID);
-void trap_PhysUnfreezeObject(int entityID);
-void trap_PhysWeld(int entA, int entB, float px, float py, float pz);
-bool trap_PhysIsSleeping(int entityID);
+void trap_Phys_CreateShape(int modelindex, const char* objPath);
+void trap_Phys_CreateBox(int entityID, float x, float y, float z, float mass);
+void trap_Phys_CreateModel(int entityID, int modelindex, float x, float y, float z, float mass);
+void trap_Phys_DeleteObject(int entityID);
+void trap_Phys_GetPosition(int entityID, float* x, float* y, float* z);
+void trap_Phys_SetPosition(int entityID, float x, float y, float z);
+void trap_Phys_GetAngles(int entityID, float* pitch, float* yaw, float* roll);
+void trap_Phys_SetAngles(int entityID, float pitch, float yaw, float roll);
+void trap_Phys_GetLinearVelocity(int entityID, float* vx, float* vy, float* vz);
+void trap_Phys_SetLinearVelocity(int entityID, float vx, float vy, float vz);
+void trap_Phys_GetAngularVelocity(int entityID, float* vx, float* vy, float* vz);
+void trap_Phys_SetAngularVelocity(int entityID, float vx, float vy, float vz);
+void trap_Phys_ApplyCentralForce(int entityID, float fx, float fy, float fz);
+void trap_Phys_FreezeObject(int entityID);
+void trap_Phys_UnfreezeObject(int entityID);
+void trap_Phys_Weld(int entA, int entB, float px, float py, float pz);
+bool trap_Phys_IsSleeping(int entityID);
 
 int trap_BotLibSetup(void);
 int trap_BotLibShutdown(void);

@@ -36,18 +36,6 @@
             {
                 "src": "baseq3/pak8.pk3",
                 "dst": "/baseq3"
-            },
-            {
-                "src": "baseq3/vm/cgame.qvm",
-                "dst": "/baseq3/vm"
-            },
-            {
-                "src": "baseq3/vm/game.qvm",
-                "dst": "/baseq3/vm"
-            },
-            {
-                "src": "baseq3/vm/ui.qvm",
-                "dst": "/baseq3/vm"
             }
         ]
     },
@@ -68,18 +56,6 @@
             {
                 "src": "missionpack/pak3.pk3",
                 "dst": "/missionpack"
-            },
-            {
-                "src": "missionpack/vm/cgame.qvm",
-                "dst": "/missionpack/vm"
-            },
-            {
-                "src": "missionpack/vm/game.qvm",
-                "dst": "/missionpack/vm"
-            },
-            {
-                "src": "missionpack/vm/ui.qvm",
-                "dst": "/missionpack/vm"
             }
         ]
     }

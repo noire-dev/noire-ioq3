@@ -147,10 +147,10 @@ function NoireSpawn_Call(id, eid, key) {
                 NoireSpawn_UpdateTab(id);
                 return;
             }
-            cvar.set("spawn_cmd", "sl prop null null " + api.element(id, ctx[id].private, "value") + " " + (api.element(id, ctx[id].physics, "value") + 1) + " " + api.element(id, ctx[id].grid, "field") + " null " + "props/" + api.element(id, ctx[id].spawnList, "field") + " " + 0);
+            cvar.set("spawn_cmd", "spawnprop " + api.element(id, ctx[id].spawnList, "field"));
             qvm.cmd(qvm.ui, EXEC.APPEND, "vstr spawn_cmd");
         } else {
-            cvar.set("spawn_cmd", "sl prop null null " + api.element(id, ctx[id].private, "value") + " " + (api.element(id, ctx[id].physics, "value") + 1) + " " + api.element(id, ctx[id].grid, "field") + " null " + "props/" + ctx[id].currentFolder + " " + api.element(id, ctx[id].spawnList, "field"));
+            cvar.set("spawn_cmd", "spawnprop " + api.element(id, ctx[id].spawnList, "field"));
             qvm.cmd(qvm.ui, EXEC.APPEND, "vstr spawn_cmd");
         }
     }

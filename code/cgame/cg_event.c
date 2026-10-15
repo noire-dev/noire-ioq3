@@ -573,11 +573,6 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 			es->loopSound = 0;
 			break;
 
-		case EV_DEBUG_LINE:
-			DEBUGNAME("EV_DEBUG_LINE");
-			CG_Beam(cent);
-			break;
-
 		default:
 			DEBUGNAME("UNKNOWN");
 			CG_Error("Unknown event: %i", event);

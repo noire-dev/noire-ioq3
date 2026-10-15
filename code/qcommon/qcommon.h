@@ -124,7 +124,7 @@ NET
 
 #define MAX_PACKET_USERCMDS 32  // max number of usercmd_t in a packet
 
-#define MAX_SNAPSHOT_ENTITIES 256
+#define MAX_SNAPSHOT_ENTITIES 4096
 #define SNAPSHOT_RECOVER_STEP 256
 
 #define PORT_ANY -1
@@ -176,10 +176,7 @@ void NET_JoinMulticast6(void);
 void NET_LeaveMulticast6(void);
 void NET_Sleep(int msec);
 
-#define MAX_MSGLEN \
-	16384  // max length of a message, which may
-	       // be fragmented into multiple packets
-
+#define MAX_MSGLEN 65535 * 4
 #define MAX_DOWNLOAD_WINDOW \
 	48                             // ACK window of 48 download chunks. Cannot set this higher, or clients
 	                               // will overflow the reliable commands buffer
@@ -328,7 +325,7 @@ typedef intptr_t(QDECL* vmMainProc)(int callNum, int arg0, int arg1, int arg2, i
 
 void VM_Init(void);
 vm_t* VM_Create(const char* module, intptr_t (*systemCalls)(intptr_t*));
-// module should be bare: "cgame", not "cgame.dll" or "vm/cgame.qvm"
+// module should be bare: "cgame", not "cgame.dll"
 
 void VM_Free(vm_t* vm);
 void VM_Clear(void);

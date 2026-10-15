@@ -46,7 +46,6 @@ void Svcmd_EntityList_f(void) {
 			case ET_ITEM: G_Printf("ET_ITEM             "); break;
 			case ET_MISSILE: G_Printf("ET_MISSILE          "); break;
 			case ET_MOVER: G_Printf("ET_MOVER            "); break;
-			case ET_BEAM: G_Printf("ET_BEAM             "); break;
 			case ET_PORTAL: G_Printf("ET_PORTAL           "); break;
 			case ET_SPEAKER: G_Printf("ET_SPEAKER          "); break;
 			case ET_PUSH_TRIGGER: G_Printf("ET_PUSH_TRIGGER     "); break;

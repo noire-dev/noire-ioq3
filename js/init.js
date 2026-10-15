@@ -29,11 +29,13 @@ const vm = {
     apiItem: vmCount += 1,
     cmd: vmCount += 1,
 
-    // game.qvm
+    // game.vm
     apiGameEntity: vmCount += 1,
     gapiEntityDelete: vmCount += 1,
+    gapiEntitySpawn: vmCount += 1,
+    gapiPlayerCrosshairPoint: vmCount += 1,
 
-    // cgame.qvm + ui.qvm
+    // cgame.vm + ui.vm
     apiCGUI: vmCount += 1,
     apiGLConfig: vmCount += 1,
     drawString: vmCount += 1,
@@ -41,13 +43,13 @@ const vm = {
     drawRectangle: vmCount += 1,
     drawShader: vmCount += 1,
 
-    // cgame.qvm
+    // cgame.vm
     apiHUD: vmCount += 1,
     apiClientPlayer: vmCount += 1,
     HUDCounter: vmCount += 1,
     notify: vmCount += 1,
 
-    // ui.qvm
+    // ui.vm
     apiShell: vmCount += 1,
     apiWindow: vmCount += 1,
     apiElement: vmCount += 1,
