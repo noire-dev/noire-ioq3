@@ -2281,7 +2281,7 @@ void R_RenderMissingCubemaps(void) {
 	imgFlags_t flags = IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_NOLIGHTSCALE | IMGFLAG_CUBEMAP;
 
 	if(!tr.cubemap->image) {
-		tr.cubemap->image = R_CreateImage("*cubeMap", NULL, r_cubemapSize->integer, r_cubemapSize->integer, IMGTYPE_COLORALPHA, flags, GL_RGBA8);
+		tr.cubemap->image = R_CreateImage("*cubeMap", NULL, r_reflectionsResolution->integer, r_reflectionsResolution->integer, IMGTYPE_COLORALPHA, flags, GL_RGBA8);
 
 		for(i = 0; i < 6; i++) {
 			RE_ClearScene();
@@ -2576,7 +2576,7 @@ void RE_LoadWorldMap(const char* name) {
 	}
 
 	// load cubemaps
-	if(r_cubeMapping->integer) {
+	if(r_reflections->integer) {
 		R_CreateBaseCubemap();
 		R_AssignCubemapsToWorldSurfaces();
 	}
@@ -2590,7 +2590,7 @@ void RE_LoadWorldMap(const char* name) {
 	R_BindNullVao();
 
 	// Render all cubemaps
-	if(r_cubeMapping->integer && glRefConfig.framebufferObject) R_RenderMissingCubemaps();
+	if(r_reflections->integer && glRefConfig.framebufferObject) R_RenderMissingCubemaps();
 
 	ri.FS_FreeFile(buffer.v);
 }

@@ -1704,7 +1704,7 @@ static float CalcSplit(float n, float f, float i, float m) { return (n * pow(f /
 
 void R_RenderSunShadowMaps(const refdef_t* fd, int level) {
 	viewParms_t shadowParms;
-	vec4_t lightDir, lightCol;
+	vec4_t lightDir;
 	vec3_t lightViewAxis[3];
 	vec3_t lightOrigin;
 	float splitZNear, splitZFar, splitBias;
@@ -1712,29 +1712,7 @@ void R_RenderSunShadowMaps(const refdef_t* fd, int level) {
 	vec3_t lightviewBounds[2];
 	bool lightViewIndependentOfCameraView = false;
 
-	if(r_forceSun->integer == 2) {
-		int scale = 32768;
-		float angle = (fd->time % scale) / (float)scale * M_PI;
-		lightDir[0] = cos(angle);
-		lightDir[1] = sin(35.0f * M_PI / 180.0f);
-		lightDir[2] = sin(angle) * cos(35.0f * M_PI / 180.0f);
-		lightDir[3] = 0.0f;
-
-		if(1)  //((fd->time % (scale * 2)) < scale)
-		{
-			lightCol[0] = lightCol[1] = lightCol[2] = CLAMP(sin(angle) * 2.0f, 0.0f, 1.0f) * 2.0f;
-			lightCol[3] = 1.0f;
-		} else {
-			lightCol[0] = lightCol[1] = lightCol[2] = CLAMP(sin(angle) * 2.0f * 0.1f, 0.0f, 0.1f);
-			lightCol[3] = 1.0f;
-		}
-
-		VectorCopy4(lightDir, tr.refdef.sunDir);
-		VectorCopy4(lightCol, tr.refdef.sunCol);
-		VectorScale4(lightCol, 0.2f, tr.refdef.sunAmbCol);
-	} else {
-		VectorCopy4(tr.refdef.sunDir, lightDir);
-	}
+	VectorCopy4(tr.refdef.sunDir, lightDir);
 
 	viewZNear = r_shadowCascadeZNear->value;
 	viewZFar = r_shadowCascadeZFar->value;
@@ -2074,31 +2052,7 @@ void R_RenderCubemapSide(int cubemapSide, bool subscene) {
 
 	refdef.time = 0;
 
-	if(!subscene) {
-		RE_BeginScene(&refdef);
-
-		// FIXME: sun shadows aren't rendered correctly in cubemaps
-		// fix involves changing r_FBufScale to fit smaller cubemap image size, or rendering cubemap to framebuffer first
-		// if(glRefConfig.framebufferObject && r_sunlightMode->integer && (r_forceSun->integer || tr.sunShadows)) {
-		//	R_RenderSunShadowMaps(&refdef, 0);
-		//	R_RenderSunShadowMaps(&refdef, 1);
-		//	R_RenderSunShadowMaps(&refdef, 2);
-		//	R_RenderSunShadowMaps(&refdef, 3);
-		//}
-	}
-
-	{
-		vec3_t ambient, directed, lightDir;
-		float scale;
-
-		R_LightForPoint(tr.refdef.vieworg, ambient, directed, lightDir);
-		scale = directed[0] + directed[1] + directed[2] + ambient[0] + ambient[1] + ambient[2] + 1.0f;
-
-		// only print message for first side
-		if(scale < 1.0001f && cubemapSide == 0) {
-			ri.Printf(PRINT_ALL, "cubemap (%f, %f, %f) is outside the lightgrid or inside a wall!\n", tr.refdef.vieworg[0], tr.refdef.vieworg[1], tr.refdef.vieworg[2]);
-		}
-	}
+	if(!subscene) RE_BeginScene(&refdef);
 
 	Com_Memset(&parms, 0, sizeof(parms));
 

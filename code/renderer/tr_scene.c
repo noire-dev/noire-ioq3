@@ -440,9 +440,9 @@ void RE_RenderScene(const refdef_t* fd) {
 	if(glRefConfig.framebufferObject && r_sunlightMode->integer && !(fd->rdflags & RDF_NOWORLDMODEL) && (r_forceSun->integer || tr.sunShadows)) {
 		if((tr.frameCount & 1) == 0) {
 			if(r_shadowCascadeZFar->integer != 0) {
-				R_RenderSunShadowMaps(fd, 0);
-				R_RenderSunShadowMaps(fd, 1);
-				R_RenderSunShadowMaps(fd, 2);
+				if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);   // 1-й каскад: каждые 2 кадра
+				if((tr.frameCount & 15) == 0) R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждые 16 кадров
+				if((tr.frameCount & 63) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 64 кадра
 			} else {
 				Mat4Zero(tr.refdef.sunShadowMvp[0]);
 				Mat4Zero(tr.refdef.sunShadowMvp[1]);
@@ -450,7 +450,7 @@ void RE_RenderScene(const refdef_t* fd) {
 			}
 
 			// only rerender last cascade if sun has changed position
-			if(r_forceSun->integer == 2 || !VectorCompare(tr.refdef.sunDir, tr.lastCascadeSunDirection)) {
+			if(!VectorCompare(tr.refdef.sunDir, tr.lastCascadeSunDirection)) {
 				VectorCopy(tr.refdef.sunDir, tr.lastCascadeSunDirection);
 				R_RenderSunShadowMaps(fd, 3);
 				Mat4Copy(tr.refdef.sunShadowMvp[3], tr.lastCascadeSunMvp);
@@ -460,11 +460,38 @@ void RE_RenderScene(const refdef_t* fd) {
 		}
 	}
 
-	if(r_cubeMapping->integer && tr.cubemap) {
-		VectorCopy(tr.refdef.vieworg, tr.cubemap->origin);
+	if(r_reflections->integer && tr.cubemap) {
 		static int current_side = 0;
-		R_RenderCubemapSide(current_side, true);
-		current_side = (current_side + 1) % 6;
+		if(r_reflections->integer == 1) {
+			int gX, gY, gZ;
+
+			gX = tr.refdef.vieworg[0] / r_reflectionsGrid->value;
+			gY = tr.refdef.vieworg[1] / r_reflectionsGrid->value;
+			gZ = tr.refdef.vieworg[2] / r_reflectionsGrid->value;
+			tr.cubemap->origin[0] = (r_reflectionsGrid->value * gX) + (r_reflectionsGrid->value * 0.5);
+			tr.cubemap->origin[1] = (r_reflectionsGrid->value * gY) + (r_reflectionsGrid->value * 0.5);
+			tr.cubemap->origin[2] = (r_reflectionsGrid->value * gZ) + (r_reflectionsGrid->value * 0.5);
+			if(gX != tr.cubemap->gridX[current_side] || gY != tr.cubemap->gridY[current_side] || gZ != tr.cubemap->gridZ[current_side]) {
+				R_RenderCubemapSide(current_side, true);
+				tr.cubemap->gridX[current_side] = gX;
+				tr.cubemap->gridY[current_side] = gY;
+				tr.cubemap->gridZ[current_side] = gZ;
+			}
+			current_side = (current_side + 1) % 6;
+		} else if(r_reflections->integer == 2) {
+			if((tr.frameCount & 1) == 0) {
+				VectorCopy(tr.refdef.vieworg, tr.cubemap->origin);
+				R_RenderCubemapSide(current_side, true);
+				current_side = (current_side + 1) % 6;
+			}
+		} else if(r_reflections->integer == 3) {
+			VectorCopy(tr.refdef.vieworg, tr.cubemap->origin);
+			R_RenderCubemapSide(current_side, true);
+			current_side = (current_side + 1) % 6;
+		} else if(r_reflections->integer == 4) {
+			VectorCopy(tr.refdef.vieworg, tr.cubemap->origin);
+			for(int i = 0; i < 6; i++) R_RenderCubemapSide(i, true);
+		}
 	}
 
 	// setup view parms for the initial view

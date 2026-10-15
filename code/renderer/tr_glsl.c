@@ -380,8 +380,8 @@ static void GLSL_GetShaderHeader(GLenum shaderType, const GLchar* extra, char* d
 
 	if(r_pbr->integer) Q_strcat(dest, size, "#define USE_PBR\n");
 
-	if(r_cubeMapping->integer) {
-		int cubeMipSize = r_cubemapSize->integer;
+	if(r_reflections->integer) {
+		int cubeMipSize = r_reflectionsResolution->integer;
 		int numRoughnessMips = 0;
 
 		while(cubeMipSize) {
@@ -1022,7 +1022,7 @@ void GLSL_InitGPUShaders(void) {
 
 			if(r_specularMapping->integer) Q_strcat(extradefines, 1024, "#define USE_SPECULARMAP\n");
 
-			if(r_cubeMapping->integer) {
+			if(r_reflections->integer) {
 				Q_strcat(extradefines, 1024, "#define USE_CUBEMAP\n");
 			} else if(r_deluxeSpecular->value > 0.000001f) {
 				Q_strcat(extradefines, 1024, va("#define r_deluxeSpecular %f\n", r_deluxeSpecular->value));

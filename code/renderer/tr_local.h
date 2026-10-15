@@ -68,6 +68,7 @@ typedef unsigned int vaoCacheGlIndex_t;
 typedef struct cubemap_s {
 	vec3_t origin;
 	image_t* image;
+	int gridX[6], gridY[6], gridZ[6];
 } cubemap_t;
 
 #define DLIGHT_SHADOW_SIZE 512
@@ -213,7 +214,6 @@ typedef enum {
 	AGEN_WAVEFORM,
 	AGEN_PORTAL,
 	AGEN_CONST,
-	AGEN_NORMALZFADE,
 } alphaGen_t;
 
 typedef enum {
@@ -1606,8 +1606,9 @@ extern cvar_t* r_deluxeMapping;
 extern cvar_t* r_parallaxMapping;
 extern cvar_t* r_parallaxMapOffset;
 extern cvar_t* r_parallaxMapShadows;
-extern cvar_t* r_cubeMapping;
-extern cvar_t* r_cubemapSize;
+extern cvar_t* r_reflections;
+extern cvar_t* r_reflectionsResolution;
+extern cvar_t* r_reflectionsGrid;
 extern cvar_t* r_deluxeSpecular;
 extern cvar_t* r_pbr;
 extern cvar_t* r_detailLevel;

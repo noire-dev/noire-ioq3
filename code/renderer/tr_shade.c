@@ -448,13 +448,6 @@ static void ComputeShaderColors(shaderStage_t* pStage, vec4_t baseColor, vec4_t 
 			baseColor[3] = 1.0f;
 			vertColor[3] = 0.0f;
 			break;
-		case AGEN_NORMALZFADE:
-			baseColor[3] = pStage->constantColor[3] / 255.0f;
-			if(backEnd.currentEntity && backEnd.currentEntity->e.hModel) {
-				baseColor[3] *= ((unsigned char*)backEnd.currentEntity->e.shaderRGBA)[3] / 255.0f;
-			}
-			vertColor[3] = 0.0f;
-			break;
 	}
 }
 
@@ -488,29 +481,6 @@ static void ComputeFogValues(vec4_t fogDistanceVector, vec4_t fogDepthVector, fl
 		*eyeT = 1;  // non-surface fog always has eye inside
 	}
 }
-
-static void ComputeFogColorMask(shaderStage_t* pStage, vec4_t fogColorMask) {
-	switch(pStage->adjustColorsForFog) {
-		case ACFF_MODULATE_RGB:
-			fogColorMask[0] = fogColorMask[1] = fogColorMask[2] = 1.0f;
-			fogColorMask[3] = 0.0f;
-			break;
-		case ACFF_MODULATE_ALPHA:
-			fogColorMask[0] = fogColorMask[1] = fogColorMask[2] = 0.0f;
-			fogColorMask[3] = 1.0f;
-			break;
-		case ACFF_MODULATE_RGBA: fogColorMask[0] = fogColorMask[1] = fogColorMask[2] = fogColorMask[3] = 1.0f; break;
-		default: fogColorMask[0] = fogColorMask[1] = fogColorMask[2] = fogColorMask[3] = 0.0f; break;
-	}
-}
-
-/* toggles for extra ForwardDlightEnt features */
-int dlightEntUseFog = 1;
-int dlightEntUseFireRiseDir = 1;
-int dlightEntUsePortal = 1;
-int dlightEntUseNormalZFade = 1;
-int dlightEntUseModelLightDir = 1;
-int dlightEntUseShaderColors = 1;
 
 static void ForwardDlightEnt(shaderStage_t* pStage) {
 	int l;
@@ -548,15 +518,6 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 		radius = dl->radius;
 		intensity = Com_Clamp(0.0f, 1.0f, dl->intensity);
 
-		/*
-		 * Build a lightall variant for THIS stage.
-		 *
-		 * If the stage is already a lightall stage, preserve all of its
-		 * lightall-specific flags and only replace the light type.
-		 *
-		 * If it is a generic stage, do NOT use glslShaderIndex because
-		 * that index does not describe a lightall shader variant.
-		 */
 		if(pStage->glslShaderGroup == tr.lightallShader) {
 			index = pStage->glslShaderIndex;
 
@@ -606,26 +567,6 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 		}
 
 		/*
-		 * FIRERISEDIR
-		 */
-		if(dlightEntUseFireRiseDir && ((deformGen != DGEN_NONE && tess.shader->deforms[0].deformationWave.frequency < 0) || pStage->alphaGen == AGEN_NORMALZFADE)) {
-			vec3_t worldUp;
-			vec3_t fireRiseDir = {0, 0, 1};
-
-			if(!VectorCompare(backEnd.currentEntity->e.fireRiseDir, vec3_origin)) {
-				VectorCopy(backEnd.currentEntity->e.fireRiseDir, fireRiseDir);
-			}
-
-			if(backEnd.currentEntity != &tr.worldEntity) {
-				VectorRotate(fireRiseDir, backEnd.currentEntity->e.axis, worldUp);
-			} else {
-				VectorCopy(fireRiseDir, worldUp);
-			}
-
-			GLSL_SetUniformVec3(sp, UNIFORM_FIRERISEDIR, worldUp);
-		}
-
-		/*
 		 * DEFORM
 		 */
 		GLSL_SetUniformInt(sp, UNIFORM_DEFORMGEN, deformGen);
@@ -636,63 +577,14 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 			GLSL_SetUniformFloat(sp, UNIFORM_TIME, tess.shaderTime);
 		}
 
-		/*
-		 * FOG
-		 */
-		if(dlightEntUseFog && input->fogNum && (!input->shader->noFog || pStage->isFogged)) {
-			vec4_t fogColorMask;
-
-			GLSL_SetUniformVec4(sp, UNIFORM_FOGDISTANCE, fogDistanceVector);
-
-			GLSL_SetUniformVec4(sp, UNIFORM_FOGDEPTH, fogDepthVector);
-
-			GLSL_SetUniformFloat(sp, UNIFORM_FOGEYET, eyeT);
-
-			ComputeFogColorMask(pStage, fogColorMask);
-
-			GLSL_SetUniformVec4(sp, UNIFORM_FOGCOLORMASK, fogColorMask);
-		}
-
-		/*
-		 * COLORS FROM STAGE 0 ONLY
-		 */
 		{
 			vec4_t baseColor;
 			vec4_t vertColor;
 
-			if(dlightEntUseShaderColors) {
-				ComputeShaderColors(pStage, baseColor, vertColor, GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE);
-			} else {
-				VectorSet4(baseColor, 1.0f, 1.0f, 1.0f, 1.0f);
-
-				VectorSet4(vertColor, 0.0f, 0.0f, 0.0f, 0.0f);
-			}
+			ComputeShaderColors(pStage, baseColor, vertColor, GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE);
 
 			GLSL_SetUniformVec4(sp, UNIFORM_BASECOLOR, baseColor);
-
 			GLSL_SetUniformVec4(sp, UNIFORM_VERTCOLOR, vertColor);
-		}
-
-		/*
-		 * PORTAL / NORMALZFADE
-		 */
-		if(dlightEntUsePortal && pStage->alphaGen == AGEN_PORTAL) {
-			GLSL_SetUniformFloat(sp, UNIFORM_PORTALRANGE, tess.shader->portalRange);
-		} else if(dlightEntUseNormalZFade && pStage->alphaGen == AGEN_NORMALZFADE) {
-			float lowest = pStage->zFadeBounds[0];
-			float highest = pStage->zFadeBounds[1];
-
-			if(lowest == -1000) {
-				lowest = backEnd.currentEntity->e.shaderTime;
-			}
-
-			if(highest == -1000) {
-				highest = backEnd.currentEntity->e.shaderTime;
-			}
-
-			GLSL_SetUniformFloat(sp, UNIFORM_ZFADELOWEST, lowest);
-
-			GLSL_SetUniformFloat(sp, UNIFORM_ZFADEHIGHEST, highest);
 		}
 
 		GLSL_SetUniformInt(sp, UNIFORM_COLORGEN, pStage->rgbGen);
@@ -756,15 +648,11 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 
 		{
 			vec4_t enableTextures;
-
 			VectorSet4(enableTextures, 0.0f, 0.0f, 0.0f, 0.0f);
-
 			GLSL_SetUniformVec4(sp, UNIFORM_ENABLETEXTURES, enableTextures);
 		}
 
-		if(r_dlightMode->integer >= 2) {
-			GL_BindToTMU(tr.shadowCubemaps[l], TB_SHADOWMAP4);
-		}
+		if(r_dlightMode->integer >= 2) GL_BindToTMU(tr.shadowCubemaps[l], TB_SHADOWMAP4);
 
 		ComputeTexMods(pStage, TB_DIFFUSEMAP, texMatrix);
 
@@ -1049,23 +937,6 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 			GLSL_SetUniformMat4BoneMatrix(sp, UNIFORM_BONEMATRIX, glState.boneMatrix, glState.boneAnimation);
 		}
 
-		if((deformGen != DGEN_NONE && tess.shader->deforms[0].deformationWave.frequency < 0) || pStage->alphaGen == AGEN_NORMALZFADE) {
-			vec3_t worldUp;
-			vec3_t fireRiseDir = {0, 0, 1};
-
-			if(!VectorCompare(backEnd.currentEntity->e.fireRiseDir, vec3_origin)) {
-				VectorCopy(backEnd.currentEntity->e.fireRiseDir, fireRiseDir);
-			}
-
-			if(backEnd.currentEntity != &tr.worldEntity) {  // world surfaces dont have an axis
-				VectorRotate(fireRiseDir, backEnd.currentEntity->e.axis, worldUp);
-			} else {
-				VectorCopy(fireRiseDir, worldUp);
-			}
-
-			GLSL_SetUniformVec3(sp, UNIFORM_FIRERISEDIR, worldUp);
-		}
-
 		GLSL_SetUniformInt(sp, UNIFORM_DEFORMGEN, deformGen);
 		if(deformGen != DGEN_NONE) {
 			GLSL_SetUniformFloat5(sp, UNIFORM_DEFORMPARAMS, deformParams);
@@ -1128,25 +999,6 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 
 		if(pStage->alphaGen == AGEN_PORTAL) {
 			GLSL_SetUniformFloat(sp, UNIFORM_PORTALRANGE, tess.shader->portalRange);
-		} else if(pStage->alphaGen == AGEN_NORMALZFADE) {
-			float lowest, highest;
-			// bool zombieEffect = false;
-
-			lowest = pStage->zFadeBounds[0];
-			if(lowest == -1000) {  // use entity alpha
-				lowest = backEnd.currentEntity->e.shaderTime;
-				// zombieEffect = true;
-			}
-			highest = pStage->zFadeBounds[1];
-			if(highest == -1000) {  // use entity alpha
-				highest = backEnd.currentEntity->e.shaderTime;
-				// zombieEffect = true;
-			}
-
-			// TODO: Handle normalzfade zombie effect
-
-			GLSL_SetUniformFloat(sp, UNIFORM_ZFADELOWEST, lowest);
-			GLSL_SetUniformFloat(sp, UNIFORM_ZFADEHIGHEST, highest);
 		}
 
 		GLSL_SetUniformInt(sp, UNIFORM_COLORGEN, pStage->rgbGen);
@@ -1287,7 +1139,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 						GL_BindToTMU(tr.whiteImage, TB_SPECULARMAP);
 				}
 
-				enableTextures[3] = (r_cubeMapping->integer && !(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap) ? 1.0f : 0.0f;
+				enableTextures[3] = (r_reflections->integer && !(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap) ? 1.0f : 0.0f;
 			}
 
 			GLSL_SetUniformVec4(sp, UNIFORM_ENABLETEXTURES, enableTextures);
@@ -1314,7 +1166,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 		}
 
 		// testing cube map
-		if(!(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap && r_cubeMapping->integer) {
+		if(!(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap && r_reflections->integer) {
 			vec3_t vec3;
 			vec4_t vec4;
 

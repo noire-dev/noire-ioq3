@@ -122,8 +122,9 @@ cvar_t* r_deluxeMapping;
 cvar_t* r_parallaxMapping;
 cvar_t* r_parallaxMapOffset;
 cvar_t* r_parallaxMapShadows;
-cvar_t* r_cubeMapping;
-cvar_t* r_cubemapSize;
+cvar_t* r_reflections;
+cvar_t* r_reflectionsResolution;
+cvar_t* r_reflectionsGrid;
 cvar_t* r_deluxeSpecular;
 cvar_t* r_pbr;
 cvar_t* r_detailLevel;
@@ -276,9 +277,9 @@ static void InitOpenGL(void) {
 	}
 
 	// check for GLSL function textureCubeLod()
-	if(r_cubeMapping->integer && !QGL_VERSION_ATLEAST(3, 0)) {
-		ri.Printf(PRINT_WARNING, "WARNING: Disabled r_cubeMapping because it requires OpenGL 3.0\n");
-		ri.Cvar_Set("r_cubeMapping", "0");
+	if(r_reflections->integer && !QGL_VERSION_ATLEAST(3, 0)) {
+		ri.Printf(PRINT_WARNING, "WARNING: Disabled r_reflections because it requires OpenGL 3.0\n");
+		ri.Cvar_Set("r_reflections", "0");
 	}
 
 	// set default state
@@ -1063,8 +1064,9 @@ void R_Register(void) {
 	r_parallaxMapping = ri.Cvar_Get("r_parallaxMapping", "2", CVAR_ARCHIVE | CVAR_LATCH);
 	r_parallaxMapOffset = ri.Cvar_Get("r_parallaxMapOffset", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_parallaxMapShadows = ri.Cvar_Get("r_parallaxMapShadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_cubeMapping = ri.Cvar_Get("r_cubeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_cubemapSize = ri.Cvar_Get("r_cubemapSize", "256", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflections = ri.Cvar_Get("r_reflections", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflectionsResolution = ri.Cvar_Get("r_reflectionsResolution", "1024", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflectionsGrid = ri.Cvar_Get("r_reflectionsGrid", "128", CVAR_ARCHIVE | CVAR_LATCH);
 	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.3", CVAR_ARCHIVE | CVAR_LATCH);
 	r_pbr = ri.Cvar_Get("r_pbr", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_detailLevel = ri.Cvar_Get("r_detailLevel", "5", CVAR_ARCHIVE);
