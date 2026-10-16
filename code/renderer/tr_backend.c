@@ -806,7 +806,7 @@ const void* RB_DrawSurfs(const void* data) {
 				FBO_BlitFromTexture(tr.renderDepthImage, srcTexCoords, NULL, tr.hdrDepthFbo, NULL, NULL, NULL, 0);
 			}
 
-			if(r_sunlightMode->integer && backEnd.viewParms.flags & VPF_USESUNLIGHT) {
+			if(r_sunShadows->integer && backEnd.viewParms.flags & VPF_USESUNLIGHT) {
 				vec4_t quadVerts[4];
 				vec2_t texCoords[4];
 				vec4_t box;
@@ -1122,7 +1122,7 @@ const void* RB_PostProcess(const void* data) {
 	srcBox[3] = backEnd.viewParms.viewportHeight;
 
 	if(srcFbo) {
-		if(r_hdr->integer && (r_toneMap->integer || r_forceToneMap->integer)) {
+		if(r_hdr->integer && r_toneMap->integer) {
 			autoExposure = r_autoExposure->integer || r_forceAutoExposure->integer;
 
 			// Use an intermediate FBO because it can't blit to the same FBO directly
@@ -1143,7 +1143,7 @@ const void* RB_PostProcess(const void* data) {
 
 	if(srcFbo != dstFbo) FBO_FastBlit(srcFbo, srcBox, dstFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-	if(0 && r_sunlightMode->integer) {
+	if(0) {
 		ivec4_t dstBox2;
 		VectorSet4(dstBox2, 0, glConfig.vidHeight - 128, 128, 128);
 		FBO_BlitFromTexture(tr.sunShadowDepthImage[0], NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);

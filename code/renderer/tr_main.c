@@ -1982,9 +1982,10 @@ void R_RenderSunShadowMaps(const refdef_t* fd, int level) {
 
 			R_SetupProjectionOrtho(&tr.viewParms, lightviewBounds);
 
-			R_AddWorldSurfaces();
-
-			R_AddPolygonSurfaces();
+			if(r_sunShadows->integer >= 2) {
+				R_AddWorldSurfaces();
+				R_AddPolygonSurfaces();
+			}
 
 			R_AddEntitySurfaces();
 

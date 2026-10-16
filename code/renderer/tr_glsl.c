@@ -970,7 +970,7 @@ void GLSL_InitGPUShaders(void) {
 		// skip impossible combos
 		if((i & LIGHTDEF_USE_PARALLAXMAP) && !r_parallaxMapping->integer) continue;
 
-		if((i & LIGHTDEF_USE_SHADOWMAP) && (!lightType || !r_sunlightMode->integer)) continue;
+		if((i & LIGHTDEF_USE_SHADOWMAP) && (!lightType || !r_sunShadows->integer)) continue;
 
 		if((i & LIGHTDEF_ENTITY_VERTEX_ANIMATION) && (i & LIGHTDEF_ENTITY_BONE_ANIMATION)) continue;
 
@@ -1040,10 +1040,12 @@ void GLSL_InitGPUShaders(void) {
 		if(i & LIGHTDEF_USE_SHADOWMAP) {
 			Q_strcat(extradefines, 1024, "#define USE_SHADOWMAP\n");
 
-			if(r_sunlightMode->integer == 1)
+			if(r_sunShadows->integer <= 2)
 				Q_strcat(extradefines, 1024, "#define SHADOWMAP_MODULATE\n");
-			else if(r_sunlightMode->integer == 2)
+			else if(r_sunShadows->integer == 3)
 				Q_strcat(extradefines, 1024, "#define USE_PRIMARY_LIGHT\n");
+
+			if(r_sunShadows->integer >= 2) Q_strcat(extradefines, 1024, "#define SHADOWMAP_WORLD\n");
 		}
 
 		if(i & LIGHTDEF_USE_TCGEN_AND_TCMOD) {

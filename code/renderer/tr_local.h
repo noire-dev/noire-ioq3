@@ -1460,8 +1460,6 @@ typedef struct {
 	int viewCluster;
 
 	float sunShadowScale;
-
-	bool sunShadows;
 	vec3_t sunLight;  // from the sky shader for this level
 	vec3_t sunDirection;
 	vec3_t lastCascadeSunDirection;
@@ -1586,10 +1584,9 @@ extern cvar_t* r_floatLightmap;
 extern cvar_t* r_postProcess;
 
 extern cvar_t* r_toneMap;
-extern cvar_t* r_forceToneMap;
-extern cvar_t* r_forceToneMapMin;
-extern cvar_t* r_forceToneMapAvg;
-extern cvar_t* r_forceToneMapMax;
+extern cvar_t* r_toneMapMin;
+extern cvar_t* r_toneMapAvg;
+extern cvar_t* r_toneMapMax;
 
 extern cvar_t* r_autoExposure;
 extern cvar_t* r_forceAutoExposure;
@@ -1622,11 +1619,9 @@ extern cvar_t* r_imageUpsample;
 extern cvar_t* r_imageUpsampleMaxSize;
 extern cvar_t* r_imageUpsampleType;
 extern cvar_t* r_genNormalMaps;
-extern cvar_t* r_forceSun;
-extern cvar_t* r_forceSunLightScale;
-extern cvar_t* r_forceSunAmbientScale;
-extern cvar_t* r_sunlightMode;
 extern cvar_t* r_sunShadows;
+extern cvar_t* r_sunShadowLightScale;
+extern cvar_t* r_sunShadowAmbientScale;
 extern cvar_t* r_shadowFilter;
 extern cvar_t* r_shadowMapSize;
 extern cvar_t* r_shadowCascadeZNear;

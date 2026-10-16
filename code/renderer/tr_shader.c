@@ -187,8 +187,6 @@ static int NameToSrcBlendMode(const char* name) {
 		return GLS_SRCBLEND_DST_ALPHA;
 	} else if(!Q_stricmp(name, "GL_ONE_MINUS_DST_ALPHA")) {
 		if(r_ignoreDstAlpha->integer) return GLS_SRCBLEND_ZERO;
-
-		return GLS_SRCBLEND_ONE_MINUS_DST_ALPHA;
 	} else if(!Q_stricmp(name, "GL_SRC_ALPHA_SATURATE")) {
 		return GLS_SRCBLEND_ALPHA_SATURATE;
 	}
@@ -1523,11 +1521,6 @@ static bool ParseShader(char** text) {
 			float a, b;
 			bool isGL2Sun = false;
 
-			if(!Q_stricmp(token, "q3gl2_sun") && r_sunShadows->integer) {
-				isGL2Sun = true;
-				tr.sunShadows = true;
-			}
-
 			token = COM_ParseExt(text, false);
 			tr.sunLight[0] = atof(token);
 			token = COM_ParseExt(text, false);
@@ -1981,10 +1974,10 @@ static int CollapseStagesToGLSL(void) {
 
 			if(!pStage->active) continue;
 
-			if(pStage->adjustColorsForFog) {
-				skip = true;
-				break;
-			}
+			// if(pStage->adjustColorsForFog) {
+			//	skip = true;
+			//	break;
+			// }
 
 			if(pStage->bundle[0].tcGen == TCGEN_LIGHTMAP) {
 				int blendBits = pStage->stateBits & (GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS);
@@ -2142,8 +2135,8 @@ static int CollapseStagesToGLSL(void) {
 
 	// convert any remaining lightmap stages with no blending or blendfunc filter
 	// to a lighting pass with a white texture
-	// only do this with r_sunlightMode non-zero, as it's only for correct shadows.
-	if(r_sunlightMode->integer && shader.numDeforms == 0) {
+	// only do this with r_sunShadows non-zero, as it's only for correct shadows.
+	if(r_sunShadows->integer && shader.numDeforms == 0) {
 		for(i = 0; i < MAX_SHADER_STAGES; i++) {
 			shaderStage_t* pStage = &stages[i];
 			int blendBits;
@@ -2316,6 +2309,11 @@ static shader_t* GeneratePermanentShader(void) {
 	if(shader.sort <= SS_OPAQUE) {
 		newShader->fogPass = FP_EQUAL;
 	} else if(shader.contentFlags & CONTENTS_FOG) {
+		newShader->fogPass = FP_LE;
+	} else if(shader.sort >= SS_BLEND0 && shader.sort <= SS_BLEND6) {
+		// blendFunc-стадии (вода, стекло, аддитивные эффекты) тоже должны
+		// тонуть в тумане. Раньше они "просвечивали" сквозь туман, т.к.
+		// adjustColorsForFog в этом рендерере не реализован.
 		newShader->fogPass = FP_LE;
 	}
 

@@ -104,10 +104,9 @@ cvar_t* r_floatLightmap;
 cvar_t* r_postProcess;
 
 cvar_t* r_toneMap;
-cvar_t* r_forceToneMap;
-cvar_t* r_forceToneMapMin;
-cvar_t* r_forceToneMapAvg;
-cvar_t* r_forceToneMapMax;
+cvar_t* r_toneMapMin;
+cvar_t* r_toneMapAvg;
+cvar_t* r_toneMapMax;
 
 cvar_t* r_autoExposure;
 cvar_t* r_forceAutoExposure;
@@ -138,11 +137,9 @@ cvar_t* r_imageUpsample;
 cvar_t* r_imageUpsampleMaxSize;
 cvar_t* r_imageUpsampleType;
 cvar_t* r_genNormalMaps;
-cvar_t* r_forceSun;
-cvar_t* r_forceSunLightScale;
-cvar_t* r_forceSunAmbientScale;
-cvar_t* r_sunlightMode;
 cvar_t* r_sunShadows;
+cvar_t* r_sunShadowLightScale;
+cvar_t* r_sunShadowAmbientScale;
 cvar_t* r_shadowFilter;
 cvar_t* r_shadowMapSize;
 cvar_t* r_shadowCascadeZNear;
@@ -983,11 +980,10 @@ void R_Register(void) {
 	r_floatLightmap = ri.Cvar_Get("r_floatLightmap", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_postProcess = ri.Cvar_Get("r_postProcess", "1", CVAR_ARCHIVE);
 
-	r_toneMap = ri.Cvar_Get("r_toneMap", "1", CVAR_ARCHIVE);
-	r_forceToneMap = ri.Cvar_Get("r_forceToneMap", "0", CVAR_CHEAT);
-	r_forceToneMapMin = ri.Cvar_Get("r_forceToneMapMin", "-8.0", CVAR_CHEAT);
-	r_forceToneMapAvg = ri.Cvar_Get("r_forceToneMapAvg", "-2.0", CVAR_CHEAT);
-	r_forceToneMapMax = ri.Cvar_Get("r_forceToneMapMax", "0.0", CVAR_CHEAT);
+	r_toneMap = ri.Cvar_Get("r_toneMap", "1", CVAR_CHEAT);
+	r_toneMapMin = ri.Cvar_Get("r_toneMapMin", "-8.0", CVAR_CHEAT);
+	r_toneMapAvg = ri.Cvar_Get("r_toneMapAvg", "-2.0", CVAR_CHEAT);
+	r_toneMapMax = ri.Cvar_Get("r_toneMapMax", "0.0", CVAR_CHEAT);
 
 	r_autoExposure = ri.Cvar_Get("r_autoExposure", "1", CVAR_ARCHIVE);
 	r_forceAutoExposure = ri.Cvar_Get("r_forceAutoExposure", "0", CVAR_CHEAT);
@@ -1022,12 +1018,9 @@ void R_Register(void) {
 	r_imageUpsampleType = ri.Cvar_Get("r_imageUpsampleType", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_genNormalMaps = ri.Cvar_Get("r_genNormalMaps", "0", CVAR_ARCHIVE | CVAR_LATCH);
 
-	r_forceSun = ri.Cvar_Get("r_forceSun", "1", CVAR_ARCHIVE);
-	r_forceSunLightScale = ri.Cvar_Get("r_forceSunLightScale", "1.00", CVAR_ARCHIVE);
-	r_forceSunAmbientScale = ri.Cvar_Get("r_forceSunAmbientScale", "0.5", CVAR_ARCHIVE);
-	r_sunlightMode = ri.Cvar_Get("r_sunlightMode", "1", CVAR_ARCHIVE | CVAR_LATCH);
-
 	r_sunShadows = ri.Cvar_Get("r_sunShadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_sunShadowLightScale = ri.Cvar_Get("r_sunShadowLightScale", "1.00", CVAR_ARCHIVE);
+	r_sunShadowAmbientScale = ri.Cvar_Get("r_sunShadowAmbientScale", "0.20", CVAR_ARCHIVE);
 	r_shadowFilter = ri.Cvar_Get("r_shadowFilter", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowMapSize = ri.Cvar_Get("r_shadowMapSize", "1024", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowCascadeZNear = ri.Cvar_Get("r_shadowCascadeZNear", "8", CVAR_ARCHIVE | CVAR_LATCH);

@@ -107,27 +107,27 @@ Cvars for HDR and tonemapping:
                                      0 - No.
                                      1 - Yes. (default)
 
-*  `r_forceToneMap`                 - Cheat. Override built-in and map tonemap settings and use cvars r_forceToneMapAvg, r_forceToneMapMin, and r_forceToneMapMax.
+*  `r_toneMap`                 - Cheat. Override built-in and map tonemap settings and use cvars r_toneMapAvg, r_toneMapMin, and r_toneMapMax.
                                      0 - No. (default)
                                      1 - Yes.
 
-*  `r_forceToneMapAvg`              - Cheat.  Map average scene luminance to this
+*  `r_toneMapAvg`              - Cheat.  Map average scene luminance to this
                                    value, in powers of two.  Requires 
-                                   r_forceToneMap.
+                                   r_toneMap.
                                     -2.0 - Dark.
                                     -1.0 - Kinda dark. (default).
                                      2.0 - Too bright.
 
-*  `r_forceToneMapMin`              - Cheat.  After mapping average, luminance
+*  `r_toneMapMin`              - Cheat.  After mapping average, luminance
                                    below this level is mapped to black.
-                                   Requires r_forceToneMap.
+                                   Requires r_toneMap.
                                     -5    - Not noticeable.
                                     -3.25 - Normal. (default)
                                      0.0  - Too dark.
 
-*  `r_forceToneMapMin`              - Cheat.  After mapping average, luminance
+*  `r_toneMapMin`              - Cheat.  After mapping average, luminance
                                    above this level is mapped to white.
-                                   Requires r_forceToneMap.
+                                   Requires r_toneMap.
                                     0.0 - Too bright.
                                     1.0 - Normal. (default).
                                     2.0 - Washed out.
@@ -268,60 +268,6 @@ Cvars for image interpolation and generation:
                                    textures.
                                      0 - Don't. (default)
                                      1 - Do.
-
-Cvars for the sunlight and cascaded shadow maps:
-
-*  `r_forceSun`                     - Cheat. Force sunlight and shadows, using sun position from sky material.
-                                     0 - Don't. (default)
-                                     1 - Do.
-                                     2 - Sunrise, sunset.
-
-*  `r_forceSunLightScale`           - Cheat. Scale sun brightness by this factor
-                                   when r_forceSun 1.
-                                     1.0 - Default
-
-*  `r_forceSunAmbientScale`         - Cheat. Scale sun ambient brightness by this factor when r_forceSun 1. 0.5 - Default
-
-*  `r_sunShadows`                   - Enable sunlight and cascaded shadow maps for
-                                   it on maps that support it.
-                                     0 - No.
-                                     1 - Yes. (default)
-
-*  `r_sunlightMode`                 - Specify the method used to add sunlight to
-                                   the scene.
-                                     0 - No.
-                                     1 - Multiply lit areas by light scale, and
-                                         shadowed areas by ambient scale.
-                                         (default)
-                                     2 - Add light.  Looks better, but is slower
-                                         and doesn't integrate well with existing
-                                         maps.
-
-*  `r_shadowFilter`                 - Enable filtering shadows for a smoother
-                                   look.
-                                     0 - No.
-                                     1 - Some. (default)
-                                     2 - Much.
-
-*  `r_shadowMapSize`                - Size of each cascaded shadow map.
-                                     256  - 256x256, ugly, probably shouldn't
-                                             go below this.
-                                     512  - 512x512, passable.
-                                     1024 - 1024x1024, good. (default)
-                                     2048 - 2048x2048, extreme.
-                                     4096 - 4096x4096, indistinguishable from
-                                            2048.
-
-Cvars that you probably don't care about or shouldn't mess with:
-
-*  `r_shadowCascadeZNear`           - Near plane for shadow cascade frustums.
-                                     4 - Default.
-
-*  `r_shadowCascadeZFar`            - Far plane for shadow cascade frustums.
-                                     3072 - Default.
-
-*  `r_shadowCascadeZBias`           - Z-bias for shadow cascade frustums.
-                                     -256 - Default.
 
 
 -------------------------------------------------------------------------------
@@ -480,7 +426,7 @@ light of the same color as the sun.
 
 There are currently two ways to use this in your own (and other people's) maps.
 
-  1. Create your map as normal, set r_sunlightMode to 1, and add a 
+  1. Create your map as normal, set r_sunShadows to 1, and add a 
      'q3gl2_sun' line after your 'q3map_sun' line in your sky material, like
      so:
      
@@ -505,7 +451,7 @@ There are currently two ways to use this in your own (and other people's) maps.
      can be used with existing maps without recompilation.  The downside is
      artifacts like doubled shadows and uneven shadow edges.
      
-  2. Set r_sunlightMode to 2 and use 'q3gl2_sun' instead of 'q3map_sun' or
+  2. Set r_sunShadows to 2 and use 'q3gl2_sun' instead of 'q3map_sun' or
      'q3map_sunExt', like so:
   
         textures/skies/bluesky

@@ -908,7 +908,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 				}
 			}
 
-			if(r_sunlightMode->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT) && (index & LIGHTDEF_LIGHTTYPE_MASK)) {
+			if(r_sunShadows->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT) && (index & LIGHTDEF_LIGHTTYPE_MASK)) {
 				index |= LIGHTDEF_USE_SHADOWMAP;
 			}
 
@@ -1070,7 +1070,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 			int i;
 			vec4_t enableTextures;
 
-			if(r_sunlightMode->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT) && (pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK)) {
+			if(r_sunShadows->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT) && (pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK)) {
 				// FIXME: screenShadowImage is NULL if no framebuffers
 				if(tr.screenShadowImage) GL_BindToTMU(tr.screenShadowImage, TB_SHADOWMAP);
 				GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTAMBIENT, backEnd.refdef.sunAmbCol);
@@ -1430,7 +1430,11 @@ void RB_StageIteratorGeneric(void) {
 	RB_IterateStagesGeneric(input);
 
 	// now do fog
-	if((tess.fogNum || (r_dynamicFog->integer && tr.world)) && tess.shader->fogPass) RB_FogPass();
+	// не применяем туман для 2D-элементов интерфейса (projection2D),
+	// иначе новый FP_LE для blend-шейдеров затронет HUD/меню
+	if(tess.shader->fogPass && !backEnd.projection2D && (tess.fogNum || (r_dynamicFog->integer && tr.world))) {
+		RB_FogPass();
+	}
 
 	//
 	// reset polygon offset
