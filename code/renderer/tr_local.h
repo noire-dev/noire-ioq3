@@ -984,6 +984,7 @@ typedef struct msurface_s {
 	// int					viewCount;		// if == tr.viewCount, already added
 	struct shader_s* shader;
 	int fogIndex;
+	bool hasFog;
 	bool useCubemap;
 	vec3_t cubemapOrigin;
 	float cubemapBound;

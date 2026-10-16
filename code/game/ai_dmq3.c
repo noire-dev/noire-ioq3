@@ -2801,12 +2801,21 @@ void BotCheckEvents(bot_state_t* bs, entityState_t* state) {
 			}
 			break;
 		}
-		case EV_FOOTSTEP:
+		case EV_FOOTSTEP_CHAINLINK:
+		case EV_FOOTSTEP_CONCRETE:
+		case EV_FOOTSTEP_DIRT:
+		case EV_FOOTSTEP_DUCT:
+		case EV_FOOTSTEP_GRASS:
+		case EV_FOOTSTEP_GRAVEL:
+		case EV_FOOTSTEP_LADDER:
 		case EV_FOOTSTEP_METAL:
-		case EV_FOOTSPLASH:
-		case EV_FOOTWADE:
-		case EV_SWIM:
-		case EV_FALL_SHORT:
+		case EV_FOOTSTEP_METALGRATE:
+		case EV_FOOTSTEP_MUD:
+		case EV_FOOTSTEP_SAND:
+		case EV_FOOTSTEP_SLOSH:
+		case EV_FOOTSTEP_TILE:
+		case EV_FOOTSTEP_WOOD:
+		case EV_FOOTSTEP_WOODPANEL:
 		case EV_FALL_MEDIUM:
 		case EV_FALL_FAR:
 		case EV_STEP_4:
@@ -2816,9 +2825,7 @@ void BotCheckEvents(bot_state_t* bs, entityState_t* state) {
 		case EV_JUMP_PAD:
 		case EV_JUMP:
 		case EV_TAUNT:
-		case EV_WATER_TOUCH:
-		case EV_WATER_LEAVE:
-		case EV_WATER_UNDER:
+		case EV_WATER_SPLASH:
 		case EV_WATER_CLEAR:
 		case EV_ITEM_PICKUP:
 		case EV_GLOBAL_ITEM_PICKUP:

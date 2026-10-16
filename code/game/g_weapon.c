@@ -80,8 +80,6 @@ bool Melee_Fire(gentity_t* ent, int weapon) {
 	VectorMA(muzzle, jsd_weapon[weapon].range, forward, end);
 	trap_Trace(&tr, muzzle, NULL, NULL, end, ent->s.number, MASK_SHOT);
 
-	if(tr.surfaceFlags & SURF_NOIMPACT) return false;
-
 	traceEnt = &g_entities[tr.entityNum];
 
 	// send blood impact
@@ -118,8 +116,6 @@ static void Bullet_Fire(gentity_t* ent, int weapon) {
 	passent = ent->s.number;
 	trap_Trace(&tr, muzzle, NULL, NULL, end, passent, MASK_SHOT);
 
-	if(tr.surfaceFlags & SURF_NOIMPACT) return;
-
 	traceEnt = &g_entities[tr.entityNum];
 
 	// send bullet impact
@@ -149,8 +145,6 @@ static void ShotgunPellet(vec3_t start, vec3_t end, gentity_t* ent, int weapon) 
 	VectorCopy(end, tr_end);
 	trap_Trace(&tr, tr_start, NULL, NULL, tr_end, passent, MASK_SHOT);
 	traceEnt = &g_entities[tr.entityNum];
-
-	if(tr.surfaceFlags & SURF_NOIMPACT) return;
 
 	if(traceEnt->takedamage) G_Damage(traceEnt, ent, ent, forward, tr.endpos, jsd_weapon[weapon].damage, 0, weapon);
 }
@@ -223,10 +217,7 @@ static void Railgun_Fire(gentity_t* ent, int weapon) {
 	VectorMA(tent->s.origin2, 4, right, tent->s.origin2);
 	VectorMA(tent->s.origin2, -1, up, tent->s.origin2);
 
-	if(trace.surfaceFlags & SURF_NOIMPACT)
-		tent->s.eventParm = 255;
-	else
-		tent->s.eventParm = DirToByte(trace.plane.normal);
+	tent->s.eventParm = DirToByte(trace.plane.normal);
 
 	tent->s.clientNum = ent->s.clientNum;
 }
@@ -251,7 +242,7 @@ static void Lightning_Fire(gentity_t* ent, int weapon) {
 		tent->s.otherEntityNum = traceEnt->s.number;
 		tent->s.eventParm = DirToByte(tr.plane.normal);
 		tent->s.weapon = ent->s.weapon;
-	} else if(!(tr.surfaceFlags & SURF_NOIMPACT)) {
+	} else {
 		tent = G_TempEntity(tr.endpos, EV_MISSILE_MISS);
 		tent->s.eventParm = DirToByte(tr.plane.normal);
 	}
@@ -294,7 +285,7 @@ static void G_MissileImpact(gentity_t* ent, trace_t* trace) {
 	if(other->takedamage && other->client) {
 		G_AddEvent(ent, EV_MISSILE_HIT, DirToByte(trace->plane.normal));
 		ent->s.otherEntityNum = other->s.number;
-	} else if(trace->surfaceFlags & SURF_METALSTEPS) {
+	} else if(trace->surfaceFlags & SURF_METAL) {
 		G_AddEvent(ent, EV_MISSILE_MISS_METAL, DirToByte(trace->plane.normal));
 	} else {
 		G_AddEvent(ent, EV_MISSILE_MISS, DirToByte(trace->plane.normal));

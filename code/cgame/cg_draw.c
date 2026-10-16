@@ -407,7 +407,7 @@ void CG_AddNotify(const char* text, int type, int number, const char* picPath) {
 	cg.notifications[0].startTime = cg.time;
 	cg.notifications[0].active = true;
 
-	if(type == NOTIFY_INFO) trap_S_StartLocalSound(cgs.media.notifySound, CHAN_LOCAL_SOUND);
+	if(type == NOTIFY_INFO) trap_S_StartLocalSound(cgs.media.notifySound[rand() & 3], CHAN_LOCAL_SOUND);
 	if(type == NOTIFY_UNDO) trap_S_StartLocalSound(cgs.media.undoSound, CHAN_LOCAL_SOUND);
 }
 

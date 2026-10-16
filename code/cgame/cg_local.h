@@ -107,13 +107,21 @@ typedef struct {
 } queued3DString_t;
 
 typedef enum {
-	FOOTSTEP_NORMAL,
-	FOOTSTEP_BOOT,
-	FOOTSTEP_FLESH,
-	FOOTSTEP_MECH,
-	FOOTSTEP_ENERGY,
+	FOOTSTEP_CHAINLINK,
+	FOOTSTEP_CONCRETE,
+	FOOTSTEP_DIRT,
+	FOOTSTEP_DUCT,
+	FOOTSTEP_GRASS,
+	FOOTSTEP_GRAVEL,
+	FOOTSTEP_LADDER,
 	FOOTSTEP_METAL,
-	FOOTSTEP_SPLASH,
+	FOOTSTEP_METALGRATE,
+	FOOTSTEP_MUD,
+	FOOTSTEP_SAND,
+	FOOTSTEP_SLOSH,
+	FOOTSTEP_TILE,
+	FOOTSTEP_WOOD,
+	FOOTSTEP_WOODPANEL,
 
 	FOOTSTEP_TOTAL
 } footstep_t;
@@ -329,8 +337,7 @@ typedef struct {
 	bool fixedtorso;  // true if torso never changes yaw
 
 	vec3_t headOffset;  // move head in icon views
-	footstep_t footsteps;
-	gender_t gender;  // from model
+	gender_t gender;    // from model
 
 	qhandle_t legsModel;
 	qhandle_t legsSkin;
@@ -683,7 +690,7 @@ typedef struct {
 	qhandle_t errIcon;
 	qhandle_t notifyIcon;
 	qhandle_t undoIcon;
-	sfxHandle_t notifySound;
+	sfxHandle_t notifySound[4];
 	sfxHandle_t undoSound;
 
 	// sounds
@@ -733,9 +740,7 @@ typedef struct {
 	sfxHandle_t assistSound;
 	sfxHandle_t defendSound;
 
-	sfxHandle_t watrInSound;
-	sfxHandle_t watrOutSound;
-	sfxHandle_t watrUnSound;
+	sfxHandle_t waterSplash[3];
 
 	// tournament sounds
 	sfxHandle_t count3Sound;
@@ -753,7 +758,6 @@ typedef struct {
 	sfxHandle_t wstbimpmSound;
 	sfxHandle_t wstbimpdSound;
 	sfxHandle_t wstbactvSound;
-
 } cgMedia_t;
 
 #define CONSOLE_MAXHEIGHT 16
@@ -892,7 +896,6 @@ extern vmCvar_t cg_errorDecay;
 extern vmCvar_t cg_nopredict;
 extern vmCvar_t cg_noPlayerAnims;
 extern vmCvar_t cg_showmiss;
-extern vmCvar_t cg_footsteps;
 extern vmCvar_t cg_addMarks;
 extern vmCvar_t cg_brassTime;
 extern vmCvar_t cg_gun_frame;

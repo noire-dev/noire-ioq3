@@ -1408,18 +1408,10 @@ static void CG_ShotgunPellet(vec3_t start, vec3_t end, int skipNum) {
 		CG_BubbleTrail(tr.endpos, trace.endpos, 32);
 	}
 
-	if(tr.surfaceFlags & SURF_NOIMPACT) {
-		return;
-	}
-
 	if(cg_entities[tr.entityNum].currentState.eType == ET_PLAYER) {
 		CG_MissileHitPlayer(WP_SHOTGUN, tr.endpos, tr.plane.normal, tr.entityNum);
 	} else {
-		if(tr.surfaceFlags & SURF_NOIMPACT) {
-			// SURF_NOIMPACT will not make a flame puff or a mark
-			return;
-		}
-		if(tr.surfaceFlags & SURF_METALSTEPS) {
+		if(tr.surfaceFlags & SURF_METAL) {
 			CG_MissileHitWall(WP_SHOTGUN, 0, tr.endpos, tr.plane.normal, IMPACTSOUND_METAL);
 		} else {
 			CG_MissileHitWall(WP_SHOTGUN, 0, tr.endpos, tr.plane.normal, IMPACTSOUND_DEFAULT);

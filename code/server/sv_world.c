@@ -564,12 +564,8 @@ void SV_Trace(trace_t* results, const vec3_t start, vec3_t mins, vec3_t maxs, co
 	moveclip_t clip;
 	int i;
 
-	if(!mins) {
-		mins = vec3_origin;
-	}
-	if(!maxs) {
-		maxs = vec3_origin;
-	}
+	if(!mins) mins = vec3_origin;
+	if(!maxs) maxs = vec3_origin;
 
 	Com_Memset(&clip, 0, sizeof(moveclip_t));
 
@@ -583,17 +579,12 @@ void SV_Trace(trace_t* results, const vec3_t start, vec3_t mins, vec3_t maxs, co
 
 	clip.contentmask = contentmask;
 	clip.start = start;
-	//	VectorCopy( clip.trace.endpos, clip.end );
 	VectorCopy(end, clip.end);
 	clip.mins = mins;
 	clip.maxs = maxs;
 	clip.passEntityNum = passEntityNum;
 	clip.capsule = capsule;
 
-	// create the bounding box of the entire move
-	// we can limit it to the part of the move not
-	// already clipped off by the world, which can be
-	// a significant savings for line of sight and shot traces
 	for(i = 0; i < 3; i++) {
 		if(end[i] > start[i]) {
 			clip.boxmins[i] = clip.start[i] + clip.mins[i] - 1;
@@ -604,8 +595,28 @@ void SV_Trace(trace_t* results, const vec3_t start, vec3_t mins, vec3_t maxs, co
 		}
 	}
 
-	// clip to other solid entities
+	// clip to other solid entities (Q3 game entities)
 	SV_ClipMoveToEntities(&clip);
+
+	// clip to Bullet physics objects (dynamic only)
+	physTrace_t physResult;
+	BT_PhysicsTrace(start, end, mins, maxs, passEntityNum, &physResult);
+
+	if(physResult.hit && physResult.fraction < clip.trace.fraction) {
+		bool oldStartSolid = clip.trace.startsolid;  // Сохраняем startsolid от BSP/Q3 entities
+
+		clip.trace.fraction = physResult.fraction;
+		VectorCopy(physResult.endpos, clip.trace.endpos);
+		VectorCopy(physResult.normal, clip.trace.plane.normal);
+		clip.trace.plane.dist = physResult.planeDist;  // ИСПОЛЬЗУЕМ НОВОЕ ПОЛЕ
+		clip.trace.surfaceFlags = 0;
+		clip.trace.contents = CONTENTS_SOLID;
+		clip.trace.entityNum = physResult.entityNum;
+
+		// ИСПРАВЛЕНИЕ: корректная обработка startsolid для Bullet
+		clip.trace.startsolid = (oldStartSolid || physResult.fraction == 0.0f) ? true : false;
+		clip.trace.allsolid = false;  // Bullet не дает достоверного allsolid для sweeps
+	}
 
 	*results = clip.trace;
 }

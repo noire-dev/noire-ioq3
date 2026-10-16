@@ -1495,6 +1495,70 @@ void R_MovePatchSurfacesToHunk(void) {
 
 /*
 ===============
+R_ComputeSurfaceFogFlags
+
+hasFog = true, если ХОТЯ БЫ ОДНА вершина поверхности
+лежит внутри объёма тумана (браш с surfaceParm fog).
+===============
+*/
+static void R_ComputeSurfaceFogFlags(void) {
+	int i, j, k;
+	msurface_t* surf;
+	srfBspSurface_t* bspSurf;
+	srfVert_t* verts;
+	int numVerts;
+	fog_t* fog;
+	bool anyInside;
+
+	for(i = 0; i < s_worldData.numsurfaces; i++) {
+		surf = &s_worldData.surfaces[i];
+		surf->hasFog = false;
+
+		// 0 — «нет тумана», 1..numfogs-1 — реальные fog-браши
+		if(surf->fogIndex <= 0 || surf->fogIndex >= s_worldData.numfogs) {
+			continue;
+		}
+
+		switch(*(surf->data)) {
+			case SF_FACE:
+			case SF_GRID:
+			case SF_TRIANGLES:
+				bspSurf = (srfBspSurface_t*)surf->data;
+				numVerts = bspSurf->numVerts;
+				verts = bspSurf->verts;
+				break;
+
+			default: continue;
+		}
+
+		if(!verts || numVerts <= 0) {
+			continue;
+		}
+
+		fog = &s_worldData.fogs[surf->fogIndex];
+
+		anyInside = false;
+		for(j = 0; j < numVerts && !anyInside; j++) {
+			bool inside = true;
+
+			for(k = 0; k < 3; k++) {
+				if(verts[j].xyz[k] < fog->bounds[0][k] || verts[j].xyz[k] > fog->bounds[1][k]) {
+					inside = false;
+					break;
+				}
+			}
+
+			if(inside) {
+				anyInside = true;
+			}
+		}
+
+		surf->hasFog = anyInside;
+	}
+}
+
+/*
+===============
 R_LoadSurfaces
 ===============
 */
@@ -1597,6 +1661,8 @@ static void R_LoadSurfaces(lump_t* surfs, lump_t* verts, lump_t* indexLump) {
 #ifdef PATCH_STITCHING
 	R_MovePatchSurfacesToHunk();
 #endif
+
+	R_ComputeSurfaceFogFlags();
 
 	ri.Printf(PRINT_ALL, "...loaded %d faces, %i meshes, %i trisurfs, %i flares\n", numFaces, numMeshes, numTriSurfs, numFlares);
 }

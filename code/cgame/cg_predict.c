@@ -401,7 +401,6 @@ void CG_PredictPlayerState(void) {
 	} else {
 		cg_pmove.tracemask = MASK_PLAYERSOLID;
 	}
-	cg_pmove.noFootsteps = (cgs.dmflags & DF_NO_FOOTSTEPS) > 0;
 
 	// save the state before the pmove so we can detect transitions
 	oldPlayerState = cg.predictedPlayerState;

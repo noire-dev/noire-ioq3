@@ -88,7 +88,6 @@ vmCvar_t cg_errorDecay;
 vmCvar_t cg_nopredict;
 vmCvar_t cg_noPlayerAnims;
 vmCvar_t cg_showmiss;
-vmCvar_t cg_footsteps;
 vmCvar_t cg_addMarks;
 vmCvar_t cg_brassTime;
 vmCvar_t cg_viewsize;
@@ -180,7 +179,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_nopredict, "cg_nopredict", "0", 0},
     {&cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT},
     {&cg_showmiss, "cg_showmiss", "0", 0},
-    {&cg_footsteps, "cg_footsteps", "1", CVAR_CHEAT},
     {&cg_tracerChance, "cg_tracerchance", "0.4", CVAR_CHEAT},
     {&cg_tracerWidth, "cg_tracerwidth", "1", CVAR_CHEAT},
     {&cg_tracerLength, "cg_tracerlength", "100", CVAR_CHEAT},
@@ -450,33 +448,43 @@ static void CG_RegisterSounds(void) {
 
 	cgs.media.hitSound = trap_S_RegisterSound("sound/feedback/hit.wav", false);
 
-	cgs.media.watrInSound = trap_S_RegisterSound("sound/player/watr_in.wav", false);
-	cgs.media.watrOutSound = trap_S_RegisterSound("sound/player/watr_out.wav", false);
-	cgs.media.watrUnSound = trap_S_RegisterSound("sound/player/watr_un.wav", false);
+	cgs.media.waterSplash[0] = trap_S_RegisterSound("sound/ambient/water/water_splash1.wav", false);
+	cgs.media.waterSplash[1] = trap_S_RegisterSound("sound/ambient/water/water_splash2.wav", false);
+	cgs.media.waterSplash[2] = trap_S_RegisterSound("sound/ambient/water/water_splash3.wav", false);
 
 	cgs.media.jumpPadSound = trap_S_RegisterSound("sound/world/jumppad.wav", false);
 
 	for(i = 0; i < 4; i++) {
-		Com_sprintf(name, sizeof(name), "sound/player/footsteps/step%i.wav", i + 1);
-		cgs.media.footsteps[FOOTSTEP_NORMAL][i] = trap_S_RegisterSound(name, false);
-
-		Com_sprintf(name, sizeof(name), "sound/player/footsteps/boot%i.wav", i + 1);
-		cgs.media.footsteps[FOOTSTEP_BOOT][i] = trap_S_RegisterSound(name, false);
-
-		Com_sprintf(name, sizeof(name), "sound/player/footsteps/flesh%i.wav", i + 1);
-		cgs.media.footsteps[FOOTSTEP_FLESH][i] = trap_S_RegisterSound(name, false);
-
-		Com_sprintf(name, sizeof(name), "sound/player/footsteps/mech%i.wav", i + 1);
-		cgs.media.footsteps[FOOTSTEP_MECH][i] = trap_S_RegisterSound(name, false);
-
-		Com_sprintf(name, sizeof(name), "sound/player/footsteps/energy%i.wav", i + 1);
-		cgs.media.footsteps[FOOTSTEP_ENERGY][i] = trap_S_RegisterSound(name, false);
-
-		Com_sprintf(name, sizeof(name), "sound/player/footsteps/splash%i.wav", i + 1);
-		cgs.media.footsteps[FOOTSTEP_SPLASH][i] = trap_S_RegisterSound(name, false);
-
-		Com_sprintf(name, sizeof(name), "sound/player/footsteps/clank%i.wav", i + 1);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/chainlink%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_CHAINLINK][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/concrete%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_CONCRETE][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/dirt%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_DIRT][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/duct%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_DUCT][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/grass%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_GRASS][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/gravel%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_GRAVEL][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/ladder%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_LADDER][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/metal%i.wav", i + 1);
 		cgs.media.footsteps[FOOTSTEP_METAL][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/metalgrate%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_METALGRATE][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/mud%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_MUD][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/sand%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_SAND][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/slosh%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_SLOSH][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/tile%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_TILE][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/wood%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_WOOD][i] = trap_S_RegisterSound(name, false);
+		Com_sprintf(name, sizeof(name), "sound/player/footsteps/woodpanel%i.wav", i + 1);
+		cgs.media.footsteps[FOOTSTEP_WOODPANEL][i] = trap_S_RegisterSound(name, false);
 	}
 
 	for(i = 0; i < jsd_itemCount; i++) CG_RegisterItemSounds(i);
@@ -609,8 +617,13 @@ static void CG_RegisterGraphics(void) {
 	cgs.media.errIcon = trap_R_RegisterShaderNoMip("menu/erricon");
 	cgs.media.notifyIcon = trap_R_RegisterShaderNoMip("menu/notifyicon");
 	cgs.media.undoIcon = trap_R_RegisterShaderNoMip("menu/undoicon");
-	cgs.media.notifySound = trap_S_RegisterSound("sound/notify.wav", false);
 	cgs.media.undoSound = trap_S_RegisterSound("sound/undo.wav", false);
+
+	for(i = 0; i < 4; i++) {
+		char name[MAX_QPATH];
+		Com_sprintf(name, sizeof(name), "sound/ambient/water/drip%i.wav", i + 1);
+		cgs.media.notifySound[i] = trap_S_RegisterSound(name, false);
+	}
 
 	memset(cg_items, 0, sizeof(cg_items));
 	memset(cg_weapons, 0, sizeof(cg_weapons));

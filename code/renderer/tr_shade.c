@@ -680,46 +680,30 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 
 /*
 ===================
-RB_FogPass
+RB_FogSetupShader
 
-Blends a fog texture on top of everything else
+Общий setup для обоих под-проходов тумана:
+биндит нужный fog-шейдер, ставит матрицу/deform/alpha-test/GL_State.
 ===================
 */
-void RB_FogPass(void) {
-	fog_t* fog;
-	vec4_t color;
-	vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
-	float eyeT = 0;
+static shaderProgram_t* RB_FogSetupShader(int deformGen, vec5_t deformParams) {
 	shaderProgram_t* sp;
-	bool dynamic;
+	int index = 0;
 
-	int deformGen;
-	vec5_t deformParams;
+	if(deformGen != DGEN_NONE) index |= FOGDEF_USE_DEFORM_VERTEXES;
 
-	// Dynamic fog applies to surfaces that do not belong to a BSP fog volume
-	dynamic = (tess.fogNum == 0 && r_dynamicFog->integer && tr.world != NULL);
+	if(glState.vertexAnimation)
+		index |= FOGDEF_USE_VERTEX_ANIMATION;
+	else if(glState.boneAnimation)
+		index |= FOGDEF_USE_BONE_ANIMATION;
 
-	ComputeDeformValues(&deformGen, deformParams);
-
-	{
-		int index = 0;
-
-		if(deformGen != DGEN_NONE) index |= FOGDEF_USE_DEFORM_VERTEXES;
-
-		if(glState.vertexAnimation)
-			index |= FOGDEF_USE_VERTEX_ANIMATION;
-		else if(glState.boneAnimation)
-			index |= FOGDEF_USE_BONE_ANIMATION;
-
-		sp = &tr.fogShader[index];
-	}
+	sp = &tr.fogShader[index];
 
 	backEnd.pc.c_fogDraws++;
 
 	GLSL_BindProgram(sp);
 
 	GLSL_SetUniformMat4(sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
-
 	GLSL_SetUniformFloat(sp, UNIFORM_VERTEXLERP, glState.vertexAttribsInterpolation);
 
 	if(glState.boneAnimation) {
@@ -732,9 +716,85 @@ void RB_FogPass(void) {
 		GLSL_SetUniformFloat(sp, UNIFORM_TIME, tess.shaderTime);
 	}
 
-	if(dynamic) {
-		// Global dynamic fog: distance based falloff between Start and End distances.
-		// We fold the density cvar into the distance scale so a single knob controls overall thickness.
+	GLSL_SetUniformInt(sp, UNIFORM_ALPHATEST, 0);
+
+	if(tess.shader->fogPass == FP_EQUAL) {
+		GL_State(GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL);
+	} else {
+		GL_State(GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
+	}
+
+	return sp;
+}
+
+/*
+===================
+RB_FogPass
+
+Теперь вызывается один раз на поверхность, но внутри делает
+ДВА независимых прохода:
+  1) туман из fog-браша (если tess.fogNum > 0)
+  2) глобальный dynamicFog (если r_dynamicFog)
+Порядок именно такой: сначала плотный локальный туман,
+поверх него — атмосферный. Смешение идёт обычным alpha-blend'ом
+(SRC_ALPHA, ONE_MINUS_SRC_ALPHA), поэтому второй проход
+естественным образом ложится на первый:
+    out = dyn*a_d + (brush*a_b + old*(1-a_b)) * (1-a_d)
+===================
+*/
+void RB_FogPass(void) {
+	int deformGen;
+	vec5_t deformParams;
+	bool hasWorldFog;
+	bool hasDynamicFog;
+
+	if(!tess.numIndexes || !tr.world) {
+		return;
+	}
+
+	hasWorldFog = (tess.fogNum > 0 && tess.fogNum < tr.world->numfogs);
+	hasDynamicFog = (r_dynamicFog->integer != 0);
+
+	if(!hasWorldFog && !hasDynamicFog) {
+		return;
+	}
+
+	ComputeDeformValues(&deformGen, deformParams);
+
+	/* ---------- 1) туман из fog-браша (объёмный) ---------- */
+	if(hasWorldFog) {
+		shaderProgram_t* sp;
+		fog_t* fog;
+		vec4_t color;
+		vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
+		float eyeT = 0;
+
+		fog = tr.world->fogs + tess.fogNum;
+
+		color[0] = ((unsigned char*)(&fog->colorInt))[0] / 255.0f;
+		color[1] = ((unsigned char*)(&fog->colorInt))[1] / 255.0f;
+		color[2] = ((unsigned char*)(&fog->colorInt))[2] / 255.0f;
+		color[3] = ((unsigned char*)(&fog->colorInt))[3] / 255.0f;
+
+		sp = RB_FogSetupShader(deformGen, deformParams);
+
+		GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
+
+		ComputeFogValues(fogDistanceVector, fogDepthVector, &eyeT);
+
+		GLSL_SetUniformVec4(sp, UNIFORM_FOGDISTANCE, fogDistanceVector);
+		GLSL_SetUniformVec4(sp, UNIFORM_FOGDEPTH, fogDepthVector);
+		GLSL_SetUniformFloat(sp, UNIFORM_FOGEYET, eyeT);
+
+		R_DrawElements(tess.numIndexes, tess.firstIndex);
+	}
+
+	/* ---------- 2) динамический туман поверх объёмного ---------- */
+	if(hasDynamicFog) {
+		shaderProgram_t* sp;
+		vec4_t color;
+		vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
+		float eyeT;
 		float startDist = r_dynamicFogStart->value;
 		float endDist = r_dynamicFogEnd->value;
 		float range = endDist - startDist;
@@ -743,14 +803,17 @@ void RB_FogPass(void) {
 
 		if(range < 1.0f) range = 1.0f;
 
-		// The fog vertex shader multiplies the distance dot-product by 8.0, so 1/8 of
-		// the 0..1 ramp range per unit distance is used here for a linear falloff.
+		// vertex-шейдер умножает dot-произведение на 8.0,
+		// поэтому для линейной рампы 0..1 на участке range нужен /8.
 		scale = r_dynamicFogDensity->value / (8.0f * range);
 
 		color[0] = r_dynamicFogColorR->value;
 		color[1] = r_dynamicFogColorG->value;
 		color[2] = r_dynamicFogColorB->value;
 		color[3] = 1.0f;
+
+		sp = RB_FogSetupShader(deformGen, deformParams);
+
 		GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
 
 		VectorSubtract(backEnd.or.origin, backEnd.viewParms.or.origin, local);
@@ -760,37 +823,21 @@ void RB_FogPass(void) {
 		fogDistanceVector[2] = -backEnd.or.modelMatrix[10] * scale;
 		fogDistanceVector[3] = (DotProduct(local, backEnd.viewParms.or.axis[0]) - startDist) * scale;
 
-		// No fog depth plane for dynamic fog
+		// у динамического тумана нет плоскости отсечения,
+		// поэтому t в CalcFog() всегда = 1
 		fogDepthVector[0] = 0.0f;
 		fogDepthVector[1] = 0.0f;
 		fogDepthVector[2] = 0.0f;
 		fogDepthVector[3] = 1.0f;
 
 		eyeT = 1.0f;
-	} else {
-		fog = tr.world->fogs + tess.fogNum;
 
-		color[0] = ((unsigned char*)(&fog->colorInt))[0] / 255.0f;
-		color[1] = ((unsigned char*)(&fog->colorInt))[1] / 255.0f;
-		color[2] = ((unsigned char*)(&fog->colorInt))[2] / 255.0f;
-		color[3] = ((unsigned char*)(&fog->colorInt))[3] / 255.0f;
-		GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
+		GLSL_SetUniformVec4(sp, UNIFORM_FOGDISTANCE, fogDistanceVector);
+		GLSL_SetUniformVec4(sp, UNIFORM_FOGDEPTH, fogDepthVector);
+		GLSL_SetUniformFloat(sp, UNIFORM_FOGEYET, eyeT);
 
-		ComputeFogValues(fogDistanceVector, fogDepthVector, &eyeT);
+		R_DrawElements(tess.numIndexes, tess.firstIndex);
 	}
-
-	GLSL_SetUniformVec4(sp, UNIFORM_FOGDISTANCE, fogDistanceVector);
-	GLSL_SetUniformVec4(sp, UNIFORM_FOGDEPTH, fogDepthVector);
-	GLSL_SetUniformFloat(sp, UNIFORM_FOGEYET, eyeT);
-
-	if(tess.shader->fogPass == FP_EQUAL) {
-		GL_State(GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL);
-	} else {
-		GL_State(GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
-	}
-	GLSL_SetUniformInt(sp, UNIFORM_ALPHATEST, 0);
-
-	R_DrawElements(tess.numIndexes, tess.firstIndex);
 }
 
 static unsigned int RB_CalcShaderVertexAttribs(shaderCommands_t* input) {
@@ -1201,7 +1248,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 		//
 		R_DrawElements(input->numIndexes, input->firstIndex);
 
-		if(tess.dlightBits && tess.shader->sort <= SS_OPAQUE && !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY))) {
+		if(tess.dlightBits && tess.shader->sort <= SS_OPAQUE && !(tess.shader->surfaceFlags & SURF_SKY)) {
 			ForwardDlightEnt(pStage);
 		}
 
@@ -1432,8 +1479,39 @@ void RB_StageIteratorGeneric(void) {
 	// now do fog
 	// не применяем туман для 2D-элементов интерфейса (projection2D),
 	// иначе новый FP_LE для blend-шейдеров затронет HUD/меню
-	if(tess.shader->fogPass && !backEnd.projection2D && (tess.fogNum || (r_dynamicFog->integer && tr.world))) {
-		RB_FogPass();
+	if(tess.shader->fogPass && !backEnd.projection2D) {
+		bool needsFogPass = false;
+
+		if(tess.fogNum) {
+			// Внутри BSP-объёма тумана — применяем всегда.
+			needsFogPass = true;
+		} else if(r_dynamicFog->integer && tr.world != NULL) {
+			// Динамический туман — применяем только к поверхностям,
+			// которые находятся дальше, чем r_dynamicFogStart.
+			// Это избавляет от дорогого fog-pass для геометрии
+			// прямо перед игроком.
+			vec3_t worldPos;
+			float dist;
+
+			if(backEnd.currentEntity && backEnd.currentEntity != &tr.worldEntity) {
+				// Для энтити используем origin как дешёвое приближение.
+				VectorCopy(backEnd.currentEntity->e.origin, worldPos);
+			} else {
+				// Мировые поверхности: tess.xyz уже в мировых координатах.
+				VectorCopy(tess.xyz[0], worldPos);
+			}
+
+			VectorSubtract(worldPos, backEnd.viewParms.or.origin, worldPos);
+			dist = VectorLength(worldPos);
+
+			if(dist > r_dynamicFogStart->value) {
+				needsFogPass = true;
+			}
+		}
+
+		if(needsFogPass) {
+			RB_FogPass();
+		}
 	}
 
 	//

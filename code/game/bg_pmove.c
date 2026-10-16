@@ -773,13 +773,22 @@ Returns an event number appropriate for the groundsurface
 ================
 */
 static int PM_FootstepForSurface(void) {
-	if(pml.groundTrace.surfaceFlags & SURF_NOSTEPS) {
-		return 0;
-	}
-	if(pml.groundTrace.surfaceFlags & SURF_METALSTEPS) {
-		return EV_FOOTSTEP_METAL;
-	}
-	return EV_FOOTSTEP;
+	if(pml.groundTrace.surfaceFlags & SURF_CHAINLINK) return EV_FOOTSTEP_CHAINLINK;
+	if(pml.groundTrace.surfaceFlags & SURF_CONCRETE) return EV_FOOTSTEP_CONCRETE;
+	if(pml.groundTrace.surfaceFlags & SURF_DIRT) return EV_FOOTSTEP_DIRT;
+	if(pml.groundTrace.surfaceFlags & SURF_DUCT) return EV_FOOTSTEP_DUCT;
+	if(pml.groundTrace.surfaceFlags & SURF_GRASS) return EV_FOOTSTEP_GRASS;
+	if(pml.groundTrace.surfaceFlags & SURF_GRAVEL) return EV_FOOTSTEP_GRAVEL;
+	if(pml.groundTrace.surfaceFlags & SURF_LADDER) return EV_FOOTSTEP_LADDER;
+	if(pml.groundTrace.surfaceFlags & SURF_METAL) return EV_FOOTSTEP_METAL;
+	if(pml.groundTrace.surfaceFlags & SURF_METALGRATE) return EV_FOOTSTEP_METALGRATE;
+	if(pml.groundTrace.surfaceFlags & SURF_MUD) return EV_FOOTSTEP_MUD;
+	if(pml.groundTrace.surfaceFlags & SURF_SAND) return EV_FOOTSTEP_SAND;
+	if(pml.groundTrace.surfaceFlags & SURF_SLOSH) return EV_FOOTSTEP_SLOSH;
+	if(pml.groundTrace.surfaceFlags & SURF_TILE) return EV_FOOTSTEP_TILE;
+	if(pml.groundTrace.surfaceFlags & SURF_WOOD) return EV_FOOTSTEP_WOOD;
+	if(pml.groundTrace.surfaceFlags & SURF_WOODPANEL) return EV_FOOTSTEP_WOODPANEL;
+	return EV_FOOTSTEP_CONCRETE;
 }
 
 /*
@@ -857,8 +866,6 @@ static void PM_CrashLand(void) {
 			if(pm->ps->stats[STAT_HEALTH] > 0) {
 				PM_AddEvent(EV_FALL_MEDIUM);
 			}
-		} else if(delta > 7) {
-			PM_AddEvent(EV_FALL_SHORT);
 		} else {
 			PM_AddEvent(PM_FootstepForSurface());
 		}
@@ -1195,17 +1202,6 @@ static void PM_Footsteps(void) {
 		} else {
 			PM_ContinueLegsAnim(LEGS_WALKCR);
 		}
-		// ducked characters never play footsteps
-		/*
-		} else 	if ( pm->ps->pm_flags & PMF_BACKWARDS_RUN ) {
-		    if ( !( pm->cmd.buttons & BUTTON_WALKING ) ) {
-		        bobmove = 0.4;	// faster speeds bob faster
-		        footstep = true;
-		    } else {
-		        bobmove = 0.3;
-		    }
-		    PM_ContinueLegsAnim( LEGS_BACK );
-		*/
 	} else {
 		if(!(pm->cmd.buttons & BUTTON_WALKING)) {
 			bobmove = 0.4f;  // faster speeds bob faster
@@ -1231,19 +1227,12 @@ static void PM_Footsteps(void) {
 
 	// if we just crossed a cycle boundary, play an appropriate footstep event
 	if(((old + 64) ^ (pm->ps->bobCycle + 64)) & 128) {
-		if(pm->waterlevel == 0) {
+		if(!pm->waterlevel) {
 			// on ground will only play sounds if running
-			if(footstep && !pm->noFootsteps) {
-				PM_AddEvent(PM_FootstepForSurface());
-			}
-		} else if(pm->waterlevel == 1) {
-			// splashing
-			PM_AddEvent(EV_FOOTSPLASH);
-		} else if(pm->waterlevel == 2) {
+			if(footstep) PM_AddEvent(PM_FootstepForSurface());
+		} else if(pm->waterlevel) {
 			// wading / swimming at surface
-			PM_AddEvent(EV_SWIM);
-		} else if(pm->waterlevel == 3) {
-			// no sound when completely underwater
+			PM_AddEvent(EV_FOOTSTEP_SLOSH);
 		}
 	}
 }
@@ -1255,31 +1244,11 @@ PM_WaterEvents
 Generate sound events for entering and leaving water
 ==============
 */
-static void PM_WaterEvents(void) {  // FIXME?
-	//
-	// if just entered a water volume, play a sound
-	//
+static void PM_WaterEvents(void) {
 	if(!pml.previous_waterlevel && pm->waterlevel) {
-		PM_AddEvent(EV_WATER_TOUCH);
+		PM_AddEvent(EV_WATER_SPLASH);
 	}
 
-	//
-	// if just completely exited a water volume, play a sound
-	//
-	if(pml.previous_waterlevel && !pm->waterlevel) {
-		PM_AddEvent(EV_WATER_LEAVE);
-	}
-
-	//
-	// check for head just going under water
-	//
-	if(pml.previous_waterlevel != 3 && pm->waterlevel == 3) {
-		PM_AddEvent(EV_WATER_UNDER);
-	}
-
-	//
-	// check for head just coming out of water
-	//
 	if(pml.previous_waterlevel == 3 && pm->waterlevel != 3) {
 		PM_AddEvent(EV_WATER_CLEAR);
 	}
@@ -1536,8 +1505,7 @@ void PmoveSingle(pmove_t* pmove) {
 		pm->tracemask &= ~CONTENTS_BODY;  // corpses can fly through bodies
 	}
 
-	// make sure walking button is clear if they are running, to avoid
-	// proxy no-footsteps cheats
+	// make sure walking button is clear if they are running, to avoid proxy nosteps cheats
 	if(abs(pm->cmd.forwardmove) > 64 || abs(pm->cmd.rightmove) > 64) {
 		pm->cmd.buttons &= ~BUTTON_WALKING;
 	}

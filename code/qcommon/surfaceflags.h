@@ -59,24 +59,34 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CONTENTS_TRIGGER 0x40000000
 #define CONTENTS_NODROP 0x80000000  // don't leave bodies or items (death fog, lava)
 
-#define SURF_NODAMAGE 0x1  // never give falling damage
-#define SURF_SLICK 0x2     // effects game physics
-#define SURF_SKY 0x4       // lighting from environment map
-#define SURF_LADDER 0x8
-#define SURF_NOIMPACT 0x10                // don't make missile explosions
-#define SURF_NOMARKS 0x20                 // don't leave missile marks
-#define SURF_FLESH 0x40                   // make flesh sounds and effects
-#define SURF_NODRAW 0x80                  // don't generate a drawsurface at all
-#define SURF_HINT 0x100                   // make a primary bsp splitter
-#define SURF_SKIP 0x200                   // completely ignore, allowing non-closed brushes
-#define SURF_NOLIGHTMAP 0x400             // surface doesn't need a lightmap
-#define SURF_POINTLIGHT 0x800             // generate lighting info at vertexes
-#define SURF_METALSTEPS 0x1000            // clanking footsteps
-#define SURF_NOSTEPS 0x2000               // no footstep sounds
-#define SURF_NONSOLID 0x4000              // don't collide against curves with this set
-#define SURF_LIGHTFILTER 0x8000           // act as a light filter during q3map -light
-#define SURF_ALPHASHADOW 0x10000          // do per-pixel light shadow casting in q3map
-#define SURF_NODLIGHT 0x20000             // don't dlight even if solid (solid lava, skies)
-#define SURF_DUST 0x40000                 // leave a dust trail when walking on this surface
-#define SURF_CUBEMAP 0x80000              // reflective?
-#define SURF_CUBEMAP_CORRECTION 0x100000  // correct reflect?
+#define SURF_NODAMAGE 1               // never give falling damage
+#define SURF_SLICK 2                  // effects game physics
+#define SURF_SKY 4                    // lighting from environment map
+#define SURF_NOMARKS 8                // don't leave missile marks
+#define SURF_NODRAW 16                // don't generate a drawsurface at all
+#define SURF_HINT 32                  // make a primary bsp splitter
+#define SURF_SKIP 64                  // completely ignore, allowing non-closed brushes
+#define SURF_NOLIGHTMAP 128           // surface doesn't need a lightmap
+#define SURF_POINTLIGHT 256           // generate lighting info at vertexes
+#define SURF_NONSOLID 512             // don't collide against curves with this set
+#define SURF_LIGHTFILTER 1024         // act as a light filter during q3map -light
+#define SURF_ALPHASHADOW 2048         // do per-pixel light shadow casting in q3map
+#define SURF_CUBEMAP 4096             // reflective?
+#define SURF_CUBEMAP_CORRECTION 8192  // correct reflect?
+
+/* --- material flags --- */
+#define SURF_CHAINLINK 16384
+#define SURF_CONCRETE 32768
+#define SURF_DIRT 65536
+#define SURF_DUCT 131072
+#define SURF_GRASS 262144
+#define SURF_GRAVEL 524288
+#define SURF_LADDER 1048576
+#define SURF_METAL 2097152
+#define SURF_METALGRATE 4194304
+#define SURF_MUD 8388608
+#define SURF_SAND 16777216
+#define SURF_SLOSH 33554432
+#define SURF_TILE 67108864
+#define SURF_WOOD 134217728
+#define SURF_WOODPANEL 268435456

@@ -484,7 +484,6 @@ void ClientThink_real(gentity_t* ent) {
 	pm.trace = trap_Trace;
 	pm.pointcontents = trap_PointContents;
 	pm.debugLevel = g_debugMove.integer;
-	pm.noFootsteps = (g_dmflags.integer & DF_NO_FOOTSTEPS) > 0;
 
 	VectorCopy(client->ps.origin, client->oldOrigin);
 

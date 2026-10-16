@@ -1419,22 +1419,32 @@ infoParm_t infoParms[] = {
 
 	// server attributes
     {"slick", 0, SURF_SLICK, 0},
-    {"noimpact", 0, SURF_NOIMPACT, 0},  // don't make impact explosions or marks
-    {"nomarks", 0, SURF_NOMARKS, 0},    // don't make impact marks, but still explode
+    {"nomarks", 0, SURF_NOMARKS, 0},  // don't make impact marks, but still explode
     {"ladder", 0, SURF_LADDER, 0},
     {"nodamage", 0, SURF_NODAMAGE, 0},
-    {"metalsteps", 0, SURF_METALSTEPS, 0},
-    {"flesh", 0, SURF_FLESH, 0},
-    {"nosteps", 0, SURF_NOSTEPS, 0},
 
     // drawsurf attributes
     {"nodraw", 0, SURF_NODRAW, 0},                         // don't generate a drawsurface (or a lightmap)
     {"pointlight", 0, SURF_POINTLIGHT, 0},                 // sample lighting at vertexes
     {"nolightmap", 0, SURF_NOLIGHTMAP, 0},                 // don't generate a lightmap
-    {"nodlight", 0, SURF_NODLIGHT, 0},                     // don't ever add dynamic lights
-    {"dust", 0, SURF_DUST, 0},                             // leave a dust trail when walking on this surface
     {"cubemap", 0, SURF_CUBEMAP, 0},                       // reflective?
     {"cubemapCorrection", 0, SURF_CUBEMAP_CORRECTION, 0},  // correct reflect?
+
+	// material flags (server/gameplay relevant)
+    {"chainlink", 0, SURF_CHAINLINK, 0},
+    {"concrete", 0, SURF_CONCRETE, 0},
+    {"dirt", 0, SURF_DIRT, 0},
+    {"duct", 0, SURF_DUCT, 0},
+    {"grass", 0, SURF_GRASS, 0},
+    {"gravel", 0, SURF_GRAVEL, 0},
+    {"metal", 0, SURF_METAL, 0},
+    {"metalgrate", 0, SURF_METALGRATE, 0},
+    {"mud", 0, SURF_MUD, 0},
+    {"sand", 0, SURF_SAND, 0},
+    {"slosh", 0, SURF_SLOSH, 0},
+    {"tile", 0, SURF_TILE, 0},
+    {"wood", 0, SURF_WOOD, 0},
+    {"woodpanel", 0, SURF_WOODPANEL, 0},
 };
 
 /*

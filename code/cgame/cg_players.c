@@ -100,7 +100,6 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci) {
 	text_p = text;
 	skip = 0;  // quite the compiler warning
 
-	ci->footsteps = FOOTSTEP_NORMAL;
 	VectorClear(ci->headOffset);
 	ci->gender = GENDER_MALE;
 	ci->fixedlegs = false;
@@ -113,26 +112,7 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci) {
 		if(!token[0]) {
 			break;
 		}
-		if(!Q_stricmp(token, "footsteps")) {
-			token = COM_Parse(&text_p);
-			if(!token[0]) {
-				break;
-			}
-			if(!Q_stricmp(token, "default") || !Q_stricmp(token, "normal")) {
-				ci->footsteps = FOOTSTEP_NORMAL;
-			} else if(!Q_stricmp(token, "boot")) {
-				ci->footsteps = FOOTSTEP_BOOT;
-			} else if(!Q_stricmp(token, "flesh")) {
-				ci->footsteps = FOOTSTEP_FLESH;
-			} else if(!Q_stricmp(token, "mech")) {
-				ci->footsteps = FOOTSTEP_MECH;
-			} else if(!Q_stricmp(token, "energy")) {
-				ci->footsteps = FOOTSTEP_ENERGY;
-			} else {
-				CG_Printf("Bad footsteps parm in %s: %s\n", filename, token);
-			}
-			continue;
-		} else if(!Q_stricmp(token, "headoffset")) {
+		if(!Q_stricmp(token, "headoffset")) {
 			for(i = 0; i < 3; i++) {
 				token = COM_Parse(&text_p);
 				if(!token[0]) {
@@ -610,7 +590,6 @@ CG_CopyClientInfoModel
 */
 static void CG_CopyClientInfoModel(clientInfo_t* from, clientInfo_t* to) {
 	VectorCopy(from->headOffset, to->headOffset);
-	to->footsteps = from->footsteps;
 	to->gender = from->gender;
 
 	to->legsModel = from->legsModel;

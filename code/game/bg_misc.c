@@ -193,28 +193,35 @@ void BG_EvaluateTrajectoryDelta(const trajectory_t* tr, int atTime, vec3_t resul
 char* eventnames[] = {
     "EV_NONE",
 
-    "EV_FOOTSTEP",
+    "EV_FOOTSTEP_CHAINLINK",
+    "EV_FOOTSTEP_CONCRETE",
+    "EV_FOOTSTEP_DIRT",
+    "EV_FOOTSTEP_DUCT",
+    "EV_FOOTSTEP_GRASS",
+    "EV_FOOTSTEP_GRAVEL",
+    "EV_FOOTSTEP_LADDER",
     "EV_FOOTSTEP_METAL",
-    "EV_FOOTSPLASH",
-    "EV_FOOTWADE",
-    "EV_SWIM",
+    "EV_FOOTSTEP_METALGRATE",
+    "EV_FOOTSTEP_MUD",
+    "EV_FOOTSTEP_SAND",
+    "EV_FOOTSTEP_SLOSH",
+    "EV_FOOTSTEP_TILE",
+    "EV_FOOTSTEP_WOOD",
+    "EV_FOOTSTEP_WOODPANEL",
 
     "EV_STEP_4",
     "EV_STEP_8",
     "EV_STEP_12",
     "EV_STEP_16",
 
-    "EV_FALL_SHORT",
     "EV_FALL_MEDIUM",
     "EV_FALL_FAR",
 
     "EV_JUMP_PAD",  // boing sound at origin", jump sound on player
 
     "EV_JUMP",
-    "EV_WATER_TOUCH",  // foot touches
-    "EV_WATER_LEAVE",  // foot leaves
-    "EV_WATER_UNDER",  // head touches
-    "EV_WATER_CLEAR",  // head leaves
+    "EV_WATER_SPLASH",  // foot touches
+    "EV_WATER_CLEAR",   // head leaves
 
     "EV_ITEM_PICKUP",         // normal item pickups are predictable
     "EV_GLOBAL_ITEM_PICKUP",  // powerup / team sounds are broadcast to everyone

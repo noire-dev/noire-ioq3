@@ -237,46 +237,25 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		//
 		// movement generated events
 		//
-		case EV_FOOTSTEP:
-			DEBUGNAME("EV_FOOTSTEP");
-			if(cg_footsteps.integer) {
-				trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.footsteps[ci->footsteps][rand() & 3]);
-			}
-			break;
+		case EV_FOOTSTEP_CHAINLINK:
+		case EV_FOOTSTEP_CONCRETE:
+		case EV_FOOTSTEP_DIRT:
+		case EV_FOOTSTEP_DUCT:
+		case EV_FOOTSTEP_GRASS:
+		case EV_FOOTSTEP_GRAVEL:
+		case EV_FOOTSTEP_LADDER:
 		case EV_FOOTSTEP_METAL:
-			DEBUGNAME("EV_FOOTSTEP_METAL");
-			if(cg_footsteps.integer) {
-				trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.footsteps[FOOTSTEP_METAL][rand() & 3]);
-			}
-			break;
-		case EV_FOOTSPLASH:
-			DEBUGNAME("EV_FOOTSPLASH");
-			if(cg_footsteps.integer) {
-				trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.footsteps[FOOTSTEP_SPLASH][rand() & 3]);
-			}
-			break;
-		case EV_FOOTWADE:
-			DEBUGNAME("EV_FOOTWADE");
-			if(cg_footsteps.integer) {
-				trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.footsteps[FOOTSTEP_SPLASH][rand() & 3]);
-			}
-			break;
-		case EV_SWIM:
-			DEBUGNAME("EV_SWIM");
-			if(cg_footsteps.integer) {
-				trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.footsteps[FOOTSTEP_SPLASH][rand() & 3]);
-			}
+		case EV_FOOTSTEP_METALGRATE:
+		case EV_FOOTSTEP_MUD:
+		case EV_FOOTSTEP_SAND:
+		case EV_FOOTSTEP_SLOSH:
+		case EV_FOOTSTEP_TILE:
+		case EV_FOOTSTEP_WOOD:
+		case EV_FOOTSTEP_WOODPANEL:
+			DEBUGNAME("EV_FOOTSTEP");
+			trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.footsteps[es->event - EV_FOOTSTEP_CHAINLINK][rand() & 3]);
 			break;
 
-		case EV_FALL_SHORT:
-			DEBUGNAME("EV_FALL_SHORT");
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.landSound);
-			if(clientNum == cg.predictedPlayerState.clientNum) {
-				// smooth landing z changes
-				cg.landChange = -8;
-				cg.landTime = cg.time;
-			}
-			break;
 		case EV_FALL_MEDIUM:
 			DEBUGNAME("EV_FALL_MEDIUM");
 			// use normal pain sound
@@ -355,17 +334,9 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 			DEBUGNAME("EV_TAUNT");
 			trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*taunt.wav"));
 			break;
-		case EV_WATER_TOUCH:
-			DEBUGNAME("EV_WATER_TOUCH");
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.watrInSound);
-			break;
-		case EV_WATER_LEAVE:
-			DEBUGNAME("EV_WATER_LEAVE");
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.watrOutSound);
-			break;
-		case EV_WATER_UNDER:
-			DEBUGNAME("EV_WATER_UNDER");
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.watrUnSound);
+		case EV_WATER_SPLASH:
+			DEBUGNAME("EV_WATER_SPLASH");
+			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.waterSplash[rand() & 2]);
 			break;
 		case EV_WATER_CLEAR:
 			DEBUGNAME("EV_WATER_CLEAR");
