@@ -1333,29 +1333,6 @@ static void RB_RenderShadowmap(shaderCommands_t* input) {
 	}
 }
 
-static void RB_RenderDynamicFogVolume(shaderCommands_t* input) {
-	shaderProgram_t* sp = &tr.dynamicFogShader;
-	vec3_t viewOrigin;
-
-	VectorCopy(backEnd.viewParms.or.origin, viewOrigin);
-
-	GLSL_BindProgram(sp);
-
-	GLSL_SetUniformMat4(sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
-	GLSL_SetUniformVec3(sp, UNIFORM_VIEWORIGIN, viewOrigin);
-	GLSL_SetUniformVec3(sp, UNIFORM_DYNAMICFOGCOLOR, input->shader->dynamicFogColor);
-	GLSL_SetUniformFloat(sp, UNIFORM_DYNAMICFOGDEPTH, input->shader->dynamicFogDepth);
-
-	// Render both front and back faces so the volume actually looks
-	// filled instead of appearing as a single thin plane. Depth writes
-	// are disabled so the back faces are not occluded by the front faces
-	// of the same brush.
-	GL_Cull(CT_TWO_SIDED);
-	GL_State(GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
-
-	R_DrawElements(input->numIndexes, input->firstIndex);
-}
-
 void RB_StageIteratorGeneric(void) {
 	shaderCommands_t* input;
 	unsigned int vertexAttribs = 0;
@@ -1446,25 +1423,11 @@ void RB_StageIteratorGeneric(void) {
 		return;
 	}
 
-	// Fog volumes must be rendered two-sided so the brush shows as a
-	// volumetric volume; the regular shader stages (water, textures, etc.)
-	// are still drawn, and the fog pass blends over them.
-	if(input->shader->hasDynamicFog) {
-		GL_Cull(CT_TWO_SIDED);
-	}
-
 	//
 	//
 	// call shader function
 	//
 	RB_IterateStagesGeneric(input);
-
-	// Dynamic fog volume pass - draws the brush geometry again as a
-	// semi-transparent volumetric fog, blended over everything already
-	// rendered in this brush (including water texture and reflections).
-	if(input->shader->hasDynamicFog) {
-		RB_RenderDynamicFogVolume(input);
-	}
 
 	// now do fog
 	// не применяем туман для 2D-элементов интерфейса (projection2D),
