@@ -49,6 +49,24 @@ extern const char* fallbackShader_texturecolor_fp;
 extern const char* fallbackShader_tonemap_vp;
 extern const char* fallbackShader_tonemap_fp;
 
+static const char* fallbackShader_dynamicfog_vp = "attribute vec3 attr_Position;\n"
+                                                  "uniform mat4 u_ModelViewProjectionMatrix;\n"
+                                                  "varying vec3 var_WorldPos;\n"
+                                                  "void main() {\n"
+                                                  "    var_WorldPos = attr_Position;\n"
+                                                  "    gl_Position = u_ModelViewProjectionMatrix * vec4(attr_Position, 1.0);\n"
+                                                  "}\n";
+
+static const char* fallbackShader_dynamicfog_fp = "uniform vec3 u_DynamicFogColor;\n"
+                                                  "uniform float u_DynamicFogDepth;\n"
+                                                  "uniform vec3 u_ViewOrigin;\n"
+                                                  "varying vec3 var_WorldPos;\n"
+                                                  "void main() {\n"
+                                                  "    float dist = distance(u_ViewOrigin, var_WorldPos);\n"
+                                                  "    float alpha = clamp(dist / u_DynamicFogDepth, 0.0, 1.0);\n"
+                                                  "    gl_FragColor = vec4(u_DynamicFogColor, alpha);\n"
+                                                  "}\n";
+
 typedef struct uniformInfo_s {
 	char* name;
 	int type;
@@ -164,6 +182,9 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_FireRiseDir", GLSL_VEC3},
     {"u_ZFadeLowest", GLSL_FLOAT},
     {"u_ZFadeHighest", GLSL_FLOAT},
+
+    {"u_DynamicFogColor", GLSL_VEC3},
+    {"u_DynamicFogDepth", GLSL_FLOAT},
 };
 
 typedef enum { GLSL_PRINTLOG_PROGRAM_INFO, GLSL_PRINTLOG_SHADER_INFO, GLSL_PRINTLOG_SHADER_SOURCE } glslPrintLog_t;
@@ -1170,6 +1191,18 @@ void GLSL_InitGPUShaders(void) {
 
 	numEtcShaders++;
 
+	attribs = ATTR_POSITION;
+	extradefines[0] = '\0';
+
+	if(!GLSL_InitGPUShader(&tr.dynamicFogShader, "dynamicfog", attribs, true, extradefines, true, fallbackShader_dynamicfog_vp, fallbackShader_dynamicfog_fp)) {
+		ri.Error(ERR_FATAL, "Could not load dynamicfog shader!");
+	}
+
+	GLSL_InitUniforms(&tr.dynamicFogShader);
+	GLSL_FinishGPUShader(&tr.dynamicFogShader);
+
+	numEtcShaders++;
+
 	for(i = 0; i < 2; i++) {
 		attribs = ATTR_POSITION | ATTR_TEXCOORD;
 		extradefines[0] = '\0';
@@ -1316,6 +1349,8 @@ void GLSL_ShutdownGPUShaders(void) {
 	GLSL_DeleteGPUShader(&tr.shadowmaskShader);
 
 	for(i = 0; i < 4; i++) GLSL_DeleteGPUShader(&tr.depthBlurShader[i]);
+
+	GLSL_DeleteGPUShader(&tr.dynamicFogShader);
 }
 
 void GLSL_BindProgram(shaderProgram_t* program) {

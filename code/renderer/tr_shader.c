@@ -1643,6 +1643,21 @@ static bool ParseShader(char** text) {
 			SkipRestOfLine(text);
 			continue;
 		}
+		// dynamicFog ( r g b ) depth
+		else if(!Q_stricmp(token, "dynamicFog")) {
+			if(!ParseVector(text, 3, shader.dynamicFogColor)) {
+				return false;
+			}
+
+			token = COM_ParseExt(text, false);
+			if(!token[0]) {
+				ri.Printf(PRINT_WARNING, "WARNING: missing depth parameter for 'dynamicFog' in shader '%s'\n", shader.name);
+				continue;
+			}
+			shader.dynamicFogDepth = atof(token);
+			shader.hasDynamicFog = true;
+			continue;
+		}
 		// portal
 		else if(!Q_stricmp(token, "portal")) {
 			shader.sort = SS_PORTAL;
@@ -2459,6 +2474,7 @@ static void InitShaderEx(const char* name, int lightmapIndex, int realLightmapIn
 	Q_strncpyz(shader.name, name, sizeof(shader.name));
 	shader.lightmapIndex = lightmapIndex;
 	shader_realLightmapIndex = realLightmapIndex;
+	shader.hasDynamicFog = false;
 
 	for(i = 0; i < MAX_SHADER_STAGES; i++) {
 		stages[i].bundle[0].texMods = texMods[i];
@@ -2603,6 +2619,13 @@ static shader_t* FinishShader(void) {
 		shader.sort = SS_OPAQUE;
 	}
 
+	// Dynamic fog volumes are translucent and must be drawn in the blend
+	// pass, AFTER opaque geometry, so that water/reflections inside the
+	// brush are visible underneath the fog layer.
+	if(shader.hasDynamicFog && shader.sort < SS_BLEND0) {
+		shader.sort = SS_BLEND0;
+	}
+
 	FixFatLightmapTexCoords();
 
 	//
@@ -2619,8 +2642,10 @@ static shader_t* FinishShader(void) {
 	//
 	shader.numUnfoggedPasses = stage;
 
-	// fogonly shaders don't have any normal passes
-	if(stage == 0 && !shader.isSky) shader.sort = SS_FOG;
+	// fogonly shaders don't have any normal passes.
+	// A dynamic fog volume with no explicit stages is still a translucent
+	// volume, not a classic fog-only shader, so do not demote it to SS_FOG.
+	if(stage == 0 && !shader.isSky && !shader.hasDynamicFog) shader.sort = SS_FOG;
 
 	// determine which stage iterator function is appropriate
 	ComputeStageIteratorFunc();

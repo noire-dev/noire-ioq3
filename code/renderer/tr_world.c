@@ -34,6 +34,12 @@ static bool R_CullSurface(msurface_t* surf) {
 		return false;
 	}
 
+	// Dynamic fog volumes must render both front and back faces so the
+	// brush actually appears as a volumetric volume instead of a thin plane.
+	if(surf->shader->hasDynamicFog) {
+		return false;
+	}
+
 	if(r_nocurves->integer && *surf->data == SF_GRID) {
 		return true;
 	}
@@ -237,6 +243,9 @@ static bool R_FogCullSurface(msurface_t* surf) {
 	vec3_t center;
 	float dist;
 	float fogEnd = r_dynamicFogEnd->value * 1.10;
+
+	// Dynamic fog volumes are visible from any distance they occupy.
+	if(surf->shader->hasDynamicFog) return false;
 
 	if(!r_dynamicFog->integer) return false;
 

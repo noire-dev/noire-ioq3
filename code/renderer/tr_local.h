@@ -406,6 +406,10 @@ typedef struct shader_s {
 	skyParms_t sky;
 	fogParms_t fogParms;
 
+	bool hasDynamicFog;
+	vec3_t dynamicFogColor;
+	float dynamicFogDepth;
+
 	float portalRange;  // distance to fog out at
 	bool isPortal;
 
@@ -618,6 +622,9 @@ typedef enum {
 	UNIFORM_FIRERISEDIR,
 	UNIFORM_ZFADELOWEST,
 	UNIFORM_ZFADEHIGHEST,
+
+	UNIFORM_DYNAMICFOGCOLOR,
+	UNIFORM_DYNAMICFOGDEPTH,
 
 	UNIFORM_COUNT
 } uniform_t;
@@ -1444,6 +1451,7 @@ typedef struct {
 	shaderProgram_t depthBlurShader[4];
 	shaderProgram_t testcubeShader;
 	shaderProgram_t greyscaleShader;
+	shaderProgram_t dynamicFogShader;
 
 	// -----------------------------------------
 
