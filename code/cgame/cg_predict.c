@@ -440,6 +440,17 @@ void CG_PredictPlayerState(void) {
 		// get the command
 		trap_GetUserCmd(cmdNum, &cg_pmove.cmd);
 
+		if(trap_Key_GetCatcher() == KEYCATCH_UI || trap_Key_GetCatcher() & KEYCATCH_CONSOLE) {
+			cg.savedSens = 0;
+		} else {
+			if(cg_pmove.cmd.buttons & BUTTON_GESTURE && cg_pmove.cmd.buttons & BUTTON_ATTACK && cg_pmove.cmd.weapon == WP_PHYSGUN) {
+				trap_Cvar_Set("sensitivity", "0.025");
+			} else {
+				if(cg.savedSens && cg.savedSens > 0.025) trap_Cvar_Set("sensitivity", va("%.3f", cg.savedSens));
+				if(cg.savedSens <= 0.025) cg.savedSens = trap_Cvar_VariableValue("sensitivity");
+			}
+		}
+
 		// don't do anything if the time is before the snapshot player time
 		if(cg_pmove.cmd.serverTime <= cg.predictedPlayerState.commandTime) {
 			continue;

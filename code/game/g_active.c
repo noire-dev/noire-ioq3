@@ -397,6 +397,59 @@ void SendPendingPredictableEvents(playerState_t* ps) {
 	}
 }
 
+static void PhysgunHold(gentity_t* player) {
+	gentity_t* ent = player->grabbedEntity;
+	gentity_t* findent;
+	vec3_t velocity;
+
+	if(player->client->ps.weapon != WP_PHYSGUN) return;
+
+	if(player->client->buttons & BUTTON_ATTACK && player->client->ps.stats[STAT_HEALTH] && player->client->ps.pm_type != PM_DEAD) {
+		if(!player->grabbedEntity) {
+			findent = FindEntityForPhysgun(player, jsd_weapon[WP_PHYSGUN].range);
+			if(findent && findent->isGrabbed == false) {
+				if(!G_PlayerIsOwner(player, findent)) return;
+				if(findent) player->grabbedEntity = findent;
+			}
+			if(player->grabbedEntity) Phys_HoldSetup(player, true);
+		} else {
+			Phys_HoldFrame_Kinetic(player, true);
+		}
+	} else if(player->grabbedEntity) {
+		ent->isGrabbed = false;
+		if(ent->grabNewPhys == PHYS_STATIC) Phys_HoldDropStatic(player, velocity);
+		if(ent->grabNewPhys == PHYS_DYNAMIC) Phys_HoldDropDynamic(player, velocity, true);
+		VectorClear(player->grabOffset);
+		player->grabbedEntity = 0;
+	}
+}
+
+static void GravitygunHold(gentity_t* player) {
+	gentity_t* ent = player->grabbedEntity;
+	gentity_t* findent;
+	vec3_t velocity;
+
+	if(player->client->ps.weapon != WP_GRAVITYGUN) return;
+
+	if(player->client->buttons & BUTTON_ATTACK && player->client->ps.stats[STAT_HEALTH] && player->client->ps.pm_type != PM_DEAD) {
+		if(!player->grabbedEntity) {
+			findent = FindEntityForGravitygun(player, jsd_weapon[WP_GRAVITYGUN].range);
+			if(findent && findent->isGrabbed == false) {
+				if(!G_PlayerIsOwner(player, findent)) return;
+				if(findent) player->grabbedEntity = findent;
+			}
+			if(player->grabbedEntity) Phys_HoldSetup(player, false);
+		} else {
+			Phys_HoldFrame_Kinetic(player, false);
+		}
+	} else if(player->grabbedEntity) {
+		ent->isGrabbed = false;
+		Phys_HoldDropDynamic(player, velocity, false);
+		player->grabbedEntity = 0;
+		G_AddEvent(player, EV_GRAVITY_LAUNCH, 0);
+	}
+}
+
 /*
 ==============
 ClientThink
@@ -525,6 +578,9 @@ void ClientThink_real(gentity_t* ent) {
 
 	// swap and latch button actions
 	client->buttons = ucmd->buttons;
+
+	PhysgunHold(ent);
+	GravitygunHold(ent);
 
 	// check for respawning
 	if(client->ps.stats[STAT_HEALTH] <= 0) {

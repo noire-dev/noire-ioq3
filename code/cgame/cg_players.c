@@ -728,6 +728,15 @@ void CG_NewClientInfo(int clientNum) {
 	newInfo.c2RGBA[2] = 255 * newInfo.color2[2];
 	newInfo.c2RGBA[3] = 255;
 
+	v = Info_ValueForKey(configstring, "pr");
+	newInfo.physR = atoi(v);
+
+	v = Info_ValueForKey(configstring, "pg");
+	newInfo.physG = atoi(v);
+
+	v = Info_ValueForKey(configstring, "pb");
+	newInfo.physB = atoi(v);
+
 	// model
 	v = Info_ValueForKey(configstring, "model");
 	if(cg_forceModel.integer) {
@@ -1552,7 +1561,7 @@ void CG_Player(centity_t* cent) {
 	if(cent->currentState.number != cg.snap->ps.clientNum) CG_Add3DString(cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2] + 48, ci->name, FONTSTYLE_DROPSHADOW, color_white, 0.50, 512, 1536, true);
 
 	// add the gun / barrel / flash
-	CG_AddPlayerWeapon(&torso, NULL, cent);
+	CG_AddPlayerWeapon(&torso, NULL, cent, ci);
 }
 
 //=====================================================================

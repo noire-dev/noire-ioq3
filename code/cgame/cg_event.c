@@ -334,6 +334,10 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 			DEBUGNAME("EV_TAUNT");
 			trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*taunt.wav"));
 			break;
+		case EV_GRAVITY_LAUNCH:
+			DEBUGNAME("EV_GRAVITY_LAUNCH");
+			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.gravityLaunch[rand() & 3]);
+			break;
 		case EV_WATER_SPLASH:
 			DEBUGNAME("EV_WATER_SPLASH");
 			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.waterSplash[rand() & 2]);
@@ -455,7 +459,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 					VectorMA(es->origin2, 4, cg.refdef.viewaxis[1], es->origin2);
 			}
 
-			CG_RailTrail(ci, es->origin2, es->pos.trBase);
+			CG_RailTrail(ci, es->origin2, es->pos.trBase, WP_RAILGUN);
 
 			// if the end was on a nomark surface, don't make an explosion
 			if(es->eventParm != 255) {

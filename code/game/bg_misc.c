@@ -41,9 +41,9 @@ weaponProperties_t jsd_weapon[] = {
 	{ WT_RAILGUN, 	WP_RAILGUN, 			NULL, 			1500, 	1, 		100, 	0, 		0,		16384,	0, 		0, 		0, 		0, 		false,	false,	0.0 },
 	{ WT_MISSILE, 	WP_PLASMAGUN, 			"plasma", 		100, 	1, 		20, 	15, 	20,		0,		2000, 	0, 		0, 		10000, 	false,	false,	0.0 },
 	{ WT_MISSILE, 	WP_BFG, 				"bfg", 			200, 	1, 		100, 	100, 	120,	0,		2000, 	0, 		0, 		10000, 	false,	false,	0.0 },
-//	{ WT_EMPTY, 	WP_PHYSGUN, 			NULL, 			100, 	1, 		0, 		0, 		0,		8192,	0, 		0, 		0, 		0, 		false,	false,	0.0 },
-//	{ WT_EMPTY, 	WP_GRAVITYGUN, 			NULL, 			100, 	1, 		0, 		0, 		0,		1024,	0, 		0, 		0, 		0, 		false,	false,	0.0 },
-//	{ WT_TOOLGUN, 	WP_TOOLGUN, 			NULL, 			200, 	1, 		0, 		0, 		0,		4096,	0, 		0, 		0, 		0, 		false,	false,	0.0 },
+	{ WT_EMPTY, 	WP_PHYSGUN, 			NULL, 			100, 	1, 		0, 		0, 		0,		8192,	0, 		0, 		0, 		0, 		false,	false,	0.0 },
+	{ WT_EMPTY, 	WP_GRAVITYGUN, 			NULL, 			100, 	1, 		0, 		0, 		0,		1024,	0, 		0, 		0, 		0, 		false,	false,	0.0 },
+	{ WT_TOOLGUN, 	WP_TOOLGUN, 			NULL, 			200, 	1, 		0, 		0, 		0,		4096,	0, 		0, 		0, 		0, 		false,	false,	0.0 },
 };
 int	jsd_weaponCount = ARRAY_LEN(jsd_weapon);
 // clang-format on
@@ -220,6 +220,7 @@ char* eventnames[] = {
     "EV_JUMP_PAD",  // boing sound at origin", jump sound on player
 
     "EV_JUMP",
+    "EV_GRAVITY_LAUNCH",
     "EV_WATER_SPLASH",  // foot touches
     "EV_WATER_CLEAR",   // head leaves
 

@@ -510,6 +510,7 @@ void ClientUserinfoChanged(int clientNum) {
 	char c1[MAX_INFO_STRING];
 	char c2[MAX_INFO_STRING];
 	char userinfo[MAX_INFO_STRING];
+	char physR[16], physG[16], physB[16];
 
 	ent = g_entities + clientNum;
 	client = ent->client;
@@ -542,9 +543,13 @@ void ClientUserinfoChanged(int clientNum) {
 	Q_strncpyz(c1, Info_ValueForKey(userinfo, "color1"), sizeof(c1));
 	Q_strncpyz(c2, Info_ValueForKey(userinfo, "color2"), sizeof(c2));
 
+	strcpy(physR, Info_ValueForKey(userinfo, "physR"));
+	strcpy(physG, Info_ValueForKey(userinfo, "physG"));
+	strcpy(physB, Info_ValueForKey(userinfo, "physB"));
+
 	// send over a subset of the userinfo keys so other clients can
 	// print scoreboards, display models, and play custom sounds
-	s = va("n\\%s\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s", client->pers.netname, model, headModel, c1, c2);
+	s = va("n\\%s\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\pr\\%s\\pg\\%s\\pb\\%s", client->pers.netname, model, headModel, c1, c2, physR, physG, physB);
 
 	trap_SetConfigstring(CS_PLAYERS + clientNum, s);
 }

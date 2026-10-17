@@ -367,6 +367,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 		if(targ->s.eType == ET_PHYSICS) {
 			vec3_t newVelocity;
 			vec3_t newAngularVelocity;
+			targ->lastPlayer = attacker;
 			trap_Phys_GetLinearVelocity(targ->s.number, &newVelocity[0], &newVelocity[1], &newVelocity[2]);
 			VectorAdd(newVelocity, kvel, kvel);
 			trap_Phys_SetLinearVelocity(targ->s.number, kvel[0], kvel[1], kvel[2]);

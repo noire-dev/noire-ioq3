@@ -142,6 +142,24 @@ struct gentity_s {
 
 	int swep_list[WEAPONS_NUM];
 	int swep_ammo[WEAPONS_NUM];
+
+	// flashlight
+	bool flashlight;
+
+	// object private system
+	gentity_t* owner;
+
+	// Physgun and Gravitygun
+	gentity_t* grabbedEntity;  // physgun object for player
+	bool isGrabbed;            // object is grabbed by player for prop
+	float grabDist;            // physgun distance for player
+	vec3_t grabOffset;         // physgun offset for player
+	vec3_t grabOldOrigin;      // physgun old origin for prop
+	int grabNewPhys;           // for freeze prop for prop
+
+	// Props
+	gentity_t* lastPlayer;  // for damage and killfeed
+	int sb_phys;
 };
 
 typedef enum { CON_DISCONNECTED, CON_CONNECTING, CON_CONNECTED } clientConnected_t;
@@ -287,6 +305,13 @@ void G_SetOrigin(gentity_t* ent, vec3_t origin);
 void AddRemap(const char* oldShader, const char* newShader, float timeOffset);
 const char* BuildShaderStateConfig(void);
 
+gentity_t* FindEntityForPhysgun(gentity_t* ent, int range);
+gentity_t* FindEntityForGravitygun(gentity_t* ent, int range);
+void CrosshairPointPhys(gentity_t* ent, int range, vec3_t outPoint);
+void CrosshairPointGravity(gentity_t* ent, int range, vec3_t outPoint);
+gentity_t* G_FindEntityForEntityNum(int entityNum);
+bool G_PlayerIsOwner(gentity_t* player, gentity_t* ent);
+
 //
 // g_combat.c
 //
@@ -308,6 +333,14 @@ void TossClientCubes(gentity_t* self);
 //
 void G_RunMover(gentity_t* ent);
 void Touch_DoorTrigger(gentity_t* ent, gentity_t* other, trace_t* trace);
+
+// g_physics.c
+void Phys_HoldDropStatic(gentity_t* player, vec3_t velocity);
+void Phys_HoldDropDynamic(gentity_t* player, vec3_t velocity, bool isPhysgun);
+void Phys_HoldSetup(gentity_t* player, bool isPhysgun);
+void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun);
+void Phys_HoldFrame(gentity_t* player, vec3_t velocity, bool isPhysgun);
+void G_RunPhysics(gentity_t* ent, int i);
 
 //
 // g_trigger.c

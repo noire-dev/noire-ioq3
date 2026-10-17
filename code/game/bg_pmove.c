@@ -1410,7 +1410,7 @@ PM_Animate
 */
 
 static void PM_Animate(void) {
-	if(pm->cmd.buttons & BUTTON_GESTURE) {
+	if(pm->cmd.buttons & BUTTON_GESTURE && pm->cmd.weapon != WP_PHYSGUN) {
 		if(pm->ps->torsoTimer == 0) {
 			PM_StartTorsoAnim(TORSO_GESTURE);
 			pm->ps->torsoTimer = TIMER_GESTURE;
@@ -1462,6 +1462,10 @@ are being updated instead of a full move
 void PM_UpdateViewAngles(playerState_t* ps, const usercmd_t* cmd) {
 	short temp;
 	int i;
+
+	if(pm->cmd.buttons & BUTTON_GESTURE && pm->cmd.buttons & BUTTON_ATTACK && pm->cmd.weapon == WP_PHYSGUN) {
+		return;
+	}
 
 	if(ps->stats[STAT_HEALTH] <= 0) {
 		return;  // no view changes at all

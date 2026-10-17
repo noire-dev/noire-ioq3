@@ -247,11 +247,13 @@ static void CG_OffsetFirstPersonView(void) {
 //======================================================================
 
 void CG_ZoomDown_f(void) {
-	if(cg.zoomed) {
-		return;
+	if(cg.zoomed) return;
+	if(cg.snap->ps.weapon != WP_PHYSGUN) {
+		cg.zoomed = true;
+		cg.zoomTime = cg.time;
+	} else {
+		trap_SendConsoleCommand(EXEC_INSERT, "altfire_physgun\n");
 	}
-	cg.zoomed = true;
-	cg.zoomTime = cg.time;
 }
 
 void CG_ZoomUp_f(void) {

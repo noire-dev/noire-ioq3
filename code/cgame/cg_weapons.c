@@ -172,115 +172,82 @@ static void CG_ShotgunEjectBrass(centity_t* cent) {
 	}
 }
 
-/*
-==========================
-CG_RailTrail
-==========================
-*/
-void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end) {
-	vec3_t axis[36], move, move2, vec, temp;
-	float len;
-	int i, j, skip;
-
+void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 	localEntity_t* le;
 	refEntity_t* re;
+	vec3_t s, e;
+	VectorCopy(start, s);
+	VectorCopy(end, e);
 
-#define RADIUS 4
-#define ROTATION 1
-#define SPACING 5
-
-	start[2] -= 4;
+	if(weapon == WP_RAILGUN) {
+		s[2] -= 4;
+		e[2] -= 0;
+	}
 
 	le = CG_AllocLocalEntity();
 	re = &le->refEntity;
 
 	le->leType = LE_FADE_RGB;
 	le->startTime = cg.time;
-	le->endTime = cg.time + cg_railTrailTime.value;
-	le->lifeRate = 1.0 / (le->endTime - le->startTime);
 
-	re->shaderTime = cg.time / 1000.0f;
+	if(weapon == WP_RAILGUN) {
+		le->endTime = cg.time + 400;
+		re->shaderTime = cg.time / 1000.0f;
+	} else {
+		le->endTime = cg.time + 60;
+		re->shaderTime = cg.time / 60.0f;
+	}
+
+	le->lifeRate = 1.0f / (le->endTime - le->startTime);
+
 	re->reType = RT_RAIL_CORE;
 	re->customShader = cgs.media.railCoreShader;
 
-	VectorCopy(start, re->origin);
-	VectorCopy(end, re->oldorigin);
+	VectorCopy(s, re->origin);
+	VectorCopy(e, re->oldorigin);
 
-	re->shaderRGBA[0] = ci->color1[0] * 255;
-	re->shaderRGBA[1] = ci->color1[1] * 255;
-	re->shaderRGBA[2] = ci->color1[2] * 255;
-	re->shaderRGBA[3] = 255;
-
-	le->color[0] = ci->color1[0] * 0.75;
-	le->color[1] = ci->color1[1] * 0.75;
-	le->color[2] = ci->color1[2] * 0.75;
-	le->color[3] = 1.0f;
-
-	AxisClear(re->axis);
-
-	if(cg_oldRail.integer) {
-		// nudge down a bit so it isn't exactly in center
-		re->origin[2] -= 8;
-		re->oldorigin[2] -= 8;
-		return;
-	}
-
-	VectorCopy(start, move);
-	VectorSubtract(end, start, vec);
-	len = VectorNormalize(vec);
-	PerpendicularVector(temp, vec);
-	for(i = 0; i < 36; i++) {
-		RotatePointAroundVector(axis[i], vec, temp, i * 10);  // banshee 2.4 was 10
-	}
-
-	VectorMA(move, 20, vec, move);
-	VectorScale(vec, SPACING, vec);
-
-	skip = -1;
-
-	j = 18;
-	for(i = 0; i < len; i += SPACING) {
-		if(i != skip) {
-			skip = i + SPACING;
-			le = CG_AllocLocalEntity();
-			re = &le->refEntity;
-			le->leFlags = LEF_PUFF_DONT_SCALE;
-			le->leType = LE_MOVE_SCALE_FADE;
-			le->startTime = cg.time;
-			le->endTime = cg.time + (i >> 1) + 600;
-			le->lifeRate = 1.0 / (le->endTime - le->startTime);
-
-			re->shaderTime = cg.time / 1000.0f;
-			re->reType = RT_SPRITE;
-			re->radius = 1.1f;
-			re->customShader = cgs.media.railRingsShader;
-
-			re->shaderRGBA[0] = ci->color2[0] * 255;
-			re->shaderRGBA[1] = ci->color2[1] * 255;
-			re->shaderRGBA[2] = ci->color2[2] * 255;
+	switch(weapon) {
+		case WP_RAILGUN:
+			re->shaderRGBA[0] = 0;
+			re->shaderRGBA[1] = 255;
+			re->shaderRGBA[2] = 0;
 			re->shaderRGBA[3] = 255;
 
-			le->color[0] = ci->color2[0] * 0.75;
-			le->color[1] = ci->color2[1] * 0.75;
-			le->color[2] = ci->color2[2] * 0.75;
+			le->color[0] = 0.0f;
+			le->color[1] = 1.0f;
+			le->color[2] = 0.0f;
 			le->color[3] = 1.0f;
 
-			le->pos.trType = TR_LINEAR;
-			le->pos.trTime = cg.time;
+			re->origin[2] -= 8;
+			re->oldorigin[2] -= 8;
+			break;
 
-			VectorCopy(move, move2);
-			VectorMA(move2, RADIUS, axis[j], move2);
-			VectorCopy(move2, le->pos.trBase);
+		case WP_PHYSGUN:
+			re->shaderRGBA[0] = ci->physR;
+			re->shaderRGBA[1] = ci->physG;
+			re->shaderRGBA[2] = ci->physB;
+			re->shaderRGBA[3] = 255;
 
-			le->pos.trDelta[0] = axis[j][0] * 6;
-			le->pos.trDelta[1] = axis[j][1] * 6;
-			le->pos.trDelta[2] = axis[j][2] * 6;
-		}
+			le->color[0] = ci->physR / 255.0f;
+			le->color[1] = ci->physG / 255.0f;
+			le->color[2] = ci->physB / 255.0f;
+			le->color[3] = 1.0f;
+			break;
 
-		VectorAdd(move, vec, move);
+		case WP_GRAVITYGUN:
+			re->shaderRGBA[0] = 120;
+			re->shaderRGBA[1] = 60;
+			re->shaderRGBA[2] = 0;
+			re->shaderRGBA[3] = 255;
 
-		j = (j + ROTATION) % 36;
+			le->color[0] = 120.0f / 255.0f;
+			le->color[1] = 60.0f / 255.0f;
+			le->color[2] = 0.0f;
+			le->color[3] = 1.0f;
+			break;
 	}
+
+	AxisClear(re->axis);
 }
 
 /*
@@ -577,6 +544,25 @@ void CG_RegisterWeapon(int weaponNum) {
 			weaponInfo->missileSound = trap_S_RegisterSound("sound/weapons/rocket/rockfly.wav", false);
 			break;
 
+		case WP_TOOLGUN:
+			weaponInfo->flashSound[0] = trap_S_RegisterSound("sound/weapons/toolgun/fire1.wav", false);
+			weaponInfo->flashSound[1] = trap_S_RegisterSound("sound/weapons/toolgun/fire2.wav", false);
+			cgs.media.plasmaExplosionShader = trap_R_RegisterShader("plasmaExplosion");
+			cgs.media.lightningShader = trap_R_RegisterShader("lightningBoltNew");
+			break;
+
+		case WP_PHYSGUN:
+			weaponInfo->flashSound[0] = trap_S_RegisterSound("sound/misc/silence.wav", false);
+			cgs.media.plasmaExplosionShader = trap_R_RegisterShader("plasmaExplosion");
+			cgs.media.lightningShader = trap_R_RegisterShader("lightningBoltNew");
+			break;
+
+		case WP_GRAVITYGUN:
+			weaponInfo->flashSound[0] = trap_S_RegisterSound("sound/misc/silence.wav", false);
+			cgs.media.plasmaExplosionShader = trap_R_RegisterShader("plasmaExplosion");
+			cgs.media.lightningShader = trap_R_RegisterShader("lightningBoltNew");
+			break;
+
 		default:
 			MAKERGB(weaponInfo->flashDlightColor, 1, 1, 1);
 			weaponInfo->flashSound[0] = trap_S_RegisterSound("sound/weapons/rocket/rocklf1a.wav", false);
@@ -707,10 +693,11 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 	vec3_t forward;
 	vec3_t muzzlePoint, endPoint;
 	int anim;
+	clientInfo_t* ci;
 
-	if(cent->currentState.weapon != WP_LIGHTNING) {
-		return;
-	}
+	ci = &cgs.clientinfo[cent->currentState.clientNum];
+
+	if(cent->currentState.weapon != WP_LIGHTNING && cent->currentState.weapon != WP_TOOLGUN && cent->currentState.weapon != WP_PHYSGUN && cent->currentState.weapon != WP_GRAVITYGUN) return;
 
 	memset(&beam, 0, sizeof(beam));
 
@@ -767,6 +754,11 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 	// use the provided origin, even though it may be slightly
 	// different than the muzzle origin
 	VectorCopy(origin, beam.origin);
+
+	if(cent->currentState.weapon == WP_PHYSGUN || cent->currentState.weapon == WP_GRAVITYGUN) {
+		CG_RailTrail(ci, origin, trace.endpos, cent->currentState.weapon);
+		return;
+	}
 
 	beam.reType = RT_LIGHTNING;
 	beam.customShader = cgs.media.lightningShader;
@@ -836,7 +828,7 @@ The main player will have this called for BOTH cases, so effects like light and
 sound should only be done on the world model case.
 =============
 */
-void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent) {
+void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent, clientInfo_t* ci) {
 	refEntity_t gun;
 	refEntity_t barrel;
 	refEntity_t flash;
@@ -868,6 +860,19 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent)
 		} else {
 			Byte4Copy(ci->c1RGBA, gun.shaderRGBA);
 		}
+	}
+
+	if(weaponNum == WP_PHYSGUN) {
+		gun.shaderRGBA[0] = ci->physR;
+		gun.shaderRGBA[1] = ci->physG;
+		gun.shaderRGBA[2] = ci->physB;
+		gun.shaderRGBA[3] = 255;
+	}
+	if(weaponNum == WP_GRAVITYGUN) {
+		gun.shaderRGBA[0] = 160;
+		gun.shaderRGBA[1] = 80;
+		gun.shaderRGBA[2] = 0;
+		gun.shaderRGBA[3] = 255;
 	}
 
 	gun.hModel = weapon->weaponModel;
@@ -933,7 +938,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent)
 	}
 
 	// add the flash
-	if((weaponNum == WP_LIGHTNING || weaponNum == WP_GAUNTLET) && (nonPredictedCent->currentState.eFlags & EF_FIRING)) {
+	if((weaponNum == WP_LIGHTNING || weaponNum == WP_GAUNTLET || weaponNum == WP_PHYSGUN || weaponNum == WP_GRAVITYGUN) && (nonPredictedCent->currentState.eFlags & EF_FIRING)) {
 		// continuous flash
 	} else {
 		// impulse flash
@@ -1033,30 +1038,22 @@ void CG_AddViewWeapon(playerState_t* ps) {
 	// set up gun position
 	CG_CalculateWeaponPosition(hand.origin, angles);
 
-	VectorMA(hand.origin, cg_gun_x.value, cg.refdef.viewaxis[0], hand.origin);
-	VectorMA(hand.origin, cg_gun_y.value, cg.refdef.viewaxis[1], hand.origin);
-	VectorMA(hand.origin, (cg_gun_z.value + fovOffset), cg.refdef.viewaxis[2], hand.origin);
+	VectorMA(hand.origin, 5, cg.refdef.viewaxis[0], hand.origin);
+	VectorMA(hand.origin, -1, cg.refdef.viewaxis[1], hand.origin);
+	VectorMA(hand.origin, (-1 + fovOffset), cg.refdef.viewaxis[2], hand.origin);
 
 	AnglesToAxis(angles, hand.axis);
 
-	// map torso animations to weapon animations
-	if(cg_gun_frame.integer) {
-		// development tool
-		hand.frame = hand.oldframe = cg_gun_frame.integer;
-		hand.backlerp = 0;
-	} else {
-		// get clientinfo for animation map
-		ci = &cgs.clientinfo[cent->currentState.clientNum];
-		hand.frame = CG_MapTorsoToWeaponFrame(ci, cent->pe.torso.frame);
-		hand.oldframe = CG_MapTorsoToWeaponFrame(ci, cent->pe.torso.oldFrame);
-		hand.backlerp = cent->pe.torso.backlerp;
-	}
+	ci = &cgs.clientinfo[cent->currentState.clientNum];
+	hand.frame = CG_MapTorsoToWeaponFrame(ci, cent->pe.torso.frame);
+	hand.oldframe = CG_MapTorsoToWeaponFrame(ci, cent->pe.torso.oldFrame);
+	hand.backlerp = cent->pe.torso.backlerp;
 
 	hand.hModel = weapon->handsModel;
 	hand.renderfx = RF_DEPTHHACK | RF_FIRST_PERSON | RF_MINLIGHT;
 
 	// add everything onto the hand
-	CG_AddPlayerWeapon(&hand, ps, &cg.predictedPlayerEntity);
+	CG_AddPlayerWeapon(&hand, ps, &cg.predictedPlayerEntity, ci);
 }
 
 void CG_NextWeapon_f(void) {
@@ -1065,10 +1062,10 @@ void CG_NextWeapon_f(void) {
 
 	if(!cg.snap || cg.snap->ps.pm_flags & PMF_FOLLOW) return;
 
-	// if(cg.snap->ps.weapon == WP_PHYSGUN && cg.snap->ps.eFlags & EF_FIRING) {
-	//	trap_Cmd(EXEC_INSERT, "physgun_dist 0\n");
-	//	return;
-	// }
+	if(cg.snap->ps.weapon == WP_PHYSGUN && cg.snap->ps.eFlags & EF_FIRING) {
+		trap_SendConsoleCommand(EXEC_INSERT, "physgun_dist 0\n");
+		return;
+	}
 
 	cg.weaponSelectTime = cg.time;
 	original = cg.weaponSelect;
@@ -1092,10 +1089,10 @@ void CG_PrevWeapon_f(void) {
 
 	if(!cg.snap || cg.snap->ps.pm_flags & PMF_FOLLOW) return;
 
-	// if(cg.snap->ps.weapon == WP_PHYSGUN && cg.snap->ps.eFlags & EF_FIRING) {
-	//	trap_Cmd(EXEC_INSERT, "physgun_dist 1\n");
-	//	return;
-	// }
+	if(cg.snap->ps.weapon == WP_PHYSGUN && cg.snap->ps.eFlags & EF_FIRING) {
+		trap_SendConsoleCommand(EXEC_INSERT, "physgun_dist 1\n");
+		return;
+	}
 
 	cg.weaponSelectTime = cg.time;
 	original = cg.weaponSelect;
@@ -1289,6 +1286,33 @@ void CG_MissileHitWall(int weapon, int clientNum, vec3_t origin, vec3_t dir, imp
 			mark = cgs.media.burnMarkShader;
 			radius = 32;
 			isSprite = true;
+			break;
+		case WP_TOOLGUN:
+			// no explosion at LG impact, it is added with the beam
+			r = rand() & 3;
+			if(r < 2) {
+				sfx = cgs.media.sfx_lghit2;
+			} else if(r == 2) {
+				sfx = cgs.media.sfx_lghit1;
+			} else {
+				sfx = cgs.media.sfx_lghit3;
+			}
+			mark = cgs.media.holeMarkShader;
+			radius = 12;
+			break;
+		case WP_PHYSGUN:
+			mod = 0;
+			shader = 0;
+			sfx = 0;
+			mark = 0;
+			radius = 0;
+			break;
+		case WP_GRAVITYGUN:
+			mod = 0;
+			shader = 0;
+			sfx = 0;
+			mark = 0;
+			radius = 0;
 			break;
 		case WP_SHOTGUN:
 			mod = cgs.media.bulletFlashModel;

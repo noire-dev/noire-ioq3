@@ -92,10 +92,6 @@ vmCvar_t cg_addMarks;
 vmCvar_t cg_brassTime;
 vmCvar_t cg_viewsize;
 vmCvar_t cg_drawGun;
-vmCvar_t cg_gun_frame;
-vmCvar_t cg_gun_x;
-vmCvar_t cg_gun_y;
-vmCvar_t cg_gun_z;
 vmCvar_t cg_tracerChance;
 vmCvar_t cg_tracerWidth;
 vmCvar_t cg_tracerLength;
@@ -161,9 +157,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE},
     {&cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE},
     {&cg_railTrailTime, "cg_railTrailTime", "400", CVAR_ARCHIVE},
-    {&cg_gun_x, "cg_gunX", "0", CVAR_CHEAT},
-    {&cg_gun_y, "cg_gunY", "0", CVAR_CHEAT},
-    {&cg_gun_z, "cg_gunZ", "0", CVAR_CHEAT},
     {&cg_centertime, "cg_centertime", "3", CVAR_CHEAT},
     {&cg_runpitch, "cg_runpitch", "0.002", CVAR_ARCHIVE},
     {&cg_runroll, "cg_runroll", "0.005", CVAR_ARCHIVE},
@@ -448,9 +441,15 @@ static void CG_RegisterSounds(void) {
 
 	cgs.media.hitSound = trap_S_RegisterSound("sound/feedback/hit.wav", false);
 
-	cgs.media.waterSplash[0] = trap_S_RegisterSound("sound/ambient/water/water_splash1.wav", false);
-	cgs.media.waterSplash[1] = trap_S_RegisterSound("sound/ambient/water/water_splash2.wav", false);
-	cgs.media.waterSplash[2] = trap_S_RegisterSound("sound/ambient/water/water_splash3.wav", false);
+	for(i = 0; i < 4; i++) {
+		Com_sprintf(name, sizeof(name), "sound/weapons/physcannon/superphys_launch%i.wav", i + 1);
+		cgs.media.gravityLaunch[i] = trap_S_RegisterSound(name, false);
+	}
+
+	for(i = 0; i < 3; i++) {
+		Com_sprintf(name, sizeof(name), "sound/ambient/water/water_splash%i.wav", i + 1);
+		cgs.media.waterSplash[i] = trap_S_RegisterSound(name, false);
+	}
 
 	cgs.media.jumpPadSound = trap_S_RegisterSound("sound/world/jumppad.wav", false);
 

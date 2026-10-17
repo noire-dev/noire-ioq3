@@ -64,6 +64,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define WS_HAVE 1
 #define WS_NOAMMO 2
 
+// phys type
+#define PHYS_STATIC 1
+#define PHYS_DYNAMIC 2
+#define PHYS_SLEEPING 3
+
 //
 // config strings are a general means of communicating variable length strings
 // from the server to all connected clients.
@@ -244,6 +249,10 @@ typedef enum {
 	WP_PLASMAGUN,
 	WP_BFG,
 
+	WP_PHYSGUN,
+	WP_GRAVITYGUN,
+	WP_TOOLGUN,
+
 	WEAPONS_NUM
 } weapon_t;
 
@@ -329,6 +338,7 @@ typedef enum {
 	EV_JUMP_PAD,  // boing sound at origin, jump sound on player
 
 	EV_JUMP,
+	EV_GRAVITY_LAUNCH,
 	EV_WATER_SPLASH,  // foot touches
 	EV_WATER_CLEAR,   // head leaves
 

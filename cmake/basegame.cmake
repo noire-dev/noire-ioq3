@@ -52,6 +52,7 @@ set(GAME_SOURCES
     ${SOURCE_DIR}/game/g_mem.c
     ${SOURCE_DIR}/game/g_misc.c
     ${SOURCE_DIR}/game/g_mover.c
+    ${SOURCE_DIR}/game/g_physics.c
     ${SOURCE_DIR}/game/g_spawn.c
     ${SOURCE_DIR}/game/g_svcmds.c
     ${SOURCE_DIR}/game/g_trigger.c

@@ -309,7 +309,10 @@ typedef struct {
 	byte c1RGBA[4];
 	byte c2RGBA[4];
 
-	int score;     // updated by score servercmds
+	int score;  // updated by score servercmds
+	int physR;
+	int physG;
+	int physB;
 	int location;  // location index for team mode
 	int health;    // you only get this info about your teammates
 	int armor;
@@ -481,6 +484,8 @@ typedef struct {
 	int weaponSelect;
 	int swep_listcl[WEAPONS_NUM];
 	int swep_spawncl[WEAPONS_NUM];  // stores spawn weapons
+
+	float savedSens;  // physgun
 
 	// auto rotating items
 	vec3_t autoAngles;
@@ -740,6 +745,7 @@ typedef struct {
 	sfxHandle_t assistSound;
 	sfxHandle_t defendSound;
 
+	sfxHandle_t gravityLaunch[4];
 	sfxHandle_t waterSplash[3];
 
 	// tournament sounds
@@ -898,10 +904,6 @@ extern vmCvar_t cg_noPlayerAnims;
 extern vmCvar_t cg_showmiss;
 extern vmCvar_t cg_addMarks;
 extern vmCvar_t cg_brassTime;
-extern vmCvar_t cg_gun_frame;
-extern vmCvar_t cg_gun_x;
-extern vmCvar_t cg_gun_y;
-extern vmCvar_t cg_gun_z;
 extern vmCvar_t cg_drawGun;
 extern vmCvar_t cg_viewsize;
 extern vmCvar_t cg_tracerChance;
@@ -1030,9 +1032,9 @@ void CG_MissileHitPlayer(int weapon, vec3_t origin, vec3_t dir, int entityNum);
 void CG_ShotgunFire(entityState_t* es, int weapon);
 void CG_Bullet(vec3_t origin, int sourceEntityNum, vec3_t normal, bool flesh, int fleshEntityNum);
 
-void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end);
+void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon);
 void CG_AddViewWeapon(playerState_t* ps);
-void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent);
+void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent, clientInfo_t* ci);
 
 //
 // cg_marks.c

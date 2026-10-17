@@ -556,3 +556,105 @@ void G_SetOrigin(gentity_t* ent, vec3_t origin) {
 
 	VectorCopy(origin, ent->r.currentOrigin);
 }
+
+gentity_t* FindEntityForPhysgun(gentity_t* ent, int range) {
+	vec3_t end, start, forward, up, right;
+	trace_t tr;
+	gentity_t* traceEnt;
+
+	// Set Aiming Directions
+	AngleVectors(ent->client->ps.viewangles, forward, right, up);
+	CalcMuzzlePoint(ent, forward, right, up, start);
+	VectorMA(start, range, forward, end);
+
+	// Trace Position
+	trap_Trace(&tr, start, NULL, NULL, end, ent->s.number, MASK_SELECT);
+
+	ent->grabDist = Distance(start, tr.endpos);
+
+	traceEnt = &g_entities[tr.entityNum];  // entity for return
+
+	if(traceEnt->grabbedEntity == ent) return NULL;
+
+	if(/*traceEnt->npcType <= NT_PLAYER &&*/ traceEnt->s.eType != ET_PHYSICS) return NULL;
+
+	VectorSubtract(traceEnt->r.currentOrigin, tr.endpos, ent->grabOffset);
+
+	if(traceEnt && tr.entityNum != ENTITYNUM_NONE && tr.entityNum != ENTITYNUM_WORLD) {
+		return traceEnt;
+	} else {
+		return NULL;
+	}
+}
+
+gentity_t* FindEntityForGravitygun(gentity_t* ent, int range) {
+	vec3_t end, start, forward, up, right;
+	trace_t tr;
+	gentity_t* traceEnt;
+
+	// Set Aiming Directions
+	AngleVectors(ent->client->ps.viewangles, forward, right, up);
+	CalcMuzzlePoint(ent, forward, right, up, start);
+	VectorMA(start, range, forward, end);
+
+	// Trace Position
+	trap_Trace(&tr, start, NULL, NULL, end, ent->s.number, MASK_SELECT);
+
+	ent->grabDist = 128;
+
+	traceEnt = &g_entities[tr.entityNum];  // entity for return
+
+	if(/*traceEnt->npcType <= NT_PLAYER &&*/ traceEnt->s.eType != ET_PHYSICS) return NULL;
+
+	VectorSubtract(traceEnt->r.currentOrigin, tr.endpos, ent->grabOffset);
+
+	if(traceEnt && tr.entityNum != ENTITYNUM_NONE && tr.entityNum != ENTITYNUM_WORLD) {
+		return traceEnt;
+	} else {
+		return NULL;
+	}
+}
+
+void CrosshairPointPhys(gentity_t* ent, int range, vec3_t outPoint) {
+	vec3_t end, start, forward, up, right;
+
+	AngleVectors(ent->client->ps.viewangles, forward, right, up);
+	CalcMuzzlePoint(ent, forward, right, up, start);
+	VectorMA(start, range, forward, end);
+
+	VectorCopy(end, outPoint);
+}
+
+void CrosshairPointGravity(gentity_t* ent, int range, vec3_t outPoint) {
+	vec3_t end, start, forward, up, right;
+
+	AngleVectors(ent->client->ps.viewangles, forward, right, up);
+	CalcMuzzlePoint(ent, forward, right, up, start);
+	VectorMA(start, range, forward, end);
+
+	VectorCopy(end, outPoint);
+}
+
+gentity_t* G_FindEntityForEntityNum(int entityNum) {
+	int i;
+	gentity_t* ent;
+
+	for(i = 0, ent = g_entities; i < level.num_entities; i++, ent++) {
+		if(ent && ent->s.number == entityNum && ent->inuse) return ent;
+	}
+
+	return NULL;
+}
+
+bool G_PlayerIsOwner(gentity_t* player, gentity_t* ent) {
+	if(ent->owner) {
+		if(ent->owner != player) {
+			trap_SendServerCommand(player->s.clientNum, va("nt \"Owned by %s\n\"", ent->owner->client->pers.netname));
+			return false;  // ent owned by another player
+		} else {
+			return true;  // ent owned by this player
+		}
+	} else {
+		return true;  // ent not owned
+	}
+}
