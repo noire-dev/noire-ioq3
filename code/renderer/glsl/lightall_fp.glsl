@@ -22,7 +22,7 @@ uniform samplerCube u_CubeMap;
 
 uniform vec4      u_EnableTextures; 
 
-#if defined(USE_PRIMARY_LIGHT) || defined(USE_SHADOWMAP)
+#if defined(USE_SHADOWMAP)
 uniform vec3  u_PrimaryLightColor;
 uniform vec3  u_PrimaryLightAmbient;
 #endif
@@ -58,7 +58,7 @@ varying vec4   var_Bitangent;
 varying vec4      var_LightDir;
 #endif
 
-#if defined(USE_PRIMARY_LIGHT) || defined(USE_SHADOWMAP)
+#if defined(USE_SHADOWMAP)
 varying vec4      var_PrimaryLightDir;
 #endif
 
@@ -176,15 +176,7 @@ float LightRay(vec2 dp, vec2 ds, sampler2D normalMap)
 
 vec3 CalcDiffuse(vec3 diffuseAlbedo, float NH, float EH, float roughness)
 {
-#if defined(USE_BURLEY)
-	// modified from https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
-	float fd90 = -0.5 + EH * EH * roughness;
-	float burley = 1.0 + fd90 * 0.04 / NH;
-	burley *= burley;
-	return diffuseAlbedo * burley;
-#else
 	return diffuseAlbedo;
-#endif
 }
 
 vec3 EnvironmentBRDF(float roughness, float NE, vec3 specular)
@@ -434,14 +426,10 @@ void main()
 	vec2 shadowTex = gl_FragCoord.xy * r_FBufScale;
 	float shadowValue = texture2D(u_ShadowMap, shadowTex).r;
 
-	#if defined(SHADOWMAP_WORLD)
 	// surfaces not facing the light are always shadowed
 	shadowValue *= clamp(dot(N, var_PrimaryLightDir.xyz), 0.0, 1.0);
-	#endif
 
-    #if defined(SHADOWMAP_MODULATE)
 	lightColor *= shadowValue * (1.0 - u_PrimaryLightAmbient.r) + u_PrimaryLightAmbient.r;
-    #endif
   #endif
 
   #if defined(USE_PARALLAXMAP) && defined(USE_PARALLAXMAP_SHADOWS)
@@ -485,7 +473,7 @@ void main()
 	// specular green is metallicness
 	float gloss = specular.r;
 	float metal = specular.g;
-	specular.rgb = metal * diffuse.rgb + vec3(0.04 - 0.04 * metal);
+	specular.rgb = metal * diffuse.rgb;
 	diffuse.rgb *= 1.0 - metal;
 
 	float roughness = exp2(-3.0 * gloss);
@@ -516,7 +504,7 @@ void main()
 	gl_FragColor.rgb += cubeLightColor * reflectance;
   #endif
 
-  #if defined(USE_PRIMARY_LIGHT) || defined(SHADOWMAP_MODULATE)
+  #if defined(USE_SHADOWMAP)
 	vec3 L2, H2;
 	float NL2, EH2, NH2;
 
@@ -539,10 +527,7 @@ void main()
     #endif
 
 	lightColor = u_PrimaryLightColor;
-
-    #if defined(USE_SHADOWMAP)
 	lightColor *= shadowValue;
-    #endif
 
 	// enable when point lights are supported as primary lights
 	//lightColor *= CalcLightAttenuation(float(u_PrimaryLightDir.w > 0.0), u_PrimaryLightDir.w / sqrLightDist);

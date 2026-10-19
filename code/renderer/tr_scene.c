@@ -314,7 +314,7 @@ void RE_BeginScene(const refdef_t* fd) {
 
 		VectorScale(tr.sunLight, scale * r_sunShadowLightScale->value, tr.refdef.sunCol);
 
-		if(r_sunShadows->integer <= 2) {
+		if(r_sunShadows->integer) {
 			tr.refdef.sunAmbCol[0] = tr.refdef.sunAmbCol[1] = tr.refdef.sunAmbCol[2] = r_sunShadowAmbientScale->value;
 		} else {
 			VectorScale(tr.sunLight, scale * r_sunShadowAmbientScale->value, tr.refdef.sunAmbCol);

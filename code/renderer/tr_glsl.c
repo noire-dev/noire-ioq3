@@ -1011,16 +1011,7 @@ void GLSL_InitGPUShaders(void) {
 			}
 		}
 
-		if(i & LIGHTDEF_USE_SHADOWMAP) {
-			Q_strcat(extradefines, 1024, "#define USE_SHADOWMAP\n");
-
-			if(r_sunShadows->integer <= 2)
-				Q_strcat(extradefines, 1024, "#define SHADOWMAP_MODULATE\n");
-			else if(r_sunShadows->integer == 3)
-				Q_strcat(extradefines, 1024, "#define USE_PRIMARY_LIGHT\n");
-
-			if(r_sunShadows->integer >= 2) Q_strcat(extradefines, 1024, "#define SHADOWMAP_WORLD\n");
-		}
+		if(i & LIGHTDEF_USE_SHADOWMAP) Q_strcat(extradefines, 1024, "#define USE_SHADOWMAP\n");
 
 		if(i & LIGHTDEF_USE_TCGEN_AND_TCMOD) {
 			Q_strcat(extradefines, 1024, "#define USE_TCGEN\n");

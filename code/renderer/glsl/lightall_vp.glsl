@@ -66,7 +66,7 @@ uniform vec3   u_DirectedLight;
 uniform vec3   u_AmbientLight;
 #endif
 
-#if defined(USE_PRIMARY_LIGHT) || defined(USE_SHADOWMAP)
+#if defined(USE_SHADOWMAP)
 uniform vec4  u_PrimaryLightOrigin;
 uniform float u_PrimaryLightRadius;
 #endif
@@ -88,7 +88,7 @@ varying vec4   var_Bitangent;
 varying vec4   var_LightDir;
 #endif
 
-#if defined(USE_PRIMARY_LIGHT) || defined(USE_SHADOWMAP)
+#if defined(USE_SHADOWMAP)
 varying vec4   var_PrimaryLightDir;
 #endif
 
@@ -257,7 +257,7 @@ void main()
 	var_Color.rgb *= var_Color.rgb;
 #endif
 
-#if defined(USE_PRIMARY_LIGHT) || defined(USE_SHADOWMAP)
+#if defined(USE_SHADOWMAP)
 	var_PrimaryLightDir.xyz = u_PrimaryLightOrigin.xyz - (position * u_PrimaryLightOrigin.w);
 	var_PrimaryLightDir.w = u_PrimaryLightRadius * u_PrimaryLightRadius;
 #endif

@@ -78,12 +78,6 @@ Cvars for simple rendering features:
                                      1-16 - Some.
                                      17+  - Too much!
 
-Cvars for HDR and tonemapping:
-
-*  `r_postProcess`                  - Enable post-processing.
-                                     0 - No.
-                                     1 - Yes. (default)
-
 Cvars for advanced material usage:
 
 *  `r_parallaxMapping`              - Enable parallax mapping for materials that
@@ -96,28 +90,6 @@ Cvars for advanced material usage:
                                    supported materials.
                                      0 - No. (default)
                                      1 - Yes.
-
-*  `r_baseSpecular`                 - Set the specular reflectance of materials
-                                   which don't include a specular map or
-                                   use the specularReflectance keyword.
-                                     0    - No.
-                                     0.04 - Realistic. (default)
-                                     1.0  - Ack.
-
-*  `r_baseGloss`                    - Set the glossiness of materials which don't
-                                   include a specular map or use the
-                                   specularExponent keyword.
-                                     0   - Rough.
-                                     0.3 - Default.
-                                     1.0 - Shiny.
-
-*  `r_baseParallax`                 - Sets the scale of the parallax effect for
-                                   materials when the parallaxDepth keyword
-                                   is not used.
-                                     0    - No depth.
-                                     0.01 - Pretty smooth.
-                                     0.05 - Standard depth. (default)
-                                     0.1  - Looks broken.
 
 
 -------------------------------------------------------------------------------

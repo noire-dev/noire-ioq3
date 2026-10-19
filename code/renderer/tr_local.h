@@ -1532,8 +1532,6 @@ extern cvar_t* r_subdivisions;
 
 extern cvar_t* r_externalGLSL;
 
-extern cvar_t* r_postProcess;
-
 extern cvar_t* r_toneMapMin;
 extern cvar_t* r_toneMapAvg;
 extern cvar_t* r_toneMapMax;
@@ -1553,9 +1551,6 @@ extern cvar_t* r_reflectionsEnd;
 extern cvar_t* r_reflectionsDetail;
 extern cvar_t* r_deluxeSpecular;
 extern cvar_t* r_detailLevel;
-extern cvar_t* r_baseParallax;
-extern cvar_t* r_baseSpecular;
-extern cvar_t* r_baseGloss;
 extern cvar_t* r_sunShadows;
 extern cvar_t* r_sunShadowLightScale;
 extern cvar_t* r_sunShadowAmbientScale;

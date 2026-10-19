@@ -743,13 +743,13 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 				stage->type = ST_DIFFUSEMAP;
 			} else if(!Q_stricmp(token, "normalMap") || !Q_stricmp(token, "bumpMap")) {
 				stage->type = ST_NORMALMAP;
-				VectorSet4(stage->normalScale, 2.0f, 2.0f, 1.0f, r_baseParallax->value);
+				VectorSet4(stage->normalScale, 2.0f, 2.0f, 1.0f, 0.03f);
 			} else if(!Q_stricmp(token, "normalParallaxMap") || !Q_stricmp(token, "bumpParallaxMap")) {
 				if(r_parallaxMapping->integer)
 					stage->type = ST_NORMALPARALLAXMAP;
 				else
 					stage->type = ST_NORMALMAP;
-				VectorSet4(stage->normalScale, 2.0f, 2.0f, 1.0f, r_baseParallax->value);
+				VectorSet4(stage->normalScale, 2.0f, 2.0f, 1.0f, 0.03f);
 			} else if(!Q_stricmp(token, "specularMap")) {
 				stage->type = ST_SPECULARMAP;
 				VectorSet4(stage->specularScale, 1.0f, 1.0f, 1.0f, 1.0f);
@@ -1862,7 +1862,7 @@ static void CollapseStagesToLightall(shaderStage_t* diffuse, shaderStage_t* norm
 
 			if(parallax && r_parallaxMapping->integer) defs |= LIGHTDEF_USE_PARALLAXMAP;
 
-			VectorSet4(diffuse->normalScale, 2.0f, 2.0f, 1.0f, r_baseParallax->value);
+			VectorSet4(diffuse->normalScale, 2.0f, 2.0f, 1.0f, 0.03f);
 		}
 	}
 
@@ -1891,8 +1891,6 @@ static void CollapseStagesToLightall(shaderStage_t* diffuse, shaderStage_t* norm
 	if(tcgen || diffuse->bundle[0].numTexMods) {
 		defs |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
 	}
-
-	// ri.Printf(PRINT_ALL, ".\n");
 
 	diffuse->glslShaderGroup = tr.lightallShader;
 	diffuse->glslShaderIndex = defs;
@@ -2426,7 +2424,7 @@ static void InitShaderEx(const char* name, int lightmapIndex, int realLightmapIn
 
 		// default normal/specular
 		VectorSet4(stages[i].normalScale, 0.0f, 0.0f, 0.0f, 0.0f);
-		stages[i].specularScale[0] = r_baseGloss->value;
+		stages[i].specularScale[0] = 0.02f;
 	}
 }
 
