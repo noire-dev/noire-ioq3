@@ -952,9 +952,9 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 	flash.renderfx = parent->renderfx;
 
 	flash.hModel = weapon->flashModel;
-	if(!flash.hModel) {
-		return;
-	}
+	// if(!flash.hModel) {
+	//	return;
+	// }
 	angles[YAW] = 0;
 	angles[PITCH] = 0;
 	angles[ROLL] = crandom() * 10;
