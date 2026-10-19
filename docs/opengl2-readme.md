@@ -102,64 +102,6 @@ Cvars for HDR and tonemapping:
                                      0 - No.
                                      1 - Yes. (default)
 
-*  `r_toneMap`                      - Enable tone mapping.  Requires 
-                                   r_hdr and r_postProcess.
-                                     0 - No.
-                                     1 - Yes. (default)
-
-*  `r_toneMap`                 - Cheat. Override built-in and map tonemap settings and use cvars r_toneMapAvg, r_toneMapMin, and r_toneMapMax.
-                                     0 - No. (default)
-                                     1 - Yes.
-
-*  `r_toneMapAvg`              - Cheat.  Map average scene luminance to this
-                                   value, in powers of two.  Requires 
-                                   r_toneMap.
-                                    -2.0 - Dark.
-                                    -1.0 - Kinda dark. (default).
-                                     2.0 - Too bright.
-
-*  `r_toneMapMin`              - Cheat.  After mapping average, luminance
-                                   below this level is mapped to black.
-                                   Requires r_toneMap.
-                                    -5    - Not noticeable.
-                                    -3.25 - Normal. (default)
-                                     0.0  - Too dark.
-
-*  `r_toneMapMin`              - Cheat.  After mapping average, luminance
-                                   above this level is mapped to white.
-                                   Requires r_toneMap.
-                                    0.0 - Too bright.
-                                    1.0 - Normal. (default).
-                                    2.0 - Washed out.
-
-*  `r_autoExposure`                 - Do automatic exposure based on scene
-                                   brightness.  Hardcoded to -2 to 2 on maps
-                                   that don't specify otherwise.  Requires
-                                   r_hdr, r_postprocess, and r_toneMap.
-                                     0 - No.
-                                     1 - Yes. (default)
-
-*  `r_forceAutoExposure`            - Cheat.  Override built-in and map auto
-                                   exposure settings and use cvars
-                                   r_forceAutoExposureMin and 
-                                   r_forceAutoExposureMax.
-                                     0 - No. (default)
-                                     1 - Yes.
-
-*  `r_forceAutoExposureMin`         - Cheat.  Set minimum exposure to this value,
-                                   in powers of two.  Requires
-                                   r_forceAutoExpsure.
-                                    -3.0 - Dimmer.
-                                    -2.0 - Normal. (default)
-                                    -1.0 - Brighter.
-
-*  `r_forceAutoExposureMax`         - Cheat.  Set maximum exposure to this value,
-                                   in powers of two.  Requires
-                                   r_forceAutoExpsure.
-                                     1.0 - Dimmer.
-                                     2.0 - Normal. (default)
-                                     3.0 - Brighter.
-
 Cvars for advanced material usage:
 
 *  `r_normalMapping`                - Enable normal maps for materials that
@@ -239,35 +181,6 @@ Cvars for advanced material usage:
                                    assets meant for it.
                                      0 - No. (default)
                                      1 - Yes.
-
-Cvars for image interpolation and generation:
-
-*  `r_imageUpsample`                - Use interpolation to artificially increase
-                                   the resolution of all textures.  Looks good
-                                   in certain circumstances.
-                                     0 - No. (default)
-                                     1 - 2x size.
-                                     2 - 4x size.
-                                     3 - 8x size, etc
-
-*  `r_imageUpsampleMaxSize`         - Maximum texture size when upsampling
-                                   textures.
-                                     1024 - Default.
-                                     2048 - Really nice.
-                                     4096 - Really slow.
-                                     8192 - Crash.
-
-*  `r_imageUpsampleType`            - Type of interpolation when upsampling
-                                   textures.
-                                     0 - None. (probably broken)
-                                     1 - Bad but fast (default,
-                                         FCBI without second derivatives)
-                                     2 - Okay but slow (normal FCBI)
-
-*  `r_genNormalMaps`                - Naively generate normal maps for all
-                                   textures.
-                                     0 - Don't. (default)
-                                     1 - Do.
 
 
 -------------------------------------------------------------------------------

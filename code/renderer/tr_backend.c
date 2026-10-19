@@ -1123,7 +1123,7 @@ const void* RB_PostProcess(const void* data) {
 
 	if(srcFbo) {
 		if(r_hdr->integer && r_toneMap->integer) {
-			autoExposure = r_autoExposure->integer || r_forceAutoExposure->integer;
+			autoExposure = r_autoExposure->integer;
 
 			// Use an intermediate FBO because it can't blit to the same FBO directly
 			// and can't read from an MSAA dstFbo later.
@@ -1139,7 +1139,7 @@ const void* RB_PostProcess(const void* data) {
 		}
 	}
 
-	RB_BokehBlur(srcFbo, srcBox, srcFbo, srcBox, backEnd.refdef.blurFactor);
+	// RB_BokehBlur(srcFbo, srcBox, srcFbo, srcBox, backEnd.refdef.blurFactor);
 
 	if(srcFbo != dstFbo) FBO_FastBlit(srcFbo, srcBox, dstFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 

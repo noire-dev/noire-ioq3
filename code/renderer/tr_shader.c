@@ -564,8 +564,6 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 					flags |= IMGFLAG_NOLIGHTSCALE;
 
 					if(stage->type == ST_NORMALPARALLAXMAP) type = IMGTYPE_NORMALHEIGHT;
-				} else {
-					if(r_genNormalMaps->integer) flags |= IMGFLAG_GENNORMALMAP;
 				}
 
 				stage->bundle[0].image[0] = R_FindImageFile(token, type, flags);
@@ -598,8 +596,6 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 				flags |= IMGFLAG_NOLIGHTSCALE;
 
 				if(stage->type == ST_NORMALPARALLAXMAP) type = IMGTYPE_NORMALHEIGHT;
-			} else {
-				if(r_genNormalMaps->integer) flags |= IMGFLAG_GENNORMALMAP;
 			}
 
 			stage->bundle[0].image[0] = R_FindImageFile(token, type, flags);
@@ -1884,7 +1880,7 @@ static void CollapseStagesToLightall(shaderStage_t* diffuse, shaderStage_t* norm
 		} else if((lightmap || useLightVector || useLightVertex) && (diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0])) {
 			char normalName[MAX_QPATH];
 			image_t* normalImg;
-			imgFlags_t normalFlags = (diffuseImg->flags & ~IMGFLAG_GENNORMALMAP) | IMGFLAG_NOLIGHTSCALE;
+			imgFlags_t normalFlags = diffuseImg->flags | IMGFLAG_NOLIGHTSCALE;
 
 			// try a normalheight image first
 			COM_StripExtension(diffuseImg->imgName, normalName, MAX_QPATH);
@@ -1920,7 +1916,7 @@ static void CollapseStagesToLightall(shaderStage_t* diffuse, shaderStage_t* norm
 		} else if((lightmap || useLightVector || useLightVertex) && (diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0])) {
 			char specularName[MAX_QPATH];
 			image_t* specularImg;
-			imgFlags_t specularFlags = (diffuseImg->flags & ~IMGFLAG_GENNORMALMAP) | IMGFLAG_NOLIGHTSCALE;
+			imgFlags_t specularFlags = diffuseImg->flags | IMGFLAG_NOLIGHTSCALE;
 
 			COM_StripExtension(diffuseImg->imgName, specularName, MAX_QPATH);
 			Q_strcat(specularName, MAX_QPATH, "_s");
@@ -2834,8 +2830,6 @@ shader_t* R_FindShaderEx(const char* name, int lightmapIndex, bool mipRawImage, 
 
 		if(mipRawImage) {
 			flags |= IMGFLAG_MIPMAP | IMGFLAG_PICMIP;
-
-			if(r_genNormalMaps->integer) flags |= IMGFLAG_GENNORMALMAP;
 		} else {
 			flags |= IMGFLAG_CLAMPTOEDGE;
 		}

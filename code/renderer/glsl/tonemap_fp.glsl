@@ -28,10 +28,6 @@ void main()
 {
 	vec4 color = texture2D(u_TextureMap, var_TexCoords) * u_Color;
 
-#if defined(USE_PBR)
-	color.rgb *= color.rgb;
-#endif
-
 	vec3 minAvgMax = texture2D(u_LevelsMap, var_TexCoords).rgb;
 	vec3 logMinAvgMaxLum = clamp(minAvgMax * 20.0 - 10.0, -u_AutoExposureMinMax.y, -u_AutoExposureMinMax.x);
 
@@ -45,10 +41,6 @@ void main()
 	color.b = FilmicTonemap(color.b);
 
 	color.rgb = clamp(color.rgb * var_InvWhite, 0.0, 1.0);
-
-#if defined(USE_PBR)
-	color.rgb = sqrt(color.rgb);
-#endif
 
 	// add a bit of dither to reduce banding
 	color.rgb += vec3(1.0/510.0 * mod(gl_FragCoord.x + gl_FragCoord.y, 2.0) - 1.0/1020.0);

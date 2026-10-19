@@ -233,36 +233,68 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 	return dlightBits;
 }
 
-static bool R_FogCullSurface(msurface_t* surf) {
+static void R_FrustumCullSurface(msurface_t* surf) {
+	int frustumCull;
+
+	if(surf->cullinfo.type & CULLINFO_BOX) {
+		if(tr.currentEntityNum != REFENTITYNUM_WORLD)
+			frustumCull = R_CullLocalBox(surf->cullinfo.bounds);
+		else
+			frustumCull = R_CullBox(surf->cullinfo.bounds);
+
+		if(frustumCull == CULL_OUT) {
+			surf->doCull = true;
+			return;
+		} else {
+			surf->doCull = false;
+			return;
+		}
+	} else if(surf->cullinfo.type & CULLINFO_SPHERE) {
+		if(tr.currentEntityNum != REFENTITYNUM_WORLD)
+			frustumCull = R_CullLocalPointAndRadius(surf->cullinfo.localOrigin, surf->cullinfo.radius);
+		else
+			frustumCull = R_CullPointAndRadius(surf->cullinfo.localOrigin, surf->cullinfo.radius);
+
+		if(frustumCull == CULL_OUT) {
+			surf->doCull = true;
+			return;
+		} else {
+			surf->doCull = false;
+			return;
+		}
+	}
+}
+
+static void R_FogCullSurface(msurface_t* surf) {
 	vec3_t center;
 	float dist;
-	float fogEnd = r_dynamicFogEnd->value * 1.10;
+	float fogEnd;
 
-	if(!r_dynamicFog->integer) return false;
+	if(tr.viewParms.flags & VPF_NOCUBEMAPS)
+		fogEnd = r_reflectionsEnd->value;
+	else
+		fogEnd = r_fogEnd->value;
 
-	if(surf->cullinfo.type & CULLINFO_SPHERE) {
-		VectorCopy(surf->cullinfo.localOrigin, center);
-		dist = Distance(center, backEnd.viewParms.or.origin) - surf->cullinfo.radius;
-	} else if(surf->cullinfo.type & CULLINFO_BOX) {
+	if(surf->doCull) return;
+
+	if(surf->cullinfo.type & CULLINFO_BOX) {
 		center[0] = (surf->cullinfo.bounds[0][0] + surf->cullinfo.bounds[1][0]) * 0.5f;
 		center[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
 		center[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
 		dist = Distance(center, backEnd.viewParms.or.origin) - VectorLength(surf->cullinfo.bounds[1]) * 0.5f;
-	} else if(surf->cullinfo.type & CULLINFO_PLANE) {
-		dist = DotProduct(backEnd.viewParms.or.origin, surf->cullinfo.plane.normal) - surf->cullinfo.plane.dist;
-		if(dist < 0) dist = -dist;
 	} else {
-		return false;
+		surf->doCull = false;
 	}
 
-	return dist > fogEnd;
+	surf->doCull = dist > fogEnd;
 }
 
 static void R_AddWorldSurface(msurface_t* surf, int dlightBits) {
-	// FIXME: bmodel fog?
-
 	if(r_detailLevel->integer < surf->shader->detailLevel) return;
-	if(R_FogCullSurface(surf)) return;
+	if(tr.viewParms.flags & VPF_NOCUBEMAPS && r_reflectionsDetail->integer < surf->shader->detailLevel) return;
+	R_FrustumCullSurface(surf);
+	R_FogCullSurface(surf);
+	if(surf->doCull) return;
 
 	// try to cull before dlighting or adding
 	if(!(tr.viewParms.targetFbo == tr.dlightShadowFbo && (tr.viewParms.flags & VPF_DEPTHSHADOW))) {

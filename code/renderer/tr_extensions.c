@@ -166,12 +166,8 @@ void GLimp_InitExtraExtensions(void) {
 	extension = "GL_ARB_vertex_array_object";
 	glRefConfig.vertexArrayObject = false;
 	if(q_gl_version_at_least_3_0 || SDL_GL_ExtensionSupported(extension)) {
-		if(q_gl_version_at_least_3_0) {
-			// force VAO, core context requires it
+		if(q_gl_version_at_least_3_0)  // force VAO, core context requires it
 			glRefConfig.vertexArrayObject = true;
-		} else {
-			glRefConfig.vertexArrayObject = !!r_arb_vertex_array_object->integer;
-		}
 
 		QGL_ARB_vertex_array_object_PROCS;
 

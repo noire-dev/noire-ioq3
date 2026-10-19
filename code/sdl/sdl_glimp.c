@@ -60,9 +60,6 @@ void(APIENTRYP qglActiveTextureARB)(GLenum texture);
 void(APIENTRYP qglClientActiveTextureARB)(GLenum texture);
 void(APIENTRYP qglMultiTexCoord2fARB)(GLenum target, GLfloat s, GLfloat t);
 
-void(APIENTRYP qglLockArraysEXT)(GLint first, GLsizei count);
-void(APIENTRYP qglUnlockArraysEXT)(void);
-
 #define GLE(ret, name, ...) name##proc* qgl##name = NULL;
 QGL_1_1_PROCS;
 QGL_1_1_FIXED_FUNCTION_PROCS;
@@ -311,9 +308,6 @@ static void GLimp_ClearProcAddresses(void) {
 	qglClientActiveTextureARB = NULL;
 	qglMultiTexCoord2fARB = NULL;
 
-	qglLockArraysEXT = NULL;
-	qglUnlockArraysEXT = NULL;
-
 #undef GLE
 }
 
@@ -420,15 +414,9 @@ static int GLimp_SetMode(const char* resolution, int fullscreen, bool noborder, 
 		glConfig.isFullscreen = false;
 	}
 
-	colorBits = r_colorbits->value;
-	if((!colorBits) || (colorBits >= 32)) colorBits = 24;
-
-	if(!r_depthbits->value)
-		depthBits = 24;
-	else
-		depthBits = r_depthbits->value;
-
-	stencilBits = r_stencilbits->value;
+	colorBits = 24;
+	depthBits = 24;
+	stencilBits = 8;
 
 	numContexts = 0;
 
@@ -779,13 +767,8 @@ static void GLimp_InitExtensions(bool fixedFunction) {
 		// GL_EXT_texture_env_add
 		glConfig.textureEnvAddAvailable = false;
 		if(SDL_GL_ExtensionSupported("GL_EXT_texture_env_add")) {
-			if(r_ext_texture_env_add->integer) {
-				glConfig.textureEnvAddAvailable = true;
-				ri.Printf(PRINT_ALL, "...using GL_EXT_texture_env_add\n");
-			} else {
-				glConfig.textureEnvAddAvailable = false;
-				ri.Printf(PRINT_ALL, "...ignoring GL_EXT_texture_env_add\n");
-			}
+			glConfig.textureEnvAddAvailable = true;
+			ri.Printf(PRINT_ALL, "...using GL_EXT_texture_env_add\n");
 		} else {
 			ri.Printf(PRINT_ALL, "...GL_EXT_texture_env_add not found\n");
 		}
@@ -795,45 +778,25 @@ static void GLimp_InitExtensions(bool fixedFunction) {
 		qglActiveTextureARB = NULL;
 		qglClientActiveTextureARB = NULL;
 		if(SDL_GL_ExtensionSupported("GL_ARB_multitexture")) {
-			if(r_ext_multitexture->value) {
-				qglMultiTexCoord2fARB = SDL_GL_GetProcAddress("glMultiTexCoord2fARB");
-				qglActiveTextureARB = SDL_GL_GetProcAddress("glActiveTextureARB");
-				qglClientActiveTextureARB = SDL_GL_GetProcAddress("glClientActiveTextureARB");
+			qglMultiTexCoord2fARB = SDL_GL_GetProcAddress("glMultiTexCoord2fARB");
+			qglActiveTextureARB = SDL_GL_GetProcAddress("glActiveTextureARB");
+			qglClientActiveTextureARB = SDL_GL_GetProcAddress("glClientActiveTextureARB");
 
-				if(qglActiveTextureARB) {
-					GLint glint = 0;
-					qglGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &glint);
-					glConfig.numTextureUnits = (int)glint;
-					if(glConfig.numTextureUnits > 1) {
-						ri.Printf(PRINT_ALL, "...using GL_ARB_multitexture\n");
-					} else {
-						qglMultiTexCoord2fARB = NULL;
-						qglActiveTextureARB = NULL;
-						qglClientActiveTextureARB = NULL;
-						ri.Printf(PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n");
-					}
+			if(qglActiveTextureARB) {
+				GLint glint = 0;
+				qglGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &glint);
+				glConfig.numTextureUnits = (int)glint;
+				if(glConfig.numTextureUnits > 1) {
+					ri.Printf(PRINT_ALL, "...using GL_ARB_multitexture\n");
+				} else {
+					qglMultiTexCoord2fARB = NULL;
+					qglActiveTextureARB = NULL;
+					qglClientActiveTextureARB = NULL;
+					ri.Printf(PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n");
 				}
-			} else {
-				ri.Printf(PRINT_ALL, "...ignoring GL_ARB_multitexture\n");
 			}
 		} else {
 			ri.Printf(PRINT_ALL, "...GL_ARB_multitexture not found\n");
-		}
-
-		// GL_EXT_compiled_vertex_array
-		if(SDL_GL_ExtensionSupported("GL_EXT_compiled_vertex_array")) {
-			if(r_ext_compiled_vertex_array->value) {
-				ri.Printf(PRINT_ALL, "...using GL_EXT_compiled_vertex_array\n");
-				qglLockArraysEXT = (void(APIENTRY*)(GLint, GLint))SDL_GL_GetProcAddress("glLockArraysEXT");
-				qglUnlockArraysEXT = (void(APIENTRY*)(void))SDL_GL_GetProcAddress("glUnlockArraysEXT");
-				if(!qglLockArraysEXT || !qglUnlockArraysEXT) {
-					ri.Error(ERR_FATAL, "bad getprocaddress");
-				}
-			} else {
-				ri.Printf(PRINT_ALL, "...ignoring GL_EXT_compiled_vertex_array\n");
-			}
-		} else {
-			ri.Printf(PRINT_ALL, "...GL_EXT_compiled_vertex_array not found\n");
 		}
 	}
 

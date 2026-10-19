@@ -734,7 +734,7 @@ RB_FogPass
 Теперь вызывается один раз на поверхность, но внутри делает
 ДВА независимых прохода:
   1) туман из fog-браша (если tess.fogNum > 0)
-  2) глобальный dynamicFog (если r_dynamicFog)
+  2) глобальный dynamicFog
 Порядок именно такой: сначала плотный локальный туман,
 поверх него — атмосферный. Смешение идёт обычным alpha-blend'ом
 (SRC_ALPHA, ONE_MINUS_SRC_ALPHA), поэтому второй проход
@@ -746,18 +746,10 @@ void RB_FogPass(void) {
 	int deformGen;
 	vec5_t deformParams;
 	bool hasWorldFog;
-	bool hasDynamicFog;
 
-	if(!tess.numIndexes || !tr.world) {
-		return;
-	}
+	if(!tess.numIndexes || !tr.world) return;
 
 	hasWorldFog = (tess.fogNum > 0 && tess.fogNum < tr.world->numfogs);
-	hasDynamicFog = (r_dynamicFog->integer != 0);
-
-	if(!hasWorldFog && !hasDynamicFog) {
-		return;
-	}
 
 	ComputeDeformValues(&deformGen, deformParams);
 
@@ -790,54 +782,56 @@ void RB_FogPass(void) {
 	}
 
 	/* ---------- 2) динамический туман поверх объёмного ---------- */
-	if(hasDynamicFog) {
-		shaderProgram_t* sp;
-		vec4_t color;
-		vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
-		float eyeT;
-		float startDist = r_dynamicFogStart->value;
-		float endDist = r_dynamicFogEnd->value;
-		float range = endDist - startDist;
-		float scale;
-		vec3_t local;
+	shaderProgram_t* sp;
+	vec4_t color;
+	vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
+	float eyeT;
+	float startDist = r_fogStart->value;
+	float endDist;
+	if(tr.viewParms.flags & VPF_NOCUBEMAPS)
+		endDist = r_reflectionsEnd->value;
+	else
+		endDist = r_fogEnd->value;
+	float range = endDist - startDist;
+	float scale;
+	vec3_t local;
 
-		if(range < 1.0f) range = 1.0f;
+	if(range < 1.0f) range = 1.0f;
 
-		// vertex-шейдер умножает dot-произведение на 8.0,
-		// поэтому для линейной рампы 0..1 на участке range нужен /8.
-		scale = r_dynamicFogDensity->value / (8.0f * range);
+	// vertex-шейдер умножает dot-произведение на 8.0,
+	// поэтому для линейной рампы 0..1 на участке range нужен /8.
+	scale = r_fogDensity->value / (8.0f * range);
 
-		color[0] = r_dynamicFogColorR->value;
-		color[1] = r_dynamicFogColorG->value;
-		color[2] = r_dynamicFogColorB->value;
-		color[3] = 1.0f;
+	color[0] = r_fogColorR->value;
+	color[1] = r_fogColorG->value;
+	color[2] = r_fogColorB->value;
+	color[3] = 1.0f;
 
-		sp = RB_FogSetupShader(deformGen, deformParams);
+	sp = RB_FogSetupShader(deformGen, deformParams);
 
-		GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
+	GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
 
-		VectorSubtract(backEnd.or.origin, backEnd.viewParms.or.origin, local);
+	VectorSubtract(backEnd.or.origin, backEnd.viewParms.or.origin, local);
 
-		fogDistanceVector[0] = -backEnd.or.modelMatrix[2] * scale;
-		fogDistanceVector[1] = -backEnd.or.modelMatrix[6] * scale;
-		fogDistanceVector[2] = -backEnd.or.modelMatrix[10] * scale;
-		fogDistanceVector[3] = (DotProduct(local, backEnd.viewParms.or.axis[0]) - startDist) * scale;
+	fogDistanceVector[0] = -backEnd.or.modelMatrix[2] * scale;
+	fogDistanceVector[1] = -backEnd.or.modelMatrix[6] * scale;
+	fogDistanceVector[2] = -backEnd.or.modelMatrix[10] * scale;
+	fogDistanceVector[3] = (DotProduct(local, backEnd.viewParms.or.axis[0]) - startDist) * scale;
 
-		// у динамического тумана нет плоскости отсечения,
-		// поэтому t в CalcFog() всегда = 1
-		fogDepthVector[0] = 0.0f;
-		fogDepthVector[1] = 0.0f;
-		fogDepthVector[2] = 0.0f;
-		fogDepthVector[3] = 1.0f;
+	// у динамического тумана нет плоскости отсечения,
+	// поэтому t в CalcFog() всегда = 1
+	fogDepthVector[0] = 0.0f;
+	fogDepthVector[1] = 0.0f;
+	fogDepthVector[2] = 0.0f;
+	fogDepthVector[3] = 1.0f;
 
-		eyeT = 1.0f;
+	eyeT = 1.0f;
 
-		GLSL_SetUniformVec4(sp, UNIFORM_FOGDISTANCE, fogDistanceVector);
-		GLSL_SetUniformVec4(sp, UNIFORM_FOGDEPTH, fogDepthVector);
-		GLSL_SetUniformFloat(sp, UNIFORM_FOGEYET, eyeT);
+	GLSL_SetUniformVec4(sp, UNIFORM_FOGDISTANCE, fogDistanceVector);
+	GLSL_SetUniformVec4(sp, UNIFORM_FOGDEPTH, fogDepthVector);
+	GLSL_SetUniformFloat(sp, UNIFORM_FOGEYET, eyeT);
 
-		R_DrawElements(tess.numIndexes, tess.firstIndex);
-	}
+	R_DrawElements(tess.numIndexes, tess.firstIndex);
 }
 
 static unsigned int RB_CalcShaderVertexAttribs(shaderCommands_t* input) {
@@ -1485,9 +1479,9 @@ void RB_StageIteratorGeneric(void) {
 		if(tess.fogNum) {
 			// Внутри BSP-объёма тумана — применяем всегда.
 			needsFogPass = true;
-		} else if(r_dynamicFog->integer && tr.world != NULL) {
+		} else if(tr.world != NULL) {
 			// Динамический туман — применяем только к поверхностям,
-			// которые находятся дальше, чем r_dynamicFogStart.
+			// которые находятся дальше, чем r_fogStart.
 			// Это избавляет от дорогого fog-pass для геометрии
 			// прямо перед игроком.
 			vec3_t worldPos;
@@ -1504,7 +1498,7 @@ void RB_StageIteratorGeneric(void) {
 			VectorSubtract(worldPos, backEnd.viewParms.or.origin, worldPos);
 			dist = VectorLength(worldPos);
 
-			if(dist > r_dynamicFogStart->value) {
+			if(dist > r_fogStart->value) {
 				needsFogPass = true;
 			}
 		}

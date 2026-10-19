@@ -321,22 +321,15 @@ void RE_BeginScene(const refdef_t* fd) {
 		}
 	}
 
-	if(r_forceAutoExposure->integer) {
-		tr.refdef.autoExposureMinMax[0] = r_forceAutoExposureMin->value;
-		tr.refdef.autoExposureMinMax[1] = r_forceAutoExposureMax->value;
-	} else {
-		tr.refdef.autoExposureMinMax[0] = tr.autoExposureMinMax[0];
-		tr.refdef.autoExposureMinMax[1] = tr.autoExposureMinMax[1];
+	if(r_autoExposure->integer) {
+		tr.refdef.autoExposureMinMax[0] = r_autoExposureMin->value;
+		tr.refdef.autoExposureMinMax[1] = r_autoExposureMax->value;
 	}
 
 	if(r_toneMap->integer) {
 		tr.refdef.toneMinAvgMaxLinear[0] = pow(2, r_toneMapMin->value);
 		tr.refdef.toneMinAvgMaxLinear[1] = pow(2, r_toneMapAvg->value);
 		tr.refdef.toneMinAvgMaxLinear[2] = pow(2, r_toneMapMax->value);
-	} else {
-		tr.refdef.toneMinAvgMaxLinear[0] = pow(2, tr.toneMinAvgMaxLevel[0]);
-		tr.refdef.toneMinAvgMaxLinear[1] = pow(2, tr.toneMinAvgMaxLevel[1]);
-		tr.refdef.toneMinAvgMaxLinear[2] = pow(2, tr.toneMinAvgMaxLevel[2]);
 	}
 
 	// Makro - copy exta info if present

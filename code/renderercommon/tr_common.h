@@ -41,7 +41,6 @@ typedef enum {
 	IMGFLAG_NO_COMPRESSION = 0x0010,
 	IMGFLAG_NOLIGHTSCALE = 0x0020,
 	IMGFLAG_CLAMPTOEDGE = 0x0040,
-	IMGFLAG_GENNORMALMAP = 0x0080,
 } imgFlags_t;
 
 typedef struct image_s {
@@ -83,10 +82,6 @@ extern bool haveClampToEdge;
 //
 // cvars
 //
-extern cvar_t* r_stencilbits;  // number of desired stencil bits
-extern cvar_t* r_depthbits;    // number of desired depth bits
-extern cvar_t* r_colorbits;    // number of desired color bits, only relevant for fullscreen
-extern cvar_t* r_texturebits;  // number of desired texture bits
 
 extern cvar_t* r_resolution;
 extern cvar_t* r_noborder;
@@ -98,8 +93,6 @@ extern cvar_t* r_swapInterval;
 extern cvar_t* r_allowExtensions;          // global enable/disable of OpenGL extensions
 extern cvar_t* r_ext_compressed_textures;  // these control use of specific extensions
 extern cvar_t* r_ext_multitexture;
-extern cvar_t* r_ext_compiled_vertex_array;
-extern cvar_t* r_ext_texture_env_add;
 
 extern cvar_t* r_ext_texture_filter_anisotropic;
 extern cvar_t* r_ext_max_anisotropy;

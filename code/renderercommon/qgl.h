@@ -36,69 +36,46 @@ extern void(APIENTRYP qglActiveTextureARB)(GLenum texture);
 extern void(APIENTRYP qglClientActiveTextureARB)(GLenum texture);
 extern void(APIENTRYP qglMultiTexCoord2fARB)(GLenum target, GLfloat s, GLfloat t);
 
-extern void(APIENTRYP qglLockArraysEXT)(GLint first, GLsizei count);
-extern void(APIENTRYP qglUnlockArraysEXT)(void);
-
 //===========================================================================
 
 // GL function loader, based on https://gist.github.com/rygorous/16796a0c876cf8a5f542caddb55bce8a
 // get missing functions from code/SDL2/include/SDL_opengl.h
 
 // OpenGL 1.0/1.1, OpenGL ES 1.0, and OpenGL 3.2 core profile
-#define QGL_1_1_PROCS                                                                                                                       \
-	GLE(void, BindTexture, GLenum target, GLuint texture)                                                                                   \
-	GLE(void, BlendFunc, GLenum sfactor, GLenum dfactor)                                                                                    \
-	GLE(void, ClearColor, GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)                                                      \
-	GLE(void, Clear, GLbitfield mask)                                                                                                       \
-	GLE(void, ClearStencil, GLint s)                                                                                                        \
-	GLE(void, ColorMask, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)                                                   \
-	GLE(void, CopyTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height) \
-	GLE(void, CullFace, GLenum mode)                                                                                                        \
-	GLE(void, DeleteTextures, GLsizei n, const GLuint* textures)                                                                            \
-	GLE(void, DepthFunc, GLenum func)                                                                                                       \
-	GLE(void, DepthMask, GLboolean flag)                                                                                                    \
-	GLE(void, Disable, GLenum cap)                                                                                                          \
-	GLE(void, DrawArrays, GLenum mode, GLint first, GLsizei count)                                                                          \
-	GLE(void, DrawElements, GLenum mode, GLsizei count, GLenum type, const GLvoid* indices)                                                 \
-	GLE(void, Enable, GLenum cap)                                                                                                           \
-	GLE(void, Finish, void)                                                                                                                 \
-	GLE(void, Flush, void)                                                                                                                  \
-	GLE(void, GenTextures, GLsizei n, GLuint* textures)                                                                                     \
-	GLE(void, GetBooleanv, GLenum pname, GLboolean* params)                                                                                 \
-	GLE(GLenum, GetError, void)                                                                                                             \
-	GLE(void, GetIntegerv, GLenum pname, GLint* params)                                                                                     \
-	GLE(const GLubyte*, GetString, GLenum name)                                                                                             \
-	GLE(void, LineWidth, GLfloat width)                                                                                                     \
-	GLE(void, PolygonOffset, GLfloat factor, GLfloat units)                                                                                 \
-	GLE(void, ReadPixels, GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels)                      \
-	GLE(void, Scissor, GLint x, GLint y, GLsizei width, GLsizei height)                                                                     \
-	GLE(void, StencilFunc, GLenum func, GLint ref, GLuint mask)                                                                             \
-	GLE(void, StencilMask, GLuint mask)                                                                                                     \
-	GLE(void, StencilOp, GLenum fail, GLenum zfail, GLenum zpass)                                                                           \
-	GLE(void,                                                                                                                               \
-	    TexImage2D,                                                                                                                         \
-	    GLenum target,                                                                                                                      \
-	    GLint level,                                                                                                                        \
-	    GLint internalFormat,                                                                                                               \
-	    GLsizei width,                                                                                                                      \
-	    GLsizei height,                                                                                                                     \
-	    GLint border,                                                                                                                       \
-	    GLenum format,                                                                                                                      \
-	    GLenum type,                                                                                                                        \
-	    const GLvoid* pixels)                                                                                                               \
-	GLE(void, TexParameterf, GLenum target, GLenum pname, GLfloat param)                                                                    \
-	GLE(void, TexParameteri, GLenum target, GLenum pname, GLint param)                                                                      \
-	GLE(void,                                                                                                                               \
-	    TexSubImage2D,                                                                                                                      \
-	    GLenum target,                                                                                                                      \
-	    GLint level,                                                                                                                        \
-	    GLint xoffset,                                                                                                                      \
-	    GLint yoffset,                                                                                                                      \
-	    GLsizei width,                                                                                                                      \
-	    GLsizei height,                                                                                                                     \
-	    GLenum format,                                                                                                                      \
-	    GLenum type,                                                                                                                        \
-	    const GLvoid* pixels)                                                                                                               \
+#define QGL_1_1_PROCS                                                                                                                                                      \
+	GLE(void, BindTexture, GLenum target, GLuint texture)                                                                                                                  \
+	GLE(void, BlendFunc, GLenum sfactor, GLenum dfactor)                                                                                                                   \
+	GLE(void, ClearColor, GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)                                                                                     \
+	GLE(void, Clear, GLbitfield mask)                                                                                                                                      \
+	GLE(void, ClearStencil, GLint s)                                                                                                                                       \
+	GLE(void, ColorMask, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)                                                                                  \
+	GLE(void, CopyTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)                                \
+	GLE(void, CullFace, GLenum mode)                                                                                                                                       \
+	GLE(void, DeleteTextures, GLsizei n, const GLuint* textures)                                                                                                           \
+	GLE(void, DepthFunc, GLenum func)                                                                                                                                      \
+	GLE(void, DepthMask, GLboolean flag)                                                                                                                                   \
+	GLE(void, Disable, GLenum cap)                                                                                                                                         \
+	GLE(void, DrawArrays, GLenum mode, GLint first, GLsizei count)                                                                                                         \
+	GLE(void, DrawElements, GLenum mode, GLsizei count, GLenum type, const GLvoid* indices)                                                                                \
+	GLE(void, Enable, GLenum cap)                                                                                                                                          \
+	GLE(void, Finish, void)                                                                                                                                                \
+	GLE(void, Flush, void)                                                                                                                                                 \
+	GLE(void, GenTextures, GLsizei n, GLuint* textures)                                                                                                                    \
+	GLE(void, GetBooleanv, GLenum pname, GLboolean* params)                                                                                                                \
+	GLE(GLenum, GetError, void)                                                                                                                                            \
+	GLE(void, GetIntegerv, GLenum pname, GLint* params)                                                                                                                    \
+	GLE(const GLubyte*, GetString, GLenum name)                                                                                                                            \
+	GLE(void, LineWidth, GLfloat width)                                                                                                                                    \
+	GLE(void, PolygonOffset, GLfloat factor, GLfloat units)                                                                                                                \
+	GLE(void, ReadPixels, GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels)                                                     \
+	GLE(void, Scissor, GLint x, GLint y, GLsizei width, GLsizei height)                                                                                                    \
+	GLE(void, StencilFunc, GLenum func, GLint ref, GLuint mask)                                                                                                            \
+	GLE(void, StencilMask, GLuint mask)                                                                                                                                    \
+	GLE(void, StencilOp, GLenum fail, GLenum zfail, GLenum zpass)                                                                                                          \
+	GLE(void, TexImage2D, GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* pixels) \
+	GLE(void, TexParameterf, GLenum target, GLenum pname, GLfloat param)                                                                                                   \
+	GLE(void, TexParameteri, GLenum target, GLenum pname, GLint param)                                                                                                     \
+	GLE(void, TexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* pixels)    \
 	GLE(void, Viewport, GLint x, GLint y, GLsizei width, GLsizei height)
 
 // OpenGL 1.0/1.1 and OpenGL ES 1.x but not OpenGL 3.2 core profile
@@ -154,29 +131,10 @@ extern void(APIENTRYP qglUnlockArraysEXT)(void);
 	GLE(void, Orthof, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val)
 
 // OpenGL 1.3, was GL_ARB_texture_compression
-#define QGL_1_3_PROCS                        \
-	GLE(void, ActiveTexture, GLenum texture) \
-	GLE(void,                                \
-	    CompressedTexImage2D,                \
-	    GLenum target,                       \
-	    GLint level,                         \
-	    GLenum internalformat,               \
-	    GLsizei width,                       \
-	    GLsizei height,                      \
-	    GLint border,                        \
-	    GLsizei imageSize,                   \
-	    const void* data)                    \
-	GLE(void,                                \
-	    CompressedTexSubImage2D,             \
-	    GLenum target,                       \
-	    GLint level,                         \
-	    GLint xoffset,                       \
-	    GLint yoffset,                       \
-	    GLsizei width,                       \
-	    GLsizei height,                      \
-	    GLenum format,                       \
-	    GLsizei imageSize,                   \
-	    const void* data)
+#define QGL_1_3_PROCS                                                                                                                                                    \
+	GLE(void, ActiveTexture, GLenum texture)                                                                                                                             \
+	GLE(void, CompressedTexImage2D, GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void* data) \
+	GLE(void, CompressedTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void* data)
 
 // GL_ARB_occlusion_query, built-in to OpenGL 1.5 but not OpenGL ES 2.0
 #define QGL_ARB_occlusion_query_PROCS                                   \
@@ -279,30 +237,19 @@ extern void(APIENTRYP qglUnlockArraysEXT)(void);
 #define QGL_3_0_PROCS GLE(const GLubyte*, GetStringi, GLenum name, GLuint index)
 
 // GL_ARB_framebuffer_object, built-in to OpenGL 3.0
-#define QGL_ARB_framebuffer_object_PROCS                                                                                 \
-	GLE(void, BindRenderbuffer, GLenum target, GLuint renderbuffer)                                                      \
-	GLE(void, DeleteRenderbuffers, GLsizei n, const GLuint* renderbuffers)                                               \
-	GLE(void, GenRenderbuffers, GLsizei n, GLuint* renderbuffers)                                                        \
-	GLE(void, RenderbufferStorage, GLenum target, GLenum internalformat, GLsizei width, GLsizei height)                  \
-	GLE(void, BindFramebuffer, GLenum target, GLuint framebuffer)                                                        \
-	GLE(void, DeleteFramebuffers, GLsizei n, const GLuint* framebuffers)                                                 \
-	GLE(void, GenFramebuffers, GLsizei n, GLuint* framebuffers)                                                          \
-	GLE(GLenum, CheckFramebufferStatus, GLenum target)                                                                   \
-	GLE(void, FramebufferTexture2D, GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)     \
-	GLE(void, FramebufferRenderbuffer, GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) \
-	GLE(void, GenerateMipmap, GLenum target)                                                                             \
-	GLE(void,                                                                                                            \
-	    BlitFramebuffer,                                                                                                 \
-	    GLint srcX0,                                                                                                     \
-	    GLint srcY0,                                                                                                     \
-	    GLint srcX1,                                                                                                     \
-	    GLint srcY1,                                                                                                     \
-	    GLint dstX0,                                                                                                     \
-	    GLint dstY0,                                                                                                     \
-	    GLint dstX1,                                                                                                     \
-	    GLint dstY1,                                                                                                     \
-	    GLbitfield mask,                                                                                                 \
-	    GLenum filter)                                                                                                   \
+#define QGL_ARB_framebuffer_object_PROCS                                                                                                                               \
+	GLE(void, BindRenderbuffer, GLenum target, GLuint renderbuffer)                                                                                                    \
+	GLE(void, DeleteRenderbuffers, GLsizei n, const GLuint* renderbuffers)                                                                                             \
+	GLE(void, GenRenderbuffers, GLsizei n, GLuint* renderbuffers)                                                                                                      \
+	GLE(void, RenderbufferStorage, GLenum target, GLenum internalformat, GLsizei width, GLsizei height)                                                                \
+	GLE(void, BindFramebuffer, GLenum target, GLuint framebuffer)                                                                                                      \
+	GLE(void, DeleteFramebuffers, GLsizei n, const GLuint* framebuffers)                                                                                               \
+	GLE(void, GenFramebuffers, GLsizei n, GLuint* framebuffers)                                                                                                        \
+	GLE(GLenum, CheckFramebufferStatus, GLenum target)                                                                                                                 \
+	GLE(void, FramebufferTexture2D, GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)                                                   \
+	GLE(void, FramebufferRenderbuffer, GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)                                               \
+	GLE(void, GenerateMipmap, GLenum target)                                                                                                                           \
+	GLE(void, BlitFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) \
 	GLE(void, RenderbufferStorageMultisample, GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height)
 
 // GL_ARB_vertex_array_object, built-in to OpenGL 3.0
@@ -338,80 +285,27 @@ extern void(APIENTRYP qglUnlockArraysEXT)(void);
 #endif
 
 // GL_EXT_direct_state_access
-#define QGL_EXT_direct_state_access_PROCS                                                                                                           \
-	GLE(GLvoid, BindMultiTextureEXT, GLenum texunit, GLenum target, GLuint texture)                                                                 \
-	GLE(GLvoid, TextureParameterfEXT, GLuint texture, GLenum target, GLenum pname, GLfloat param)                                                   \
-	GLE(GLvoid, TextureParameteriEXT, GLuint texture, GLenum target, GLenum pname, GLint param)                                                     \
-	GLE(GLvoid,                                                                                                                                     \
-	    TextureImage2DEXT,                                                                                                                          \
-	    GLuint texture,                                                                                                                             \
-	    GLenum target,                                                                                                                              \
-	    GLint level,                                                                                                                                \
-	    GLint internalformat,                                                                                                                       \
-	    GLsizei width,                                                                                                                              \
-	    GLsizei height,                                                                                                                             \
-	    GLint border,                                                                                                                               \
-	    GLenum format,                                                                                                                              \
-	    GLenum type,                                                                                                                                \
-	    const GLvoid* pixels)                                                                                                                       \
-	GLE(GLvoid,                                                                                                                                     \
-	    TextureSubImage2DEXT,                                                                                                                       \
-	    GLuint texture,                                                                                                                             \
-	    GLenum target,                                                                                                                              \
-	    GLint level,                                                                                                                                \
-	    GLint xoffset,                                                                                                                              \
-	    GLint yoffset,                                                                                                                              \
-	    GLsizei width,                                                                                                                              \
-	    GLsizei height,                                                                                                                             \
-	    GLenum format,                                                                                                                              \
-	    GLenum type,                                                                                                                                \
-	    const GLvoid* pixels)                                                                                                                       \
-	GLE(GLvoid,                                                                                                                                     \
-	    CopyTextureSubImage2DEXT,                                                                                                                   \
-	    GLuint texture,                                                                                                                             \
-	    GLenum target,                                                                                                                              \
-	    GLint level,                                                                                                                                \
-	    GLint xoffset,                                                                                                                              \
-	    GLint yoffset,                                                                                                                              \
-	    GLint x,                                                                                                                                    \
-	    GLint y,                                                                                                                                    \
-	    GLsizei width,                                                                                                                              \
-	    GLsizei height)                                                                                                                             \
-	GLE(GLvoid,                                                                                                                                     \
-	    CompressedTextureImage2DEXT,                                                                                                                \
-	    GLuint texture,                                                                                                                             \
-	    GLenum target,                                                                                                                              \
-	    GLint level,                                                                                                                                \
-	    GLenum internalformat,                                                                                                                      \
-	    GLsizei width,                                                                                                                              \
-	    GLsizei height,                                                                                                                             \
-	    GLint border,                                                                                                                               \
-	    GLsizei imageSize,                                                                                                                          \
-	    const GLvoid* data)                                                                                                                         \
-	GLE(GLvoid,                                                                                                                                     \
-	    CompressedTextureSubImage2DEXT,                                                                                                             \
-	    GLuint texture,                                                                                                                             \
-	    GLenum target,                                                                                                                              \
-	    GLint level,                                                                                                                                \
-	    GLint xoffset,                                                                                                                              \
-	    GLint yoffset,                                                                                                                              \
-	    GLsizei width,                                                                                                                              \
-	    GLsizei height,                                                                                                                             \
-	    GLenum format,                                                                                                                              \
-	    GLsizei imageSize,                                                                                                                          \
-	    const GLvoid* data)                                                                                                                         \
-	GLE(GLvoid, GenerateTextureMipmapEXT, GLuint texture, GLenum target)                                                                            \
-	GLE(GLvoid, ProgramUniform1iEXT, GLuint program, GLint location, GLint v0)                                                                      \
-	GLE(GLvoid, ProgramUniform1fEXT, GLuint program, GLint location, GLfloat v0)                                                                    \
-	GLE(GLvoid, ProgramUniform2fEXT, GLuint program, GLint location, GLfloat v0, GLfloat v1)                                                        \
-	GLE(GLvoid, ProgramUniform3fEXT, GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2)                                            \
-	GLE(GLvoid, ProgramUniform4fEXT, GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)                                \
-	GLE(GLvoid, ProgramUniform1fvEXT, GLuint program, GLint location, GLsizei count, const GLfloat* value)                                          \
-	GLE(GLvoid, ProgramUniformMatrix4fvEXT, GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)               \
-	GLE(GLvoid, NamedRenderbufferStorageEXT, GLuint renderbuffer, GLenum internalformat, GLsizei width, GLsizei height)                             \
-	GLE(GLvoid, NamedRenderbufferStorageMultisampleEXT, GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) \
-	GLE(GLenum, CheckNamedFramebufferStatusEXT, GLuint framebuffer, GLenum target)                                                                  \
-	GLE(GLvoid, NamedFramebufferTexture2DEXT, GLuint framebuffer, GLenum attachment, GLenum textarget, GLuint texture, GLint level)                 \
+#define QGL_EXT_direct_state_access_PROCS                                                                                                                                                                      \
+	GLE(GLvoid, BindMultiTextureEXT, GLenum texunit, GLenum target, GLuint texture)                                                                                                                            \
+	GLE(GLvoid, TextureParameterfEXT, GLuint texture, GLenum target, GLenum pname, GLfloat param)                                                                                                              \
+	GLE(GLvoid, TextureParameteriEXT, GLuint texture, GLenum target, GLenum pname, GLint param)                                                                                                                \
+	GLE(GLvoid, TextureImage2DEXT, GLuint texture, GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* pixels)            \
+	GLE(GLvoid, TextureSubImage2DEXT, GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* pixels)               \
+	GLE(GLvoid, CopyTextureSubImage2DEXT, GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)                                           \
+	GLE(GLvoid, CompressedTextureImage2DEXT, GLuint texture, GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data)            \
+	GLE(GLvoid, CompressedTextureSubImage2DEXT, GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid* data) \
+	GLE(GLvoid, GenerateTextureMipmapEXT, GLuint texture, GLenum target)                                                                                                                                       \
+	GLE(GLvoid, ProgramUniform1iEXT, GLuint program, GLint location, GLint v0)                                                                                                                                 \
+	GLE(GLvoid, ProgramUniform1fEXT, GLuint program, GLint location, GLfloat v0)                                                                                                                               \
+	GLE(GLvoid, ProgramUniform2fEXT, GLuint program, GLint location, GLfloat v0, GLfloat v1)                                                                                                                   \
+	GLE(GLvoid, ProgramUniform3fEXT, GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2)                                                                                                       \
+	GLE(GLvoid, ProgramUniform4fEXT, GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)                                                                                           \
+	GLE(GLvoid, ProgramUniform1fvEXT, GLuint program, GLint location, GLsizei count, const GLfloat* value)                                                                                                     \
+	GLE(GLvoid, ProgramUniformMatrix4fvEXT, GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)                                                                          \
+	GLE(GLvoid, NamedRenderbufferStorageEXT, GLuint renderbuffer, GLenum internalformat, GLsizei width, GLsizei height)                                                                                        \
+	GLE(GLvoid, NamedRenderbufferStorageMultisampleEXT, GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height)                                                            \
+	GLE(GLenum, CheckNamedFramebufferStatusEXT, GLuint framebuffer, GLenum target)                                                                                                                             \
+	GLE(GLvoid, NamedFramebufferTexture2DEXT, GLuint framebuffer, GLenum attachment, GLenum textarget, GLuint texture, GLint level)                                                                            \
 	GLE(GLvoid, NamedFramebufferRenderbufferEXT, GLuint framebuffer, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
 
 #define GLE(ret, name, ...) typedef ret APIENTRY name##proc(__VA_ARGS__);

@@ -989,6 +989,7 @@ typedef struct msurface_s {
 	vec3_t cubemapOrigin;
 	float cubemapBound;
 	cullinfo_t cullinfo;
+	bool doCull;
 
 	surfaceType_t* data;  // any of srf*_t
 } msurface_t;
@@ -1548,7 +1549,6 @@ extern cvar_t* r_ext_framebuffer_object;
 extern cvar_t* r_ext_texture_float;
 extern cvar_t* r_ext_framebuffer_multisample;
 extern cvar_t* r_arb_seamless_cube_map;
-extern cvar_t* r_arb_vertex_array_object;
 extern cvar_t* r_ext_direct_state_access;
 
 extern cvar_t* r_nobind;        // turns off binding to appropriate textures
@@ -1581,7 +1581,6 @@ extern cvar_t* r_skipBackEnd;
 extern cvar_t* r_externalGLSL;
 
 extern cvar_t* r_hdr;
-extern cvar_t* r_floatLightmap;
 extern cvar_t* r_postProcess;
 
 extern cvar_t* r_toneMap;
@@ -1590,9 +1589,8 @@ extern cvar_t* r_toneMapAvg;
 extern cvar_t* r_toneMapMax;
 
 extern cvar_t* r_autoExposure;
-extern cvar_t* r_forceAutoExposure;
-extern cvar_t* r_forceAutoExposureMin;
-extern cvar_t* r_forceAutoExposureMax;
+extern cvar_t* r_autoExposureMin;
+extern cvar_t* r_autoExposureMax;
 
 extern cvar_t* r_cameraExposure;
 
@@ -1607,6 +1605,8 @@ extern cvar_t* r_parallaxMapShadows;
 extern cvar_t* r_reflections;
 extern cvar_t* r_reflectionsResolution;
 extern cvar_t* r_reflectionsGrid;
+extern cvar_t* r_reflectionsEnd;
+extern cvar_t* r_reflectionsDetail;
 extern cvar_t* r_deluxeSpecular;
 extern cvar_t* r_pbr;
 extern cvar_t* r_detailLevel;
@@ -1616,10 +1616,6 @@ extern cvar_t* r_baseParallax;
 extern cvar_t* r_baseSpecular;
 extern cvar_t* r_baseGloss;
 extern cvar_t* r_glossType;
-extern cvar_t* r_imageUpsample;
-extern cvar_t* r_imageUpsampleMaxSize;
-extern cvar_t* r_imageUpsampleType;
-extern cvar_t* r_genNormalMaps;
 extern cvar_t* r_sunShadows;
 extern cvar_t* r_sunShadowLightScale;
 extern cvar_t* r_sunShadowAmbientScale;
@@ -1630,23 +1626,19 @@ extern cvar_t* r_shadowCascadeZFar;
 extern cvar_t* r_shadowCascadeZBias;
 extern cvar_t* r_ignoreDstAlpha;
 
-extern cvar_t* r_dynamicFog;
-extern cvar_t* r_dynamicFogDensity;
-extern cvar_t* r_dynamicFogColorR;
-extern cvar_t* r_dynamicFogColorG;
-extern cvar_t* r_dynamicFogColorB;
-extern cvar_t* r_dynamicFogStart;
-extern cvar_t* r_dynamicFogEnd;
+extern cvar_t* r_fogDensity;
+extern cvar_t* r_fogColorR;
+extern cvar_t* r_fogColorG;
+extern cvar_t* r_fogColorB;
+extern cvar_t* r_fogStart;
+extern cvar_t* r_fogEnd;
+extern cvar_t* r_fogReflectionEnd;
 
 extern cvar_t* r_ignoreGLErrors;
 
 extern cvar_t* r_overBrightBits;
 extern cvar_t* r_mapOverBrightBits;
 
-extern cvar_t* r_debugSurface;
-extern cvar_t* r_simpleMipMaps;
-
-extern cvar_t* r_showImages;
 extern cvar_t* r_debugSort;
 
 extern cvar_t* r_printShaders;

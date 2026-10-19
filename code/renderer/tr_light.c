@@ -113,7 +113,6 @@ LIGHT SAMPLING
 
 extern cvar_t* r_ambientScale;
 extern cvar_t* r_directedScale;
-extern cvar_t* r_debugLight;
 
 /*
 =================
@@ -270,35 +269,6 @@ static void R_SetupEntityLightingGrid(trRefEntity_t* ent, world_t* world) {
 }
 
 /*
-===============
-LogLight
-===============
-*/
-static void LogLight(trRefEntity_t* ent) {
-	int max1, max2;
-
-	if(!(ent->e.renderfx & RF_FIRST_PERSON)) {
-		return;
-	}
-
-	max1 = ent->ambientLight[0];
-	if(ent->ambientLight[1] > max1) {
-		max1 = ent->ambientLight[1];
-	} else if(ent->ambientLight[2] > max1) {
-		max1 = ent->ambientLight[2];
-	}
-
-	max2 = ent->directedLight[0];
-	if(ent->directedLight[1] > max2) {
-		max2 = ent->directedLight[1];
-	} else if(ent->directedLight[2] > max2) {
-		max2 = ent->directedLight[2];
-	}
-
-	ri.Printf(PRINT_ALL, "amb:%i  dir:%i\n", max1, max2);
-}
-
-/*
 =================
 R_SetupEntityLighting
 
@@ -402,10 +372,6 @@ void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
 			ent->directedLight[1] *= max;
 			ent->directedLight[2] *= max;
 		}
-	}
-
-	if(r_debugLight->integer) {
-		LogLight(ent);
 	}
 
 	// save out the byte packet version
