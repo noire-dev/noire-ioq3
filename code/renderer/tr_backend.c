@@ -282,10 +282,6 @@ void RB_BeginDrawingView(void) {
 	// clear relevant buffers
 	clearBits = GL_DEPTH_BUFFER_BIT;
 
-	if(r_fastsky->integer && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) {
-		clearBits |= GL_COLOR_BUFFER_BIT;  // FIXME: only if sky shaders have been used
-	}
-
 	// clear to black for cube maps
 	if(tr.renderCubeFbo && backEnd.viewParms.targetFbo == tr.renderCubeFbo) {
 		clearBits |= GL_COLOR_BUFFER_BIT;
@@ -779,7 +775,7 @@ const void* RB_DrawSurfs(const void* data) {
 		FBO_t* oldFbo = glState.currentFBO;
 		vec4_t viewInfo;
 
-		VectorSet4(viewInfo, backEnd.viewParms.zFar / r_znear->value, backEnd.viewParms.zFar, 0.0, 0.0);
+		VectorSet4(viewInfo, backEnd.viewParms.zFar / 8.0f, backEnd.viewParms.zFar, 0.0, 0.0);
 
 		backEnd.depthFill = true;
 		qglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -903,10 +899,7 @@ const void* RB_DrawSurfs(const void* data) {
 		qglColorMask(!backEnd.colorMask[0], !backEnd.colorMask[1], !backEnd.colorMask[2], !backEnd.colorMask[3]);
 	} else if(!isShadowView) {
 		RB_RenderDrawSurfList(cmd->drawSurfs, cmd->numDrawSurfs);
-
-		if(r_drawSun->integer) {
-			RB_DrawSun(0.1f, tr.sunShader);
-		}
+		RB_DrawSun(0.1f, tr.sunShader);
 	}
 
 	if(glRefConfig.framebufferObject && tr.renderCubeFbo && backEnd.viewParms.targetFbo == tr.renderCubeFbo) {
@@ -1025,7 +1018,7 @@ static void RB_PresentToScreen(void) {
 	if(tr.renderFbo && tr.renderFbo->colorImage[0]) {
 		// texture-backed render FBO
 		src = tr.renderFbo;
-	} else if(tr.msaaResolveFbo && r_hdr->integer) {
+	} else if(tr.msaaResolveFbo) {
 		// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
 		FBO_FastBlit(tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		src = tr.msaaResolveFbo;
@@ -1066,8 +1059,6 @@ const void* RB_SwapBuffers(const void* data) {
 	if(!glState.finishCalled) {
 		qglFinish();
 	}
-
-	GLimp_LogComment("***************** RB_SwapBuffers *****************\n\n\n");
 
 	GLimp_EndFrame();
 
@@ -1122,21 +1113,12 @@ const void* RB_PostProcess(const void* data) {
 	srcBox[3] = backEnd.viewParms.viewportHeight;
 
 	if(srcFbo) {
-		if(r_hdr->integer && r_toneMap->integer) {
-			autoExposure = r_autoExposure->integer;
+		autoExposure = r_autoExposure->integer;
 
-			// Use an intermediate FBO because it can't blit to the same FBO directly
-			// and can't read from an MSAA dstFbo later.
-			RB_ToneMap(srcFbo, srcBox, tr.screenScratchFbo, srcBox, autoExposure);
-			FBO_FastBlit(tr.screenScratchFbo, srcBox, srcFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		} else if(r_cameraExposure->value != 0.0f) {
-			vec4_t color;
-
-			color[0] = color[1] = color[2] = pow(2, r_cameraExposure->value);  // exp2(r_cameraExposure->value);
-			color[3] = 1.0f;
-
-			FBO_BlitFromTexture(tr.whiteImage, NULL, NULL, srcFbo, srcBox, NULL, color, GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO);
-		}
+		// Use an intermediate FBO because it can't blit to the same FBO directly
+		// and can't read from an MSAA dstFbo later.
+		RB_ToneMap(srcFbo, srcBox, tr.screenScratchFbo, srcBox, autoExposure);
+		FBO_FastBlit(tr.screenScratchFbo, srcBox, srcFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	}
 
 	// RB_BokehBlur(srcFbo, srcBox, srcFbo, srcBox, backEnd.refdef.blurFactor);

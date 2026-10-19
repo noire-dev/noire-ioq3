@@ -195,11 +195,6 @@ void FBO_Bind(FBO_t* fbo) {
 
 	if(glState.currentFBO == fbo) return;
 
-	if(r_logFile->integer) {
-		// don't just call LogComment, or we will get a call to va() every frame!
-		GLimp_LogComment(va("--- FBO_Bind( %s ) ---\n", fbo ? fbo->name : "NULL"));
-	}
-
 	GL_BindFramebuffer(GL_FRAMEBUFFER, fbo ? fbo->frameBuffer : 0);
 	glState.currentFBO = fbo;
 }
@@ -219,12 +214,10 @@ void FBO_Init(void) {
 
 	tr.numFBOs = 0;
 
-	GL_CheckErrors();
-
 	R_IssuePendingRenderCommands();
 
 	hdrFormat = GL_RGBA8;
-	if(r_hdr->integer && glRefConfig.textureFloat) hdrFormat = GL_RGBA16F_ARB;
+	if(glRefConfig.textureFloat) hdrFormat = GL_RGBA16F_ARB;
 
 	if(glRefConfig.framebufferMultisample) qglGetIntegerv(GL_MAX_SAMPLES, &multisample);
 
@@ -246,15 +239,14 @@ void FBO_Init(void) {
 		FBO_AttachImage(tr.msaaResolveFbo, tr.renderImage, GL_COLOR_ATTACHMENT0, 0);
 		FBO_AttachImage(tr.msaaResolveFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT, 0);
 		R_CheckFBO(tr.msaaResolveFbo);
-	} else if(r_hdr->integer) {
+	} else {
 		tr.renderFbo = FBO_Create("_render", tr.renderDepthImage->width, tr.renderDepthImage->height);
 		FBO_AttachImage(tr.renderFbo, tr.renderImage, GL_COLOR_ATTACHMENT0, 0);
 		FBO_AttachImage(tr.renderFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT, 0);
 		R_CheckFBO(tr.renderFbo);
 	}
 
-	// clear render buffer
-	// this fixes the corrupt screen bug with r_hdr 1 on older hardware
+	// clear render buffer this fixes the corrupt screen bug with hdr on older hardware
 	if(tr.renderFbo) {
 		GL_BindFramebuffer(GL_FRAMEBUFFER, tr.renderFbo->frameBuffer);
 		qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -324,8 +316,6 @@ void FBO_Init(void) {
 		FBO_CreateBuffer(tr.renderCubeFbo, GL_DEPTH_COMPONENT24_ARB, 0, 0);
 		R_CheckFBO(tr.renderCubeFbo);
 	}
-
-	GL_CheckErrors();
 
 	GL_BindFramebuffer(GL_FRAMEBUFFER, 0);
 	glState.currentFBO = NULL;

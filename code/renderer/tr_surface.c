@@ -165,8 +165,6 @@ based on Tess_InstantQuad from xreal
 ==============
 */
 void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4]) {
-	GLimp_LogComment("--- RB_InstantQuad2 ---\n");
-
 	tess.numVertexes = 0;
 	tess.numIndexes = 0;
 	tess.firstIndex = 0;
@@ -565,7 +563,7 @@ static void DoRailDiscs(int numSegs, const vec3_t start, const vec3_t dir, const
 	int i;
 	vec3_t pos[4];
 	vec3_t v;
-	int spanWidth = r_railWidth->integer;
+	int spanWidth = 16;
 	float c, s;
 	float scale;
 
@@ -636,12 +634,12 @@ static void RB_SurfaceRailRings(void) {
 	VectorSubtract(end, start, vec);
 	len = VectorNormalize(vec);
 	MakeNormalVectors(vec, right, up);
-	numSegs = (len) / r_railSegmentLength->value;
+	numSegs = (len) / 32.0f;
 	if(numSegs <= 0) {
 		numSegs = 1;
 	}
 
-	VectorScale(vec, r_railSegmentLength->value, vec);
+	VectorScale(vec, 32.0f, vec);
 
 	DoRailDiscs(numSegs, start, vec, right, up);
 }
@@ -673,7 +671,7 @@ static void RB_SurfaceRailCore(void) {
 	CrossProduct(v1, v2, right);
 	VectorNormalize(right);
 
-	DoRailCore(start, end, right, len, r_railCoreWidth->integer);
+	DoRailCore(start, end, right, len, 6);
 }
 
 /*
@@ -832,11 +830,6 @@ static float LodErrorForVolume(vec3_t local, float radius) {
 	vec3_t world;
 	float d;
 
-	// never let it go negative
-	if(r_lodCurveError->value < 0) {
-		return 0;
-	}
-
 	world[0] = local[0] * backEnd.or.axis[0][0] + local[1] * backEnd.or.axis[1][0] + local[2] * backEnd.or.axis[2][0] + backEnd.or.origin[0];
 	world[1] = local[0] * backEnd.or.axis[0][1] + local[1] * backEnd.or.axis[1][1] + local[2] * backEnd.or.axis[2][1] + backEnd.or.origin[1];
 	world[2] = local[0] * backEnd.or.axis[0][2] + local[1] * backEnd.or.axis[1][2] + local[2] * backEnd.or.axis[2][2] + backEnd.or.origin[2];
@@ -852,7 +845,7 @@ static float LodErrorForVolume(vec3_t local, float radius) {
 		d = 1;
 	}
 
-	return r_lodCurveError->value / d;
+	return 250 / d;
 }
 
 /*
@@ -1092,11 +1085,7 @@ static void RB_SurfaceEntity(surfaceType_t* surfType) {
 static void RB_SurfaceBad(surfaceType_t* surfType) { ri.Printf(PRINT_ALL, "Bad surface tesselated.\n"); }
 
 void RB_SurfaceVaoMdvMesh(srfVaoMdvMesh_t* surface) {
-	// mdvModel_t     *mdvModel;
-	// mdvSurface_t   *mdvSurface;
 	refEntity_t* refEnt;
-
-	GLimp_LogComment("--- RB_SurfaceVaoMdvMesh ---\n");
 
 	if(ShaderRequiresCPUDeforms(tess.shader)) {
 		RB_SurfaceMesh(surface->mdvSurface);

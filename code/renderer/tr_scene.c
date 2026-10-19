@@ -326,11 +326,9 @@ void RE_BeginScene(const refdef_t* fd) {
 		tr.refdef.autoExposureMinMax[1] = r_autoExposureMax->value;
 	}
 
-	if(r_toneMap->integer) {
-		tr.refdef.toneMinAvgMaxLinear[0] = pow(2, r_toneMapMin->value);
-		tr.refdef.toneMinAvgMaxLinear[1] = pow(2, r_toneMapAvg->value);
-		tr.refdef.toneMinAvgMaxLinear[2] = pow(2, r_toneMapMax->value);
-	}
+	tr.refdef.toneMinAvgMaxLinear[0] = pow(2, r_toneMapMin->value);
+	tr.refdef.toneMinAvgMaxLinear[1] = pow(2, r_toneMapAvg->value);
+	tr.refdef.toneMinAvgMaxLinear[2] = pow(2, r_toneMapMax->value);
 
 	// Makro - copy exta info if present
 	if(fd->rdflags & RDF_EXTRA) {
@@ -401,14 +399,7 @@ void RE_RenderScene(const refdef_t* fd) {
 	viewParms_t parms;
 	int startTime;
 
-	if(!tr.registered) {
-		return;
-	}
-	GLimp_LogComment("====== RE_RenderScene =====\n");
-
-	if(r_norefresh->integer) {
-		return;
-	}
+	if(!tr.registered) return;
 
 	startTime = ri.Milliseconds();
 
@@ -419,7 +410,7 @@ void RE_RenderScene(const refdef_t* fd) {
 	RE_BeginScene(fd);
 
 	// SmileTheory: playing with shadow mapping
-	if(!(fd->rdflags & RDF_NOWORLDMODEL) && tr.refdef.num_dlights && r_dlightMode->integer >= 2) {
+	if(!(fd->rdflags & RDF_NOWORLDMODEL) && tr.refdef.num_dlights && r_dynamiclight->integer >= 2) {
 		R_RenderDlightCubemaps(fd);
 	}
 

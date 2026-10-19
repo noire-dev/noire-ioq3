@@ -73,12 +73,6 @@ Cvars for API:
 
 Cvars for simple rendering features:
 
-* `r_ext_compressed_textures`       - Automatically compress textures.
-                                     0 - No texture compression. (default)
-                                     1 - DXT/RGTC texture compression if
-                                         supported.
-                                     2 - BPTC texture compression if supported.
-
 *  `r_ext_framebuffer_multisample`  - Multisample Anti-aliasing.
                                      0    - None. (default)
                                      1-16 - Some.
@@ -86,52 +80,17 @@ Cvars for simple rendering features:
 
 Cvars for HDR and tonemapping:
 
- * `r_hdr`                          - Do scene rendering in a framebuffer with
-                                   high dynamic range.  (Less banding, and
-                                   exposure changes look much better)
-                                     0 - No.
-                                     1 - Yes. (default)
-
-*  `r_cameraExposure`               - Cheat.  Alter brightness, in powers of two.
-                                     -2  - 4x as dark.
-                                     0   - Normal. (default)
-                                     0.5 - Sqrt(2)x as bright.
-                                     2   - 4x as bright.
-
 *  `r_postProcess`                  - Enable post-processing.
                                      0 - No.
                                      1 - Yes. (default)
 
 Cvars for advanced material usage:
 
-*  `r_normalMapping`                - Enable normal maps for materials that
-                                   support it.
-                                     0 - No.
-                                     1 - Yes. (default)
-
-*  `r_specularMapping`              - Enable specular maps for materials that
-                                   support it.
-                                     0 - No.
-                                     1 - Yes. (default)
-
-*  `r_deluxeMapping`                - Enable deluxe mapping.  (Map is compiled
-                                   with light directions.)  Even if the map 
-                                   doesn't have deluxe mapping compiled in,
-                                   an approximation based on the lightgrid
-                                   will be used.
-                                     0 - No.
-                                     1 - Yes. (default)
-
 *  `r_parallaxMapping`              - Enable parallax mapping for materials that
                                    support it.
                                      0 - No. (default)
                                      1 - Use parallax occlusion mapping.
                                      2 - Use relief mapping. (slower)
-
-*  `r_parallaxMapOffset`            - Set the parallax height offset.
-                                     0    - Values map to -255 - 0. (default)
-                                     0.5  - Values map to -127 - 127.
-                                     1.0  - Values map to 0 - 255.
 
 *  `r_parallaxMapShadows`           - Enable self-shadowing on parallax map
                                    supported materials.
@@ -152,22 +111,6 @@ Cvars for advanced material usage:
                                      0.3 - Default.
                                      1.0 - Shiny.
 
-*  `r_baseNormalX`                  - Set the scale of the X values from normal
-                                   maps when the normalScale keyword is not
-                                   used.
-                                     -1  - Flip X.
-                                     0   - Ignore X.
-                                     1   - Normal X. (default)
-                                     2   - Double X.
-
-*  `r_baseNormalY`                  - Set the scale of the Y values from normal
-                                   maps when the normalScale keyword is not
-                                   used.
-                                     -1  - Flip Y.
-                                     0   - Ignore Y.
-                                     1   - Normal Y. (default)
-                                     2   - Double Y.
-
 *  `r_baseParallax`                 - Sets the scale of the parallax effect for
                                    materials when the parallaxDepth keyword
                                    is not used.
@@ -175,12 +118,6 @@ Cvars for advanced material usage:
                                      0.01 - Pretty smooth.
                                      0.05 - Standard depth. (default)
                                      0.1  - Looks broken.
-
-*  `r_pbr`                          - Enable physically based rendering.
-                                   Experimental, will not look correct without
-                                   assets meant for it.
-                                     0 - No. (default)
-                                     1 - Yes.
 
 
 -------------------------------------------------------------------------------

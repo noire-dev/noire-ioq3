@@ -1268,9 +1268,6 @@ void CL_Disconnect(bool showMainMenu) {
 		return;
 	}
 
-	// shutting down the client so enter full screen ui mode
-	Cvar_Set("r_uiFullScreen", "1");
-
 	if(clc.demorecording) {
 		CL_StopRecord_f();
 	}
@@ -1977,9 +1974,6 @@ void CL_DownloadsComplete(void) {
 	if(clc.state != CA_LOADING) {
 		return;
 	}
-
-	// starting to load a map so we get out of full screen ui mode
-	Cvar_Set("r_uiFullScreen", "0");
 
 	// flush client memory and start loading stuff
 	// this will also (re)load the UI
@@ -3784,12 +3778,6 @@ void CL_Init(void) {
 	cl_allowDownload = Cvar_Get("cl_allowDownload", "0", CVAR_ARCHIVE);
 
 	cl_conXOffset = Cvar_Get("cl_conXOffset", "0", 0);
-#ifdef __APPLE__
-	// In game video is REALLY slow in Mac OS X right now due to driver slowness
-	cl_inGameVideo = Cvar_Get("r_inGameVideo", "0", CVAR_ARCHIVE);
-#else
-	cl_inGameVideo = Cvar_Get("r_inGameVideo", "1", CVAR_ARCHIVE);
-#endif
 
 	cl_serverStatusResendTime = Cvar_Get("cl_serverStatusResendTime", "750", 0);
 

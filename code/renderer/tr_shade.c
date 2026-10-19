@@ -636,13 +636,13 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 
 		if(pStage->bundle[TB_NORMALMAP].image[0]) {
 			R_BindAnimatedImageToTMU(&pStage->bundle[TB_NORMALMAP], TB_NORMALMAP);
-		} else if(r_normalMapping->integer) {
+		} else {
 			GL_BindToTMU(tr.whiteImage, TB_NORMALMAP);
 		}
 
 		if(pStage->bundle[TB_SPECULARMAP].image[0]) {
 			R_BindAnimatedImageToTMU(&pStage->bundle[TB_SPECULARMAP], TB_SPECULARMAP);
-		} else if(r_specularMapping->integer) {
+		} else {
 			GL_BindToTMU(tr.whiteImage, TB_SPECULARMAP);
 		}
 
@@ -652,7 +652,7 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 			GLSL_SetUniformVec4(sp, UNIFORM_ENABLETEXTURES, enableTextures);
 		}
 
-		if(r_dlightMode->integer >= 2) GL_BindToTMU(tr.shadowCubemaps[l], TB_SHADOWMAP4);
+		if(r_dynamiclight->integer >= 2) GL_BindToTMU(tr.shadowCubemaps[l], TB_SHADOWMAP4);
 
 		ComputeTexMods(pStage, TB_DIFFUSEMAP, texMatrix);
 
@@ -953,10 +953,6 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 				index |= LIGHTDEF_USE_SHADOWMAP;
 			}
 
-			if(r_lightmap->integer && ((index & LIGHTDEF_LIGHTTYPE_MASK) == LIGHTDEF_USE_LIGHTMAP)) {
-				index = LIGHTDEF_USE_TCGEN_AND_TCMOD;
-			}
-
 			sp = &pStage->glslShaderGroup[index];
 
 			backEnd.pc.c_lightallDraws++;
@@ -1045,40 +1041,24 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 		GLSL_SetUniformInt(sp, UNIFORM_COLORGEN, pStage->rgbGen);
 		GLSL_SetUniformInt(sp, UNIFORM_ALPHAGEN, pStage->alphaGen);
 
-		if(r_lightmap->integer) {
-			vec4_t st[2];
-			VectorSet4(st[0], 1.0f, 0.0f, 0.0f, 0.0f);
-			VectorSet4(st[1], 0.0f, 1.0f, 0.0f, 0.0f);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX0, st[0]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX1, st[1]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX2, st[0]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX3, st[1]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX4, st[0]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX5, st[1]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX6, st[0]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX7, st[1]);
+		ComputeTexMods(pStage, TB_DIFFUSEMAP, texMatrix);
+		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX0, texMatrix[0]);
+		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX1, texMatrix[1]);
+		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX2, texMatrix[2]);
+		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX3, texMatrix[3]);
+		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX4, texMatrix[4]);
+		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX5, texMatrix[5]);
+		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX6, texMatrix[6]);
+		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX7, texMatrix[7]);
 
-			GLSL_SetUniformInt(sp, UNIFORM_TCGEN0, TCGEN_LIGHTMAP);
-		} else {
-			ComputeTexMods(pStage, TB_DIFFUSEMAP, texMatrix);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX0, texMatrix[0]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX1, texMatrix[1]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX2, texMatrix[2]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX3, texMatrix[3]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX4, texMatrix[4]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX5, texMatrix[5]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX6, texMatrix[6]);
-			GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX7, texMatrix[7]);
+		GLSL_SetUniformInt(sp, UNIFORM_TCGEN0, pStage->bundle[0].tcGen);
+		if(pStage->bundle[0].tcGen == TCGEN_VECTOR) {
+			vec3_t vec;
 
-			GLSL_SetUniformInt(sp, UNIFORM_TCGEN0, pStage->bundle[0].tcGen);
-			if(pStage->bundle[0].tcGen == TCGEN_VECTOR) {
-				vec3_t vec;
-
-				VectorCopy(pStage->bundle[0].tcGenVectors[0], vec);
-				GLSL_SetUniformVec3(sp, UNIFORM_TCGEN0VECTOR0, vec);
-				VectorCopy(pStage->bundle[0].tcGenVectors[1], vec);
-				GLSL_SetUniformVec3(sp, UNIFORM_TCGEN0VECTOR1, vec);
-			}
+			VectorCopy(pStage->bundle[0].tcGenVectors[0], vec);
+			GLSL_SetUniformVec3(sp, UNIFORM_TCGEN0VECTOR0, vec);
+			VectorCopy(pStage->bundle[0].tcGenVectors[1], vec);
+			GLSL_SetUniformVec3(sp, UNIFORM_TCGEN0VECTOR1, vec);
 		}
 
 		GLSL_SetUniformMat4(sp, UNIFORM_MODELMATRIX, backEnd.or.transformMatrix);
@@ -1091,7 +1071,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 
 			if(renderToCubemap) {
 				// force specular to nonmetal if rendering cubemaps
-				if(r_pbr->integer) specularScale[1] = 0.0f;
+				specularScale[1] = 0.0f;
 			}
 
 			GLSL_SetUniformVec4(sp, UNIFORM_SPECULARSCALE, specularScale);
@@ -1108,80 +1088,62 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 			else if(pStage->bundle[TB_COLORMAP].image[0] != 0)
 				R_BindAnimatedImageToTMU(&pStage->bundle[TB_COLORMAP], TB_COLORMAP);
 		} else if(pStage->glslShaderGroup == tr.lightallShader) {
-			int i;
 			vec4_t enableTextures;
 
 			if(r_sunShadows->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT) && (pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK)) {
 				// FIXME: screenShadowImage is NULL if no framebuffers
 				if(tr.screenShadowImage) GL_BindToTMU(tr.screenShadowImage, TB_SHADOWMAP);
 				GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTAMBIENT, backEnd.refdef.sunAmbCol);
-				if(r_pbr->integer) {
-					vec3_t color;
+				vec3_t color;
 
-					color[0] = backEnd.refdef.sunCol[0] * backEnd.refdef.sunCol[0];
-					color[1] = backEnd.refdef.sunCol[1] * backEnd.refdef.sunCol[1];
-					color[2] = backEnd.refdef.sunCol[2] * backEnd.refdef.sunCol[2];
-					GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTCOLOR, color);
-				} else {
-					GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTCOLOR, backEnd.refdef.sunCol);
-				}
+				color[0] = backEnd.refdef.sunCol[0] * backEnd.refdef.sunCol[0];
+				color[1] = backEnd.refdef.sunCol[1] * backEnd.refdef.sunCol[1];
+				color[2] = backEnd.refdef.sunCol[2] * backEnd.refdef.sunCol[2];
+				GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTCOLOR, color);
 				GLSL_SetUniformVec4(sp, UNIFORM_PRIMARYLIGHTORIGIN, backEnd.refdef.sunDir);
 			}
 
 			VectorSet4(enableTextures, 0, 0, 0, 0);
-			if((r_lightmap->integer == 1 || r_lightmap->integer == 2) && pStage->bundle[TB_LIGHTMAP].image[0]) {
-				for(i = 0; i < NUM_TEXTURE_BUNDLES; i++) {
-					if(i == TB_COLORMAP)
-						R_BindAnimatedImageToTMU(&pStage->bundle[TB_LIGHTMAP], i);
-					else
-						GL_BindToTMU(tr.whiteImage, i);
-				}
-			} else if(r_lightmap->integer == 3 && pStage->bundle[TB_DELUXEMAP].image[0]) {
-				for(i = 0; i < NUM_TEXTURE_BUNDLES; i++) {
-					if(i == TB_COLORMAP)
-						R_BindAnimatedImageToTMU(&pStage->bundle[TB_DELUXEMAP], i);
-					else
-						GL_BindToTMU(tr.whiteImage, i);
-				}
-			} else {
-				bool light = (pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK) != 0;
-				bool fastLight = !(r_normalMapping->integer || r_specularMapping->integer);
 
-				if(pStage->bundle[TB_DIFFUSEMAP].image[0]) R_BindAnimatedImageToTMU(&pStage->bundle[TB_DIFFUSEMAP], TB_DIFFUSEMAP);
+			bool light = (pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK) != 0;
 
-				if(pStage->bundle[TB_LIGHTMAP].image[0]) R_BindAnimatedImageToTMU(&pStage->bundle[TB_LIGHTMAP], TB_LIGHTMAP);
+			if(pStage->bundle[TB_DIFFUSEMAP].image[0]) R_BindAnimatedImageToTMU(&pStage->bundle[TB_DIFFUSEMAP], TB_DIFFUSEMAP);
 
-				// bind textures that are sampled and used in the glsl shader, and
-				// bind whiteImage to textures that are sampled but zeroed in the glsl shader
-				//
-				// alternatives:
-				//  - use the last bound texture
-				//     -> costs more to sample a higher res texture then throw out the result
-				//  - disable texture sampling in glsl shader with #ifdefs, as before
-				//     -> increases the number of shaders that must be compiled
-				//
-				if(light && !fastLight) {
-					if(pStage->bundle[TB_NORMALMAP].image[0]) {
-						R_BindAnimatedImageToTMU(&pStage->bundle[TB_NORMALMAP], TB_NORMALMAP);
-						enableTextures[0] = 1.0f;
-					} else if(r_normalMapping->integer)
-						GL_BindToTMU(tr.whiteImage, TB_NORMALMAP);
+			if(pStage->bundle[TB_LIGHTMAP].image[0]) R_BindAnimatedImageToTMU(&pStage->bundle[TB_LIGHTMAP], TB_LIGHTMAP);
 
-					if(pStage->bundle[TB_DELUXEMAP].image[0]) {
-						R_BindAnimatedImageToTMU(&pStage->bundle[TB_DELUXEMAP], TB_DELUXEMAP);
-						enableTextures[1] = 1.0f;
-					} else if(r_deluxeMapping->integer)
-						GL_BindToTMU(tr.whiteImage, TB_DELUXEMAP);
-
-					if(pStage->bundle[TB_SPECULARMAP].image[0]) {
-						R_BindAnimatedImageToTMU(&pStage->bundle[TB_SPECULARMAP], TB_SPECULARMAP);
-						enableTextures[2] = 1.0f;
-					} else if(r_specularMapping->integer)
-						GL_BindToTMU(tr.whiteImage, TB_SPECULARMAP);
+			// bind textures that are sampled and used in the glsl shader, and
+			// bind whiteImage to textures that are sampled but zeroed in the glsl shader
+			//
+			// alternatives:
+			//  - use the last bound texture
+			//     -> costs more to sample a higher res texture then throw out the result
+			//  - disable texture sampling in glsl shader with #ifdefs, as before
+			//     -> increases the number of shaders that must be compiled
+			//
+			if(light) {
+				if(pStage->bundle[TB_NORMALMAP].image[0]) {
+					R_BindAnimatedImageToTMU(&pStage->bundle[TB_NORMALMAP], TB_NORMALMAP);
+					enableTextures[0] = 1.0f;
+				} else {
+					GL_BindToTMU(tr.whiteImage, TB_NORMALMAP);
 				}
 
-				enableTextures[3] = (r_reflections->integer && !(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap) ? 1.0f : 0.0f;
+				if(pStage->bundle[TB_DELUXEMAP].image[0]) {
+					R_BindAnimatedImageToTMU(&pStage->bundle[TB_DELUXEMAP], TB_DELUXEMAP);
+					enableTextures[1] = 1.0f;
+				} else {
+					GL_BindToTMU(tr.whiteImage, TB_DELUXEMAP);
+				}
+
+				if(pStage->bundle[TB_SPECULARMAP].image[0]) {
+					R_BindAnimatedImageToTMU(&pStage->bundle[TB_SPECULARMAP], TB_SPECULARMAP);
+					enableTextures[2] = 1.0f;
+				} else {
+					GL_BindToTMU(tr.whiteImage, TB_SPECULARMAP);
+				}
 			}
+
+			enableTextures[3] = (r_reflections->integer && !(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap) ? 1.0f : 0.0f;
 
 			GLSL_SetUniformVec4(sp, UNIFORM_ENABLETEXTURES, enableTextures);
 		} else if(pStage->bundle[1].image[0] != 0) {
@@ -1190,11 +1152,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 			//
 			// lightmap/secondary pass
 			//
-			if(r_lightmap->integer && pStage->bundle[1].isLightmap) {
-				GLSL_SetUniformInt(sp, UNIFORM_TEXTURE1ENV, GL_REPLACE);
-			} else {
-				GLSL_SetUniformInt(sp, UNIFORM_TEXTURE1ENV, pStage->multitextureEnv);
-			}
+			GLSL_SetUniformInt(sp, UNIFORM_TEXTURE1ENV, pStage->multitextureEnv);
 
 			R_BindAnimatedImageToTMU(&pStage->bundle[1], 1);
 		} else {
@@ -1253,11 +1211,6 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 
 		if(overridecolor) {
 			pStage->rgbGen = oldRgbGen;
-		}
-
-		// allow skipping out to show just lightmaps during development
-		if(r_lightmap->integer && (pStage->bundle[0].isLightmap || pStage->bundle[1].isLightmap)) {
-			break;
 		}
 
 		if(backEnd.depthFill) break;
@@ -1397,15 +1350,6 @@ void RB_StageIteratorGeneric(void) {
 	}
 
 	//
-	// log this call
-	//
-	if(r_logFile->integer) {
-		// don't just call LogComment, or we will get
-		// a call to va() every frame!
-		GLimp_LogComment(va("--- RB_StageIteratorGeneric( %s ) ---\n", tess.shader->name));
-	}
-
-	//
 	// set face culling appropriately
 	//
 	if(input->shader->cullType == CT_TWO_SIDED) {
@@ -1428,7 +1372,7 @@ void RB_StageIteratorGeneric(void) {
 	// set polygon offset if necessary
 	if(input->shader->polygonOffset) {
 		qglEnable(GL_POLYGON_OFFSET_FILL);
-		qglPolygonOffset(r_offsetFactor->value, r_offsetUnits->value);
+		qglPolygonOffset(-1, -2);
 	}
 
 	//
@@ -1570,6 +1514,4 @@ void RB_EndSurface(void) {
 	tess.firstIndex = 0;
 	tess.useCacheVao = false;
 	tess.useInternalVao = false;
-
-	GLimp_LogComment("----------\n");
 }

@@ -4,17 +4,9 @@ uniform sampler2D u_DiffuseMap;
 uniform sampler2D u_LightMap;
 #endif
 
-#if defined(USE_NORMALMAP)
 uniform sampler2D u_NormalMap;
-#endif
-
-#if defined(USE_DELUXEMAP)
 uniform sampler2D u_DeluxeMap;
-#endif
-
-#if defined(USE_SPECULARMAP)
 uniform sampler2D u_SpecularMap;
-#endif
 
 #if defined(USE_SHADOWMAP)
 uniform sampler2D u_ShadowMap;
@@ -28,22 +20,19 @@ uniform samplerCube u_DlightShadowMap;
 uniform samplerCube u_CubeMap;
 #endif
 
-#if defined(USE_NORMALMAP) || defined(USE_DELUXEMAP) || defined(USE_SPECULARMAP) || defined(USE_CUBEMAP)
-// y = deluxe, w = cube
 uniform vec4      u_EnableTextures; 
-#endif
 
 #if defined(USE_PRIMARY_LIGHT) || defined(USE_SHADOWMAP)
 uniform vec3  u_PrimaryLightColor;
 uniform vec3  u_PrimaryLightAmbient;
 #endif
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
 uniform vec4      u_NormalScale;
 uniform vec4      u_SpecularScale;
 #endif
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
 #if defined(USE_CUBEMAP)
 uniform vec4      u_CubeMapInfo;
 uniform vec3      u_CubeMapParallaxInfo;
@@ -55,17 +44,17 @@ uniform int       u_AlphaTest;
 varying vec4      var_TexCoords;
 
 varying vec4      var_Color;
-#if (defined(USE_LIGHT) && !defined(USE_FAST_LIGHT))
+#if defined(USE_LIGHT)
 varying vec4      var_ColorAmbient;
 #endif
 
-#if (defined(USE_LIGHT) && !defined(USE_FAST_LIGHT))
+#if defined(USE_LIGHT)
 varying vec4   var_Normal;
 varying vec4   var_Tangent;
 varying vec4   var_Bitangent;
 #endif
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
 varying vec4      var_LightDir;
 #endif
 
@@ -99,9 +88,6 @@ float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 
 	// current size of search window
 	float size = 1.0 / float(linearSearchSteps);
-
-	// adjust position if offset above surface
-	dp -= ds * r_parallaxMapOffset;
 
 	// current depth position
 	float depth = 0.0;
@@ -155,7 +141,7 @@ float RayIntersectDisplaceMap(vec2 dp, vec2 ds, sampler2D normalMap)
 	}
 #endif
 
-	return bestDepth - r_parallaxMapOffset;
+	return bestDepth;
 }
 
 float LightRay(vec2 dp, vec2 ds, sampler2D normalMap)
@@ -368,7 +354,7 @@ void main()
 	vec3 L, N, E, H;
 	float NL, NH, NE, EH, attenuation;
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
 	vec3 surfNormal = (!gl_FrontFacing ? var_Normal : -var_Normal).xyz;
 	mat3 tangentToWorld = mat3(var_Tangent.xyz, var_Bitangent.xyz, surfNormal);
 	viewDir = vec3(var_Normal.w, var_Tangent.w, var_Bitangent.w);
@@ -382,9 +368,7 @@ void main()
   #if defined(RGBM_LIGHTMAP)
 	lightmapColor.rgb *= lightmapColor.a;
   #endif
-  #if defined(USE_PBR) && !defined(USE_FAST_LIGHT)
 	lightmapColor.rgb *= lightmapColor.rgb;
-  #endif
 	lightColor *= lightmapColor.rgb;
 #endif
 
@@ -417,11 +401,9 @@ void main()
 			discard;
 	}
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
 	L = var_LightDir.xyz;
-  #if defined(USE_DELUXEMAP)
 	L += (texture2D(u_DeluxeMap, var_TexCoords.zw).xyz - vec3(0.5)) * u_EnableTextures.y;
-  #endif
 	float sqrLightDist = dot(L, L);
 	L /= sqrt(sqrLightDist);
 
@@ -431,7 +413,6 @@ void main()
 	attenuation  = 1.0;
   #endif
 
-  #if defined(USE_NORMALMAP)
     #if defined(SWIZZLE_NORMALMAP)
 	N.xy = texture2D(u_NormalMap, texCoords).ag - vec2(0.5);
     #else
@@ -440,9 +421,6 @@ void main()
 	N.xy *= u_NormalScale.xy;
 	N.z = sqrt(clamp((0.25 - N.x * N.x) - N.y * N.y, 0.0, 1.0));
 	N = tangentToWorld * N;
-  #else
-	N = surfNormal;
-  #endif
 
 	N = normalize(N);
 
@@ -497,18 +475,11 @@ void main()
 	EH = clamp(dot(E, H), 0.0, 1.0);
 	NH = clamp(dot(N, H), 0.0, 1.0);
 
-  #if defined(USE_SPECULARMAP)
 	vec4 specular = texture2D(u_SpecularMap, texCoords);
-  #else
-	vec4 specular = vec4(1.0);
-  #endif
 	specular *= u_SpecularScale;
 
-  #if defined(USE_PBR)
 	diffuse.rgb *= diffuse.rgb;
-  #endif
 
-  #if defined(USE_PBR)
 	// diffuse rgb is base color
 	// specular red is gloss
 	// specular green is metallicness
@@ -516,26 +487,8 @@ void main()
 	float metal = specular.g;
 	specular.rgb = metal * diffuse.rgb + vec3(0.04 - 0.04 * metal);
 	diffuse.rgb *= 1.0 - metal;
-  #else
-	// diffuse rgb is diffuse
-	// specular rgb is specular reflectance at normal incidence
-	// specular alpha is gloss
-	float gloss = specular.a;
 
-	// adjust diffuse by specular reflectance, to maintain energy conservation
-	diffuse.rgb *= vec3(1.0) - specular.rgb;
-  #endif
-
-  #if defined(GLOSS_IS_GLOSS)
 	float roughness = exp2(-3.0 * gloss);
-  #elif defined(GLOSS_IS_SMOOTHNESS)
-	float roughness = 1.0 - gloss;
-  #elif defined(GLOSS_IS_ROUGHNESS)
-	float roughness = gloss;
-  #elif defined(GLOSS_IS_SHININESS)
-	float roughness = pow(2.0 / (8190.0 * gloss + 2.0), 0.25);
-  #endif
-
 	reflectance  = CalcDiffuse(diffuse.rgb, NH, EH, roughness);
 
   #if defined(r_deluxeSpecular)
@@ -558,9 +511,7 @@ void main()
 	vec3 parallax = u_CubeMapParallaxInfo.xyz + 1.0f / 65536 * viewDir;
 	vec3 cubeLightColor = textureCubeLod(u_CubeMap, modifiedR + parallax, ROUGHNESS_MIPS * roughness).rgb * u_EnableTextures.w;
 
-    #if defined(USE_PBR)
 	cubeLightColor *= cubeLightColor;
-    #endif
 
 	gl_FragColor.rgb += cubeLightColor * reflectance;
   #endif
@@ -605,9 +556,7 @@ void main()
 	gl_FragColor.rgb += lightColor * reflectance * NL2;
   #endif
 
-  #if defined(USE_PBR)
 	gl_FragColor.rgb = sqrt(gl_FragColor.rgb);
-  #endif
 
 #else
 

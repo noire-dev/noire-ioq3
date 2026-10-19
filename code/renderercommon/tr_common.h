@@ -87,17 +87,12 @@ extern cvar_t* r_resolution;
 extern cvar_t* r_noborder;
 extern cvar_t* r_fullscreen;
 extern cvar_t* r_ignorehwgamma;  // overrides hardware gamma capabilities
-extern cvar_t* r_drawBuffer;
 extern cvar_t* r_swapInterval;
 
-extern cvar_t* r_allowExtensions;          // global enable/disable of OpenGL extensions
-extern cvar_t* r_ext_compressed_textures;  // these control use of specific extensions
 extern cvar_t* r_ext_multitexture;
 
 extern cvar_t* r_ext_texture_filter_anisotropic;
 extern cvar_t* r_ext_max_anisotropy;
-
-extern cvar_t* r_saveFontData;
 
 float R_NoiseGet4f(float x, float y, float z, double t);
 void R_NoiseInit(void);
@@ -138,7 +133,6 @@ void GLimp_Init(bool fixedFunction);
 void GLimp_Shutdown(void);
 void GLimp_EndFrame(void);
 
-void GLimp_LogComment(char* comment);
 void GLimp_Minimize(void);
 
 void GLimp_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);

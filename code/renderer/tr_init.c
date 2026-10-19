@@ -41,64 +41,27 @@ static void GfxMemInfo_f(void);
 cvar_t* com_altivec;
 #endif
 
-cvar_t* r_railWidth;
-cvar_t* r_railCoreWidth;
-cvar_t* r_railSegmentLength;
-
-cvar_t* r_verbose;
 cvar_t* r_ignore;
-
-cvar_t* r_displayRefresh;
-
-cvar_t* r_detailTextures;
-
-cvar_t* r_znear;
-cvar_t* r_zproj;
-
-cvar_t* r_skipBackEnd;
 
 cvar_t* r_ignorehwgamma;
 
-cvar_t* r_inGameVideo;
-cvar_t* r_fastsky;
-cvar_t* r_drawSun;
 cvar_t* r_dynamiclight;
-cvar_t* r_dlightBacks;
 
 cvar_t* r_lodbias;
-cvar_t* r_lodscale;
 
-cvar_t* r_norefresh;
-cvar_t* r_drawentities;
-cvar_t* r_drawworld;
 cvar_t* r_speeds;
-cvar_t* r_fullbright;
-cvar_t* r_novis;
-cvar_t* r_nocull;
-cvar_t* r_facePlaneCull;
-cvar_t* r_showcluster;
-cvar_t* r_nocurves;
 
-cvar_t* r_allowExtensions;
-
-cvar_t* r_ext_compressed_textures;
 cvar_t* r_ext_texture_filter_anisotropic;
 cvar_t* r_ext_max_anisotropy;
 
-cvar_t* r_ext_framebuffer_object;
-cvar_t* r_ext_texture_float;
 cvar_t* r_ext_framebuffer_multisample;
-cvar_t* r_arb_seamless_cube_map;
-cvar_t* r_ext_direct_state_access;
 
 cvar_t* r_cameraExposure;
 
 cvar_t* r_externalGLSL;
 
-cvar_t* r_hdr;
 cvar_t* r_postProcess;
 
-cvar_t* r_toneMap;
 cvar_t* r_toneMapMin;
 cvar_t* r_toneMapAvg;
 cvar_t* r_toneMapMax;
@@ -107,13 +70,7 @@ cvar_t* r_autoExposure;
 cvar_t* r_autoExposureMin;
 cvar_t* r_autoExposureMax;
 
-cvar_t* r_dlightMode;
-
-cvar_t* r_normalMapping;
-cvar_t* r_specularMapping;
-cvar_t* r_deluxeMapping;
 cvar_t* r_parallaxMapping;
-cvar_t* r_parallaxMapOffset;
 cvar_t* r_parallaxMapShadows;
 cvar_t* r_reflections;
 cvar_t* r_reflectionsResolution;
@@ -121,14 +78,10 @@ cvar_t* r_reflectionsGrid;
 cvar_t* r_reflectionsEnd;
 cvar_t* r_reflectionsDetail;
 cvar_t* r_deluxeSpecular;
-cvar_t* r_pbr;
 cvar_t* r_detailLevel;
-cvar_t* r_baseNormalX;
-cvar_t* r_baseNormalY;
 cvar_t* r_baseParallax;
 cvar_t* r_baseSpecular;
 cvar_t* r_baseGloss;
-cvar_t* r_glossType;
 cvar_t* r_sunShadows;
 cvar_t* r_sunShadowLightScale;
 cvar_t* r_sunShadowAmbientScale;
@@ -137,7 +90,6 @@ cvar_t* r_shadowMapSize;
 cvar_t* r_shadowCascadeZNear;
 cvar_t* r_shadowCascadeZFar;
 cvar_t* r_shadowCascadeZBias;
-cvar_t* r_ignoreDstAlpha;
 
 cvar_t* r_fogDensity;
 cvar_t* r_fogColorR;
@@ -146,32 +98,15 @@ cvar_t* r_fogColorB;
 cvar_t* r_fogStart;
 cvar_t* r_fogEnd;
 
-cvar_t* r_ignoreGLErrors;
-cvar_t* r_logFile;
-
-cvar_t* r_drawBuffer;
-cvar_t* r_lightmap;
-cvar_t* r_uiFullScreen;
 cvar_t* r_resolution;
-cvar_t* r_nobind;
-cvar_t* r_singleShader;
-cvar_t* r_roundImagesDown;
-cvar_t* r_colorMipLevels;
 cvar_t* r_picmip;
 cvar_t* r_showtris;
-cvar_t* r_showsky;
 cvar_t* r_swapInterval;
 cvar_t* r_textureMode;
-cvar_t* r_offsetFactor;
-cvar_t* r_offsetUnits;
 cvar_t* r_gamma;
-cvar_t* r_intensity;
 cvar_t* r_lockpvs;
-cvar_t* r_noportals;
-cvar_t* r_portalOnly;
 
 cvar_t* r_subdivisions;
-cvar_t* r_lodCurveError;
 
 cvar_t* r_fullscreen;
 cvar_t* r_noborder;
@@ -179,15 +114,8 @@ cvar_t* r_noborder;
 cvar_t* r_ambientScale;
 cvar_t* r_directedScale;
 cvar_t* r_debugSort;
-cvar_t* r_printShaders;
-cvar_t* r_saveFontData;
 
-cvar_t* r_aviMotionJpegQuality;
-cvar_t* r_screenshotJpegQuality;
-
-cvar_t* r_maxpolys;
 int max_polys;
-cvar_t* r_maxpolyverts;
 int max_polyverts;
 
 /*
@@ -254,35 +182,6 @@ static void InitOpenGL(void) {
 
 	// set default state
 	GL_SetDefaultState();
-}
-
-/*
-==================
-GL_CheckErrors
-==================
-*/
-void GL_CheckErrs(char* file, int line) {
-	int err;
-	char s[64];
-
-	err = qglGetError();
-	if(err == GL_NO_ERROR) {
-		return;
-	}
-	if(r_ignoreGLErrors->integer) {
-		return;
-	}
-	switch(err) {
-		case GL_INVALID_ENUM: strcpy(s, "GL_INVALID_ENUM"); break;
-		case GL_INVALID_VALUE: strcpy(s, "GL_INVALID_VALUE"); break;
-		case GL_INVALID_OPERATION: strcpy(s, "GL_INVALID_OPERATION"); break;
-		case GL_STACK_OVERFLOW: strcpy(s, "GL_STACK_OVERFLOW"); break;
-		case GL_STACK_UNDERFLOW: strcpy(s, "GL_STACK_UNDERFLOW"); break;
-		case GL_OUT_OF_MEMORY: strcpy(s, "GL_OUT_OF_MEMORY"); break;
-		default: Com_sprintf(s, sizeof(s), "%i", err); break;
-	}
-
-	ri.Error(ERR_FATAL, "GL_CheckErrors: %s in %s at line %d", s, file, line);
 }
 
 /*
@@ -440,7 +339,7 @@ void RB_TakeScreenshotJPEG(int x, int y, int width, int height, char* fileName) 
 	// gamma correct
 	if(glConfig.deviceSupportsGamma) R_GammaCorrect(buffer + offset, memcount);
 
-	RE_SaveJPG(fileName, r_screenshotJpegQuality->integer, width, height, buffer + offset, padlen);
+	RE_SaveJPG(fileName, 100, width, height, buffer + offset, padlen);
 	ri.Hunk_FreeTempMemory(buffer);
 }
 
@@ -707,7 +606,7 @@ const void* RB_TakeVideoFrameCmd(const void* data) {
 			}
 		}
 
-		memcount = RE_SaveJPGToBuffer(cmd->encodeBuffer, avilinelen * cmd->height, r_aviMotionJpegQuality->integer, cmd->width, cmd->height, cBuf, padlen);
+		memcount = RE_SaveJPGToBuffer(cmd->encodeBuffer, avilinelen * cmd->height, 100, cmd->width, cmd->height, cBuf, padlen);
 		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, memcount);
 	} else {
 		byte *lineend, *memend;
@@ -785,7 +684,7 @@ void GL_SetDefaultState(void) {
 	if(glRefConfig.seamlessCubeMap) qglEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	// GL_POLYGON_OFFSET_FILL will be glEnable()d when this is used
-	qglPolygonOffset(r_offsetFactor->value, r_offsetUnits->value);
+	qglPolygonOffset(-1, -2);
 
 	qglClearColor(0.0f, 0.0f, 0.0f, 1.0f);  // FIXME: get color of sky
 }
@@ -908,39 +807,24 @@ void R_Register(void) {
 	com_altivec = ri.Cvar_Get("com_altivec", "1", CVAR_ARCHIVE);
 #endif
 
-	//
 	// latched and archived variables
-	//
-	r_allowExtensions = ri.Cvar_Get("r_allowExtensions", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_ext_compressed_textures = ri.Cvar_Get("r_ext_compressed_textures", "0", CVAR_ARCHIVE | CVAR_LATCH);
-
-	r_ext_framebuffer_object = ri.Cvar_Get("r_ext_framebuffer_object", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_ext_texture_float = ri.Cvar_Get("r_ext_texture_float", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ext_framebuffer_multisample = ri.Cvar_Get("r_ext_framebuffer_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_arb_seamless_cube_map = ri.Cvar_Get("r_arb_seamless_cube_map", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_ext_direct_state_access = ri.Cvar_Get("r_ext_direct_state_access", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
-	r_ext_texture_filter_anisotropic = ri.Cvar_Get("r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_ext_max_anisotropy = ri.Cvar_Get("r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH);
+	r_ext_texture_filter_anisotropic = ri.Cvar_Get("r_ext_texture_filter_anisotropic", "16", CVAR_ARCHIVE | CVAR_LATCH);
+	r_ext_max_anisotropy = ri.Cvar_Get("r_ext_max_anisotropy", "16", CVAR_ARCHIVE | CVAR_LATCH);
 
-	r_picmip = ri.Cvar_Get("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_roundImagesDown = ri.Cvar_Get("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_colorMipLevels = ri.Cvar_Get("r_colorMipLevels", "0", CVAR_LATCH);
+	r_picmip = ri.Cvar_Get("r_picmip", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	ri.Cvar_CheckRange(r_picmip, 0, 16, true);
-	r_detailTextures = ri.Cvar_Get("r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ignorehwgamma = ri.Cvar_Get("r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_resolution = ri.Cvar_Get("r_resolution", "640x480", CVAR_ARCHIVE | CVAR_LATCH);
 	r_fullscreen = ri.Cvar_Get("r_fullscreen", "2", CVAR_ARCHIVE);
 	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_uiFullScreen = ri.Cvar_Get("r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
 
 	r_externalGLSL = ri.Cvar_Get("r_externalGLSL", "0", CVAR_LATCH);
 
-	r_hdr = ri.Cvar_Get("r_hdr", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_postProcess = ri.Cvar_Get("r_postProcess", "1", CVAR_ARCHIVE);
 
-	r_toneMap = ri.Cvar_Get("r_toneMap", "1", CVAR_CHEAT);
 	r_toneMapMin = ri.Cvar_Get("r_toneMapMin", "-8.00", CVAR_CHEAT);
 	r_toneMapAvg = ri.Cvar_Get("r_toneMapAvg", "-2.48", CVAR_CHEAT);
 	r_toneMapMax = ri.Cvar_Get("r_toneMapMax", "-1.00", CVAR_CHEAT);
@@ -949,33 +833,23 @@ void R_Register(void) {
 	r_autoExposureMin = ri.Cvar_Get("r_autoExposureMin", "-2.0", CVAR_CHEAT);
 	r_autoExposureMax = ri.Cvar_Get("r_autoExposureMax", "2.0", CVAR_CHEAT);
 
-	r_cameraExposure = ri.Cvar_Get("r_cameraExposure", "1", CVAR_CHEAT);
+	r_cameraExposure = ri.Cvar_Get("r_cameraExposure", "1.08", CVAR_CHEAT);
 
-	r_dlightMode = ri.Cvar_Get("r_dlightMode", "1", CVAR_LATCH | CVAR_ARCHIVE);
-
-	r_normalMapping = ri.Cvar_Get("r_normalMapping", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_specularMapping = ri.Cvar_Get("r_specularMapping", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_deluxeMapping = ri.Cvar_Get("r_deluxeMapping", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_parallaxMapping = ri.Cvar_Get("r_parallaxMapping", "2", CVAR_ARCHIVE | CVAR_LATCH);
-	r_parallaxMapOffset = ri.Cvar_Get("r_parallaxMapOffset", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_parallaxMapShadows = ri.Cvar_Get("r_parallaxMapShadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
-	r_reflections = ri.Cvar_Get("r_reflections", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflections = ri.Cvar_Get("r_reflections", "3", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsResolution = ri.Cvar_Get("r_reflectionsResolution", "1024", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsGrid = ri.Cvar_Get("r_reflectionsGrid", "64", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsEnd = ri.Cvar_Get("r_reflectionsEnd", "16384", CVAR_ARCHIVE);
 	r_reflectionsDetail = ri.Cvar_Get("r_reflectionsDetail", "5", CVAR_ARCHIVE);
 
 	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.3", CVAR_ARCHIVE | CVAR_LATCH);
-	r_pbr = ri.Cvar_Get("r_pbr", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_detailLevel = ri.Cvar_Get("r_detailLevel", "5", CVAR_ARCHIVE);
 	ri.Cvar_CheckRange(r_detailLevel, 0, 5, true);
-	r_baseNormalX = ri.Cvar_Get("r_baseNormalX", "2.0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_baseNormalY = ri.Cvar_Get("r_baseNormalY", "2.0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_baseParallax = ri.Cvar_Get("r_baseParallax", "0.05", CVAR_ARCHIVE | CVAR_LATCH);
 	r_baseSpecular = ri.Cvar_Get("r_baseSpecular", "0.04", CVAR_ARCHIVE | CVAR_LATCH);
 	r_baseGloss = ri.Cvar_Get("r_baseGloss", "0.02", CVAR_ARCHIVE | CVAR_LATCH);
-	r_glossType = ri.Cvar_Get("r_glossType", "0", CVAR_ARCHIVE | CVAR_LATCH);
 
 	r_sunShadows = ri.Cvar_Get("r_sunShadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_sunShadowLightScale = ri.Cvar_Get("r_sunShadowLightScale", "1.00", CVAR_ARCHIVE);
@@ -985,7 +859,6 @@ void R_Register(void) {
 	r_shadowCascadeZNear = ri.Cvar_Get("r_shadowCascadeZNear", "8", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowCascadeZFar = ri.Cvar_Get("r_shadowCascadeZFar", "1024", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowCascadeZBias = ri.Cvar_Get("r_shadowCascadeZBias", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_ignoreDstAlpha = ri.Cvar_Get("r_ignoreDstAlpha", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
 	r_fogDensity = ri.Cvar_Get("r_fogDensity", "1.0", CVAR_ARCHIVE);
 	r_fogColorR = ri.Cvar_Get("r_fogColorR", "0.5", CVAR_ARCHIVE);
@@ -995,28 +868,10 @@ void R_Register(void) {
 	r_fogEnd = ri.Cvar_Get("r_fogEnd", "65536", CVAR_ARCHIVE);
 
 	//
-	// temporary latched variables that can only change over a restart
-	//
-	r_displayRefresh = ri.Cvar_Get("r_displayRefresh", "0", CVAR_LATCH);
-	ri.Cvar_CheckRange(r_displayRefresh, 0, 999, true);
-	r_fullbright = ri.Cvar_Get("r_fullbright", "0", CVAR_LATCH | CVAR_CHEAT);
-	r_intensity = ri.Cvar_Get("r_intensity", "1", CVAR_LATCH);
-	r_singleShader = ri.Cvar_Get("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH);
-
-	//
 	// archived variables that can change at any time
 	//
-	r_lodCurveError = ri.Cvar_Get("r_lodCurveError", "250", CVAR_ARCHIVE | CVAR_CHEAT);
 	r_lodbias = ri.Cvar_Get("r_lodbias", "0", CVAR_ARCHIVE);
-	r_znear = ri.Cvar_Get("r_znear", "4", CVAR_CHEAT);
-	ri.Cvar_CheckRange(r_znear, 0.001f, 200, false);
-	r_zproj = ri.Cvar_Get("r_zproj", "64", CVAR_ARCHIVE);
-	r_ignoreGLErrors = ri.Cvar_Get("r_ignoreGLErrors", "1", CVAR_ARCHIVE);
-	r_fastsky = ri.Cvar_Get("r_fastsky", "0", CVAR_ARCHIVE);
-	r_inGameVideo = ri.Cvar_Get("r_inGameVideo", "1", CVAR_ARCHIVE);
-	r_drawSun = ri.Cvar_Get("r_drawSun", "0", CVAR_ARCHIVE);
-	r_dynamiclight = ri.Cvar_Get("r_dynamiclight", "1", CVAR_ARCHIVE);
-	r_dlightBacks = ri.Cvar_Get("r_dlightBacks", "1", CVAR_ARCHIVE);
+	r_dynamiclight = ri.Cvar_Get("r_dynamiclight", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_textureMode = ri.Cvar_Get("r_textureMode", "GL_LINEAR_MIPMAP_LINEAR", CVAR_ARCHIVE);
 #ifdef __EMSCRIPTEN__
 	// Under Emscripten we don't throttle framerate with com_maxfps by default, so enable
@@ -1026,54 +881,16 @@ void R_Register(void) {
 	r_swapInterval = ri.Cvar_Get("r_swapInterval", "0", CVAR_ARCHIVE | CVAR_LATCH);
 #endif
 	r_gamma = ri.Cvar_Get("r_gamma", "1", CVAR_ARCHIVE);
-	r_facePlaneCull = ri.Cvar_Get("r_facePlaneCull", "1", CVAR_ARCHIVE);
 
-	r_railWidth = ri.Cvar_Get("r_railWidth", "16", CVAR_ARCHIVE);
-	r_railCoreWidth = ri.Cvar_Get("r_railCoreWidth", "6", CVAR_ARCHIVE);
-	r_railSegmentLength = ri.Cvar_Get("r_railSegmentLength", "32", CVAR_ARCHIVE);
+	r_ambientScale = ri.Cvar_Get("r_ambientScale", "0.32", CVAR_CHEAT);
+	r_directedScale = ri.Cvar_Get("r_directedScale", "0.72", CVAR_CHEAT);
 
-	r_ambientScale = ri.Cvar_Get("r_ambientScale", "0.6", CVAR_CHEAT);
-	r_directedScale = ri.Cvar_Get("r_directedScale", "1", CVAR_CHEAT);
-
-	//
 	// temporary variables that can change at any time
-	//
-
 	r_debugSort = ri.Cvar_Get("r_debugSort", "0", CVAR_CHEAT);
-	r_printShaders = ri.Cvar_Get("r_printShaders", "0", 0);
-	r_saveFontData = ri.Cvar_Get("r_saveFontData", "0", 0);
-
-	r_nocurves = ri.Cvar_Get("r_nocurves", "0", CVAR_CHEAT);
-	r_drawworld = ri.Cvar_Get("r_drawworld", "1", CVAR_CHEAT);
-	r_lightmap = ri.Cvar_Get("r_lightmap", "0", 0);
-	r_portalOnly = ri.Cvar_Get("r_portalOnly", "0", CVAR_CHEAT);
-
-	r_skipBackEnd = ri.Cvar_Get("r_skipBackEnd", "0", CVAR_CHEAT);
-
-	r_lodscale = ri.Cvar_Get("r_lodscale", "5", CVAR_CHEAT);
-	r_norefresh = ri.Cvar_Get("r_norefresh", "0", CVAR_CHEAT);
-	r_drawentities = ri.Cvar_Get("r_drawentities", "1", CVAR_CHEAT);
 	r_ignore = ri.Cvar_Get("r_ignore", "1", CVAR_CHEAT);
-	r_nocull = ri.Cvar_Get("r_nocull", "0", CVAR_CHEAT);
-	r_novis = ri.Cvar_Get("r_novis", "0", CVAR_CHEAT);
-	r_showcluster = ri.Cvar_Get("r_showcluster", "0", CVAR_CHEAT);
 	r_speeds = ri.Cvar_Get("r_speeds", "0", CVAR_CHEAT);
-	r_verbose = ri.Cvar_Get("r_verbose", "0", CVAR_CHEAT);
-	r_logFile = ri.Cvar_Get("r_logFile", "0", CVAR_CHEAT);
-	r_nobind = ri.Cvar_Get("r_nobind", "0", CVAR_CHEAT);
 	r_showtris = ri.Cvar_Get("r_showtris", "0", CVAR_CHEAT);
-	r_showsky = ri.Cvar_Get("r_showsky", "0", CVAR_CHEAT);
-	r_offsetFactor = ri.Cvar_Get("r_offsetfactor", "-1", CVAR_CHEAT);
-	r_offsetUnits = ri.Cvar_Get("r_offsetunits", "-2", CVAR_CHEAT);
-	r_drawBuffer = ri.Cvar_Get("r_drawBuffer", "GL_BACK", CVAR_CHEAT);
 	r_lockpvs = ri.Cvar_Get("r_lockpvs", "0", CVAR_CHEAT);
-	r_noportals = ri.Cvar_Get("r_noportals", "0", CVAR_CHEAT);
-
-	r_aviMotionJpegQuality = ri.Cvar_Get("r_aviMotionJpegQuality", "90", CVAR_ARCHIVE);
-	r_screenshotJpegQuality = ri.Cvar_Get("r_screenshotJpegQuality", "90", CVAR_ARCHIVE);
-
-	r_maxpolys = ri.Cvar_Get("r_maxpolys", va("%d", MAX_POLYS), 0);
-	r_maxpolyverts = ri.Cvar_Get("r_maxpolyverts", va("%d", MAX_POLYVERTS), 0);
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
@@ -1148,11 +965,8 @@ void R_Init(void) {
 
 	R_Register();
 
-	max_polys = r_maxpolys->integer;
-	if(max_polys < MAX_POLYS) max_polys = MAX_POLYS;
-
-	max_polyverts = r_maxpolyverts->integer;
-	if(max_polyverts < MAX_POLYVERTS) max_polyverts = MAX_POLYVERTS;
+	max_polys = MAX_POLYS;
+	max_polyverts = MAX_POLYVERTS;
 
 	ptr = ri.Hunk_Alloc(sizeof(*backEndData) + sizeof(srfPoly_t) * max_polys + sizeof(polyVert_t) * max_polyverts, h_low);
 	backEndData = (backEndData_t*)ptr;

@@ -21,11 +21,9 @@ attribute vec4 attr_BoneWeights;
 attribute vec3 attr_LightDirection;
 #endif
 
-#if defined(USE_DELUXEMAP)
 uniform vec4   u_EnableTextures; // x = normal, y = deluxe, z = specular, w = cube
-#endif
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
 uniform vec3   u_ViewOrigin;
 #endif
 
@@ -76,17 +74,17 @@ uniform float u_PrimaryLightRadius;
 varying vec4   var_TexCoords;
 
 varying vec4   var_Color;
-#if defined(USE_LIGHT_VECTOR) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT_VECTOR)
 varying vec4   var_ColorAmbient;
 #endif
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
 varying vec4   var_Normal;
 varying vec4   var_Tangent;
 varying vec4   var_Bitangent;
 #endif
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
 varying vec4   var_LightDir;
 #endif
 
@@ -172,7 +170,7 @@ void main()
 #if defined(USE_VERTEX_ANIMATION)
 	vec3 position  = mix(attr_Position,    attr_Position2,    u_VertexLerp);
 	vec3 normal    = mix(attr_Normal,      attr_Normal2,      u_VertexLerp);
-  #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+  #if defined(USE_LIGHT)
 	vec3 tangent   = mix(attr_Tangent.xyz, attr_Tangent2.xyz, u_VertexLerp);
   #endif
 #elif defined(USE_BONE_ANIMATION)
@@ -184,13 +182,13 @@ void main()
 
 	vec3 position  = vec3(vtxMat * vec4(attr_Position, 1.0));
 	vec3 normal    = normalize(nrmMat * attr_Normal);
-  #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+  #if defined(USE_LIGHT)
 	vec3 tangent   = normalize(nrmMat * attr_Tangent.xyz);
   #endif
 #else
 	vec3 position  = attr_Position;
 	vec3 normal    = attr_Normal;
-  #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+  #if defined(USE_LIGHT)
 	vec3 tangent   = attr_Tangent.xyz;
   #endif
 #endif
@@ -221,7 +219,7 @@ void main()
 #if defined(USE_MODELMATRIX)
 	position  = (u_ModelMatrix * vec4(position, 1.0)).xyz;
 	normal    = (u_ModelMatrix * vec4(normal,   0.0)).xyz;
-  #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+  #if defined(USE_LIGHT)
 	tangent   = (u_ModelMatrix * vec4(tangent,  0.0)).xyz;
   #endif
 #endif
@@ -230,13 +228,13 @@ void main()
     var_WorldPosition = position;
 #endif
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
 	vec3 bitangent = cross(normal, tangent) * attr_Tangent.w;
 #endif
 
 #if defined(USE_LIGHT_VECTOR)
 	vec3 L = u_LightOrigin.xyz - (position * u_LightOrigin.w);
-#elif defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#elif defined(USE_LIGHT)
 	vec3 L = attr_LightDirection;
   #if defined(USE_MODELMATRIX)
 	L = (u_ModelMatrix * vec4(L, 0.0)).xyz;
@@ -250,22 +248,12 @@ void main()
 	var_Color = u_VertColor * attr_Color + u_BaseColor;
 
 #if defined(USE_LIGHT_VECTOR)
-  #if defined(USE_FAST_LIGHT)
-	float sqrLightDist = dot(L, L);
-	float NL = clamp(dot(normalize(normal), L) / sqrt(sqrLightDist), 0.0, 1.0);
-	float attenuation = CalcLightAttenuation(u_LightOrigin.w, u_LightRadius * u_LightRadius / sqrLightDist);
-
-	var_Color.rgb *= u_DirectedLight * (attenuation * NL) + u_AmbientLight;
-  #else
 	var_ColorAmbient.rgb = u_AmbientLight * var_Color.rgb;
 	var_Color.rgb *= u_DirectedLight;
-    #if defined(USE_PBR)
 	var_ColorAmbient.rgb *= var_ColorAmbient.rgb;
-    #endif
-  #endif
 #endif
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT) && defined(USE_PBR)
+#if defined(USE_LIGHT)
 	var_Color.rgb *= var_Color.rgb;
 #endif
 
@@ -274,18 +262,16 @@ void main()
 	var_PrimaryLightDir.w = u_PrimaryLightRadius * u_PrimaryLightRadius;
 #endif
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
   #if defined(USE_LIGHT_VECTOR)
 	var_LightDir = vec4(L, u_LightRadius * u_LightRadius);
   #else
 	var_LightDir = vec4(L, 0.0);
   #endif
-  #if defined(USE_DELUXEMAP)
 	var_LightDir -= u_EnableTextures.y * var_LightDir;
-  #endif
 #endif
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+#if defined(USE_LIGHT)
 	vec3 viewDir = u_ViewOrigin - position;
 	// store view direction in tangent space to save on varyings
 	var_Normal    = vec4(normal,    viewDir.x);

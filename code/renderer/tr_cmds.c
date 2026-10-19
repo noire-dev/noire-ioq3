@@ -76,11 +76,8 @@ void R_IssueRenderCommands(bool runPerformanceCounters) {
 		R_PerformanceCounters();
 	}
 
-	// actually start the commands going
-	if(!r_skipBackEnd->integer) {
-		// let it start on the new batch
-		RB_ExecuteRenderCommands(cmdList->cmds);
-	}
+	// let it start on the new batch
+	RB_ExecuteRenderCommands(cmdList->cmds);
 }
 
 /*
@@ -265,23 +262,11 @@ void RE_BeginFrame(void) {
 		R_SetColorMappings();
 	}
 
-	// check for errors
-	if(!r_ignoreGLErrors->integer) {
-		int err;
-
-		R_IssuePendingRenderCommands();
-		if((err = qglGetError()) != GL_NO_ERROR) ri.Error(ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!", err);
-	}
-
 	if(!(cmd = R_GetCommandBuffer(sizeof(*cmd)))) return;
 
 	if(cmd) {
 		cmd->commandId = RC_DRAW_BUFFER;
-
-		if(!Q_stricmp(r_drawBuffer->string, "GL_FRONT"))
-			cmd->buffer = (int)GL_FRONT;
-		else
-			cmd->buffer = (int)GL_BACK;
+		cmd->buffer = (int)GL_BACK;
 	}
 }
 

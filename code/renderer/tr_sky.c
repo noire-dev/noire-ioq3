@@ -666,8 +666,6 @@ void RB_DrawSun(float scale, shader_t* shader) {
 		return;
 	}
 
-	// qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
-	// qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
 	{
 		// FIXME: this could be a lot cleaner
 		mat4_t translation, modelview;
@@ -710,23 +708,12 @@ Other things could be stuck in here, like birds in the sky, etc
 ================
 */
 void RB_StageIteratorSky(void) {
-	if(r_fastsky->integer) {
-		return;
-	}
-
 	// go through all the polygons and project them onto
 	// the sky box to see which blocks on each side need
 	// to be drawn
 	RB_ClipSkyPolygons(&tess);
 
-	// r_showsky will let all the sky blocks be drawn in
-	// front of everything to allow developers to see how
-	// much sky is getting sucked in
-	if(r_showsky->integer) {
-		qglDepthRange(0.0, 0.0);
-	} else {
-		qglDepthRange(1.0, 1.0);
-	}
+	qglDepthRange(1.0, 1.0);
 
 	// draw the outer skybox
 	if(tess.shader->sky.outerbox[0] && tess.shader->sky.outerbox[0] != tr.defaultImage) {

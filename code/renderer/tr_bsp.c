@@ -82,7 +82,6 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 	byte* image;
 	int i, j, numLightmaps, textureInternalFormat = 0;
 	int numLightmapsPerPage = 16;
-	float maxIntensity = 0;
 
 	len = l->filelen;
 	if(!len) {
@@ -135,13 +134,6 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 	if(tr.worldDeluxeMapping) tr.deluxemaps = ri.Hunk_Alloc(tr.numLightmaps * sizeof(image_t*), h_low);
 
 	textureInternalFormat = GL_RGBA8;
-	if(r_hdr->integer && !qglesMajorVersion) {
-		// Check for the first hdr lightmap, if it exists, use GL_RGBA16 for textures.
-		char filename[MAX_QPATH];
-
-		Com_sprintf(filename, sizeof(filename), "maps/%s/lm_0000.hdr", s_worldData.baseName);
-		if(ri.FS_FileExists(filename)) textureInternalFormat = GL_RGBA16;
-	}
 
 	int width = tr.fatLightmapCols * tr.lightmapSize;
 	int height = tr.fatLightmapRows * tr.lightmapSize;
@@ -279,10 +271,6 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 		}
 	}
 
-	if(r_lightmap->integer == 2) {
-		ri.Printf(PRINT_ALL, "Brightest lightmap value: %d\n", (int)(maxIntensity * 255));
-	}
-
 	ri.Free(image);
 }
 
@@ -381,10 +369,6 @@ static shader_t* ShaderForShaderNum(int shaderNum, int lightmapNum) {
 	}
 	dsh = &s_worldData.shaders[_shaderNum];
 
-	if(r_fullbright->integer) {
-		lightmapNum = LIGHTMAP_WHITEIMAGE;
-	}
-
 	shader = R_FindShaderEx(dsh->shader, FatLightmap(lightmapNum), true, lightmapNum);
 
 	// if the shader had errors, just use default shader
@@ -427,15 +411,9 @@ void LoadDrawVertToSrfVert(srfVert_t* s, drawVert_t* d, int realLightmapNum, flo
 		v[2] = hdrVertColors[2];
 	} else {
 		// hack: convert LDR vertex colors to HDR
-		if(r_hdr->integer) {
-			v[0] = MAX(d->color[0], 0.499f);
-			v[1] = MAX(d->color[1], 0.499f);
-			v[2] = MAX(d->color[2], 0.499f);
-		} else {
-			v[0] = d->color[0];
-			v[1] = d->color[1];
-			v[2] = d->color[2];
-		}
+		v[0] = MAX(d->color[0], 0.499f);
+		v[1] = MAX(d->color[1], 0.499f);
+		v[2] = MAX(d->color[2], 0.499f);
 	}
 	v[3] = d->color[3] / 255.0f;
 
@@ -461,9 +439,6 @@ static void ParseFace(dsurface_t* ds, drawVert_t* verts, float* hdrVertColors, m
 
 	// get shader value
 	surf->shader = ShaderForShaderNum(ds->shaderNum, realLightmapNum);
-	if(r_singleShader->integer && !surf->shader->isSky) {
-		surf->shader = tr.defaultShader;
-	}
 
 	numVerts = LittleLong(ds->numVerts);
 	if(numVerts > MAX_FACE_POINTS) {
@@ -560,9 +535,6 @@ static void ParseMesh(dsurface_t* ds, drawVert_t* verts, float* hdrVertColors, m
 
 	// get shader value
 	surf->shader = ShaderForShaderNum(ds->shaderNum, realLightmapNum);
-	if(r_singleShader->integer && !surf->shader->isSky) {
-		surf->shader = tr.defaultShader;
-	}
 
 	// we may have a nodraw surface, because they might still need to
 	// be around for movement clipping
@@ -618,9 +590,6 @@ static void ParseTriSurf(dsurface_t* ds, drawVert_t* verts, float* hdrVertColors
 
 	// get shader
 	surf->shader = ShaderForShaderNum(ds->shaderNum, LIGHTMAP_BY_VERTEX);
-	if(r_singleShader->integer && !surf->shader->isSky) {
-		surf->shader = tr.defaultShader;
-	}
 
 	numVerts = LittleLong(ds->numVerts);
 	numIndexes = LittleLong(ds->numIndexes);
@@ -694,9 +663,6 @@ static void ParseFlare(dsurface_t* ds, drawVert_t* verts, msurface_t* surf, int*
 
 	// get shader
 	surf->shader = ShaderForShaderNum(ds->shaderNum, LIGHTMAP_BY_VERTEX);
-	if(r_singleShader->integer && !surf->shader->isSky) {
-		surf->shader = tr.defaultShader;
-	}
 
 	flare = (void*)surf->data;
 	flare->surfaceType = SF_SKIP;
@@ -1451,22 +1417,6 @@ static void R_LoadSurfaces(lump_t* surfs, lump_t* verts, lump_t* indexLump) {
 	s_worldData.surfacesViewCount = ri.Hunk_Alloc(count * sizeof(*s_worldData.surfacesViewCount), h_low);
 	s_worldData.surfacesDlightBits = ri.Hunk_Alloc(count * sizeof(*s_worldData.surfacesDlightBits), h_low);
 
-	// load hdr vertex colors
-	if(r_hdr->integer) {
-		char filename[MAX_QPATH];
-		int size;
-
-		Com_sprintf(filename, sizeof(filename), "maps/%s/vertlight.raw", s_worldData.baseName);
-		// ri.Printf(PRINT_ALL, "looking for %s\n", filename);
-
-		size = ri.FS_ReadFile(filename, (void**)&hdrVertColors);
-
-		if(hdrVertColors) {
-			// ri.Printf(PRINT_ALL, "Found!\n");
-			if(size != sizeof(float) * 3 * (verts->filelen / sizeof(*dv))) ri.Error(ERR_DROP, "Bad size for %s (%i, expected %i)!", filename, size, (int)((sizeof(float)) * 3 * (verts->filelen / sizeof(*dv))));
-		}
-	}
-
 	// Two passes, allocate surfaces first, then load them full of data
 	// This ensures surfaces are close together to reduce L2 cache misses when using VAOs,
 	// which don't actually use the verts and indexes
@@ -1929,58 +1879,6 @@ void R_LoadLightGrid(lump_t* l) {
 
 	w->lightGridData = ri.Hunk_Alloc(l->filelen, h_low);
 	Com_Memcpy(w->lightGridData, (void*)(fileBase + l->fileofs), l->filelen);
-
-	// load hdr lightgrid
-	if(r_hdr->integer) {
-		char filename[MAX_QPATH];
-		float* hdrLightGrid;
-		int size;
-
-		Com_sprintf(filename, sizeof(filename), "maps/%s/lightgrid.raw", s_worldData.baseName);
-		// ri.Printf(PRINT_ALL, "looking for %s\n", filename);
-
-		size = ri.FS_ReadFile(filename, (void**)&hdrLightGrid);
-
-		if(hdrLightGrid) {
-			// ri.Printf(PRINT_ALL, "found!\n");
-
-			if(size != sizeof(float) * 6 * numGridPoints) ri.Error(ERR_DROP, "Bad size for %s (%i, expected %i)!", filename, size, (int)(sizeof(float)) * 6 * numGridPoints);
-
-			w->lightGrid16 = ri.Hunk_Alloc(sizeof(w->lightGrid16) * 6 * numGridPoints, h_low);
-
-			for(i = 0; i < numGridPoints; i++) {
-				vec4_t c;
-
-				c[0] = hdrLightGrid[i * 6];
-				c[1] = hdrLightGrid[i * 6 + 1];
-				c[2] = hdrLightGrid[i * 6 + 2];
-				c[3] = 1.0f;
-
-				ColorToRGB16(c, &w->lightGrid16[i * 6]);
-
-				c[0] = hdrLightGrid[i * 6 + 3];
-				c[1] = hdrLightGrid[i * 6 + 4];
-				c[2] = hdrLightGrid[i * 6 + 5];
-				c[3] = 1.0f;
-
-				ColorToRGB16(c, &w->lightGrid16[i * 6 + 3]);
-			}
-		} else if(0) {
-			// promote 8-bit lightgrid to 16-bit
-			w->lightGrid16 = ri.Hunk_Alloc(sizeof(w->lightGrid16) * 6 * numGridPoints, h_low);
-
-			for(i = 0; i < numGridPoints; i++) {
-				w->lightGrid16[i * 6] = w->lightGridData[i * 8] * 257;
-				w->lightGrid16[i * 6 + 1] = w->lightGridData[i * 8 + 1] * 257;
-				w->lightGrid16[i * 6 + 2] = w->lightGridData[i * 8 + 2] * 257;
-				w->lightGrid16[i * 6 + 3] = w->lightGridData[i * 8 + 3] * 257;
-				w->lightGrid16[i * 6 + 4] = w->lightGridData[i * 8 + 4] * 257;
-				w->lightGrid16[i * 6 + 5] = w->lightGridData[i * 8 + 5] * 257;
-			}
-		}
-
-		if(hdrLightGrid) ri.FS_FreeFile(hdrLightGrid);
-	}
 }
 
 /*

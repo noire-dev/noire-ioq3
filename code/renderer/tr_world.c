@@ -30,22 +30,14 @@ added to the sorting list.
 ================
 */
 static bool R_CullSurface(msurface_t* surf) {
-	if(r_nocull->integer || surf->cullinfo.type == CULLINFO_NONE) {
+	if(surf->cullinfo.type == CULLINFO_NONE) {
 		return false;
-	}
-
-	if(r_nocurves->integer && *surf->data == SF_GRID) {
-		return true;
 	}
 
 	if(surf->cullinfo.type & CULLINFO_PLANE) {
 		// Only true for SF_FACE, so treat like its own function
 		float d;
 		cullType_t ct;
-
-		if(!r_facePlaneCull->integer) {
-			return false;
-		}
 
 		ct = surf->shader->cullType;
 
@@ -399,46 +391,44 @@ static void R_RecursiveWorldNode(mnode_t* node, uint32_t planeBits, uint32_t dli
 		/*
 		 * Normal view frustum culling.
 		 */
-		if(!r_nocull->integer) {
-			if(planeBits & 1) {
-				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[0]);
+		if(planeBits & 1) {
+			r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[0]);
 
-				if(r == 2) return;
+			if(r == 2) return;
 
-				if(r == 1) planeBits &= ~1;
-			}
+			if(r == 1) planeBits &= ~1;
+		}
 
-			if(planeBits & 2) {
-				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[1]);
+		if(planeBits & 2) {
+			r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[1]);
 
-				if(r == 2) return;
+			if(r == 2) return;
 
-				if(r == 1) planeBits &= ~2;
-			}
+			if(r == 1) planeBits &= ~2;
+		}
 
-			if(planeBits & 4) {
-				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[2]);
+		if(planeBits & 4) {
+			r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[2]);
 
-				if(r == 2) return;
+			if(r == 2) return;
 
-				if(r == 1) planeBits &= ~4;
-			}
+			if(r == 1) planeBits &= ~4;
+		}
 
-			if(planeBits & 8) {
-				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[3]);
+		if(planeBits & 8) {
+			r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[3]);
 
-				if(r == 2) return;
+			if(r == 2) return;
 
-				if(r == 1) planeBits &= ~8;
-			}
+			if(r == 1) planeBits &= ~8;
+		}
 
-			if(planeBits & 16) {
-				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[4]);
+		if(planeBits & 16) {
+			r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[4]);
 
-				if(r == 2) return;
+			if(r == 2) return;
 
-				if(r == 1) planeBits &= ~16;
-			}
+			if(r == 1) planeBits &= ~16;
 		}
 
 		/*
@@ -603,14 +593,11 @@ static void R_MarkLeaves(void) {
 	// hasn't changed, we don't need to mark everything again
 
 	for(i = 0; i < MAX_VISCOUNTS; i++) {
-		// if the areamask or r_showcluster was modified, invalidate all visclusters
+		// if the areamask was modified, invalidate all visclusters
 		// this caused doors to open into undrawn areas
-		if(tr.refdef.areamaskModified || r_showcluster->modified) {
+		if(tr.refdef.areamaskModified) {
 			tr.visClusters[i] = -2;
 		} else if(tr.visClusters[i] == cluster) {
-			if(tr.visClusters[i] != tr.visClusters[tr.visIndex] && r_showcluster->integer) {
-				ri.Printf(PRINT_ALL, "found cluster:%i  area:%i  index:%i\n", cluster, leaf->area, i);
-			}
 			tr.visIndex = i;
 			return;
 		}
@@ -619,13 +606,6 @@ static void R_MarkLeaves(void) {
 	tr.visIndex = (tr.visIndex + 1) % MAX_VISCOUNTS;
 	tr.visCounts[tr.visIndex]++;
 	tr.visClusters[tr.visIndex] = cluster;
-
-	if(r_showcluster->modified || r_showcluster->integer) {
-		r_showcluster->modified = false;
-		if(r_showcluster->integer) {
-			ri.Printf(PRINT_ALL, "cluster:%i  area:%i\n", cluster, leaf->area);
-		}
-	}
 
 	vis = R_ClusterPVS(tr.visClusters[tr.visIndex]);
 
@@ -662,13 +642,7 @@ R_AddWorldSurfaces
 void R_AddWorldSurfaces(void) {
 	uint32_t planeBits, dlightBits;
 
-	if(!r_drawworld->integer) {
-		return;
-	}
-
-	if(tr.refdef.rdflags & RDF_NOWORLDMODEL) {
-		return;
-	}
+	if(tr.refdef.rdflags & RDF_NOWORLDMODEL) return;
 
 	tr.currentEntityNum = REFENTITYNUM_WORLD;
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
@@ -680,9 +654,7 @@ void R_AddWorldSurfaces(void) {
 	ClearBounds(tr.viewParms.visBounds[0], tr.viewParms.visBounds[1]);
 
 	// perform frustum culling and flag all the potentially visible surfaces
-	if(tr.refdef.num_dlights > MAX_DLIGHTS) {
-		tr.refdef.num_dlights = MAX_DLIGHTS;
-	}
+	if(tr.refdef.num_dlights > MAX_DLIGHTS) tr.refdef.num_dlights = MAX_DLIGHTS;
 
 	planeBits = (tr.viewParms.flags & VPF_FARPLANEFRUSTUM) ? 31 : 15;
 

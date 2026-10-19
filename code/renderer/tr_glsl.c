@@ -378,8 +378,6 @@ static void GLSL_GetShaderHeader(GLenum shaderType, const GLchar* extra, char* d
 	fbufHeightScale = 1.0f / ((float)glConfig.vidHeight);
 	Q_strcat(dest, size, va("#ifndef r_FBufScale\n#define r_FBufScale vec2(%f, %f)\n#endif\n", fbufWidthScale, fbufHeightScale));
 
-	if(r_pbr->integer) Q_strcat(dest, size, "#define USE_PBR\n");
-
 	if(r_reflections->integer) {
 		int cubeMipSize = r_reflectionsResolution->integer;
 		int numRoughnessMips = 0;
@@ -638,10 +636,7 @@ void GLSL_InitUniforms(shaderProgram_t* program) {
 	program->uniformBuffer = ri.Malloc(size);
 }
 
-void GLSL_FinishGPUShader(shaderProgram_t* program) {
-	GLSL_ShowProgramUniforms(program->program);
-	GL_CheckErrors();
-}
+void GLSL_FinishGPUShader(shaderProgram_t* program) { GLSL_ShowProgramUniforms(program->program); }
 
 void GLSL_SetUniformInt(shaderProgram_t* program, int uniformNum, GLint value) {
 	GLint* uniforms = program->uniforms;
@@ -965,7 +960,6 @@ void GLSL_InitGPUShaders(void) {
 
 	for(i = 0; i < LIGHTDEF_COUNT; i++) {
 		int lightType = i & LIGHTDEF_LIGHTTYPE_MASK;
-		bool fastLight = !(r_normalMapping->integer || r_specularMapping->integer);
 
 		// skip impossible combos
 		if((i & LIGHTDEF_USE_PARALLAXMAP) && !r_parallaxMapping->integer) continue;
@@ -980,7 +974,7 @@ void GLSL_InitGPUShaders(void) {
 
 		extradefines[0] = '\0';
 
-		if(r_dlightMode->integer >= 2 && lightType == LIGHTDEF_USE_LIGHT_VECTOR) {
+		if(r_dynamiclight->integer >= 2 && lightType == LIGHTDEF_USE_LIGHT_VECTOR) {
 			Q_strcat(extradefines, 1024, "#define USE_DLIGHT_SHADOWMAP\n");
 		}
 
@@ -989,12 +983,9 @@ void GLSL_InitGPUShaders(void) {
 		if(lightType) {
 			Q_strcat(extradefines, 1024, "#define USE_LIGHT\n");
 
-			if(fastLight) Q_strcat(extradefines, 1024, "#define USE_FAST_LIGHT\n");
-
 			switch(lightType) {
 				case LIGHTDEF_USE_LIGHTMAP:
 					Q_strcat(extradefines, 1024, "#define USE_LIGHTMAP\n");
-					if(r_deluxeMapping->integer && !fastLight) Q_strcat(extradefines, 1024, "#define USE_DELUXEMAP\n");
 					attribs |= ATTR_LIGHTCOORD | ATTR_LIGHTDIRECTION;
 					break;
 				case LIGHTDEF_USE_LIGHT_VECTOR: Q_strcat(extradefines, 1024, "#define USE_LIGHT_VECTOR\n"); break;
@@ -1005,35 +996,18 @@ void GLSL_InitGPUShaders(void) {
 				default: break;
 			}
 
-			if(r_normalMapping->integer) {
-				Q_strcat(extradefines, 1024, "#define USE_NORMALMAP\n");
+			attribs |= ATTR_TANGENT;
 
-				attribs |= ATTR_TANGENT;
-
-				if((i & LIGHTDEF_USE_PARALLAXMAP) && !(i & LIGHTDEF_ENTITY_VERTEX_ANIMATION) && !(i & LIGHTDEF_ENTITY_BONE_ANIMATION) && r_parallaxMapping->integer) {
-					Q_strcat(extradefines, 1024, "#define USE_PARALLAXMAP\n");
-					if(r_parallaxMapping->integer > 1) Q_strcat(extradefines, 1024, "#define USE_RELIEFMAP\n");
-
-					if(r_parallaxMapShadows->integer) Q_strcat(extradefines, 1024, "#define USE_PARALLAXMAP_SHADOWS\n");
-
-					Q_strcat(extradefines, 1024, va("#define r_parallaxMapOffset %f\n", r_parallaxMapOffset->value));
-				}
+			if((i & LIGHTDEF_USE_PARALLAXMAP) && !(i & LIGHTDEF_ENTITY_VERTEX_ANIMATION) && !(i & LIGHTDEF_ENTITY_BONE_ANIMATION) && r_parallaxMapping->integer) {
+				Q_strcat(extradefines, 1024, "#define USE_PARALLAXMAP\n");
+				if(r_parallaxMapping->integer > 1) Q_strcat(extradefines, 1024, "#define USE_RELIEFMAP\n");
+				if(r_parallaxMapShadows->integer) Q_strcat(extradefines, 1024, "#define USE_PARALLAXMAP_SHADOWS\n");
 			}
-
-			if(r_specularMapping->integer) Q_strcat(extradefines, 1024, "#define USE_SPECULARMAP\n");
 
 			if(r_reflections->integer) {
 				Q_strcat(extradefines, 1024, "#define USE_CUBEMAP\n");
 			} else if(r_deluxeSpecular->value > 0.000001f) {
 				Q_strcat(extradefines, 1024, va("#define r_deluxeSpecular %f\n", r_deluxeSpecular->value));
-			}
-
-			switch(r_glossType->integer) {
-				case 0:
-				default: Q_strcat(extradefines, 1024, "#define GLOSS_IS_GLOSS\n"); break;
-				case 1: Q_strcat(extradefines, 1024, "#define GLOSS_IS_SMOOTHNESS\n"); break;
-				case 2: Q_strcat(extradefines, 1024, "#define GLOSS_IS_ROUGHNESS\n"); break;
-				case 3: Q_strcat(extradefines, 1024, "#define GLOSS_IS_SHININESS\n"); break;
 			}
 		}
 
@@ -1058,11 +1032,7 @@ void GLSL_InitGPUShaders(void) {
 
 			if(glRefConfig.gpuVertexAnimation) {
 				Q_strcat(extradefines, 1024, "#define USE_VERTEX_ANIMATION\n");
-				attribs |= ATTR_POSITION2 | ATTR_NORMAL2;
-
-				if(r_normalMapping->integer) {
-					attribs |= ATTR_TANGENT2;
-				}
+				attribs |= ATTR_POSITION2 | ATTR_NORMAL2 | ATTR_TANGENT2;
 			}
 		} else if(i & LIGHTDEF_ENTITY_BONE_ANIMATION) {
 			Q_strcat(extradefines, 1024, "#define USE_MODELMATRIX\n");
@@ -1320,12 +1290,6 @@ void GLSL_ShutdownGPUShaders(void) {
 
 void GLSL_BindProgram(shaderProgram_t* program) {
 	GLuint programObject = program ? program->program : 0;
-	char* name = program ? program->name : "NULL";
-
-	if(r_logFile->integer) {
-		// don't just call LogComment, or we will get a call to va() every frame!
-		GLimp_LogComment(va("--- GLSL_BindProgram( %s ) ---\n", name));
-	}
 
 	if(GL_UseProgram(programObject)) backEnd.pc.c_glslShaderBinds++;
 }

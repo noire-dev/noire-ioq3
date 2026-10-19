@@ -124,7 +124,7 @@ R_ComputeLOD
 */
 int R_ComputeLOD(trRefEntity_t* ent) {
 	float radius;
-	float flod, lodscale;
+	float flod;
 	float projectedRadius;
 	mdvFrame_t* frame;
 	int lod;
@@ -142,9 +142,7 @@ int R_ComputeLOD(trRefEntity_t* ent) {
 		radius = RadiusFromBounds(frame->bounds[0], frame->bounds[1]);
 
 		if((projectedRadius = ProjectRadius(radius, ent->e.origin)) != 0) {
-			lodscale = r_lodscale->value;
-			if(lodscale > 20) lodscale = 20;
-			flod = 1.0f - projectedRadius * lodscale;
+			flod = 1.0f - projectedRadius;
 		} else {
 			// object intersects near view plane, e.g. view weapon
 			flod = 0;

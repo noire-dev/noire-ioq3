@@ -134,8 +134,6 @@ vao_t* R_CreateVao(const char* name, byte* vertexes, int vertexesSize, byte* ind
 
 	glState.currentVao = vao;
 
-	GL_CheckErrors();
-
 	return vao;
 }
 
@@ -288,8 +286,6 @@ vao_t* R_CreateVao2(const char* name, int numVertexes, srfVert_t* verts, int num
 
 	glState.currentVao = vao;
 
-	GL_CheckErrors();
-
 	ri.Hunk_FreeTempMemory(data);
 
 	return vao;
@@ -305,11 +301,6 @@ void R_BindVao(vao_t* vao) {
 		// R_BindNullVao();
 		ri.Error(ERR_DROP, "R_BindVao: NULL vao");
 		return;
-	}
-
-	if(r_logFile->integer) {
-		// don't just call LogComment, or we will get a call to va() every frame!
-		GLimp_LogComment(va("--- R_BindVao( %s ) ---\n", vao->name));
 	}
 
 	if(glState.currentVao != vao) {
@@ -343,8 +334,6 @@ R_BindNullVao
 ============
 */
 void R_BindNullVao(void) {
-	GLimp_LogComment("--- R_BindNullVao ---\n");
-
 	if(glState.currentVao) {
 		if(glRefConfig.vertexArrayObject) {
 			qglBindVertexArray(0);
@@ -357,8 +346,6 @@ void R_BindNullVao(void) {
 		}
 		glState.currentVao = NULL;
 	}
-
-	GL_CheckErrors();
 }
 
 /*
@@ -456,8 +443,6 @@ void R_InitVaos(void) {
 	R_BindNullVao();
 
 	VaoCache_Init();
-
-	GL_CheckErrors();
 }
 
 /*
@@ -535,8 +520,6 @@ Update the default VAO to replace the client side vertex arrays
 ==============
 */
 void RB_UpdateTessVao(unsigned int attribBits) {
-	GLimp_LogComment("--- RB_UpdateTessVao ---\n");
-
 	backEnd.pc.c_dynamicVaoDraws++;
 
 	// update the default VAO

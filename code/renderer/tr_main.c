@@ -196,69 +196,10 @@ Returns CULL_IN, CULL_CLIP, or CULL_OUT
 =================
 */
 int R_CullLocalBox(vec3_t localBounds[2]) {
-#if 0
-	int		i, j;
-	vec3_t	transformed[8];
-	float	dists[8];
-	vec3_t	v;
-	cplane_t	*frust;
-	int			anyBack;
-	int			front, back;
-
-	if ( r_nocull->integer ) {
-		return CULL_CLIP;
-	}
-
-	// transform into world space
-	for (i = 0 ; i < 8 ; i++) {
-		v[0] = bounds[i&1][0];
-		v[1] = bounds[(i>>1)&1][1];
-		v[2] = bounds[(i>>2)&1][2];
-
-		VectorCopy( tr.or.origin, transformed[i] );
-		VectorMA( transformed[i], v[0], tr.or.axis[0], transformed[i] );
-		VectorMA( transformed[i], v[1], tr.or.axis[1], transformed[i] );
-		VectorMA( transformed[i], v[2], tr.or.axis[2], transformed[i] );
-	}
-
-	// check against frustum planes
-	anyBack = 0;
-	for (i = 0 ; i < 4 ; i++) {
-		frust = &tr.viewParms.frustum[i];
-
-		front = back = 0;
-		for (j = 0 ; j < 8 ; j++) {
-			dists[j] = DotProduct(transformed[j], frust->normal);
-			if ( dists[j] > frust->dist ) {
-				front = 1;
-				if ( back ) {
-					break;		// a point is in front
-				}
-			} else {
-				back = 1;
-			}
-		}
-		if ( !front ) {
-			// all points were behind one of the planes
-			return CULL_OUT;
-		}
-		anyBack |= back;
-	}
-
-	if ( !anyBack ) {
-		return CULL_IN;		// completely inside frustum
-	}
-
-	return CULL_CLIP;		// partially clipped
-#else
 	int j;
 	vec3_t transformed;
 	vec3_t v;
 	vec3_t worldBounds[2];
-
-	if(r_nocull->integer) {
-		return CULL_CLIP;
-	}
 
 	// transform into world space
 	ClearBounds(worldBounds[0], worldBounds[1]);
@@ -274,7 +215,6 @@ int R_CullLocalBox(vec3_t localBounds[2]) {
 	}
 
 	return R_CullBox(worldBounds);
-#endif
 }
 
 /*
@@ -336,10 +276,6 @@ int R_CullPointAndRadiusEx(const vec3_t pt, float radius, const cplane_t* frustu
 	float dist;
 	const cplane_t* frust;
 	bool mightBeClipped = false;
-
-	if(r_nocull->integer) {
-		return CULL_CLIP;
-	}
 
 	// check against frustum planes
 	for(i = 0; i < numPlanes; i++) {
@@ -729,7 +665,7 @@ Sets the z-component transformation part in the projection matrix
 void R_SetupProjectionZ(viewParms_t* dest) {
 	float zNear, zFar, depth;
 
-	zNear = r_znear->value;
+	zNear = 8.0f;
 	zFar = dest->zFar;
 
 	depth = zFar - zNear;
@@ -1197,10 +1133,6 @@ bool R_MirrorViewBySurface(drawSurf_t* drawSurf, int entityNum) {
 		return false;
 	}
 
-	if(r_noportals->integer || (r_fastsky->integer == 1)) {
-		return false;
-	}
-
 	// trivially reject portal/mirror
 	if(SurfIsOffscreen(drawSurf, clipDest)) {
 		return false;
@@ -1409,10 +1341,6 @@ void R_SortDrawSurfs(drawSurf_t* drawSurfs, int numDrawSurfs) {
 
 		// if the mirror was completely clipped away, we may need to check another surface
 		if(R_MirrorViewBySurface((drawSurfs + i), entityNum)) {
-			// this is a debug option to see exactly what is being mirrored
-			if(r_portalOnly->integer) {
-				return;
-			}
 			break;  // only one mirror view at a time
 		}
 	}
@@ -1493,10 +1421,6 @@ R_AddEntitySurfaces
 */
 void R_AddEntitySurfaces(void) {
 	int i;
-
-	if(!r_drawentities->integer) {
-		return;
-	}
 
 	for(i = 0; i < tr.refdef.num_entities; i++) R_AddEntitySurface(i);
 }
@@ -1591,7 +1515,7 @@ void R_RenderView(viewParms_t* parms) {
 	// set viewParms.world
 	R_RotateForViewer();
 
-	R_SetupProjection(&tr.viewParms, r_zproj->value, tr.viewParms.zFar, true);
+	R_SetupProjection(&tr.viewParms, 64, tr.viewParms.zFar, true);
 
 	R_GenerateDrawSurfs();
 
@@ -1721,22 +1645,16 @@ void R_RenderSunShadowMaps(const refdef_t* fd, int level) {
 	switch(level) {
 		case 0:
 		default:
-			// splitZNear = r_znear->value;
-			// splitZFar  = 256;
 			splitZNear = viewZNear;
 			splitZFar = CalcSplit(viewZNear, viewZFar, 1, 3) + splitBias;
 			break;
 		case 1:
 			splitZNear = CalcSplit(viewZNear, viewZFar, 1, 3) + splitBias;
 			splitZFar = CalcSplit(viewZNear, viewZFar, 2, 3) + splitBias;
-			// splitZNear = 256;
-			// splitZFar  = 896;
 			break;
 		case 2:
 			splitZNear = CalcSplit(viewZNear, viewZFar, 2, 3) + splitBias;
 			splitZFar = viewZFar;
-			// splitZNear = 896;
-			// splitZFar  = 3072;
 			break;
 	}
 

@@ -312,10 +312,10 @@ static void ResampleTexture(byte* in, int inwidth, int inheight, byte* out, int 
 	int i, j;
 	byte *inrow, *inrow2;
 	int frac, fracstep;
-	int p1[2048], p2[2048];
+	int p1[4096], p2[4096];
 	byte *pix1, *pix2, *pix3, *pix4;
 
-	if(outwidth > 2048) ri.Error(ERR_DROP, "ResampleTexture: max width");
+	if(outwidth > 4096) ri.Error(ERR_DROP, "ResampleTexture: max width");
 
 	fracstep = inwidth * 0x10000 / outwidth;
 
@@ -603,9 +603,6 @@ static bool RawImage_ScaleToPower2(byte** data, int* inout_width, int* inout_hei
 		scaled_width = NextPowerOfTwo(width);
 		scaled_height = NextPowerOfTwo(height);
 	}
-
-	if(r_roundImagesDown->integer && scaled_width > width) scaled_width >>= 1;
-	if(r_roundImagesDown->integer && scaled_height > height) scaled_height >>= 1;
 
 	if((!(picmip && data && resampledBuffer) && scaled_width != width) || scaled_height != height) {
 		if(data && resampledBuffer) {
@@ -938,8 +935,6 @@ static void Upload32(byte* data, int x, int y, int width, int height, GLenum pic
 	} else {
 		RawImage_UploadTexture(image->texnum, data, x, y, width, height, GL_TEXTURE_2D, picFormat, dataFormat, dataType, numMips, internalFormat, type, flags, false);
 	}
-
-	GL_CheckErrors();
 }
 
 /*
@@ -1107,8 +1102,6 @@ image_t* R_CreateImage2(const char* name, byte* pic, int width, int height, GLen
 			break;
 	}
 
-	GL_CheckErrors();
-
 	hash = generateHashValue(name);
 	image->next = hashTable[hash];
 	hashTable[hash] = image;
@@ -1183,40 +1176,11 @@ void R_LoadImage(const char* name, byte** pic, int* width, int* height, GLenum* 
 	Q_strncpyz(ddsName, base, sizeof(ddsName));
 	Q_strcat(ddsName, sizeof(ddsName), ".dds");
 
-	if(r_ext_compressed_textures->integer) {
-		// Try DDS first
-		R_LoadDDS(ddsName, pic, width, height, picFormat, numMips);
-		if(*pic) return;
+	// Try DDS first
+	R_LoadDDS(ddsName, pic, width, height, picFormat, numMips);
+	if(*pic) return;
 
-		// Then try explicitly requested extension (if not DDS)
-		if(ext && *ext && Q_stricmp(ext, "dds")) {
-			for(i = 0; i < numImageLoaders; i++) {
-				if(!Q_stricmp(ext, imageLoaders[i].ext)) {
-					imageLoaders[i].ImageLoader(localName, pic, width, height);
-					if(*pic) return;
-					orgNameFailed = true;
-					orgLoader = i;
-					break;
-				}
-			}
-			COM_StripExtension(name, localName, sizeof(localName));
-		}
-
-		// Then probe all supported formats except the failed one
-		for(i = 0; i < numImageLoaders; i++) {
-			if(i == orgLoader) continue;
-			altName = va("%s.%s", localName, imageLoaders[i].ext);
-			imageLoaders[i].ImageLoader(altName, pic, width, height);
-			if(*pic) {
-				if(orgNameFailed) ri.Printf(PRINT_DEVELOPER, "WARNING: %s not present, using %s instead\n", name, altName);
-				return;
-			}
-		}
-
-		return;
-	}
-
-	// Explicit non-dds extension requested, so try its image loader
+	// Then try explicitly requested extension (if not DDS)
 	if(ext && *ext && Q_stricmp(ext, "dds")) {
 		for(i = 0; i < numImageLoaders; i++) {
 			if(!Q_stricmp(ext, imageLoaders[i].ext)) {
@@ -1230,10 +1194,9 @@ void R_LoadImage(const char* name, byte** pic, int* width, int* height, GLenum* 
 		COM_StripExtension(name, localName, sizeof(localName));
 	}
 
-	// Try all other uncompressed formats
+	// Then probe all supported formats except the failed one
 	for(i = 0; i < numImageLoaders; i++) {
 		if(i == orgLoader) continue;
-		if(!Q_stricmp(imageLoaders[i].ext, "dds")) continue;
 		altName = va("%s.%s", localName, imageLoaders[i].ext);
 		imageLoaders[i].ImageLoader(altName, pic, width, height);
 		if(*pic) {
@@ -1242,11 +1205,7 @@ void R_LoadImage(const char* name, byte** pic, int* width, int* height, GLenum* 
 		}
 	}
 
-	// Finally, allow DDS fallback even when compressed textures are off
-	if(!*pic) {
-		R_LoadDDS(ddsName, pic, width, height, picFormat, numMips);
-		if(*pic) ri.Printf(PRINT_DEVELOPER, "WARNING: falling back to compressed texture %s when r_ext_compressed_textures=0\n", ddsName);
-	}
+	return;
 }
 
 /*
@@ -1468,7 +1427,7 @@ void R_CreateBuiltinImages(void) {
 	Com_Memset(data, 255, sizeof(data));
 	tr.whiteImage = R_CreateImage("*white", (byte*)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0);
 
-	if(r_dlightMode->integer >= 2) {
+	if(r_dynamiclight->integer >= 2) {
 		for(x = 0; x < MAX_DLIGHTS; x++) {
 			tr.shadowCubemaps[x] = R_CreateImage(va("*shadowcubemap%i", x), NULL, DLIGHT_SHADOW_SIZE, DLIGHT_SHADOW_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_CUBEMAP, GL_DEPTH_COMPONENT24);
 			qglTextureParameterfEXT(tr.shadowCubemaps[x]->texnum, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_NONE);
@@ -1501,13 +1460,13 @@ void R_CreateBuiltinImages(void) {
 		height = glConfig.vidHeight;
 
 		hdrFormat = GL_RGBA8;
-		if(r_hdr->integer && glRefConfig.textureFloat) hdrFormat = GL_RGBA16F_ARB;
+		if(glRefConfig.textureFloat) hdrFormat = GL_RGBA16F_ARB;
 
 		rgbFormat = GL_RGBA8;
 
 		tr.renderImage = R_CreateImage("_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat);
 
-		if(r_hdr->integer) tr.screenScratchImage = R_CreateImage("screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
+		tr.screenScratchImage = R_CreateImage("screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
 
 		tr.renderDepthImage = R_CreateImage("*renderdepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24);
 		tr.textureDepthImage = R_CreateImage("*texturedepth", NULL, 512, 512, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24);
@@ -1562,10 +1521,6 @@ void R_SetColorMappings(void) {
 	tr.identityLight = 1.0f / (1 << 0);
 	tr.identityLightByte = 255 * tr.identityLight;
 
-	if(r_intensity->value <= 1) {
-		ri.Cvar_Set("r_intensity", "1");
-	}
-
 	if(r_gamma->value < 0.5f) {
 		ri.Cvar_Set("r_gamma", "0.5");
 	} else if(r_gamma->value > 3.0f) {
@@ -1591,7 +1546,7 @@ void R_SetColorMappings(void) {
 	}
 
 	for(i = 0; i < 256; i++) {
-		j = i * r_intensity->value;
+		j = i;
 		if(j > 255) {
 			j = 255;
 		}

@@ -99,13 +99,6 @@ void GLimp_Minimize(void) { SDL_MinimizeWindow(SDL_window); }
 
 /*
 ===============
-GLimp_LogComment
-===============
-*/
-void GLimp_LogComment(char* comment) {}
-
-/*
-===============
 GLimp_DetectAvailableModes
 ===============
 */
@@ -634,7 +627,7 @@ static int GLimp_SetMode(const char* resolution, int fullscreen, bool noborder, 
 
 			desiredMode.w = glConfig.vidWidth;
 			desiredMode.h = glConfig.vidHeight;
-			desiredMode.refresh_rate = glConfig.displayFrequency = ri.Cvar_VariableIntegerValue("r_displayRefresh");
+			desiredMode.refresh_rate = glConfig.displayFrequency = 0;
 			desiredMode.driverdata = NULL;
 
 			if(SDL_SetWindowDisplayMode(SDL_window, &desiredMode) < 0) {
@@ -727,23 +720,14 @@ GLimp_InitExtensions
 ===============
 */
 static void GLimp_InitExtensions(bool fixedFunction) {
-	if(!r_allowExtensions->integer) {
-		ri.Printf(PRINT_ALL, "* IGNORING OPENGL EXTENSIONS *\n");
-		return;
-	}
-
 	ri.Printf(PRINT_ALL, "Initializing OpenGL extensions\n");
 
 	glConfig.textureCompression = TC_NONE;
 
 	// GL_EXT_texture_compression_s3tc
 	if((QGLES_VERSION_ATLEAST(2, 0) || SDL_GL_ExtensionSupported("GL_ARB_texture_compression")) && SDL_GL_ExtensionSupported("GL_EXT_texture_compression_s3tc")) {
-		if(r_ext_compressed_textures->value) {
-			glConfig.textureCompression = TC_S3TC_ARB;
-			ri.Printf(PRINT_ALL, "...using GL_EXT_texture_compression_s3tc\n");
-		} else {
-			ri.Printf(PRINT_ALL, "...ignoring GL_EXT_texture_compression_s3tc\n");
-		}
+		glConfig.textureCompression = TC_S3TC_ARB;
+		ri.Printf(PRINT_ALL, "...using GL_EXT_texture_compression_s3tc\n");
 	} else {
 		ri.Printf(PRINT_ALL, "...GL_EXT_texture_compression_s3tc not found\n");
 	}
@@ -751,12 +735,8 @@ static void GLimp_InitExtensions(bool fixedFunction) {
 	// GL_S3_s3tc ... legacy extension before GL_EXT_texture_compression_s3tc.
 	if(glConfig.textureCompression == TC_NONE) {
 		if(SDL_GL_ExtensionSupported("GL_S3_s3tc")) {
-			if(r_ext_compressed_textures->value) {
-				glConfig.textureCompression = TC_S3TC;
-				ri.Printf(PRINT_ALL, "...using GL_S3_s3tc\n");
-			} else {
-				ri.Printf(PRINT_ALL, "...ignoring GL_S3_s3tc\n");
-			}
+			glConfig.textureCompression = TC_S3TC;
+			ri.Printf(PRINT_ALL, "...using GL_S3_s3tc\n");
 		} else {
 			ri.Printf(PRINT_ALL, "...GL_S3_s3tc not found\n");
 		}
@@ -926,10 +906,7 @@ Responsible for doing a swapbuffers
 ===============
 */
 void GLimp_EndFrame(void) {
-	// don't flip if drawing to front buffer
-	if(Q_stricmp(r_drawBuffer->string, "GL_FRONT") != 0) {
-		SDL_GL_SwapWindow(SDL_window);
-	}
+	SDL_GL_SwapWindow(SDL_window);
 
 	if(r_fullscreen->modified) {
 		int fullscreen;

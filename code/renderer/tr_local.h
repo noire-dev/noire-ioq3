@@ -1508,81 +1508,32 @@ extern trGlobals_t tr;
 extern glstate_t glState;  // outside of TR since it shouldn't be cleared during ref re-init
 extern glRefConfig_t glRefConfig;
 
-//
 // cvars
-//
-extern cvar_t* r_railWidth;
-extern cvar_t* r_railCoreWidth;
-extern cvar_t* r_railSegmentLength;
-
-extern cvar_t* r_ignore;   // used for debugging anything
-extern cvar_t* r_verbose;  // used for verbose debug spew
-
-extern cvar_t* r_znear;  // near Z clip plane
-extern cvar_t* r_zproj;  // z distance of projection plane
+extern cvar_t* r_ignore;  // used for debugging anything
 
 extern cvar_t* r_lodbias;  // push/pull LOD transitions
-extern cvar_t* r_lodscale;
 
-extern cvar_t* r_inGameVideo;   // controls whether in game video should be draw
-extern cvar_t* r_fastsky;       // controls whether sky should be cleared or drawn
-extern cvar_t* r_drawSun;       // controls drawing of sun quad
 extern cvar_t* r_dynamiclight;  // dynamic lights enabled/disabled
-extern cvar_t* r_dlightBacks;   // dlight non-facing surfaces for continuity
 
-extern cvar_t* r_norefresh;       // bypasses the ref rendering
-extern cvar_t* r_drawentities;    // disable/enable entity rendering
-extern cvar_t* r_drawworld;       // disable/enable world rendering
-extern cvar_t* r_speeds;          // various levels of information display
-extern cvar_t* r_detailTextures;  // enables/disables detail texturing stages
-extern cvar_t* r_novis;           // disable/enable usage of PVS
-extern cvar_t* r_nocull;
-extern cvar_t* r_facePlaneCull;  // enables culling of planar surfaces with back side test
-extern cvar_t* r_nocurves;
-extern cvar_t* r_showcluster;
+extern cvar_t* r_speeds;  // various levels of information display
 
 extern cvar_t* r_gamma;
-extern cvar_t* r_displayRefresh;  // optional display refresh option
 
-extern cvar_t* r_ext_framebuffer_object;
-extern cvar_t* r_ext_texture_float;
 extern cvar_t* r_ext_framebuffer_multisample;
-extern cvar_t* r_arb_seamless_cube_map;
-extern cvar_t* r_ext_direct_state_access;
 
-extern cvar_t* r_nobind;        // turns off binding to appropriate textures
-extern cvar_t* r_singleShader;  // make most world faces use default shader
-extern cvar_t* r_roundImagesDown;
-extern cvar_t* r_colorMipLevels;  // development aid to see texture mip usage
-extern cvar_t* r_picmip;          // controls picmip values
+extern cvar_t* r_picmip;  // controls picmip values
 extern cvar_t* r_textureMode;
-extern cvar_t* r_offsetFactor;
-extern cvar_t* r_offsetUnits;
 
-extern cvar_t* r_fullbright;    // avoid lightmap pass
-extern cvar_t* r_lightmap;      // render lightmaps only
-extern cvar_t* r_uiFullScreen;  // ui is running fullscreen
-
-extern cvar_t* r_logFile;   // number of frames to emit GL logs
 extern cvar_t* r_showtris;  // enables wireframe rendering of the world
-extern cvar_t* r_showsky;   // forces sky in front of all surface
-
-extern cvar_t* r_intensity;
 
 extern cvar_t* r_lockpvs;
-extern cvar_t* r_noportals;
-extern cvar_t* r_portalOnly;
 
 extern cvar_t* r_subdivisions;
-extern cvar_t* r_lodCurveError;
-extern cvar_t* r_skipBackEnd;
 
 extern cvar_t* r_externalGLSL;
 
-extern cvar_t* r_hdr;
 extern cvar_t* r_postProcess;
 
-extern cvar_t* r_toneMap;
 extern cvar_t* r_toneMapMin;
 extern cvar_t* r_toneMapAvg;
 extern cvar_t* r_toneMapMax;
@@ -1593,13 +1544,7 @@ extern cvar_t* r_autoExposureMax;
 
 extern cvar_t* r_cameraExposure;
 
-extern cvar_t* r_dlightMode;
-
-extern cvar_t* r_normalMapping;
-extern cvar_t* r_specularMapping;
-extern cvar_t* r_deluxeMapping;
 extern cvar_t* r_parallaxMapping;
-extern cvar_t* r_parallaxMapOffset;
 extern cvar_t* r_parallaxMapShadows;
 extern cvar_t* r_reflections;
 extern cvar_t* r_reflectionsResolution;
@@ -1607,14 +1552,10 @@ extern cvar_t* r_reflectionsGrid;
 extern cvar_t* r_reflectionsEnd;
 extern cvar_t* r_reflectionsDetail;
 extern cvar_t* r_deluxeSpecular;
-extern cvar_t* r_pbr;
 extern cvar_t* r_detailLevel;
-extern cvar_t* r_baseNormalX;
-extern cvar_t* r_baseNormalY;
 extern cvar_t* r_baseParallax;
 extern cvar_t* r_baseSpecular;
 extern cvar_t* r_baseGloss;
-extern cvar_t* r_glossType;
 extern cvar_t* r_sunShadows;
 extern cvar_t* r_sunShadowLightScale;
 extern cvar_t* r_sunShadowAmbientScale;
@@ -1623,7 +1564,6 @@ extern cvar_t* r_shadowMapSize;
 extern cvar_t* r_shadowCascadeZNear;
 extern cvar_t* r_shadowCascadeZFar;
 extern cvar_t* r_shadowCascadeZBias;
-extern cvar_t* r_ignoreDstAlpha;
 
 extern cvar_t* r_fogDensity;
 extern cvar_t* r_fogColorR;
@@ -1633,11 +1573,7 @@ extern cvar_t* r_fogStart;
 extern cvar_t* r_fogEnd;
 extern cvar_t* r_fogReflectionEnd;
 
-extern cvar_t* r_ignoreGLErrors;
-
 extern cvar_t* r_debugSort;
-
-extern cvar_t* r_printShaders;
 
 //====================================================================
 
@@ -1705,8 +1641,6 @@ void R_RotateForEntity(const trRefEntity_t* ent, const viewParms_t* viewParms, o
 void GL_BindToTMU(image_t* image, int tmu);
 void GL_SetDefaultState(void);
 void GL_TextureMode(const char* string);
-void GL_CheckErrs(char* file, int line);
-#define GL_CheckErrors(...) GL_CheckErrs(__FILE__, __LINE__)
 void GL_State(unsigned long stateVector);
 void GL_SetProjectionMatrix(mat4_t matrix);
 void GL_SetModelviewMatrix(mat4_t matrix);
@@ -2209,8 +2143,8 @@ typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_D
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --
 // the main view, all the 3D icons, etc
-#define MAX_POLYS 600
-#define MAX_POLYVERTS 3000
+#define MAX_POLYS 6000
+#define MAX_POLYVERTS 30000
 
 // all of the information needed by the back end must be
 // contained in a backEndData_t

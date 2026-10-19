@@ -293,16 +293,10 @@ the above locations, if desired.
 
   r_allowResize                     - make window resizable
   r_ext_texture_filter_anisotropic  - anisotropic texture filtering
-  r_zProj                           - distance of observer camera to projection
-                                      plane in quake3 standard units
   r_sdlDriver                       - read only, indicates the SDL driver
                                       backend being used
   r_noborder                        - Remove window decoration from window
                                       managers, like borders and titlebar.
-  r_screenshotJpegQuality           - Controls quality of jpeg screenshots
-                                      captured using screenshotJPEG
-  r_aviMotionJpegQuality            - Controls quality of video capture when
-                                      cl_aviMotionJpeg is enabled
 ```
 
 ## New commands

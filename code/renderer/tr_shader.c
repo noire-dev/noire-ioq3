@@ -182,11 +182,9 @@ static int NameToSrcBlendMode(const char* name) {
 	} else if(!Q_stricmp(name, "GL_ONE_MINUS_SRC_ALPHA")) {
 		return GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA;
 	} else if(!Q_stricmp(name, "GL_DST_ALPHA")) {
-		if(r_ignoreDstAlpha->integer) return GLS_SRCBLEND_ONE;
-
-		return GLS_SRCBLEND_DST_ALPHA;
+		return GLS_SRCBLEND_ONE;
 	} else if(!Q_stricmp(name, "GL_ONE_MINUS_DST_ALPHA")) {
-		if(r_ignoreDstAlpha->integer) return GLS_SRCBLEND_ZERO;
+		return GLS_SRCBLEND_ZERO;
 	} else if(!Q_stricmp(name, "GL_SRC_ALPHA_SATURATE")) {
 		return GLS_SRCBLEND_ALPHA_SATURATE;
 	}
@@ -210,13 +208,9 @@ static int NameToDstBlendMode(const char* name) {
 	} else if(!Q_stricmp(name, "GL_ONE_MINUS_SRC_ALPHA")) {
 		return GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
 	} else if(!Q_stricmp(name, "GL_DST_ALPHA")) {
-		if(r_ignoreDstAlpha->integer) return GLS_DSTBLEND_ONE;
-
-		return GLS_DSTBLEND_DST_ALPHA;
+		return GLS_DSTBLEND_ONE;
 	} else if(!Q_stricmp(name, "GL_ONE_MINUS_DST_ALPHA")) {
-		if(r_ignoreDstAlpha->integer) return GLS_DSTBLEND_ZERO;
-
-		return GLS_DSTBLEND_ONE_MINUS_DST_ALPHA;
+		return GLS_DSTBLEND_ZERO;
 	} else if(!Q_stricmp(name, "GL_SRC_COLOR")) {
 		return GLS_DSTBLEND_SRC_COLOR;
 	} else if(!Q_stricmp(name, "GL_ONE_MINUS_SRC_COLOR")) {
@@ -749,13 +743,13 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 				stage->type = ST_DIFFUSEMAP;
 			} else if(!Q_stricmp(token, "normalMap") || !Q_stricmp(token, "bumpMap")) {
 				stage->type = ST_NORMALMAP;
-				VectorSet4(stage->normalScale, r_baseNormalX->value, r_baseNormalY->value, 1.0f, r_baseParallax->value);
+				VectorSet4(stage->normalScale, 2.0f, 2.0f, 1.0f, r_baseParallax->value);
 			} else if(!Q_stricmp(token, "normalParallaxMap") || !Q_stricmp(token, "bumpParallaxMap")) {
 				if(r_parallaxMapping->integer)
 					stage->type = ST_NORMALPARALLAXMAP;
 				else
 					stage->type = ST_NORMALMAP;
-				VectorSet4(stage->normalScale, r_baseNormalX->value, r_baseNormalY->value, 1.0f, r_baseParallax->value);
+				VectorSet4(stage->normalScale, 2.0f, 2.0f, 1.0f, r_baseParallax->value);
 			} else if(!Q_stricmp(token, "specularMap")) {
 				stage->type = ST_SPECULARMAP;
 				VectorSet4(stage->specularScale, 1.0f, 1.0f, 1.0f, 1.0f);
@@ -774,12 +768,8 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 				continue;
 			}
 
-			if(r_pbr->integer) {
-				// interpret specularReflectance < 0.5 as nonmetal
-				stage->specularScale[1] = (atof(token) < 0.5f) ? 0.0f : 1.0f;
-			} else {
-				stage->specularScale[0] = stage->specularScale[1] = stage->specularScale[2] = atof(token);
-			}
+			// interpret specularReflectance < 0.5 as nonmetal
+			stage->specularScale[1] = (atof(token) < 0.5f) ? 0.0f : 1.0f;
 		}
 		//
 		// specularExponent <value>
@@ -795,14 +785,7 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 
 			exponent = atof(token);
 
-			if(r_pbr->integer)
-				stage->specularScale[0] = 1.0f - powf(2.0f / (exponent + 2.0), 0.25);
-			else {
-				// Change shininess to gloss
-				// Assumes max exponent of 8190 and min of 0, must change here if altered in lightall_fp.glsl
-				exponent = CLAMP(exponent, 0.0f, 8190.0f);
-				stage->specularScale[3] = (log2f(exponent + 2.0f) - 1.0f) / 12.0f;
-			}
+			stage->specularScale[0] = 1.0f - powf(2.0f / (exponent + 2.0), 0.25);
 		}
 		//
 		// gloss <value>
@@ -818,10 +801,7 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 
 			gloss = atof(token);
 
-			if(r_pbr->integer)
-				stage->specularScale[0] = 1.0f - exp2f(-3.0f * gloss);
-			else
-				stage->specularScale[3] = gloss;
+			stage->specularScale[0] = 1.0f - exp2f(-3.0f * gloss);
 		}
 		//
 		// roughness <value>
@@ -837,14 +817,7 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 
 			roughness = atof(token);
 
-			if(r_pbr->integer)
-				stage->specularScale[0] = 1.0 - roughness;
-			else {
-				if(roughness >= 0.125)
-					stage->specularScale[3] = log2f(1.0f / roughness) / 3.0f;
-				else
-					stage->specularScale[3] = 1.0f;
-			}
+			stage->specularScale[0] = 1.0 - roughness;
 		}
 		//
 		// parallaxDepth <value>
@@ -889,12 +862,7 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 
 			stage->normalScale[3] = atof(token);
 		}
-		//
-		// specularScale <rgb> <gloss>
-		// or specularScale <metallic> <smoothness> with r_pbr 1
-		// or specularScale <r> <g> <b>
-		// or specularScale <r> <g> <b> <gloss>
-		//
+		// specularScale <metallic> <smoothness
 		else if(!Q_stricmp(token, "specularscale")) {
 			token = COM_ParseExt(text, false);
 			if(token[0] == 0) {
@@ -914,16 +882,10 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 
 			token = COM_ParseExt(text, false);
 			if(token[0] == 0) {
-				if(r_pbr->integer) {
-					// two values, metallic then smoothness
-					float smoothness = stage->specularScale[1];
-					stage->specularScale[1] = (stage->specularScale[0] < 0.5f) ? 0.0f : 1.0f;
-					stage->specularScale[0] = smoothness;
-				} else {
-					// two values, rgb then gloss
-					stage->specularScale[3] = stage->specularScale[1];
-					stage->specularScale[1] = stage->specularScale[2] = stage->specularScale[0];
-				}
+				// two values, metallic then smoothness
+				float smoothness = stage->specularScale[1];
+				stage->specularScale[1] = (stage->specularScale[0] < 0.5f) ? 0.0f : 1.0f;
+				stage->specularScale[0] = smoothness;
 				continue;
 			}
 
@@ -1797,9 +1759,7 @@ static void ComputeVertexAttribs(void) {
 		if(pStage->glslShaderGroup == tr.lightallShader) {
 			shader.vertexAttribs |= ATTR_NORMAL;
 
-			if((pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK) && !(r_normalMapping->integer == 0 && r_specularMapping->integer == 0)) {
-				shader.vertexAttribs |= ATTR_TANGENT;
-			}
+			if(pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK) shader.vertexAttribs |= ATTR_TANGENT;
 
 			switch(pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK) {
 				case LIGHTDEF_USE_LIGHTMAP:
@@ -1863,73 +1823,68 @@ static void CollapseStagesToLightall(shaderStage_t* diffuse, shaderStage_t* norm
 		defs |= LIGHTDEF_USE_LIGHT_VERTEX;
 	}
 
-	if(r_deluxeMapping->integer && tr.worldDeluxeMapping && lightmap && shader.lightmapIndex >= 0) {
+	if(tr.worldDeluxeMapping && lightmap && shader.lightmapIndex >= 0) {
 		// ri.Printf(PRINT_ALL, ", deluxemap");
 		diffuse->bundle[TB_DELUXEMAP] = lightmap->bundle[0];
 		diffuse->bundle[TB_DELUXEMAP].image[0] = tr.deluxemaps[shader.lightmapIndex];
 	}
 
-	if(r_normalMapping->integer) {
-		image_t* diffuseImg;
-		if(normal) {
-			// ri.Printf(PRINT_ALL, ", normalmap %s", normal->bundle[0].image[0]->imgName);
-			diffuse->bundle[TB_NORMALMAP] = normal->bundle[0];
+	image_t* diffuseImg;
+	if(normal) {
+		// ri.Printf(PRINT_ALL, ", normalmap %s", normal->bundle[0].image[0]->imgName);
+		diffuse->bundle[TB_NORMALMAP] = normal->bundle[0];
+		if(parallax && r_parallaxMapping->integer) defs |= LIGHTDEF_USE_PARALLAXMAP;
+
+		VectorCopy4(normal->normalScale, diffuse->normalScale);
+	} else if((lightmap || useLightVector || useLightVertex) && (diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0])) {
+		char normalName[MAX_QPATH];
+		image_t* normalImg;
+		imgFlags_t normalFlags = diffuseImg->flags | IMGFLAG_NOLIGHTSCALE;
+
+		// try a normalheight image first
+		COM_StripExtension(diffuseImg->imgName, normalName, MAX_QPATH);
+		Q_strcat(normalName, MAX_QPATH, "_nh");
+
+		normalImg = R_FindImageFile(normalName, IMGTYPE_NORMALHEIGHT, normalFlags);
+
+		if(normalImg) {
+			parallax = true;
+		} else {
+			// try a normal image ("_n" suffix)
+			normalName[strlen(normalName) - 1] = '\0';
+			normalImg = R_FindImageFile(normalName, IMGTYPE_NORMAL, normalFlags);
+		}
+
+		if(normalImg) {
+			diffuse->bundle[TB_NORMALMAP] = diffuse->bundle[0];
+			diffuse->bundle[TB_NORMALMAP].numImageAnimations = 0;
+			diffuse->bundle[TB_NORMALMAP].image[0] = normalImg;
+
 			if(parallax && r_parallaxMapping->integer) defs |= LIGHTDEF_USE_PARALLAXMAP;
 
-			VectorCopy4(normal->normalScale, diffuse->normalScale);
-		} else if((lightmap || useLightVector || useLightVertex) && (diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0])) {
-			char normalName[MAX_QPATH];
-			image_t* normalImg;
-			imgFlags_t normalFlags = diffuseImg->flags | IMGFLAG_NOLIGHTSCALE;
-
-			// try a normalheight image first
-			COM_StripExtension(diffuseImg->imgName, normalName, MAX_QPATH);
-			Q_strcat(normalName, MAX_QPATH, "_nh");
-
-			normalImg = R_FindImageFile(normalName, IMGTYPE_NORMALHEIGHT, normalFlags);
-
-			if(normalImg) {
-				parallax = true;
-			} else {
-				// try a normal image ("_n" suffix)
-				normalName[strlen(normalName) - 1] = '\0';
-				normalImg = R_FindImageFile(normalName, IMGTYPE_NORMAL, normalFlags);
-			}
-
-			if(normalImg) {
-				diffuse->bundle[TB_NORMALMAP] = diffuse->bundle[0];
-				diffuse->bundle[TB_NORMALMAP].numImageAnimations = 0;
-				diffuse->bundle[TB_NORMALMAP].image[0] = normalImg;
-
-				if(parallax && r_parallaxMapping->integer) defs |= LIGHTDEF_USE_PARALLAXMAP;
-
-				VectorSet4(diffuse->normalScale, r_baseNormalX->value, r_baseNormalY->value, 1.0f, r_baseParallax->value);
-			}
+			VectorSet4(diffuse->normalScale, 2.0f, 2.0f, 1.0f, r_baseParallax->value);
 		}
 	}
 
-	if(r_specularMapping->integer) {
-		image_t* diffuseImg;
-		if(specular) {
-			diffuse->bundle[TB_SPECULARMAP] = specular->bundle[0];
-			VectorCopy4(specular->specularScale, diffuse->specularScale);
-		} else if((lightmap || useLightVector || useLightVertex) && (diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0])) {
-			char specularName[MAX_QPATH];
-			image_t* specularImg;
-			imgFlags_t specularFlags = diffuseImg->flags | IMGFLAG_NOLIGHTSCALE;
+	if(specular) {
+		diffuse->bundle[TB_SPECULARMAP] = specular->bundle[0];
+		VectorCopy4(specular->specularScale, diffuse->specularScale);
+	} else if((lightmap || useLightVector || useLightVertex) && (diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0])) {
+		char specularName[MAX_QPATH];
+		image_t* specularImg;
+		imgFlags_t specularFlags = diffuseImg->flags | IMGFLAG_NOLIGHTSCALE;
 
-			COM_StripExtension(diffuseImg->imgName, specularName, MAX_QPATH);
-			Q_strcat(specularName, MAX_QPATH, "_s");
+		COM_StripExtension(diffuseImg->imgName, specularName, MAX_QPATH);
+		Q_strcat(specularName, MAX_QPATH, "_s");
 
-			specularImg = R_FindImageFile(specularName, IMGTYPE_COLORALPHA, specularFlags);
+		specularImg = R_FindImageFile(specularName, IMGTYPE_COLORALPHA, specularFlags);
 
-			if(specularImg) {
-				diffuse->bundle[TB_SPECULARMAP] = diffuse->bundle[0];
-				diffuse->bundle[TB_SPECULARMAP].numImageAnimations = 0;
-				diffuse->bundle[TB_SPECULARMAP].image[0] = specularImg;
+		if(specularImg) {
+			diffuse->bundle[TB_SPECULARMAP] = diffuse->bundle[0];
+			diffuse->bundle[TB_SPECULARMAP].numImageAnimations = 0;
+			diffuse->bundle[TB_SPECULARMAP].image[0] = specularImg;
 
-				VectorSet4(diffuse->specularScale, 1.0f, 1.0f, 1.0f, 1.0f);
-			}
+			VectorSet4(diffuse->specularScale, 1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
 
@@ -2471,12 +2426,7 @@ static void InitShaderEx(const char* name, int lightmapIndex, int realLightmapIn
 
 		// default normal/specular
 		VectorSet4(stages[i].normalScale, 0.0f, 0.0f, 0.0f, 0.0f);
-		if(r_pbr->integer) {
-			stages[i].specularScale[0] = r_baseGloss->value;
-		} else {
-			stages[i].specularScale[0] = stages[i].specularScale[1] = stages[i].specularScale[2] = r_baseSpecular->value;
-			stages[i].specularScale[3] = r_baseGloss->value;
-		}
+		stages[i].specularScale[0] = r_baseGloss->value;
 	}
 }
 
@@ -2529,7 +2479,7 @@ static shader_t* FinishShader(void) {
 		//
 		// ditch this stage if it's detail and detail textures are disabled
 		//
-		if(pStage->isDetail && !r_detailTextures->integer) {
+		if(pStage->isDetail) {
 			int index;
 
 			for(index = stage + 1; index < MAX_SHADER_STAGES; index++) {
@@ -2805,12 +2755,6 @@ shader_t* R_FindShaderEx(const char* name, int lightmapIndex, bool mipRawImage, 
 	//
 	shaderText = FindShaderInShaderText(strippedName);
 	if(shaderText) {
-		// enable this when building a pak file to get a global list
-		// of all explicit shaders
-		if(r_printShaders->integer) {
-			ri.Printf(PRINT_ALL, "*SHADER* %s\n", name);
-		}
-
 		if(!ParseShader(&shaderText)) {
 			// had errors, so use default shader
 			shader.defaultShader = true;
