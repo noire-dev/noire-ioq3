@@ -176,9 +176,6 @@ cvar_t* r_lodCurveError;
 cvar_t* r_fullscreen;
 cvar_t* r_noborder;
 
-cvar_t* r_overBrightBits;
-cvar_t* r_mapOverBrightBits;
-
 cvar_t* r_ambientScale;
 cvar_t* r_directedScale;
 cvar_t* r_debugSort;
@@ -849,11 +846,6 @@ void GfxInfo_f(void) {
 	} else {
 		ri.Printf(PRINT_ALL, "N/A\n");
 	}
-	if(glConfig.deviceSupportsGamma) {
-		ri.Printf(PRINT_ALL, "GAMMA: hardware w/ %d overbright bits\n", tr.overbrightBits);
-	} else {
-		ri.Printf(PRINT_ALL, "GAMMA: software w/ %d overbright bits\n", tr.overbrightBits);
-	}
 
 	ri.Printf(PRINT_ALL, "texturemode: %s\n", r_textureMode->string);
 	ri.Printf(PRINT_ALL, "picmip: %d\n", r_picmip->integer);
@@ -936,7 +928,6 @@ void R_Register(void) {
 	r_colorMipLevels = ri.Cvar_Get("r_colorMipLevels", "0", CVAR_LATCH);
 	ri.Cvar_CheckRange(r_picmip, 0, 16, true);
 	r_detailTextures = ri.Cvar_Get("r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_overBrightBits = ri.Cvar_Get("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ignorehwgamma = ri.Cvar_Get("r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_resolution = ri.Cvar_Get("r_resolution", "640x480", CVAR_ARCHIVE | CVAR_LATCH);
 	r_fullscreen = ri.Cvar_Get("r_fullscreen", "2", CVAR_ARCHIVE);
@@ -950,9 +941,9 @@ void R_Register(void) {
 	r_postProcess = ri.Cvar_Get("r_postProcess", "1", CVAR_ARCHIVE);
 
 	r_toneMap = ri.Cvar_Get("r_toneMap", "1", CVAR_CHEAT);
-	r_toneMapMin = ri.Cvar_Get("r_toneMapMin", "-8.0", CVAR_CHEAT);
-	r_toneMapAvg = ri.Cvar_Get("r_toneMapAvg", "-2.0", CVAR_CHEAT);
-	r_toneMapMax = ri.Cvar_Get("r_toneMapMax", "0.0", CVAR_CHEAT);
+	r_toneMapMin = ri.Cvar_Get("r_toneMapMin", "-8.00", CVAR_CHEAT);
+	r_toneMapAvg = ri.Cvar_Get("r_toneMapAvg", "-2.48", CVAR_CHEAT);
+	r_toneMapMax = ri.Cvar_Get("r_toneMapMax", "-1.00", CVAR_CHEAT);
 
 	r_autoExposure = ri.Cvar_Get("r_autoExposure", "1", CVAR_ARCHIVE);
 	r_autoExposureMin = ri.Cvar_Get("r_autoExposureMin", "-2.0", CVAR_CHEAT);
@@ -1009,7 +1000,6 @@ void R_Register(void) {
 	r_displayRefresh = ri.Cvar_Get("r_displayRefresh", "0", CVAR_LATCH);
 	ri.Cvar_CheckRange(r_displayRefresh, 0, 999, true);
 	r_fullbright = ri.Cvar_Get("r_fullbright", "0", CVAR_LATCH | CVAR_CHEAT);
-	r_mapOverBrightBits = ri.Cvar_Get("r_mapOverBrightBits", "2", CVAR_LATCH);
 	r_intensity = ri.Cvar_Get("r_intensity", "1", CVAR_LATCH);
 	r_singleShader = ri.Cvar_Get("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH);
 
@@ -1186,8 +1176,6 @@ void R_Init(void) {
 
 	R_ModelInit();
 
-	R_InitFreeType();
-
 	R_InitQueries();
 
 	err = qglGetError();
@@ -1225,8 +1213,6 @@ void RE_Shutdown(bool destroyWindow) {
 		R_ShutdownVaos();
 		GLSL_ShutdownGPUShaders();
 	}
-
-	R_DoneFreeType();
 
 	// shut down platform specific OpenGL stuff
 	if(destroyWindow) {
@@ -1313,7 +1299,6 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t* rimp) {
 	re.DrawStretchRaw = RE_StretchRaw;
 	re.UploadCinematic = RE_UploadCinematic;
 
-	re.RegisterFont = RE_RegisterFont;
 	re.RemapShader = R_RemapShader;
 	re.GetEntityToken = R_GetEntityToken;
 	re.inPVS = R_inPVS;

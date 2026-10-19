@@ -32,7 +32,6 @@ int PASSFLOAT(float x) {
 	return fi.i;
 }
 
-void trap_R_RegisterFont(const char* fontName, int pointSize, fontInfo_t* font) { syscall(UI_R_REGISTERFONT, fontName, pointSize, font); }
 void trap_Key_SetBinding(int keynum, const char* binding) { syscall(UI_KEY_SETBINDING, keynum, binding); }
 void trap_Key_ClearStates(void) { syscall(UI_KEY_CLEARSTATES); }
 void trap_Key_SetCatcher(int catcher) { syscall(UI_KEY_SETCATCHER, catcher); }

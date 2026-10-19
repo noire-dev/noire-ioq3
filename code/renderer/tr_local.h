@@ -1451,9 +1451,8 @@ typedef struct {
 
 	viewParms_t viewParms;
 
-	float identityLight;    // 1.0 / ( 1 << overbrightBits )
+	float identityLight;    // 1.0
 	int identityLightByte;  // identityLight * 255
-	int overbrightBits;     // r_overbrightBits->integer, but set to 0 if no hw gamma
 
 	orientationr_t or ;  // for current entity
 
@@ -1635,9 +1634,6 @@ extern cvar_t* r_fogEnd;
 extern cvar_t* r_fogReflectionEnd;
 
 extern cvar_t* r_ignoreGLErrors;
-
-extern cvar_t* r_overBrightBits;
-extern cvar_t* r_mapOverBrightBits;
 
 extern cvar_t* r_debugSort;
 

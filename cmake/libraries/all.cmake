@@ -9,7 +9,6 @@ endforeach()
 
 include(libraries/bullet3)
 include(libraries/curl)
-include(libraries/freetype)
 include(libraries/jpeg)
 include(libraries/mad)
 include(libraries/ogg)

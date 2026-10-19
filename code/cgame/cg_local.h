@@ -1134,7 +1134,6 @@ int trap_GetCurrentCmdNumber(void);
 bool trap_GetUserCmd(int cmdNumber, usercmd_t* ucmd);
 void trap_SetUserCmdValue(int stateValue, float sensitivityScale);
 int trap_MemoryRemaining(void);
-void trap_R_RegisterFont(const char* fontName, int pointSize, fontInfo_t* font);
 void trap_Key_SetCatcher(int catcher);
 
 typedef enum { SYSTEM_PRINT, CHAT_PRINT, TEAMCHAT_PRINT } q3print_t;

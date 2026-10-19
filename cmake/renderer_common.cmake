@@ -1,7 +1,6 @@
 include_guard(GLOBAL)
 
 set(RENDERER_COMMON_SOURCES
-    ${SOURCE_DIR}/renderercommon/tr_font.c
     ${SOURCE_DIR}/renderercommon/tr_image_bmp.c
     ${SOURCE_DIR}/renderercommon/tr_image_dds.c
     ${SOURCE_DIR}/renderercommon/tr_image_jpg.c
@@ -23,10 +22,6 @@ set(DYNAMIC_RENDERER_SOURCES
     ${SOURCE_DIR}/qcommon/q_shared.c
     ${SOURCE_DIR}/qcommon/q_math.c
 )
-
-if(USE_FREETYPE)
-    list(APPEND RENDERER_DEFINITIONS BUILD_FREETYPE)
-endif()
 
 if(USE_RENDERER_DLOPEN)
     list(APPEND RENDERER_DEFINITIONS USE_RENDERER_DLOPEN)

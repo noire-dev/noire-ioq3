@@ -94,7 +94,6 @@ The following CMake variables may be set, using `-D` on the command line.
   USE_CODEC_MP3           - enable Mp3 support
   USE_MUMBLE              - enable Mumble support
   USE_VOIP                - enable built-in VoIP support
-  USE_FREETYPE            - enable FreeType support for rendering fonts
 
   USE_INTERNAL_LIBS       - build internal libraries instead of dynamically
                             linking against system libraries; this just sets

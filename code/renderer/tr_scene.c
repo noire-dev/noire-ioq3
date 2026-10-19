@@ -310,7 +310,7 @@ void RE_BeginScene(const refdef_t* fd) {
 		VectorSet(tr.refdef.sunCol, 0, 0, 0);
 		VectorSet(tr.refdef.sunAmbCol, 0, 0, 0);
 	} else {
-		float scale = (1 << r_mapOverBrightBits->integer) / 255.0f;
+		float scale = (1 << 0) / 255.0f;
 
 		VectorScale(tr.sunLight, scale * r_sunShadowLightScale->value, tr.refdef.sunCol);
 

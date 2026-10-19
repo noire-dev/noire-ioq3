@@ -40,121 +40,6 @@ static byte* fileBase;
 int c_subdivisions;
 int c_gridVerts;
 
-//===============================================================================
-
-static void HSVtoRGB(float h, float s, float v, float rgb[3]) {
-	int i;
-	float f;
-	float p, q, t;
-
-	h *= 5;
-
-	i = floor(h);
-	f = h - i;
-
-	p = v * (1 - s);
-	q = v * (1 - s * f);
-	t = v * (1 - s * (1 - f));
-
-	switch(i) {
-		case 0:
-			rgb[0] = v;
-			rgb[1] = t;
-			rgb[2] = p;
-			break;
-		case 1:
-			rgb[0] = q;
-			rgb[1] = v;
-			rgb[2] = p;
-			break;
-		case 2:
-			rgb[0] = p;
-			rgb[1] = v;
-			rgb[2] = t;
-			break;
-		case 3:
-			rgb[0] = p;
-			rgb[1] = q;
-			rgb[2] = v;
-			break;
-		case 4:
-			rgb[0] = t;
-			rgb[1] = p;
-			rgb[2] = v;
-			break;
-		case 5:
-			rgb[0] = v;
-			rgb[1] = p;
-			rgb[2] = q;
-			break;
-	}
-}
-
-/*
-===============
-R_ColorShiftLightingBytes
-
-===============
-*/
-static void R_ColorShiftLightingBytes(byte in[4], byte out[4]) {
-	int shift, r, g, b;
-
-	// shift the color data based on overbright range
-	shift = r_mapOverBrightBits->integer - tr.overbrightBits;
-
-	// shift the data based on overbright range
-	r = in[0] << shift;
-	g = in[1] << shift;
-	b = in[2] << shift;
-
-	// normalize by color instead of saturating to white
-	if((r | g | b) > 255) {
-		int max;
-
-		max = r > g ? r : g;
-		max = max > b ? max : b;
-		r = r * 255 / max;
-		g = g * 255 / max;
-		b = b * 255 / max;
-	}
-
-	out[0] = r;
-	out[1] = g;
-	out[2] = b;
-	out[3] = in[3];
-}
-
-/*
-===============
-R_ColorShiftLightingFloats
-
-===============
-*/
-static void R_ColorShiftLightingFloats(float in[4], float out[4]) {
-	float r, g, b;
-	float scale = (1 << (r_mapOverBrightBits->integer - tr.overbrightBits)) / 255.0f;
-
-	r = in[0] * scale;
-	g = in[1] * scale;
-	b = in[2] * scale;
-
-	// normalize by color instead of saturating to white
-	if(r > 1 || g > 1 || b > 1) {
-		float max;
-
-		max = r > g ? r : g;
-		max = max > b ? max : b;
-		r = r / max;
-		g = g / max;
-		b = b / max;
-	}
-
-	out[0] = r;
-	out[1] = g;
-	out[2] = b;
-	out[3] = in[3];
-}
-
 // Modified from http://graphicrants.blogspot.jp/2009/04/rgbm-color-encoding.html
 void ColorToRGBM(const vec3_t color, unsigned char rgbm[4]) {
 	vec3_t sample;
@@ -339,8 +224,6 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 #endif
 					color[3] = 1.0f;
 
-					R_ColorShiftLightingFloats(color, color);
-
 					ColorToRGB16(color, (uint16_t*)(&image[j * 8]));
 					((uint16_t*)(&image[j * 8]))[3] = 65535;
 				} else if(textureInternalFormat == GL_RGBA16) {
@@ -361,37 +244,13 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 					}
 					color[3] = 1.0f;
 
-					R_ColorShiftLightingFloats(color, color);
-
 					ColorToRGB16(color, (uint16_t*)(&image[j * 8]));
 					((uint16_t*)(&image[j * 8]))[3] = 65535;
 				} else {
-					if(r_lightmap->integer == 2) {  // color code by intensity as development tool	(FIXME: check range)
-						float r = buf_p[j * 3 + 0];
-						float g = buf_p[j * 3 + 1];
-						float b = buf_p[j * 3 + 2];
-						float intensity;
-						float out[3] = {0.0, 0.0, 0.0};
-
-						intensity = 0.33f * r + 0.685f * g + 0.063f * b;
-
-						if(intensity > 255)
-							intensity = 1.0f;
-						else
-							intensity /= 255.0f;
-
-						if(intensity > maxIntensity) maxIntensity = intensity;
-
-						HSVtoRGB(intensity, 1.00, 0.50, out);
-
-						image[j * 4 + 0] = out[0] * 255;
-						image[j * 4 + 1] = out[1] * 255;
-						image[j * 4 + 2] = out[2] * 255;
-						image[j * 4 + 3] = 255;
-					} else {
-						R_ColorShiftLightingBytes(&buf_p[j * 3], &image[j * 4]);
-						image[j * 4 + 3] = 255;
-					}
+					image[j * 4 + 0] = buf_p[j * 3 + 0];
+					image[j * 4 + 1] = buf_p[j * 3 + 1];
+					image[j * 4 + 2] = buf_p[j * 3 + 2];
+					image[j * 4 + 3] = 255;
 				}
 			}
 
@@ -580,7 +439,6 @@ void LoadDrawVertToSrfVert(srfVert_t* s, drawVert_t* d, int realLightmapNum, flo
 	}
 	v[3] = d->color[3] / 255.0f;
 
-	R_ColorShiftLightingFloats(v, v);
 	R_VaoPackColor(s->color, v);
 }
 
@@ -2072,12 +1930,6 @@ void R_LoadLightGrid(lump_t* l) {
 	w->lightGridData = ri.Hunk_Alloc(l->filelen, h_low);
 	Com_Memcpy(w->lightGridData, (void*)(fileBase + l->fileofs), l->filelen);
 
-	// deal with overbright bits
-	for(i = 0; i < numGridPoints; i++) {
-		R_ColorShiftLightingBytes(&w->lightGridData[i * 8], &w->lightGridData[i * 8]);
-		R_ColorShiftLightingBytes(&w->lightGridData[i * 8 + 3], &w->lightGridData[i * 8 + 3]);
-	}
-
 	// load hdr lightgrid
 	if(r_hdr->integer) {
 		char filename[MAX_QPATH];
@@ -2104,7 +1956,6 @@ void R_LoadLightGrid(lump_t* l) {
 				c[2] = hdrLightGrid[i * 6 + 2];
 				c[3] = 1.0f;
 
-				R_ColorShiftLightingFloats(c, c);
 				ColorToRGB16(c, &w->lightGrid16[i * 6]);
 
 				c[0] = hdrLightGrid[i * 6 + 3];
@@ -2112,7 +1963,6 @@ void R_LoadLightGrid(lump_t* l) {
 				c[2] = hdrLightGrid[i * 6 + 5];
 				c[3] = 1.0f;
 
-				R_ColorShiftLightingFloats(c, c);
 				ColorToRGB16(c, &w->lightGrid16[i * 6 + 3]);
 			}
 		} else if(0) {

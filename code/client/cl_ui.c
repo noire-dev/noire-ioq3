@@ -704,7 +704,6 @@ intptr_t CL_UISystemCalls(intptr_t* args) {
 		case UI_GET_CDKEY: CLUI_GetCDKey(VMA(1), args[2]); return 0;
 		case UI_SET_CDKEY: return 0;
 		case UI_SET_PBCLSTATUS: return 0;
-		case UI_R_REGISTERFONT: re.RegisterFont(VMA(1), args[2], VMA(3)); return 0;
 		case UI_PC_ADD_GLOBAL_DEFINE: return botlib_export->PC_AddGlobalDefine(VMA(1));
 		case UI_PC_LOAD_SOURCE: return botlib_export->PC_LoadSourceHandle(VMA(1));
 		case UI_PC_FREE_SOURCE: return botlib_export->PC_FreeSourceHandle(args[1]);

@@ -53,7 +53,6 @@ void trap_S_UpdateEntityPosition(int entityNum, const vec3_t origin) { syscall(C
 void trap_S_Respatialize(int entityNum, const vec3_t origin, vec3_t axis[3], int inwater) { syscall(CG_S_RESPATIALIZE, entityNum, origin, axis, inwater); }
 void trap_S_StartBackgroundTrack(const char* intro, const char* loop) { syscall(CG_S_STARTBACKGROUNDTRACK, intro, loop); }
 void trap_R_LoadWorldMap(const char* mapname) { syscall(CG_R_LOADWORLDMAP, mapname); }
-void trap_R_RegisterFont(const char* fontName, int pointSize, fontInfo_t* font) { syscall(CG_R_REGISTERFONT, fontName, pointSize, font); }
 void trap_R_AddPolysToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num) { syscall(CG_R_ADDPOLYSTOSCENE, hShader, numVerts, verts, num); }
 int trap_R_LightForPoint(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir) { return syscall(CG_R_LIGHTFORPOINT, point, ambientLight, directedLight, lightDir); }
 void trap_GetGameState(gameState_t* gamestate) { syscall(CG_GETGAMESTATE, gamestate); }
