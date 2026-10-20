@@ -584,8 +584,8 @@ void SV_Init(void) {
 
 	// Physics engine
 	phys_fps = Cvar_Get("phys_fps", "120", CVAR_ARCHIVE);
-	phys_steps = Cvar_Get("phys_steps", "8", CVAR_ARCHIVE);
-	phys_solver_iterations = Cvar_Get("phys_solver_iterations", "96", CVAR_ARCHIVE);
+	phys_steps = Cvar_Get("phys_steps", "4", CVAR_ARCHIVE);
+	phys_solver_iterations = Cvar_Get("phys_solver_iterations", "8", CVAR_ARCHIVE);
 	phys_gravity_x = Cvar_Get("phys_gravity_x", "0", CVAR_ARCHIVE);
 	phys_gravity_y = Cvar_Get("phys_gravity_y", "0", CVAR_ARCHIVE);
 	phys_gravity_z = Cvar_Get("phys_gravity_z", "-800", CVAR_ARCHIVE);
@@ -624,7 +624,7 @@ void SV_Init(void) {
 	// server vars
 	sv_rconPassword = Cvar_Get("rconPassword", "", CVAR_TEMP);
 	sv_privatePassword = Cvar_Get("sv_privatePassword", "", CVAR_TEMP);
-	sv_fps = Cvar_Get("sv_fps", "20", CVAR_TEMP);
+	sv_fps = Cvar_Get("sv_fps", "30", CVAR_TEMP);
 	sv_timeout = Cvar_Get("sv_timeout", "200", CVAR_TEMP);
 	sv_zombietime = Cvar_Get("sv_zombietime", "2", CVAR_TEMP);
 	Cvar_Get("nextmap", "", CVAR_TEMP);
