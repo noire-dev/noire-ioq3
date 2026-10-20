@@ -86,7 +86,6 @@ extern bool haveClampToEdge;
 extern cvar_t* r_resolution;
 extern cvar_t* r_noborder;
 extern cvar_t* r_fullscreen;
-extern cvar_t* r_ignorehwgamma;  // overrides hardware gamma capabilities
 extern cvar_t* r_swapInterval;
 
 extern cvar_t* r_ext_multitexture;

@@ -252,16 +252,6 @@ void RE_BeginFrame(void) {
 		r_textureMode->modified = false;
 	}
 
-	//
-	// gamma stuff
-	//
-	if(r_gamma->modified) {
-		r_gamma->modified = false;
-
-		R_IssuePendingRenderCommands();
-		R_SetColorMappings();
-	}
-
 	if(!(cmd = R_GetCommandBuffer(sizeof(*cmd)))) return;
 
 	if(cmd) {
@@ -279,10 +269,17 @@ Returns the number of msec spent in the back end
 */
 void RE_EndFrame(int* frontEndMsec, int* backEndMsec) {
 	swapBuffersCommand_t* cmd;
+	gammaCommand_t* gammaCmd;
 
 	if(!tr.registered) {
 		return;
 	}
+
+	gammaCmd = R_GetCommandBufferReserved(sizeof(*gammaCmd), 0);
+	if(!gammaCmd) return;
+
+	gammaCmd->commandId = RC_GAMMA;
+
 	cmd = R_GetCommandBufferReserved(sizeof(*cmd), 0);
 	if(!cmd) {
 		return;

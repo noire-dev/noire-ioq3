@@ -1082,7 +1082,7 @@ const void* RB_PostProcess(const void* data) {
 	// finish any 2D drawing if needed
 	if(tess.numIndexes) RB_EndSurface();
 
-	if(!glRefConfig.framebufferObject || !r_postProcess->integer) {
+	if(!glRefConfig.framebufferObject) {
 		// do nothing
 		return (const void*)(cmd + 1);
 	}
@@ -1149,6 +1149,34 @@ const void* RB_PostProcess(const void* data) {
 }
 
 /*
+=============
+RB_GammaCommand
+=============
+*/
+const void* RB_GammaCommand(const void* data) {
+	const gammaCommand_t* cmd = data;
+	ivec4_t box;
+
+	// finish any 2D drawing if needed
+	if(tess.numIndexes) RB_EndSurface();
+
+	if(!glRefConfig.framebufferObject) {
+		// do nothing
+		return (const void*)(cmd + 1);
+	}
+
+	if(r_gamma->value != 1.0f) {
+		VectorSet4(box, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
+
+		RB_Gamma(tr.renderFbo, box, tr.screenScratchFbo, box);
+
+		FBO_FastBlit(tr.screenScratchFbo, box, tr.renderFbo, box, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	}
+
+	return (const void*)(cmd + 1);
+}
+
+/*
 ====================
 RB_ExecuteRenderCommands
 ====================
@@ -1171,6 +1199,7 @@ void RB_ExecuteRenderCommands(const void* data) {
 			case RC_VIDEOFRAME: data = RB_TakeVideoFrameCmd(data); break;
 			case RC_CLEARDEPTH: data = RB_ClearDepth(data); break;
 			case RC_POSTPROCESS: data = RB_PostProcess(data); break;
+			case RC_GAMMA: data = RB_GammaCommand(data); break;
 			case RC_END_OF_LIST:
 			default:
 				// finish any 2D drawing if needed

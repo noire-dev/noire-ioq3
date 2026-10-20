@@ -279,3 +279,14 @@ void RB_GaussianBlur(FBO_t* srcFbo, FBO_t* dstFbo, float blur) {
 		FBO_Blit(tr.textureScratchFbo[0], srcBox, NULL, dstFbo, dstBox, NULL, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
 	}
 }
+
+void RB_Gamma(FBO_t* srcFbo, ivec4_t srcBox, FBO_t* dstFbo, ivec4_t dstBox) {
+	vec4_t color;
+
+	VectorSet4(color, 1.0f, 1.0f, 1.0f, 1.0f);
+
+	GLSL_BindProgram(&tr.gammaShader);
+	GLSL_SetUniformFloat(&tr.gammaShader, UNIFORM_GAMMA, r_gamma->value);
+
+	FBO_Blit(srcFbo, srcBox, NULL, dstFbo, dstBox, &tr.gammaShader, color, 0);
+}

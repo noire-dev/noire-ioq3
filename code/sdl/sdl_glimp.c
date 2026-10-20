@@ -854,9 +854,6 @@ void GLimp_Init(bool fixedFunction) {
 
 success:
 
-	// Only using SDL_SetWindowBrightness to determine if hardware gamma is supported
-	glConfig.deviceSupportsGamma = !r_ignorehwgamma->integer && SDL_SetWindowBrightness(SDL_window, 1.0f) >= 0;
-
 	// get our config strings
 	Q_strncpyz(glConfig.vendor_string, (char*)qglGetString(GL_VENDOR), sizeof(glConfig.vendor_string));
 	Q_strncpyz(glConfig.renderer_string, (char*)qglGetString(GL_RENDERER), sizeof(glConfig.renderer_string));

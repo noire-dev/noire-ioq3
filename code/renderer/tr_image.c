@@ -25,24 +25,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_dsa.h"
 
 static byte s_intensitytable[256];
-static unsigned char s_gammatable[256];
 
 int gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
 int gl_filter_max = GL_LINEAR;
 
 #define FILE_HASH_SIZE 1024
 static image_t* hashTable[FILE_HASH_SIZE];
-
-/*
-** R_GammaCorrect
-*/
-void R_GammaCorrect(byte* buffer, int bufSize) {
-	int i;
-
-	for(i = 0; i < bufSize; i++) {
-		buffer[i] = s_gammatable[buffer[i]];
-	}
-}
 
 typedef struct {
 	char* name;
@@ -354,42 +342,17 @@ Scale up the pixel values in a texture to increase the
 lighting range
 ================
 */
-void R_LightScaleTexture(byte* in, int inwidth, int inheight, bool only_gamma) {
-	if(only_gamma) {
-		if(!glConfig.deviceSupportsGamma) {
-			int i, c;
-			byte* p;
+void R_LightScaleTexture(byte* in, int inwidth, int inheight) {
+	int i, c;
+	byte* p;
 
-			p = in;
+	p = in;
+	c = inwidth * inheight;
 
-			c = inwidth * inheight;
-			for(i = 0; i < c; i++, p += 4) {
-				p[0] = s_gammatable[p[0]];
-				p[1] = s_gammatable[p[1]];
-				p[2] = s_gammatable[p[2]];
-			}
-		}
-	} else {
-		int i, c;
-		byte* p;
-
-		p = in;
-
-		c = inwidth * inheight;
-
-		if(glConfig.deviceSupportsGamma) {
-			for(i = 0; i < c; i++, p += 4) {
-				p[0] = s_intensitytable[p[0]];
-				p[1] = s_intensitytable[p[1]];
-				p[2] = s_intensitytable[p[2]];
-			}
-		} else {
-			for(i = 0; i < c; i++, p += 4) {
-				p[0] = s_gammatable[s_intensitytable[p[0]]];
-				p[1] = s_gammatable[s_intensitytable[p[1]]];
-				p[2] = s_gammatable[s_intensitytable[p[2]]];
-			}
-		}
+	for(i = 0; i < c; i++, p += 4) {
+		p[0] = s_intensitytable[p[0]];
+		p[1] = s_intensitytable[p[1]];
+		p[2] = s_intensitytable[p[2]];
 	}
 }
 
@@ -916,7 +879,7 @@ static void Upload32(byte* data, int x, int y, int width, int height, GLenum pic
 
 		if(type == IMGTYPE_COLORALPHA) {
 			// This corresponds to what the OpenGL1 renderer does.
-			if(!(flags & IMGFLAG_NOLIGHTSCALE) && (scaled || mipmap)) R_LightScaleTexture(data, width, height, !mipmap);
+			if(!(flags & IMGFLAG_NOLIGHTSCALE) && (scaled || mipmap)) R_LightScaleTexture(data, width, height);
 		}
 
 		if(glRefConfig.swizzleNormalmap && (type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT)) RawImage_SwizzleRA(data, width, height);
@@ -1513,48 +1476,20 @@ void R_CreateBuiltinImages(void) {
 R_SetColorMappings
 ===============
 */
-void R_SetColorMappings(void) {
+static void R_SetColorMappings(void) {
 	int i, j;
-	float g;
-	int inf;
 
 	tr.identityLight = 1.0f / (1 << 0);
 	tr.identityLightByte = 255 * tr.identityLight;
 
-	if(r_gamma->value < 0.5f) {
-		ri.Cvar_Set("r_gamma", "0.5");
-	} else if(r_gamma->value > 3.0f) {
-		ri.Cvar_Set("r_gamma", "3.0");
-	}
-
-	g = r_gamma->value;
-
-	for(i = 0; i < 256; i++) {
-		if(g == 1) {
-			inf = i;
-		} else {
-			inf = 255 * pow(i / 255.0f, 1.0f / g) + 0.5f;
-		}
-
-		if(inf < 0) {
-			inf = 0;
-		}
-		if(inf > 255) {
-			inf = 255;
-		}
-		s_gammatable[i] = inf;
-	}
-
 	for(i = 0; i < 256; i++) {
 		j = i;
+
 		if(j > 255) {
 			j = 255;
 		}
-		s_intensitytable[i] = j;
-	}
 
-	if(glConfig.deviceSupportsGamma) {
-		GLimp_SetGamma(s_gammatable, s_gammatable, s_gammatable);
+		s_intensitytable[i] = j;
 	}
 }
 
@@ -1565,6 +1500,7 @@ R_InitImages
 */
 void R_InitImages(void) {
 	Com_Memset(hashTable, 0, sizeof(hashTable));
+
 	// build brightness translation tables
 	R_SetColorMappings();
 

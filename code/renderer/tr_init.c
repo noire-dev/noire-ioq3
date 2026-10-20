@@ -43,8 +43,6 @@ cvar_t* com_altivec;
 
 cvar_t* r_ignore;
 
-cvar_t* r_ignorehwgamma;
-
 cvar_t* r_dynamiclight;
 
 cvar_t* r_lodbias;
@@ -129,8 +127,6 @@ static void InitOpenGL(void) {
 	//		- r_fullscreen
 	//		- r_resolution
 	//		- r_(color|depth|stencil)bits
-	//		- r_ignorehwgamma
-	//		- r_gamma
 	//
 
 	if(glConfig.vidWidth == 0) {
@@ -309,9 +305,6 @@ void RB_TakeScreenshot(int x, int y, int width, int height, char* fileName) {
 
 	memcount = linelen * height;
 
-	// gamma correct
-	if(glConfig.deviceSupportsGamma) R_GammaCorrect(allbuf + offset, memcount);
-
 	ri.FS_WriteFile(fileName, buffer, memcount + 18);
 
 	ri.Hunk_FreeTempMemory(allbuf);
@@ -330,9 +323,6 @@ void RB_TakeScreenshotJPEG(int x, int y, int width, int height, char* fileName) 
 
 	buffer = RB_ReadPixels(x, y, width, height, &offset, &padlen);
 	memcount = (width * 3 + padlen) * height;
-
-	// gamma correct
-	if(glConfig.deviceSupportsGamma) R_GammaCorrect(buffer + offset, memcount);
 
 	RE_SaveJPG(fileName, 100, width, height, buffer + offset, padlen);
 	ri.Hunk_FreeTempMemory(buffer);
@@ -583,9 +573,6 @@ const void* RB_TakeVideoFrameCmd(const void* data) {
 
 	memcount = padwidth * cmd->height;
 
-	// gamma correct
-	if(glConfig.deviceSupportsGamma) R_GammaCorrect(cBuf, memcount);
-
 	if(cmd->motionJpeg) {
 		// Convert RGBA to RGB, in place, line by line
 		if(format == GL_RGBA) {
@@ -810,7 +797,6 @@ void R_Register(void) {
 
 	r_picmip = ri.Cvar_Get("r_picmip", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	ri.Cvar_CheckRange(r_picmip, 0, 16, true);
-	r_ignorehwgamma = ri.Cvar_Get("r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_resolution = ri.Cvar_Get("r_resolution", "640x480", CVAR_ARCHIVE | CVAR_LATCH);
 	r_fullscreen = ri.Cvar_Get("r_fullscreen", "2", CVAR_ARCHIVE);
 	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);

@@ -611,6 +611,7 @@ typedef enum {
 
 	UNIFORM_ALPHATESTREF,
 	UNIFORM_INTENSITY,
+	UNIFORM_GAMMA,
 	UNIFORM_DIFFUSECOLOR,
 
 	UNIFORM_GREYSCALE,
@@ -1441,6 +1442,7 @@ typedef struct {
 	shaderProgram_t down4xShader;
 	shaderProgram_t bokehShader;
 	shaderProgram_t tonemapShader;
+	shaderProgram_t gammaShader;
 	shaderProgram_t calclevels4xShader[2];
 	shaderProgram_t shadowmaskShader;
 	shaderProgram_t depthBlurShader[4];
@@ -1712,9 +1714,6 @@ model_t* R_AllocModel(void);
 
 void R_Init(void);
 void R_UpdateSubImage(image_t* image, byte* pic, int x, int y, int width, int height, GLenum picFormat);
-
-void R_SetColorMappings(void);
-void R_GammaCorrect(byte* buffer, int bufSize);
 
 void R_ImageList_f(void);
 void R_SkinList_f(void);
@@ -2133,7 +2132,11 @@ typedef struct {
 	viewParms_t viewParms;
 } postProcessCommand_t;
 
-typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_DRAW_BUFFER, RC_SWAP_BUFFERS, RC_SCREENSHOT, RC_VIDEOFRAME, RC_CLEARDEPTH, RC_POSTPROCESS } renderCommand_t;
+typedef struct {
+	int commandId;
+} gammaCommand_t;
+
+typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_DRAW_BUFFER, RC_SWAP_BUFFERS, RC_SCREENSHOT, RC_VIDEOFRAME, RC_CLEARDEPTH, RC_POSTPROCESS, RC_GAMMA } renderCommand_t;
 
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --

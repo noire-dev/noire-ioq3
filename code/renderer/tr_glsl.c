@@ -48,6 +48,8 @@ extern const char* fallbackShader_texturecolor_vp;
 extern const char* fallbackShader_texturecolor_fp;
 extern const char* fallbackShader_tonemap_vp;
 extern const char* fallbackShader_tonemap_fp;
+extern const char* fallbackShader_gamma_vp;
+extern const char* fallbackShader_gamma_fp;
 
 typedef struct uniformInfo_s {
 	char* name;
@@ -157,6 +159,7 @@ static uniformInfo_t uniformsInfo[] = {
 
     {"u_AlphaTestRef", GLSL_FLOAT},
     {"u_Intensity", GLSL_FLOAT},
+    {"u_Gamma", GLSL_FLOAT},
     {"u_DiffuseColor", GLSL_VEC3},
 
     {"u_Greyscale", GLSL_FLOAT},
@@ -1128,6 +1131,21 @@ void GLSL_InitGPUShaders(void) {
 	GLSL_SetUniformInt(&tr.tonemapShader, UNIFORM_LEVELSMAP, TB_LEVELSMAP);
 
 	GLSL_FinishGPUShader(&tr.tonemapShader);
+
+	numEtcShaders++;
+
+	attribs = ATTR_POSITION | ATTR_TEXCOORD;
+	extradefines[0] = '\0';
+
+	if(!GLSL_InitGPUShader(&tr.gammaShader, "gamma", attribs, true, extradefines, true, fallbackShader_gamma_vp, fallbackShader_gamma_fp)) {
+		ri.Error(ERR_FATAL, "Could not load gamma shader!");
+	}
+
+	GLSL_InitUniforms(&tr.gammaShader);
+
+	GLSL_SetUniformInt(&tr.gammaShader, UNIFORM_TEXTUREMAP, TB_COLORMAP);
+
+	GLSL_FinishGPUShader(&tr.gammaShader);
 
 	numEtcShaders++;
 

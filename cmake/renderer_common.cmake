@@ -13,7 +13,6 @@ set(RENDERER_COMMON_SOURCES
 )
 
 set(SDL_RENDERER_SOURCES
-    ${SOURCE_DIR}/sdl/sdl_gamma.c
     ${SOURCE_DIR}/sdl/sdl_glimp.c
 )
 
