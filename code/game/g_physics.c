@@ -65,8 +65,8 @@ void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun) {
 
 	VectorSubtract(target, currentPos, delta);
 
-	Kp = 192.0f;
-	Kd = 24.0f;
+	Kp = 48.0f;
+	Kd = 4.0f;
 
 	for(i = 0; i < 3; i++) {
 		float desiredAccel = Kp * delta[i] - Kd * currentVel[i];

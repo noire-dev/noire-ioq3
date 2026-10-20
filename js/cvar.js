@@ -19,7 +19,7 @@ cvar.register("g_knockback", "1000", 0);
 cvar.register("com_blood", "1", 0);
 cvar.register("g_enableDust", "0", CVAR.SERVERINFO);
 cvar.register("g_enableBreath", "0", CVAR.SERVERINFO);
-cvar.register("sv_fps", "60", CVAR.SYSTEMINFO | CVAR.ARCHIVE);
+cvar.register("sv_fps", "30", CVAR.SYSTEMINFO | CVAR.ARCHIVE);
 // cgame.vm
 cvar.register("headR", "100", CVAR.USERINFO | CVAR.ARCHIVE);
 cvar.register("headG", "100", CVAR.USERINFO | CVAR.ARCHIVE);
@@ -73,7 +73,7 @@ cvar.register("g_enableBreath", "0", CVAR.SERVERINFO);
 cvar.register("cg_cameraEyes", "0", CVAR.ARCHIVE);
 cvar.register("cg_cameraEyes_Fwd", "-2", CVAR.ARCHIVE);
 cvar.register("cg_cameraEyes_Up", "7", CVAR.ARCHIVE);
-cvar.register("sv_fps", "60", CVAR.SYSTEMINFO);
+cvar.register("sv_fps", "30", CVAR.SYSTEMINFO);
 cvar.register("cg_crosshairColorRed", "0.5", CVAR.ARCHIVE | CVAR.USERINFO);
 cvar.register("cg_crosshairColorGreen", "0.75", CVAR.ARCHIVE | CVAR.USERINFO);
 cvar.register("cg_crosshairColorBlue", "1.0", CVAR.ARCHIVE | CVAR.USERINFO);
