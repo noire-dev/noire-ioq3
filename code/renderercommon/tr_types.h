@@ -153,7 +153,6 @@ typedef struct {
 
 	int colorBits, depthBits, stencilBits;
 
-	bool deviceSupportsGamma;
 	textureCompression_t textureCompression;
 	bool textureEnvAddAvailable;
 

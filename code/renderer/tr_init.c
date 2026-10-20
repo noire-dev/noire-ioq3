@@ -75,14 +75,13 @@ cvar_t* r_reflectionsEnd;
 cvar_t* r_reflectionsDetail;
 cvar_t* r_deluxeSpecular;
 cvar_t* r_detailLevel;
-cvar_t* r_sunShadows;
-cvar_t* r_sunShadowLightScale;
-cvar_t* r_sunShadowAmbientScale;
+cvar_t* r_shadows;
+cvar_t* r_shadowsUpdate;
+cvar_t* r_shadowResolution;
+cvar_t* r_shadowDistance;
+cvar_t* r_shadowLightScale;
+cvar_t* r_shadowAmbientScale;
 cvar_t* r_shadowFilter;
-cvar_t* r_shadowMapSize;
-cvar_t* r_shadowCascadeZNear;
-cvar_t* r_shadowCascadeZFar;
-cvar_t* r_shadowCascadeZBias;
 
 cvar_t* r_fogDensity;
 cvar_t* r_fogColorR;
@@ -318,11 +317,10 @@ RB_TakeScreenshotJPEG
 
 void RB_TakeScreenshotJPEG(int x, int y, int width, int height, char* fileName) {
 	byte* buffer;
-	size_t offset = 0, memcount;
+	size_t offset = 0;
 	int padlen;
 
 	buffer = RB_ReadPixels(x, y, width, height, &offset, &padlen);
-	memcount = (width * 3 + padlen) * height;
 
 	RE_SaveJPG(fileName, 100, width, height, buffer + offset, padlen);
 	ri.Hunk_FreeTempMemory(buffer);
@@ -826,21 +824,20 @@ void R_Register(void) {
 	r_detailLevel = ri.Cvar_Get("r_detailLevel", "5", CVAR_ARCHIVE);
 	ri.Cvar_CheckRange(r_detailLevel, 0, 5, true);
 
-	r_sunShadows = ri.Cvar_Get("r_sunShadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_sunShadowLightScale = ri.Cvar_Get("r_sunShadowLightScale", "0.50", CVAR_ARCHIVE);
-	r_sunShadowAmbientScale = ri.Cvar_Get("r_sunShadowAmbientScale", "0.32", CVAR_ARCHIVE);
+	r_shadows = ri.Cvar_Get("r_shadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_shadowsUpdate = ri.Cvar_Get("r_shadowsUpdate", "5", CVAR_ARCHIVE | CVAR_LATCH);
+	r_shadowResolution = ri.Cvar_Get("r_shadowResolution", "4096", CVAR_ARCHIVE | CVAR_LATCH);
+	r_shadowDistance = ri.Cvar_Get("r_shadowDistance", "8192", CVAR_ARCHIVE | CVAR_LATCH);
+	r_shadowLightScale = ri.Cvar_Get("r_shadowLightScale", "0.50", CVAR_ARCHIVE);
+	r_shadowAmbientScale = ri.Cvar_Get("r_shadowAmbientScale", "0.32", CVAR_ARCHIVE);
 	r_shadowFilter = ri.Cvar_Get("r_shadowFilter", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_shadowMapSize = ri.Cvar_Get("r_shadowMapSize", "1024", CVAR_ARCHIVE | CVAR_LATCH);
-	r_shadowCascadeZNear = ri.Cvar_Get("r_shadowCascadeZNear", "16", CVAR_ARCHIVE | CVAR_LATCH);
-	r_shadowCascadeZFar = ri.Cvar_Get("r_shadowCascadeZFar", "2048", CVAR_ARCHIVE | CVAR_LATCH);
-	r_shadowCascadeZBias = ri.Cvar_Get("r_shadowCascadeZBias", "0", CVAR_ARCHIVE | CVAR_LATCH);
 
 	r_fogDensity = ri.Cvar_Get("r_fogDensity", "1.0", CVAR_ARCHIVE);
 	r_fogColorR = ri.Cvar_Get("r_fogColorR", "0.5", CVAR_ARCHIVE);
 	r_fogColorG = ri.Cvar_Get("r_fogColorG", "0.5", CVAR_ARCHIVE);
 	r_fogColorB = ri.Cvar_Get("r_fogColorB", "0.5", CVAR_ARCHIVE);
-	r_fogStart = ri.Cvar_Get("r_fogStart", "512", CVAR_ARCHIVE);
-	r_fogEnd = ri.Cvar_Get("r_fogEnd", "65536", CVAR_ARCHIVE);
+	r_fogStart = ri.Cvar_Get("r_fogStart", "0", CVAR_ARCHIVE);
+	r_fogEnd = ri.Cvar_Get("r_fogEnd", "131072", CVAR_ARCHIVE);
 
 	//
 	// archived variables that can change at any time
@@ -905,14 +902,13 @@ void R_Init(void) {
 	Com_Memset(&backEnd, 0, sizeof(backEnd));
 	Com_Memset(&tess, 0, sizeof(tess));
 
-	if(sizeof(glconfig_t) != 11316) ri.Error(ERR_FATAL, "Mod ABI incompatible: sizeof(glconfig_t) == %u != 11316", (unsigned int)sizeof(glconfig_t));
+	if(sizeof(glconfig_t) != 11312) ri.Error(ERR_FATAL, "Mod ABI incompatible: sizeof(glconfig_t) == %u != 11312", (unsigned int)sizeof(glconfig_t));
 
 	//	Swap_Init();
 
 	if((intptr_t)tess.xyz & 15) {
 		ri.Printf(PRINT_WARNING, "tess.xyz not 16 byte aligned\n");
 	}
-	// Com_Memset( tess.constantColor255, 255, sizeof( tess.constantColor255 ) );
 
 	//
 	// init function tables

@@ -1638,9 +1638,9 @@ void R_RenderSunShadowMaps(const refdef_t* fd, int level) {
 
 	VectorCopy4(tr.refdef.sunDir, lightDir);
 
-	viewZNear = r_shadowCascadeZNear->value;
-	viewZFar = r_shadowCascadeZFar->value;
-	splitBias = r_shadowCascadeZBias->value;
+	viewZNear = 16.0f;
+	viewZFar = r_shadowDistance->value;
+	splitBias = 0.0f;
 
 	switch(level) {
 		case 0:
@@ -1901,9 +1901,9 @@ void R_RenderSunShadowMaps(const refdef_t* fd, int level) {
 			R_SetupProjectionOrtho(&tr.viewParms, lightviewBounds);
 
 			R_AddWorldSurfaces();
-			R_AddPolygonSurfaces();
+			// R_AddPolygonSurfaces();
 
-			R_AddEntitySurfaces();
+			if(level != 3 && (level == 0 || r_shadowsUpdate->integer != 0)) R_AddEntitySurfaces();
 
 			R_SortDrawSurfs(tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf);
 		}

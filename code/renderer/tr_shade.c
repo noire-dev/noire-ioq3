@@ -949,7 +949,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 				}
 			}
 
-			if(r_sunShadows->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT) && (index & LIGHTDEF_LIGHTTYPE_MASK)) {
+			if(r_shadows->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT) && (index & LIGHTDEF_LIGHTTYPE_MASK)) {
 				index |= LIGHTDEF_USE_SHADOWMAP;
 			}
 
@@ -1090,7 +1090,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 		} else if(pStage->glslShaderGroup == tr.lightallShader) {
 			vec4_t enableTextures;
 
-			if(r_sunShadows->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT) && (pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK)) {
+			if(r_shadows->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT) && (pStage->glslShaderIndex & LIGHTDEF_LIGHTTYPE_MASK)) {
 				// FIXME: screenShadowImage is NULL if no framebuffers
 				if(tr.screenShadowImage) GL_BindToTMU(tr.screenShadowImage, TB_SHADOWMAP);
 				GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTAMBIENT, backEnd.refdef.sunAmbCol);

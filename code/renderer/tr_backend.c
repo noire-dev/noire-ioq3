@@ -802,7 +802,7 @@ const void* RB_DrawSurfs(const void* data) {
 				FBO_BlitFromTexture(tr.renderDepthImage, srcTexCoords, NULL, tr.hdrDepthFbo, NULL, NULL, NULL, 0);
 			}
 
-			if(r_sunShadows->integer && backEnd.viewParms.flags & VPF_USESUNLIGHT) {
+			if(r_shadows->integer && backEnd.viewParms.flags & VPF_USESUNLIGHT) {
 				vec4_t quadVerts[4];
 				vec2_t texCoords[4];
 				vec4_t box;
@@ -847,20 +847,15 @@ const void* RB_DrawSurfs(const void* data) {
 
 				GL_BindToTMU(tr.renderDepthImage, TB_COLORMAP);
 
-				if(r_shadowCascadeZFar->integer != 0) {
-					GL_BindToTMU(tr.sunShadowDepthImage[0], TB_SHADOWMAP);
-					GL_BindToTMU(tr.sunShadowDepthImage[1], TB_SHADOWMAP2);
-					GL_BindToTMU(tr.sunShadowDepthImage[2], TB_SHADOWMAP3);
-					GL_BindToTMU(tr.sunShadowDepthImage[3], TB_SHADOWMAP4);
+				GL_BindToTMU(tr.sunShadowDepthImage[0], TB_SHADOWMAP);
+				GL_BindToTMU(tr.sunShadowDepthImage[1], TB_SHADOWMAP2);
+				GL_BindToTMU(tr.sunShadowDepthImage[2], TB_SHADOWMAP3);
+				GL_BindToTMU(tr.sunShadowDepthImage[3], TB_SHADOWMAP4);
 
-					GLSL_SetUniformMat4(&tr.shadowmaskShader, UNIFORM_SHADOWMVP, backEnd.refdef.sunShadowMvp[0]);
-					GLSL_SetUniformMat4(&tr.shadowmaskShader, UNIFORM_SHADOWMVP2, backEnd.refdef.sunShadowMvp[1]);
-					GLSL_SetUniformMat4(&tr.shadowmaskShader, UNIFORM_SHADOWMVP3, backEnd.refdef.sunShadowMvp[2]);
-					GLSL_SetUniformMat4(&tr.shadowmaskShader, UNIFORM_SHADOWMVP4, backEnd.refdef.sunShadowMvp[3]);
-				} else {
-					GL_BindToTMU(tr.sunShadowDepthImage[3], TB_SHADOWMAP);
-					GLSL_SetUniformMat4(&tr.shadowmaskShader, UNIFORM_SHADOWMVP, backEnd.refdef.sunShadowMvp[3]);
-				}
+				GLSL_SetUniformMat4(&tr.shadowmaskShader, UNIFORM_SHADOWMVP, backEnd.refdef.sunShadowMvp[0]);
+				GLSL_SetUniformMat4(&tr.shadowmaskShader, UNIFORM_SHADOWMVP2, backEnd.refdef.sunShadowMvp[1]);
+				GLSL_SetUniformMat4(&tr.shadowmaskShader, UNIFORM_SHADOWMVP3, backEnd.refdef.sunShadowMvp[2]);
+				GLSL_SetUniformMat4(&tr.shadowmaskShader, UNIFORM_SHADOWMVP4, backEnd.refdef.sunShadowMvp[3]);
 
 				GLSL_SetUniformVec3(&tr.shadowmaskShader, UNIFORM_VIEWORIGIN, backEnd.refdef.vieworg);
 				{

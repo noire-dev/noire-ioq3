@@ -312,12 +312,12 @@ void RE_BeginScene(const refdef_t* fd) {
 	} else {
 		float scale = (1 << 0) / 255.0f;
 
-		VectorScale(tr.sunLight, scale * r_sunShadowLightScale->value, tr.refdef.sunCol);
+		VectorScale(tr.sunLight, scale * r_shadowLightScale->value, tr.refdef.sunCol);
 
-		if(r_sunShadows->integer) {
-			tr.refdef.sunAmbCol[0] = tr.refdef.sunAmbCol[1] = tr.refdef.sunAmbCol[2] = r_sunShadowAmbientScale->value;
+		if(r_shadows->integer) {
+			tr.refdef.sunAmbCol[0] = tr.refdef.sunAmbCol[1] = tr.refdef.sunAmbCol[2] = r_shadowAmbientScale->value;
 		} else {
-			VectorScale(tr.sunLight, scale * r_sunShadowAmbientScale->value, tr.refdef.sunAmbCol);
+			VectorScale(tr.sunLight, scale * r_shadowAmbientScale->value, tr.refdef.sunAmbCol);
 		}
 	}
 
@@ -415,26 +415,40 @@ void RE_RenderScene(const refdef_t* fd) {
 	}
 
 	// playing with even more shadows
-	if(glRefConfig.framebufferObject && r_sunShadows->integer && !(fd->rdflags & RDF_NOWORLDMODEL) && r_sunShadows->integer) {
-		if((tr.frameCount & 1) == 0) {
-			if(r_shadowCascadeZFar->integer != 0) {
-				if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);   // 1-й каскад: каждые 2 кадра
-				if((tr.frameCount & 15) == 0) R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждые 16 кадров
-				if((tr.frameCount & 63) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 64 кадра
-			} else {
-				Mat4Zero(tr.refdef.sunShadowMvp[0]);
-				Mat4Zero(tr.refdef.sunShadowMvp[1]);
-				Mat4Zero(tr.refdef.sunShadowMvp[2]);
-			}
+	if(glRefConfig.framebufferObject && r_shadows->integer && !(fd->rdflags & RDF_NOWORLDMODEL) && r_shadows->integer) {
+		if(r_shadowsUpdate->integer == 5) {
+			R_RenderSunShadowMaps(fd, 0);  // 1-й каскад: каждый кадр
+			R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждый кадр
+			R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждый кадр
+		} else if(r_shadowsUpdate->integer == 4) {
+			R_RenderSunShadowMaps(fd, 0);                               // 1-й каскад: каждый кадр
+			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждые 2 кадра
+			if((tr.frameCount & 3) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 4 кадра
+		} else if(r_shadowsUpdate->integer == 3) {
+			R_RenderSunShadowMaps(fd, 0);                               // 1-й каскад: каждый кадр
+			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждые 2 кадра
+			if((tr.frameCount & 7) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 8 кадров
+		} else if(r_shadowsUpdate->integer == 2) {
+			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);   // 1-й каскад: каждые 2 кадра
+			if((tr.frameCount & 3) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 4 кадра
+			if((tr.frameCount & 15) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 16 кадров
+		} else if(r_shadowsUpdate->integer == 1) {
+			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);   // 1-й каскад: каждые 2 кадра
+			if((tr.frameCount & 7) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 8 кадров
+			if((tr.frameCount & 31) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 32 кадров
+		} else if(r_shadowsUpdate->integer == 0) {
+			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);    // 1-й каскад: каждые 2 кадра
+			if((tr.frameCount & 63) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 64 кадров (без энтити)
+			if((tr.frameCount & 127) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 128 кадров (без энтити)
+		}
 
-			// only rerender last cascade if sun has changed position
-			if(!VectorCompare(tr.refdef.sunDir, tr.lastCascadeSunDirection)) {
-				VectorCopy(tr.refdef.sunDir, tr.lastCascadeSunDirection);
-				R_RenderSunShadowMaps(fd, 3);
-				Mat4Copy(tr.refdef.sunShadowMvp[3], tr.lastCascadeSunMvp);
-			} else {
-				Mat4Copy(tr.lastCascadeSunMvp, tr.refdef.sunShadowMvp[3]);
-			}
+		// only rerender last cascade if sun has changed position
+		if(!VectorCompare(tr.refdef.sunDir, tr.lastCascadeSunDirection)) {
+			VectorCopy(tr.refdef.sunDir, tr.lastCascadeSunDirection);
+			R_RenderSunShadowMaps(fd, 3);
+			Mat4Copy(tr.refdef.sunShadowMvp[3], tr.lastCascadeSunMvp);
+		} else {
+			Mat4Copy(tr.lastCascadeSunMvp, tr.refdef.sunShadowMvp[3]);
 		}
 	}
 
@@ -495,7 +509,7 @@ void RE_RenderScene(const refdef_t* fd) {
 
 	VectorCopy(fd->vieworg, parms.pvsOrigin);
 
-	if(!(fd->rdflags & RDF_NOWORLDMODEL) && r_sunShadows->integer) {
+	if(!(fd->rdflags & RDF_NOWORLDMODEL) && r_shadows->integer) {
 		parms.flags = VPF_USESUNLIGHT;
 	}
 

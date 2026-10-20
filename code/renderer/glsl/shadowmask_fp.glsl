@@ -1,18 +1,14 @@
 uniform sampler2D u_ScreenDepthMap;
 
 uniform sampler2DShadow u_ShadowMap;
-#if defined(USE_SHADOW_CASCADE)
 uniform sampler2DShadow u_ShadowMap2;
 uniform sampler2DShadow u_ShadowMap3;
 uniform sampler2DShadow u_ShadowMap4;
-#endif
 
 uniform mat4      u_ShadowMvp;
-#if defined(USE_SHADOW_CASCADE)
 uniform mat4      u_ShadowMvp2;
 uniform mat4      u_ShadowMvp3;
 uniform mat4      u_ShadowMvp4;
-#endif
 
 uniform vec3   u_ViewOrigin;
 uniform vec4   u_ViewInfo; // zfar / znear, zfar
@@ -44,7 +40,7 @@ float random( const vec2 p )
 float PCF(const sampler2DShadow shadowmap, const vec2 st, const float dist)
 {
 	float mult;
-	float scale = 2.0 / r_shadowMapSize;
+	float scale = 2.0 / r_shadowResolution;
 
 #if 0
 	// from http://http.developer.nvidia.com/GPUGems/gpugems_ch11.html
@@ -69,7 +65,6 @@ float PCF(const sampler2DShadow shadowmap, const vec2 st, const float dist)
 	mult =  shadow2D(shadowmap, vec3(st + rmat * vec2(-0.7055767, 0.196515), dist));
 	mult += shadow2D(shadowmap, vec3(st + rmat * vec2(0.3524343, -0.7791386), dist));
 	mult += shadow2D(shadowmap, vec3(st + rmat * vec2(0.2391056, 0.9189604), dist));
-  #if defined(USE_SHADOW_FILTER2)
 	mult += shadow2D(shadowmap, vec3(st + rmat * vec2(-0.07580382, -0.09224417), dist));
 	mult += shadow2D(shadowmap, vec3(st + rmat * vec2(0.5784913, -0.002528916), dist));
 	mult += shadow2D(shadowmap, vec3(st + rmat * vec2(0.192888, 0.4064181), dist));
@@ -78,9 +73,6 @@ float PCF(const sampler2DShadow shadowmap, const vec2 st, const float dist)
 	mult += shadow2D(shadowmap, vec3(st + rmat * vec2(0.7320465, 0.6317794), dist));
 
 	mult *= 0.11111;
-  #else
-    mult *= 0.33333;
-  #endif
 #else
 	mult = shadow2D(shadowmap, vec3(st, dist));
 #endif
@@ -108,14 +100,11 @@ void main()
 		result = 1.0;
 	}
 	else
-#if defined(USE_SHADOW_CASCADE)
 	if (all(lessThan(abs(shadowpos.xyz), vec3(abs(shadowpos.w)))))
-#endif
 	{
 		shadowpos.xyz = shadowpos.xyz * (0.5 / shadowpos.w) + vec3(0.5);
 		result = PCF(u_ShadowMap, shadowpos.xy, shadowpos.z);
 	}
-#if defined(USE_SHADOW_CASCADE)
 	else
 	{
 		shadowpos = u_ShadowMvp2 * biasPos;
@@ -142,7 +131,6 @@ void main()
 			}
 		}
 	}
-#endif
 
 	gl_FragColor = vec4(vec3(result), 1.0);
 }

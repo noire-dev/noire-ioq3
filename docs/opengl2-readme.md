@@ -248,7 +248,7 @@ light of the same color as the sun.
 
 There are currently two ways to use this in your own (and other people's) maps.
 
-  1. Create your map as normal, set r_sunShadows to 1, and add a 
+  1. Create your map as normal, set r_shadows to 1, and add a 
      'q3gl2_sun' line after your 'q3map_sun' line in your sky material, like
      so:
      
@@ -273,7 +273,7 @@ There are currently two ways to use this in your own (and other people's) maps.
      can be used with existing maps without recompilation.  The downside is
      artifacts like doubled shadows and uneven shadow edges.
      
-  2. Set r_sunShadows to 2 and use 'q3gl2_sun' instead of 'q3map_sun' or
+  2. Set r_shadows to 2 and use 'q3gl2_sun' instead of 'q3map_sun' or
      'q3map_sunExt', like so:
   
         textures/skies/bluesky

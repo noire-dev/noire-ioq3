@@ -2094,8 +2094,8 @@ static int CollapseStagesToGLSL(void) {
 
 	// convert any remaining lightmap stages with no blending or blendfunc filter
 	// to a lighting pass with a white texture
-	// only do this with r_sunShadows non-zero, as it's only for correct shadows.
-	if(r_sunShadows->integer && shader.numDeforms == 0) {
+	// only do this with r_shadows non-zero, as it's only for correct shadows.
+	if(r_shadows->integer && shader.numDeforms == 0) {
 		for(i = 0; i < MAX_SHADER_STAGES; i++) {
 			shaderStage_t* pStage = &stages[i];
 			int blendBits;

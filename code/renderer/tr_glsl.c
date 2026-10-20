@@ -967,7 +967,7 @@ void GLSL_InitGPUShaders(void) {
 		// skip impossible combos
 		if((i & LIGHTDEF_USE_PARALLAXMAP) && !r_parallaxMapping->integer) continue;
 
-		if((i & LIGHTDEF_USE_SHADOWMAP) && (!lightType || !r_sunShadows->integer)) continue;
+		if((i & LIGHTDEF_USE_SHADOWMAP) && (!lightType || !r_shadows->integer)) continue;
 
 		if((i & LIGHTDEF_ENTITY_VERTEX_ANIMATION) && (i & LIGHTDEF_ENTITY_BONE_ANIMATION)) continue;
 
@@ -1179,12 +1179,7 @@ void GLSL_InitGPUShaders(void) {
 
 		if(r_shadowFilter->integer >= 1) Q_strcat(extradefines, 1024, "#define USE_SHADOW_FILTER\n");
 
-		if(r_shadowFilter->integer >= 2) Q_strcat(extradefines, 1024, "#define USE_SHADOW_FILTER2\n");
-
-		if(r_shadowCascadeZFar->integer != 0) Q_strcat(extradefines, 1024, "#define USE_SHADOW_CASCADE\n");
-
-		Q_strcat(extradefines, 1024, va("#define r_shadowMapSize %f\n", r_shadowMapSize->value));
-		Q_strcat(extradefines, 1024, va("#define r_shadowCascadeZFar %f\n", r_shadowCascadeZFar->value));
+		Q_strcat(extradefines, 1024, va("#define r_shadowResolution %f\n", r_shadowResolution->value));
 
 		if(!GLSL_InitGPUShader(&tr.shadowmaskShader, "shadowmask", attribs, true, extradefines, true, fallbackShader_shadowmask_vp, fallbackShader_shadowmask_fp)) {
 			ri.Error(ERR_FATAL, "Could not load shadowmask shader!");
