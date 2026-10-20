@@ -274,11 +274,10 @@ static void R_FogCullSurface(msurface_t* surf) {
 		center[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
 		center[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
 		dist = Distance(center, backEnd.viewParms.or.origin) - VectorLength(surf->cullinfo.bounds[1]) * 0.5f;
+		surf->doCull = dist > fogEnd;
 	} else {
 		surf->doCull = false;
 	}
-
-	surf->doCull = dist > fogEnd;
 }
 
 static void R_AddWorldSurface(msurface_t* surf, int dlightBits) {
@@ -660,8 +659,6 @@ void R_AddWorldSurfaces(void) {
 
 	if(tr.viewParms.flags & VPF_DEPTHSHADOW) {
 		dlightBits = 0;
-	} else if(!(tr.viewParms.flags & VPF_SHADOWMAP)) {
-		dlightBits = (1ULL << tr.refdef.num_dlights) - 1;
 	} else {
 		dlightBits = (1ULL << tr.refdef.num_dlights) - 1;
 	}
