@@ -157,7 +157,7 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 
 		// if (tr.worldLightmapping)
 		{
-			char filename[MAX_QPATH];
+			char filename[MAX_QEXTENDEDPATH];
 			byte* hdrLightmap = NULL;
 			int size = 0;
 
@@ -2279,7 +2279,7 @@ void RE_LoadWorldMap(const char* name) {
 			byte* buf = ri.Malloc(w->lightGridBounds[0] * w->lightGridBounds[1] * 3 + 18);
 			byte* out;
 			uint8_t* in;
-			char fileName[MAX_QPATH];
+			char fileName[MAX_QEXTENDEDPATH];
 
 			Com_Memset(buf, 0, 18);
 			buf[2] = 2;  // uncompressed type

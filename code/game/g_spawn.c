@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 //
 
-#include "g_local.h"
+#include "../qcommon/vm_javascript.h"
 
 bool G_SpawnString(const char* key, const char* defaultString, char** out) {
 	int i;
@@ -136,48 +136,47 @@ void SP_misc_portal_surface(gentity_t* ent);
 
 void SP_item_botroam(gentity_t* ent) {}
 
-spawn_t spawns[] = {
-    // info entities don't do anything at all, but provide positional
-    // information for things controlled by other processes
-    {"info_player_start", SP_info_player_start},
-    {"info_player_deathmatch", SP_info_player_deathmatch},
-    {"info_null", SP_info_null},
-    {"info_notnull", SP_info_notnull},  // use target_position instead
-    {"info_camp", SP_info_camp},
+spawn_t spawns[] = {// info entities don't do anything at all, but provide positional
+                    // information for things controlled by other processes
+                    {"info_player_start", SP_info_player_start},
+                    {"info_player_deathmatch", SP_info_player_deathmatch},
+                    {"info_null", SP_info_null},
+                    {"info_notnull", SP_info_notnull},  // use target_position instead
+                    {"info_camp", SP_info_camp},
 
-    {"func_plat", SP_func_plat},
-    {"func_button", SP_func_button},
-    {"func_door", SP_func_door},
-    {"func_static", SP_func_static},
-    {"func_rotating", SP_func_rotating},
-    {"func_bobbing", SP_func_bobbing},
-    {"func_pendulum", SP_func_pendulum},
-    {"func_train", SP_func_train},
-    {"func_group", SP_info_null},
-    {"func_timer", SP_func_timer},  // rename trigger_timer?
+                    {"func_plat", SP_func_plat},
+                    {"func_button", SP_func_button},
+                    {"func_door", SP_func_door},
+                    {"func_static", SP_func_static},
+                    {"func_rotating", SP_func_rotating},
+                    {"func_bobbing", SP_func_bobbing},
+                    {"func_pendulum", SP_func_pendulum},
+                    {"func_train", SP_func_train},
+                    {"func_group", SP_info_null},
+                    {"func_timer", SP_func_timer},  // rename trigger_timer?
 
-    // Triggers are brush objects that cause an effect when contacted
-    // by a living player, usually involving firing targets.
-    // While almost everything could be done with
-    // a single trigger class and different targets, triggered effects
-    // could not be client side predicted (push and teleport).
-    {"trigger_always", SP_trigger_always},
-    {"trigger_multiple", SP_trigger_multiple},
-    {"trigger_push", SP_trigger_push},
-    {"trigger_teleport", SP_trigger_teleport},
-    {"trigger_hurt", SP_trigger_hurt},
+                    // Triggers are brush objects that cause an effect when contacted
+                    // by a living player, usually involving firing targets.
+                    // While almost everything could be done with
+                    // a single trigger class and different targets, triggered effects
+                    // could not be client side predicted (push and teleport).
+                    {"trigger_always", SP_trigger_always},
+                    {"trigger_multiple", SP_trigger_multiple},
+                    {"trigger_push", SP_trigger_push},
+                    {"trigger_teleport", SP_trigger_teleport},
+                    {"trigger_hurt", SP_trigger_hurt},
 
-    {"light", SP_light},
-    {"path_corner", SP_path_corner},
+                    {"light", SP_light},
+                    {"path_corner", SP_path_corner},
 
-    {"misc_teleporter_dest", SP_misc_teleporter_dest},
-    {"misc_model", SP_misc_model},
-    {"misc_portal_surface", SP_misc_portal_surface},
-    {"misc_portal_camera", SP_misc_portal_camera},
+                    {"misc_teleporter_dest", SP_misc_teleporter_dest},
+                    {"misc_model", SP_misc_model},
+                    {"misc_portal_surface", SP_misc_portal_surface},
+                    {"misc_portal_camera", SP_misc_portal_camera},
 
-    {"item_botroam", SP_item_botroam},
+                    {"item_botroam", SP_item_botroam},
 
-    {NULL, 0}};
+                    {NULL, 0}};
 
 /*
 ===============
@@ -211,6 +210,11 @@ bool G_CallSpawn(gentity_t* ent) {
 			return true;
 		}
 	}
+
+	if(JS_SpawnUse(ent->classname)) {
+		return true;
+	}
+
 	G_Printf("%s doesn't have a spawn function\n", ent->classname);
 	return false;
 }

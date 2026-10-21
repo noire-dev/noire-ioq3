@@ -182,3 +182,11 @@ int JS_CommandRun(int clientNum) {
 	JS_Function(JS_COMMANDRUN);
 	return jsresult.v.i;
 }
+
+int JS_SpawnUse(char* classname) {
+	JS_StackClean();
+	jsargs.t[0] = JS_TYPE_STRING;
+	StringCopy(jsargs.v[0].s, classname, MAX_JS_STRINGSIZE);
+	JS_Function(JS_SPAWNUSE);
+	return jsresult.v.i;
+}

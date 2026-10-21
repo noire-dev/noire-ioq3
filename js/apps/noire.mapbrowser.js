@@ -42,14 +42,14 @@ function NoireMapBrowser_Init(appID) {
 }
 
 function NoireMapBrowser_UpdateTab(id) {
-    if (cvar.int("noire.mapbrowser.showall")) {
-        ctx[id].mapList = ui.listFiles(id, ctx[id].tabEndID, 234, 0, 128, 128, 0.65, 5, 4, LSTYLE.GRID, LCONTENT.SHADER, 0);
-        ui.setMargin(id, ctx[id].mapList, 10, 20, 10, 40);
-        ui.fillListFiles(id, "maps/", ".bsp", "levelshots/", 0);
-    } else {
-        ctx[id].mapList = ui.list(id, ctx[id].tabEndID, 234, 0, 128, 128, 0.65, 5, 4, LSTYLE.GRID, LMODE.MAPS, ctx[id].currentTab);
-        ui.setMargin(id, ctx[id].mapList, 10, 20, 10, 40);
-    }
+    //if (cvar.int("noire.mapbrowser.showall")) {
+    ctx[id].mapList = ui.listFiles(id, ctx[id].tabEndID, 234, 0, 128, 128, 0.65, 5, 4, LSTYLE.GRID, LCONTENT.SHADER, 0);
+    ui.setMargin(id, ctx[id].mapList, 10, 20, 10, 40);
+    ui.fillListFiles(id, "maps/", ".bsp", "levelshots/", 0);
+    //} else {
+    //    ctx[id].mapList = ui.list(id, ctx[id].tabEndID, 234, 0, 128, 128, 0.65, 5, 4, LSTYLE.GRID, LMODE.MAPS, ctx[id].currentTab);
+    //    ui.setMargin(id, ctx[id].mapList, 10, 20, 10, 40);
+    //}
 }
 
 function NoireMapBrowser_Key(key, id) {

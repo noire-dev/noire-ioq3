@@ -187,7 +187,7 @@ bool R_LoadIQM(model_t* mod, void* buffer, int filesize, const char* mod_name) {
 	byte* dataPtr;
 	iqmData_t* iqmData;
 	srfIQModel_t* surface;
-	char meshName[MAX_QPATH];
+	char meshName[MAX_QEXTENDEDPATH];
 	int vertexArrayFormat[IQM_COLOR + 1];
 	int allocateInfluences;
 	byte* blendIndexes;

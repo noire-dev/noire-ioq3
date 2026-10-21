@@ -67,7 +67,7 @@ static long generateHashValue(const char* fname, const int size) {
 }
 
 void R_RemapShader(const char* shaderName, const char* newShaderName, const char* timeOffset) {
-	char strippedName[MAX_QPATH];
+	char strippedName[MAX_QEXTENDEDPATH];
 	int hash;
 	shader_t *sh, *sh2;
 	qhandle_t h;
@@ -1235,7 +1235,7 @@ skyParms <outerbox> <cloudheight> <innerbox>
 static void ParseSkyParms(char** text) {
 	char* token;
 	static char* suf[6] = {"rt", "bk", "lf", "ft", "up", "dn"};
-	char pathname[MAX_QPATH];
+	char pathname[MAX_QEXTENDEDPATH];
 	int i;
 	imgFlags_t imgFlags = IMGFLAG_MIPMAP | IMGFLAG_PICMIP;
 
@@ -1837,13 +1837,13 @@ static void CollapseStagesToLightall(shaderStage_t* diffuse, shaderStage_t* norm
 
 		VectorCopy4(normal->normalScale, diffuse->normalScale);
 	} else if((lightmap || useLightVector || useLightVertex) && (diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0])) {
-		char normalName[MAX_QPATH];
+		char normalName[MAX_QEXTENDEDPATH];
 		image_t* normalImg;
 		imgFlags_t normalFlags = diffuseImg->flags | IMGFLAG_NOLIGHTSCALE;
 
 		// try a normalheight image first
-		COM_StripExtension(diffuseImg->imgName, normalName, MAX_QPATH);
-		Q_strcat(normalName, MAX_QPATH, "_nh");
+		COM_StripExtension(diffuseImg->imgName, normalName, MAX_QEXTENDEDPATH);
+		Q_strcat(normalName, MAX_QEXTENDEDPATH, "_nh");
 
 		normalImg = R_FindImageFile(normalName, IMGTYPE_NORMALHEIGHT, normalFlags);
 
@@ -1870,12 +1870,12 @@ static void CollapseStagesToLightall(shaderStage_t* diffuse, shaderStage_t* norm
 		diffuse->bundle[TB_SPECULARMAP] = specular->bundle[0];
 		VectorCopy4(specular->specularScale, diffuse->specularScale);
 	} else if((lightmap || useLightVector || useLightVertex) && (diffuseImg = diffuse->bundle[TB_DIFFUSEMAP].image[0])) {
-		char specularName[MAX_QPATH];
+		char specularName[MAX_QEXTENDEDPATH];
 		image_t* specularImg;
 		imgFlags_t specularFlags = diffuseImg->flags | IMGFLAG_NOLIGHTSCALE;
 
-		COM_StripExtension(diffuseImg->imgName, specularName, MAX_QPATH);
-		Q_strcat(specularName, MAX_QPATH, "_s");
+		COM_StripExtension(diffuseImg->imgName, specularName, MAX_QEXTENDEDPATH);
+		Q_strcat(specularName, MAX_QEXTENDEDPATH, "_s");
 
 		specularImg = R_FindImageFile(specularName, IMGTYPE_COLORALPHA, specularFlags);
 
@@ -2648,7 +2648,7 @@ default shader if the real one can't be found.
 ==================
 */
 shader_t* R_FindShaderByName(const char* name) {
-	char strippedName[MAX_QPATH];
+	char strippedName[MAX_QEXTENDEDPATH];
 	int hash;
 	shader_t* sh;
 
@@ -2708,7 +2708,7 @@ most world construction surfaces.
 shader_t* R_FindShader(const char* name, int lightmapIndex, bool mipRawImage) { return R_FindShaderEx(name, lightmapIndex, mipRawImage, lightmapIndex); }
 
 shader_t* R_FindShaderEx(const char* name, int lightmapIndex, bool mipRawImage, int realLightmapIndex) {
-	char strippedName[MAX_QPATH];
+	char strippedName[MAX_QEXTENDEDPATH];
 	int hash;
 	char* shaderText;
 	image_t* image;
@@ -2929,8 +2929,8 @@ way to ask for different implicit lighting modes (vertex, lightmap, etc)
 qhandle_t RE_RegisterShaderLightMap(const char* name, int lightmapIndex) {
 	shader_t* sh;
 
-	if(strlen(name) >= MAX_QPATH) {
-		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QPATH\n");
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
+		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QEXTENDEDPATH\n");
 		return 0;
 	}
 
@@ -2962,8 +2962,8 @@ way to ask for different implicit lighting modes (vertex, lightmap, etc)
 qhandle_t RE_RegisterShader(const char* name) {
 	shader_t* sh;
 
-	if(strlen(name) >= MAX_QPATH) {
-		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QPATH\n");
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
+		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QEXTENDEDPATH\n");
 		return 0;
 	}
 
@@ -2991,8 +2991,8 @@ For menu graphics that should never be picmiped
 qhandle_t RE_RegisterShaderNoMip(const char* name) {
 	shader_t* sh;
 
-	if(strlen(name) >= MAX_QPATH) {
-		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QPATH\n");
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
+		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QEXTENDEDPATH\n");
 		return 0;
 	}
 
@@ -3116,7 +3116,7 @@ static void ScanAndLoadShaderFiles(void) {
 	int i;
 	char *oldp, *token, *hashMem, *textEnd;
 	int shaderTextHashTableSizes[MAX_SHADERTEXT_HASH], hash, size;
-	char shaderName[MAX_QPATH];
+	char shaderName[MAX_QEXTENDEDPATH];
 	int shaderLine;
 
 	long sum = 0, summand;
@@ -3134,7 +3134,7 @@ static void ScanAndLoadShaderFiles(void) {
 
 	// load and parse shader files
 	for(i = 0; i < numShaderFiles; i++) {
-		char filename[MAX_QPATH];
+		char filename[MAX_QEXTENDEDPATH];
 
 		// look for a .mtr file first
 		{

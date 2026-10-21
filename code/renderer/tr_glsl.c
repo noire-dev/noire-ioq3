@@ -432,7 +432,7 @@ static int GLSL_CompileGPUShader(GLuint program, GLuint* prevShader, const GLcha
 }
 
 static int GLSL_LoadGPUShaderText(const char* name, const char* fallback, GLenum shaderType, char* dest, int destSize) {
-	char filename[MAX_QPATH];
+	char filename[MAX_QEXTENDEDPATH];
 	GLchar* buffer = NULL;
 	const GLchar* shaderText = NULL;
 	int size;
@@ -510,7 +510,7 @@ static void GLSL_ShowProgramUniforms(GLuint program) {
 static int GLSL_InitGPUShader2(shaderProgram_t* program, const char* name, int attribs, const char* vpCode, const char* fpCode) {
 	ri.Printf(PRINT_DEVELOPER, "------- GPU shader -------\n");
 
-	if(strlen(name) >= MAX_QPATH) {
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
 		ri.Error(ERR_DROP, "GLSL_InitGPUShader2: \"%s\" is too long", name);
 	}
 

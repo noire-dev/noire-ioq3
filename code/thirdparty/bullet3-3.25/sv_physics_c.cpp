@@ -28,21 +28,22 @@ typedef struct btConstraint_s {
 
 // Углы Эйлера в кватернион для Q3 формата
 static void AnglesToQuat(float pitch, float yaw, float roll, float* qx, float* qy, float* qz, float* qw) {
-	float p = pitch * M_PI / 180.0f;
-	float y = yaw * M_PI / 180.0f;
-	float r = roll * M_PI / 180.0f;
+	const float p = pitch * (float)M_PI / 180.0f;
+	const float y = yaw * (float)M_PI / 180.0f;
+	const float r = roll * (float)M_PI / 180.0f;
 
-	float cp = cosf(p * 0.5f);
-	float sp = sinf(p * 0.5f);
-	float cy = cosf(y * 0.5f);
-	float sy = sinf(y * 0.5f);
-	float cr = cosf(r * 0.5f);
-	float sr = sinf(r * 0.5f);
+	const float cp = cosf(p * 0.5f);
+	const float sp = sinf(p * 0.5f);
+	const float cy = cosf(y * 0.5f);
+	const float sy = sinf(y * 0.5f);
+	const float cr = cosf(r * 0.5f);
+	const float sr = sinf(r * 0.5f);
 
+	// Стандартное сочетание: Rz(yaw) * Ry(pitch) * Rx(roll)
+	*qx = cy * cp * sr - sy * sp * cr;
+	*qy = cy * sp * cr + sy * cp * sr;
+	*qz = sy * cp * cr - cy * sp * sr;
 	*qw = cy * cp * cr + sy * sp * sr;
-	*qx = cy * sp * cr + sy * cp * sr;
-	*qy = sy * cp * cr - cy * sp * sr;
-	*qz = cy * cp * sr - sy * sp * cr;
 }
 
 // Индексы углов из движка

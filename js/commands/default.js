@@ -28,14 +28,14 @@ function ADDITEM(args) {
 }
 
 function TESTPROP(args) {
-    entity.spawn(0, 0, 0, "props/wood_box");
+    entity.spawn(0, 0, 0, 0.0, 0.0, 0.0, "props/wood_box");
 }
 
 function SpawnProp(args) {
     var x = player.crosshairPoint(args[0], 1024, 0);
     var y = player.crosshairPoint(args[0], 1024, 1);
     var z = player.crosshairPoint(args[0], 1024, 2);
-    entity.spawn(x, y, z, "props/" + args[2]);
+    entity.spawn(x, y, z, 0.0, 0.0, 0.0, "props/" + args[2]);
 }
 
 command.register("testCmdJS", TestCmd);

@@ -96,7 +96,7 @@ vao_t* R_CreateVao(const char* name, byte* vertexes, int vertexesSize, byte* ind
 		default: ri.Error(ERR_FATAL, "bad vaoUsage_t given: %i", usage); return NULL;
 	}
 
-	if(strlen(name) >= MAX_QPATH) {
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
 		ri.Error(ERR_DROP, "R_CreateVao: \"%s\" is too long", name);
 	}
 
@@ -154,7 +154,7 @@ vao_t* R_CreateVao2(const char* name, int numVertexes, srfVert_t* verts, int num
 
 	if(!numVertexes || !numIndexes) return NULL;
 
-	if(strlen(name) >= MAX_QPATH) {
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
 		ri.Error(ERR_DROP, "R_CreateVao2: \"%s\" is too long", name);
 	}
 

@@ -455,8 +455,8 @@ void SV_SpawnServer(char* server, bool killBots) {
 	sv.state = SS_LOADING;
 
 	// load and spawn all other entities
-	SV_InitGameProgs();
 	SV_PhysicsInit();
+	SV_InitGameProgs();
 
 	// run a few frames to allow everything to settle
 	for(i = 0; i < 3; i++) {

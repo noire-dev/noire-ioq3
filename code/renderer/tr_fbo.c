@@ -63,7 +63,7 @@ FBO_Create
 FBO_t* FBO_Create(const char* name, int width, int height) {
 	FBO_t* fbo;
 
-	if(strlen(name) >= MAX_QPATH) {
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
 		ri.Error(ERR_DROP, "FBO_Create: \"%s\" is too long", name);
 	}
 

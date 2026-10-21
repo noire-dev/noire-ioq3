@@ -95,7 +95,7 @@ typedef struct {
 	float baseMargin4[4], margin4[4];
 } element_s;
 
-#define FILELIST_MAX_LENGTH (1024 * 512)
+#define FILELIST_MAX_LENGTH (1024 * 1024)
 typedef struct {
 	char list[FILELIST_MAX_LENGTH];
 	int count;

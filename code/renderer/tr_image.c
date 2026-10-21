@@ -921,7 +921,7 @@ image_t* R_CreateImage2(const char* name, byte* pic, int width, int height, GLen
 	GLenum textureTarget = cubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
 	GLenum dataFormat, dataType;
 
-	if(strlen(name) >= MAX_QPATH) {
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
 		ri.Error(ERR_DROP, "R_CreateImage: \"%s\" is too long", name);
 	}
 	if(!strncmp(name, "*lightmap", 9)) {
@@ -1119,9 +1119,9 @@ void R_LoadImage(const char* name, byte** pic, int* width, int* height, GLenum* 
 	bool orgNameFailed = false;
 	int orgLoader = -1;
 	int i;
-	char base[MAX_QPATH];
-	char localName[MAX_QPATH];
-	char ddsName[MAX_QPATH];
+	char base[MAX_QEXTENDEDPATH];
+	char localName[MAX_QEXTENDEDPATH];
+	char ddsName[MAX_QEXTENDEDPATH];
 	const char* ext;
 	char* altName;
 
@@ -1643,7 +1643,7 @@ qhandle_t RE_RegisterSkin(const char* name) {
 	} text;
 	char* text_p;
 	char* token;
-	char surfName[MAX_QPATH];
+	char surfName[MAX_QEXTENDEDPATH];
 	int totalSurfaces;
 
 	if(!name || !name[0]) {
@@ -1651,8 +1651,8 @@ qhandle_t RE_RegisterSkin(const char* name) {
 		return 0;
 	}
 
-	if(strlen(name) >= MAX_QPATH) {
-		ri.Printf(PRINT_DEVELOPER, "Skin name exceeds MAX_QPATH\n");
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
+		ri.Printf(PRINT_DEVELOPER, "Skin name exceeds MAX_QEXTENDEDPATH\n");
 		return 0;
 	}
 

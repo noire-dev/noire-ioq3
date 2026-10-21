@@ -42,7 +42,7 @@ qhandle_t R_RegisterMD3(const char* name, model_t* mod) {
 	int ident;
 	bool loaded = false;
 	int numLoaded;
-	char filename[MAX_QPATH], namebuf[MAX_QPATH + 20];
+	char filename[MAX_QEXTENDEDPATH], namebuf[MAX_QEXTENDEDPATH + 20];
 	char *fext, defex[] = "md3";
 
 	numLoaded = 0;
@@ -199,17 +199,17 @@ qhandle_t RE_RegisterModel(const char* name) {
 	bool orgNameFailed = false;
 	int orgLoader = -1;
 	int i;
-	char localName[MAX_QPATH];
+	char localName[MAX_QEXTENDEDPATH];
 	const char* ext;
-	char altName[MAX_QPATH];
+	char altName[MAX_QEXTENDEDPATH];
 
 	if(!name || !name[0]) {
 		ri.Printf(PRINT_ALL, "RE_RegisterModel: NULL name\n");
 		return 0;
 	}
 
-	if(strlen(name) >= MAX_QPATH) {
-		ri.Printf(PRINT_ALL, "Model name exceeds MAX_QPATH\n");
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
+		ri.Printf(PRINT_ALL, "Model name exceeds MAX_QEXTENDEDPATH\n");
 		return 0;
 	}
 
@@ -244,7 +244,7 @@ qhandle_t RE_RegisterModel(const char* name) {
 	//
 	// load the files
 	//
-	Q_strncpyz(localName, name, MAX_QPATH);
+	Q_strncpyz(localName, name, MAX_QEXTENDEDPATH);
 
 	ext = COM_GetExtension(localName);
 
@@ -265,7 +265,7 @@ qhandle_t RE_RegisterModel(const char* name) {
 				// try again without the extension
 				orgNameFailed = true;
 				orgLoader = i;
-				COM_StripExtension(name, localName, MAX_QPATH);
+				COM_StripExtension(name, localName, MAX_QEXTENDEDPATH);
 			} else {
 				// Something loaded
 				return mod->index;

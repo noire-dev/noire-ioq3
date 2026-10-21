@@ -529,6 +529,34 @@ void Cmd_SetViewpos_f(gentity_t* ent) {
 	TeleportPlayer(ent, origin, angles);
 }
 
+static void Cmd_Altfire_Physgun_f(gentity_t* ent) {
+	if(ent->client->ps.weapon == WP_PHYSGUN) {
+		if(ent->client->buttons & BUTTON_ATTACK) {
+			if(ent->grabbedEntity) {
+				ent->grabbedEntity->grabNewPhys = PHYS_STATIC;  // say physgun about freeze option
+			}
+		}
+	}
+}
+
+static void Cmd_PhysgunDist_f(gentity_t* ent) {
+	char mode[MAX_TOKEN_CHARS];
+
+	trap_Argv(1, mode, sizeof(mode));
+
+	if(ent->client->ps.weapon == WP_PHYSGUN) {
+		if(ent->client->buttons & BUTTON_ATTACK) {
+			if(ent->grabbedEntity) {
+				if(atoi(mode) == 0) {
+					ent->grabDist -= 20;
+					if(ent->grabDist < 100) ent->grabDist = 100;
+				}
+				if(atoi(mode) == 1) ent->grabDist += 20;
+			}
+		}
+	}
+}
+
 /*
 =================
 ClientCommand
@@ -565,6 +593,10 @@ void ClientCommand(int clientNum) {
 		Cmd_Where_f(ent);
 	else if(Q_stricmp(cmd, "setviewpos") == 0)
 		Cmd_SetViewpos_f(ent);
+	else if(Q_stricmp(cmd, "altfire_physgun") == 0)
+		Cmd_Altfire_Physgun_f(ent);
+	else if(Q_stricmp(cmd, "physgun_dist") == 0)
+		Cmd_PhysgunDist_f(ent);
 	else if(JS_CommandRun(clientNum) != -1)
 		return;
 	else

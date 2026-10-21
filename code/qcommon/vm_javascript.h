@@ -45,6 +45,7 @@ typedef enum {
 	JS_GAMERUNFRAME,
 	JS_ITEMINIT,
 	JS_COMMANDRUN,
+	JS_SPAWNUSE,
 } jscall_t;
 
 typedef enum {
@@ -57,6 +58,10 @@ typedef enum {
 	VM_GAPIENTITYDELETE,
 	VM_GAPIENTITYSPAWN,
 	VM_GAPIPLAYERCROSHAIRPOINT,
+	VM_GAPISPAWNINT,
+	VM_GAPISPAWNFLOAT,
+	VM_GAPISPAWNSTRING,
+	VM_GAPISPAWNVECTOR,
 
 	// cgame.vm + ui.vm
 	VM_APICGUI,
@@ -144,6 +149,7 @@ void JS_ToolCall(int id, int targetID, int playerID, char* arg1, char* arg2, cha
 void JS_GameRunFrame(int levelTime);
 void JS_ItemInit(int vmIndex);
 int JS_CommandRun(int clientNum);
+int JS_SpawnUse(char* classname);
 
 void JS_SystemInit(int vmIndex);
 

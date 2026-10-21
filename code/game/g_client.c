@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 //
+
 #include "g_local.h"
 
 // g_client.c -- client functions that don't happen every frame
@@ -789,14 +790,16 @@ void ClientSpawn(gentity_t* ent) {
 		ent->swep_ammo[i] = 0;
 	}
 
-	ent->swep_list[WP_MACHINEGUN] = WS_HAVE;
-	ent->swep_ammo[WP_MACHINEGUN] = 100;
-	ent->swep_list[WP_SHOTGUN] = WS_HAVE;
-	ent->swep_ammo[WP_SHOTGUN] = 100;
+	ent->swep_list[WP_PHYSGUN] = WS_HAVE;
+	ent->swep_ammo[WP_PHYSGUN] = 9999;
+	ent->swep_list[WP_GRAVITYGUN] = WS_HAVE;
+	ent->swep_ammo[WP_GRAVITYGUN] = 9999;
+	ent->swep_list[WP_TOOLGUN] = WS_HAVE;
+	ent->swep_ammo[WP_TOOLGUN] = 9999;
 
 	G_UseTargets(spawnPoint, ent);
 
-	client->ps.weapon = WP_SHOTGUN;
+	client->ps.weapon = WP_PHYSGUN;
 
 	// positively link the client, even if the command times are weird
 	VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);

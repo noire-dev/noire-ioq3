@@ -270,9 +270,9 @@ static void SV_MapRestart_f(void) {
 	sv.state = SS_LOADING;
 	sv.restarting = true;
 
-	SV_RestartGameProgs();
 	SV_PhysicsShutdown();
 	SV_PhysicsInit();
+	SV_RestartGameProgs();
 
 	// run a few frames to allow everything to settle
 	for(i = 0; i < 3; i++) {

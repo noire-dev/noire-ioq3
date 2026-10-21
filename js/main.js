@@ -22,5 +22,6 @@ JSCall = function (func_id) {
         case js.gameRunFrame: return Game_RunFrame(args[0]);
         case js.itemInit: return item.initSystem(args[0]);
         case js.commandRun: return command.run(args);
+        case js.spawnUse: return spawn.use(args[0]);
     }
 };

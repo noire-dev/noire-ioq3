@@ -44,10 +44,10 @@ typedef enum {
 } imgFlags_t;
 
 typedef struct image_s {
-	char imgName[MAX_QPATH];        // game path, including extension
-	int width, height;              // source image
-	int uploadWidth, uploadHeight;  // after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
-	GLuint texnum;                  // gl texture binding
+	char imgName[MAX_QEXTENDEDPATH];  // game path, including extension
+	int width, height;                // source image
+	int uploadWidth, uploadHeight;    // after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
+	GLuint texnum;                    // gl texture binding
 
 	int frameUsed;  // for texture usage in frame statistics
 

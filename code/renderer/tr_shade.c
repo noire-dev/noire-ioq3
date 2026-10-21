@@ -1171,28 +1171,30 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 
 			cubemap_t* cubemap = tr.cubemap;
 
-			if(cubemap->image) GL_BindToTMU(cubemap->image, TB_CUBEMAP);
+			if(cubemap) {
+				if(cubemap->image) GL_BindToTMU(cubemap->image, TB_CUBEMAP);
 
-			float dx = backEnd.viewParms.or.origin[0] - input->cubemapOrigin[0];
-			float dy = backEnd.viewParms.or.origin[1] - input->cubemapOrigin[1];
-			float dz = backEnd.viewParms.or.origin[2] - input->cubemapOrigin[2];
-			float distXYZ = sqrtf(dx * dx + dy * dy + dz * dz);
+				float dx = backEnd.viewParms.or.origin[0] - input->cubemapOrigin[0];
+				float dy = backEnd.viewParms.or.origin[1] - input->cubemapOrigin[1];
+				float dz = backEnd.viewParms.or.origin[2] - input->cubemapOrigin[2];
+				float distXYZ = sqrtf(dx * dx + dy * dy + dz * dz);
 
-			if(input->cubemapBound != 0.0f) {
-				vec4[0] = backEnd.viewParms.or.origin[2];  // Z камеры
-				vec4[1] = input->cubemapOrigin[2];         // Z поверхности
-				vec4[2] = distXYZ;                         // Полное 3D-расстояние (distXYZ)
-			} else {
-				vec4[0] = 0.0f;  // Z камеры
-				vec4[1] = 0.0f;  // Z поверхности
-				vec4[2] = 1.0f;  // Полное 3D-расстояние (distXYZ)
+				if(input->cubemapBound != 0.0f) {
+					vec4[0] = backEnd.viewParms.or.origin[2];  // Z камеры
+					vec4[1] = input->cubemapOrigin[2];         // Z поверхности
+					vec4[2] = distXYZ;                         // Полное 3D-расстояние (distXYZ)
+				} else {
+					vec4[0] = 0.0f;  // Z камеры
+					vec4[1] = 0.0f;  // Z поверхности
+					vec4[2] = 1.0f;  // Полное 3D-расстояние (distXYZ)
+				}
+				vec4[3] = input->cubemapBound;  // Сторона
+				GLSL_SetUniformVec4(sp, UNIFORM_CUBEMAPINFO, vec4);
+
+				VectorSubtract(cubemap->origin, backEnd.viewParms.or.origin, vec3);
+				VectorScale(vec3, 1.0f / 65536, vec3);
+				GLSL_SetUniformVec3(sp, UNIFORM_CUBEMAPARALLAXINFO, vec3);
 			}
-			vec4[3] = input->cubemapBound;  // Сторона
-			GLSL_SetUniformVec4(sp, UNIFORM_CUBEMAPINFO, vec4);
-
-			VectorSubtract(cubemap->origin, backEnd.viewParms.or.origin, vec3);
-			VectorScale(vec3, 1.0f / 65536, vec3);
-			GLSL_SetUniformVec3(sp, UNIFORM_CUBEMAPARALLAXINFO, vec3);
 		}
 
 		//

@@ -21,6 +21,7 @@ const js = {
     gameRunFrame: jsCount += 1,
     itemInit: jsCount += 1,
     commandRun: jsCount += 1,
+    spawnUse: jsCount += 1,
 };
 
 const vmCount = -1;
@@ -34,6 +35,10 @@ const vm = {
     gapiEntityDelete: vmCount += 1,
     gapiEntitySpawn: vmCount += 1,
     gapiPlayerCrosshairPoint: vmCount += 1,
+    gapiSpawnInt: vmCount += 1,
+    gapiSpawnFloat: vmCount += 1,
+    gapiSpawnString: vmCount += 1,
+    gapiSpawnVector: vmCount += 1,
 
     // cgame.vm + ui.vm
     apiCGUI: vmCount += 1,
@@ -128,6 +133,7 @@ openjs.file("js/app");
 openjs.file("js/tool");
 openjs.file("js/item");
 openjs.file("js/shell");
+openjs.file("js/spawn");
 openjs.file("js/cg");
 openjs.file("js/hud/" + cvar.string("hud.module"));
 openjs.file("js/game");

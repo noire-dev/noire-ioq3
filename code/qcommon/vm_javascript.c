@@ -168,7 +168,7 @@ static void GAPI_SetEntityAngles(gentity_t* entity, float x, float y, float z) {
 	entity->s.angles[2] = z;
 }
 
-static void GAPI_EntitySpawn(float x, float y, float z, char* modelName) {
+static void GAPI_EntitySpawn(float x, float y, float z, float ax, float ay, float az, char* modelName) {
 	gentity_t* entity;
 	entity = G_Spawn();
 	entity->s.eType = ET_PHYSICS;
@@ -176,7 +176,7 @@ static void GAPI_EntitySpawn(float x, float y, float z, char* modelName) {
 	entity->s.pos.trType = TR_INTERPOLATE;
 	GAPI_SetEntityModel(entity, modelName);
 	GAPI_SetEntityPosition(entity, x, y, z);
-	GAPI_SetEntityAngles(entity, 0.0, 0.0, 0.0);
+	GAPI_SetEntityAngles(entity, ax, ay, az);
 	trap_Phys_CreateModel(entity->s.number, entity->s.modelindex, entity->s.origin[0], entity->s.origin[1], entity->s.origin[2], 10);
 	trap_Phys_SetAngles(entity->s.number, entity->s.angles[0], entity->s.angles[1], entity->s.angles[2]);
 	trap_Phys_UnfreezeObject(entity->s.number);
@@ -361,11 +361,39 @@ void VMCall(int func_id) {
 #ifdef GAME
 		case VM_APIGAMEENTITY: API_GameEntity(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
 		case VM_GAPIENTITYDELETE: GAPI_EntityDelete(&g_entities[vmargs.v[0].i]); break;
-		case VM_GAPIENTITYSPAWN: GAPI_EntitySpawn(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].s); break;
+		case VM_GAPIENTITYSPAWN: GAPI_EntitySpawn(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s); break;
 		case VM_GAPIPLAYERCROSHAIRPOINT:
 			vmresult.v.f = GAPI_PlayerCrosshairPoint(&g_entities[vmargs.v[0].i], vmargs.v[1].f, vmargs.v[2].i);
 			vmresult.t = JS_TYPE_FLOAT;
 			break;
+		case VM_GAPISPAWNINT: {
+			int out = 0;
+			G_SpawnInt(vmargs.v[0].s, vmargs.v[1].s, &out);
+			vmresult.v.i = out;
+			vmresult.t = JS_TYPE_INT;
+			break;
+		}
+		case VM_GAPISPAWNFLOAT: {
+			float out = 0.0f;
+			G_SpawnFloat(vmargs.v[0].s, vmargs.v[1].s, &out);
+			vmresult.v.f = out;
+			vmresult.t = JS_TYPE_FLOAT;
+			break;
+		}
+		case VM_GAPISPAWNSTRING: {
+			char* out = NULL;
+			G_SpawnString(vmargs.v[0].s, vmargs.v[1].s, &out);
+			StringCopy(vmresult.v.s, out ? out : "", MAX_JS_STRINGSIZE);
+			vmresult.t = JS_TYPE_STRING;
+			break;
+		}
+		case VM_GAPISPAWNVECTOR: {
+			vec3_t out;
+			G_SpawnVector(vmargs.v[0].s, vmargs.v[1].s, out);
+			StringCopy(vmresult.v.s, va("%f %f %f", out[0], out[1], out[2]), MAX_JS_STRINGSIZE);
+			vmresult.t = JS_TYPE_STRING;
+			break;
+		}
 #endif
 #ifndef GAME
 		case VM_APICGUI: API_CGUI(vmargs.v[0].i, vmargs.v[2].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i); break;

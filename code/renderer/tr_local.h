@@ -125,7 +125,7 @@ typedef struct vaoAttrib_s {
 } vaoAttrib_t;
 
 typedef struct vao_s {
-	char name[MAX_QPATH];
+	char name[MAX_QEXTENDEDPATH];
 
 	uint32_t vao;
 
@@ -381,8 +381,8 @@ typedef struct {
 } fogParms_t;
 
 typedef struct shader_s {
-	char name[MAX_QPATH];  // game path, including extension
-	int lightmapIndex;     // for a shader to match, both name and lightmapIndex must match
+	char name[MAX_QEXTENDEDPATH];  // game path, including extension
+	int lightmapIndex;             // for a shader to match, both name and lightmapIndex must match
 
 	int index;        // this shader == tr.shaders[index]
 	int sortedIndex;  // this shader == tr.sortedShaders[sortedIndex]
@@ -637,7 +637,7 @@ enum {
 // shaderProgram_t represents a pair of one
 // GLSL vertex and one GLSL fragment shader
 typedef struct shaderProgram_s {
-	char name[MAX_QPATH];
+	char name[MAX_QEXTENDEDPATH];
 
 	GLuint program;
 	GLuint vertexShader;
@@ -705,12 +705,12 @@ typedef struct {
 
 // skins allow models to be retextured without modifying the model file
 typedef struct {
-	char name[MAX_QPATH];
+	char name[MAX_QEXTENDEDPATH];
 	shader_t* shader;
 } skinSurface_t;
 
 typedef struct skin_s {
-	char name[MAX_QPATH];  // game path, including extension
+	char name[MAX_QEXTENDEDPATH];  // game path, including extension
 	int numSurfaces;
 	skinSurface_t* surfaces;  // dynamically allocated array of surfaces
 } skin_t;
@@ -914,7 +914,7 @@ typedef struct {
 // inter-quake-model surface
 typedef struct srfIQModel_s {
 	surfaceType_t surfaceType;
-	char name[MAX_QPATH];
+	char name[MAX_QEXTENDEDPATH];
 	shader_t* shader;
 	iqmData_t* data;
 	int first_vertex, num_vertexes;
@@ -1024,8 +1024,8 @@ typedef struct {
 } bmodel_t;
 
 typedef struct {
-	char name[MAX_QPATH];      // ie: maps/tim_dm2.bsp
-	char baseName[MAX_QPATH];  // ie: tim_dm2
+	char name[MAX_QEXTENDEDPATH];      // ie: maps/tim_dm2.bsp
+	char baseName[MAX_QEXTENDEDPATH];  // ie: tim_dm2
 
 	int dataSize;
 
@@ -1087,7 +1087,7 @@ typedef struct {
 } mdvTag_t;
 
 typedef struct {
-	char name[MAX_QPATH];  // tag name
+	char name[MAX_QEXTENDEDPATH];  // tag name
 } mdvTagName_t;
 
 typedef struct {
@@ -1103,7 +1103,7 @@ typedef struct {
 typedef struct mdvSurface_s {
 	surfaceType_t surfaceType;
 
-	char name[MAX_QPATH];  // polyset name
+	char name[MAX_QEXTENDEDPATH];  // polyset name
 
 	int numShaderIndexes;
 	int* shaderIndexes;
@@ -1140,7 +1140,7 @@ typedef struct mdvModel_s {
 typedef enum { MOD_BAD, MOD_BRUSH, MOD_MESH, MOD_IQM } modtype_t;
 
 typedef struct model_s {
-	char name[MAX_QPATH];
+	char name[MAX_QEXTENDEDPATH];
 	modtype_t type;
 	int index;  // model = tr.models[model->index]
 
@@ -1152,7 +1152,7 @@ typedef struct model_s {
 	int numLods;
 } model_t;
 
-#define MAX_MOD_KNOWN 1024
+#define MAX_MOD_KNOWN 16384
 
 void R_ModelInit(void);
 model_t* R_GetModelByHandle(qhandle_t hModel);
@@ -1164,7 +1164,7 @@ void R_Modellist_f(void);
 //====================================================
 
 #define MAX_DRAWIMAGES 2048
-#define MAX_SKINS 1024
+#define MAX_SKINS 16384
 
 #define MAX_DRAWSURFS 0x100000
 #define DRAWSURF_MASK (MAX_DRAWSURFS - 1)
