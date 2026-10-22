@@ -83,7 +83,13 @@ static bool R_CullSurface(msurface_t* surf) {
 		return false;
 	}
 
-	if(surf->cullinfo.type & CULLINFO_SPHERE) {
+	/*
+	 * R_AddWorldSurface calls R_FrustumCullSurface immediately before this
+	 * function. That function already checks the box when present, or the
+	 * sphere when it is the only bounds type. Only check a sphere here when
+	 * both bounds are present (the frustum path checks the box first).
+	 */
+	if((surf->cullinfo.type & (CULLINFO_BOX | CULLINFO_SPHERE)) == (CULLINFO_BOX | CULLINFO_SPHERE)) {
 		int sphereCull;
 
 		if(tr.currentEntityNum != REFENTITYNUM_WORLD) {
@@ -93,20 +99,6 @@ static bool R_CullSurface(msurface_t* surf) {
 		}
 
 		if(sphereCull == CULL_OUT) {
-			return true;
-		}
-	}
-
-	if(surf->cullinfo.type & CULLINFO_BOX) {
-		int boxCull;
-
-		if(tr.currentEntityNum != REFENTITYNUM_WORLD) {
-			boxCull = R_CullLocalBox(surf->cullinfo.bounds);
-		} else {
-			boxCull = R_CullBox(surf->cullinfo.bounds);
-		}
-
-		if(boxCull == CULL_OUT) {
 			return true;
 		}
 	}

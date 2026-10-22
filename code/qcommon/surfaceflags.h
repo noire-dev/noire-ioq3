@@ -90,3 +90,5 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define SURF_TILE 67108864
 #define SURF_WOOD 134217728
 #define SURF_WOODPANEL 268435456
+
+#define SURF_OPTIMIZE 536870912

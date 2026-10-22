@@ -21,6 +21,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_vbo.c
 #include "tr_local.h"
+#include <stdint.h>
+
+/* VaoCache diagnostics, reported by R_VaoList_f. */
+typedef struct vaoCacheStats_s {
+	unsigned int lookups;
+	unsigned int hits;
+	unsigned int misses;
+	unsigned int hashProbes;
+	unsigned int fullCacheRecycles;
+	unsigned int vertexBufferRecycles;
+} vaoCacheStats_t;
+
+static vaoCacheStats_t vaoCacheStats;
+static void VaoCache_PrintStats(void);
 
 void R_VaoPackTangent(int16_t* out, vec4_t v) {
 	out[0] = v[0] * 32767.0f + (v[0] > 0.0f ? 0.5f : -0.5f);
@@ -508,6 +522,8 @@ void R_VaoList_f(void) {
 	ri.Printf(PRINT_ALL, " %i total VAOs\n", tr.numVaos);
 	ri.Printf(PRINT_ALL, " %d.%02d MB total vertices memory\n", vertexesSize / (1024 * 1024), (vertexesSize % (1024 * 1024)) * 100 / (1024 * 1024));
 	ri.Printf(PRINT_ALL, " %d.%02d MB total triangle indices memory\n", indexesSize / (1024 * 1024), (indexesSize % (1024 * 1024)) * 100 / (1024 * 1024));
+
+	VaoCache_PrintStats();
 }
 
 /*
@@ -590,10 +606,14 @@ static struct {
 
 	vaoCacheGlIndex_t indexes[VAOCACHE_QUEUE_MAX_INDEXES];
 	int indexCommitSize;
+	uint64_t batchHashLow;
+	uint64_t batchHashHigh;
 } vcq;
 
 #define VAOCACHE_MAX_SURFACES (1 << 20)
 #define VAOCACHE_MAX_BATCHES (1 << 14)
+#define VAOCACHE_HASH_SIZE (1 << 15)
+#define VAOCACHE_HASH_MASK (VAOCACHE_HASH_SIZE - 1)
 
 // srfVert_t is 60 bytes
 // assuming each vert is referenced 4 times, need 16 bytes (4 glIndex_t) per vert
@@ -602,6 +622,8 @@ static struct {
 #define VAOCACHE_INDEX_BUFFER_SIZE (80 * 1024 * 1024)
 
 typedef struct buffered_s {
+	srfVert_t* vertexes;
+	int numVerts;
 	glIndex_t* indexes;
 	int numIndexes;
 	int bufferOffset;
@@ -612,52 +634,108 @@ static struct {
 	buffered_t surfaceIndexSets[VAOCACHE_MAX_SURFACES];
 	int numSurfaces;
 
-	int batchLengths[VAOCACHE_MAX_BATCHES];
+	int batchStarts[VAOCACHE_MAX_BATCHES];
+	uint64_t batchHashesLow[VAOCACHE_MAX_BATCHES];
+	uint64_t batchHashesHigh[VAOCACHE_MAX_BATCHES];
+	unsigned int batchHashTable[VAOCACHE_HASH_SIZE];
 	int numBatches;
 
 	int vertexOffset;
 	int indexOffset;
 } vc;
 
+static uint64_t VaoCache_RotateLeft64(uint64_t value, unsigned int bits) {
+	return (value << bits) | (value >> (64 - bits));
+}
+
+static uint64_t VaoCache_Mix64(uint64_t value) {
+	value ^= value >> 30;
+	value *= UINT64_C(0xbf58476d1ce4e5b9);
+	value ^= value >> 27;
+	value *= UINT64_C(0x94d049bb133111eb);
+	value ^= value >> 31;
+	return value;
+}
+
+/*
+ * Build two independent 64-bit rolling hashes as surfaces enter the queue.
+ * This avoids walking the whole surface list again in VaoCache_Commit and
+ * avoids a second O(surface-count) equality pass on every cache hit.
+ * The 128-bit signature is used as the batch identity; accidental collisions
+ * are extraordinarily unlikely, but—as with all finite hashes—not impossible.
+ */
+static void VaoCache_HashQueuedSurface(uint64_t* hashLow, uint64_t* hashHigh, const queuedSurface_t* surf) {
+	uint64_t vertexPointer = (uint64_t)(uintptr_t)surf->vertexes;
+	uint64_t indexPointer = (uint64_t)(uintptr_t)surf->indexes;
+	uint64_t sizes = ((uint64_t)(uint32_t)surf->numVerts << 32) | (uint32_t)surf->numIndexes;
+	uint64_t key = vertexPointer ^ VaoCache_RotateLeft64(indexPointer, 23) ^ (sizes * UINT64_C(0x9e3779b185ebca87));
+	uint64_t item = VaoCache_Mix64(key + UINT64_C(0x243f6a8885a308d3));
+
+	/* FNV-like and rotate/multiply streams use different mixing patterns. */
+	*hashLow = (*hashLow ^ item) * UINT64_C(0x100000001b3);
+	*hashHigh = VaoCache_RotateLeft64(*hashHigh, 31) * UINT64_C(0x9e3779b185ebca87) + item;
+}
+
+static void VaoCache_FinalizeQueuedHash(uint64_t* hashLow, uint64_t* hashHigh, int numSurfaces) {
+	uint64_t count = (uint64_t)(uint32_t)numSurfaces;
+	*hashLow = VaoCache_Mix64(*hashLow ^ (count * UINT64_C(0x9e3779b97f4a7c15)));
+	*hashHigh = VaoCache_Mix64(*hashHigh + (count * UINT64_C(0xd6e8feb86659fd93)));
+}
+
 void VaoCache_Commit(void) {
 	buffered_t* indexSet;
-	int* batchLength;
 	queuedSurface_t *surf, *end = vcq.surfaces + vcq.numSurfaces;
+	uint64_t batchHashLow, batchHashHigh;
+	unsigned int hashSlot;
+	int foundBatch = -1;
+	int batchIndex;
+
+	if(vcq.numSurfaces <= 0) return;
 
 	R_BindVao(vc.vao);
 
-	// Search for a matching batch
-	// FIXME: Use faster search
-	indexSet = vc.surfaceIndexSets;
-	batchLength = vc.batchLengths;
-	for(; batchLength < vc.batchLengths + vc.numBatches; batchLength++) {
-		if(*batchLength == vcq.numSurfaces) {
-			buffered_t* indexSet2 = indexSet;
-			for(surf = vcq.surfaces; surf < end; surf++, indexSet2++) {
-				if(surf->indexes != indexSet2->indexes || surf->numIndexes != indexSet2->numIndexes) break;
-			}
+	/*
+	 * Hash the complete ordered surface list. Surface count is part of the
+	 * key, but changing it only creates a distinct batch; it does not clear
+	 * the cache. Open addressing keeps lookup bounded without scanning every
+	 * previously cached batch.
+	 */
+	batchHashLow = vcq.batchHashLow;
+	batchHashHigh = vcq.batchHashHigh;
+	VaoCache_FinalizeQueuedHash(&batchHashLow, &batchHashHigh, vcq.numSurfaces);
 
-			if(surf == end) break;
+	vaoCacheStats.lookups++;
+	hashSlot = (unsigned int)(batchHashLow ^ batchHashHigh) & VAOCACHE_HASH_MASK;
+	for(;;) {
+		unsigned int entry = vc.batchHashTable[hashSlot];
+		vaoCacheStats.hashProbes++;
+		if(!entry) break;
+
+		batchIndex = (int)(entry - 1U);
+		if(vc.batchHashesLow[batchIndex] == batchHashLow && vc.batchHashesHigh[batchIndex] == batchHashHigh) {
+			foundBatch = batchIndex;
+			break;
 		}
-
-		indexSet += *batchLength;
+		hashSlot = (hashSlot + 1U) & VAOCACHE_HASH_MASK;
 	}
 
-	// If found, use it
-	if(indexSet < vc.surfaceIndexSets + vc.numSurfaces) {
+	if(foundBatch >= 0) {
+		/* Cache hit: no vertex/index packing or GPU upload is needed. */
+		indexSet = vc.surfaceIndexSets + vc.batchStarts[foundBatch];
 		tess.firstIndex = indexSet->bufferOffset / glRefConfig.vaoCacheGlIndexSize;
-		// ri.Printf(PRINT_ALL, "firstIndex %d numIndexes %d as %d\n", tess.firstIndex, tess.numIndexes, (int)(batchLength - vc.batchLengths));
-		// ri.Printf(PRINT_ALL, "vc.numSurfaces %d vc.numBatches %d\n", vc.numSurfaces, vc.numBatches);
-	}
-	// If not, rebuffer the batch
-	// FIXME: keep track of the vertexes so we don't have to reupload them every time
-	else {
+		vaoCacheStats.hits++;
+	} else {
 		srfVert_t* dstVertex = vcq.vertexes;
 		vaoCacheGlIndex_t* dstIndex = vcq.indexes;
 		unsigned short* dstIndexUshort = (unsigned short*)vcq.indexes;
+		int tableSlot;
 
-		batchLength = vc.batchLengths + vc.numBatches;
-		*batchLength = vcq.numSurfaces;
+		vaoCacheStats.misses++;
+
+		batchIndex = vc.numBatches;
+		vc.batchStarts[batchIndex] = vc.numSurfaces;
+		vc.batchHashesLow[batchIndex] = batchHashLow;
+		vc.batchHashesHigh[batchIndex] = batchHashHigh;
 		vc.numBatches++;
 
 		tess.firstIndex = vc.indexOffset / glRefConfig.vaoCacheGlIndexSize;
@@ -675,6 +753,8 @@ void VaoCache_Commit(void) {
 			vcq.vertexCommitSize += vertexesSize;
 
 			indexSet = vc.surfaceIndexSets + vc.numSurfaces;
+			indexSet->vertexes = surf->vertexes;
+			indexSet->numVerts = surf->numVerts;
 			indexSet->indexes = surf->indexes;
 			indexSet->numIndexes = surf->numIndexes;
 			indexSet->bufferOffset = vc.indexOffset + vcq.indexCommitSize;
@@ -689,8 +769,12 @@ void VaoCache_Commit(void) {
 			vcq.indexCommitSize += indexesSize;
 		}
 
-		// ri.Printf(PRINT_ALL, "committing %d to %d, %d to %d as %d\n", vcq.vertexCommitSize, vc.vertexOffset, vcq.indexCommitSize, vc.indexOffset,
-		// (int)(batchLength - vc.batchLengths));
+		/* Insert the new batch into the hash table after its key is stored. */
+		tableSlot = (int)((batchHashLow ^ batchHashHigh) & VAOCACHE_HASH_MASK);
+		while(vc.batchHashTable[tableSlot]) {
+			tableSlot = (tableSlot + 1) & VAOCACHE_HASH_MASK;
+		}
+		vc.batchHashTable[tableSlot] = (unsigned int)batchIndex + 1U;
 
 		if(vcq.vertexCommitSize) {
 			qglBindBuffer(GL_ARRAY_BUFFER, vc.vao->vertexesVBO);
@@ -704,6 +788,11 @@ void VaoCache_Commit(void) {
 			vc.indexOffset += vcq.indexCommitSize;
 		}
 	}
+}
+
+static void VaoCache_PrintStats(void) {
+	ri.Printf(PRINT_ALL, "VaoCache (since init): lookups=%u hits=%u misses=%u hashProbes=%u\n", vaoCacheStats.lookups, vaoCacheStats.hits, vaoCacheStats.misses, vaoCacheStats.hashProbes);
+	ri.Printf(PRINT_ALL, "VaoCache: fullCacheRecycles=%u vertexBufferRecycles=%u cachedBatches=%d/%d cachedSurfaces=%d/%d\n", vaoCacheStats.fullCacheRecycles, vaoCacheStats.vertexBufferRecycles, vc.numBatches, VAOCACHE_MAX_BATCHES, vc.numSurfaces, VAOCACHE_MAX_SURFACES);
 }
 
 void VaoCache_DrawElements(int numIndexes, int firstIndex) {
@@ -780,9 +869,13 @@ void VaoCache_Init(void) {
 	vc.numBatches = 0;
 	vc.vertexOffset = 0;
 	vc.indexOffset = 0;
+	memset(vc.batchHashTable, 0, sizeof(vc.batchHashTable));
+	memset(&vaoCacheStats, 0, sizeof(vaoCacheStats));
 	vcq.vertexCommitSize = 0;
 	vcq.indexCommitSize = 0;
 	vcq.numSurfaces = 0;
+	vcq.batchHashLow = UINT64_C(0xcbf29ce484222325);
+	vcq.batchHashHigh = UINT64_C(0x6a09e667f3bcc909);
 }
 
 void VaoCache_BindVao(void) { R_BindVao(vc.vao); }
@@ -833,17 +926,22 @@ void VaoCache_CheckAdd(bool* endSurface, bool* recycleVertexBuffer, bool* recycl
 }
 
 void VaoCache_RecycleVertexBuffer(void) {
+	vaoCacheStats.vertexBufferRecycles++;
 	qglBindBuffer(GL_ARRAY_BUFFER, vc.vao->vertexesVBO);
 	qglBufferData(GL_ARRAY_BUFFER, vc.vao->vertexesSize, NULL, GL_DYNAMIC_DRAW);
 	vc.vertexOffset = 0;
 }
 
 void VaoCache_RecycleIndexBuffer(void) {
+	vaoCacheStats.fullCacheRecycles++;
+	/* This path invalidates cached batches and recycles the vertex buffer too. */
+	vaoCacheStats.vertexBufferRecycles++;
 	qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vc.vao->indexesIBO);
 	qglBufferData(GL_ELEMENT_ARRAY_BUFFER, vc.vao->indexesSize, NULL, GL_DYNAMIC_DRAW);
 	vc.indexOffset = 0;
 	vc.numSurfaces = 0;
 	vc.numBatches = 0;
+	memset(vc.batchHashTable, 0, sizeof(vc.batchHashTable));
 	// Сбрасываем и вершинный буфер, чтобы избежать фрагментации:
 	// все батчи в кэше аннулируются, старые данные вершин больше не нужны
 	qglBindBuffer(GL_ARRAY_BUFFER, vc.vao->vertexesVBO);
@@ -855,6 +953,8 @@ void VaoCache_InitQueue(void) {
 	vcq.vertexCommitSize = 0;
 	vcq.indexCommitSize = 0;
 	vcq.numSurfaces = 0;
+	vcq.batchHashLow = UINT64_C(0xcbf29ce484222325);
+	vcq.batchHashHigh = UINT64_C(0x6a09e667f3bcc909);
 }
 
 void VaoCache_AddSurface(srfVert_t* verts, int numVerts, glIndex_t* indexes, int numIndexes) {
@@ -863,6 +963,7 @@ void VaoCache_AddSurface(srfVert_t* verts, int numVerts, glIndex_t* indexes, int
 	queueEntry->numVerts = numVerts;
 	queueEntry->indexes = indexes;
 	queueEntry->numIndexes = numIndexes;
+	VaoCache_HashQueuedSurface(&vcq.batchHashLow, &vcq.batchHashHigh, queueEntry);
 	vcq.numSurfaces++;
 
 	vcq.vertexCommitSize += sizeof(srfVert_t) * numVerts;

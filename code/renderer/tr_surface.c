@@ -389,9 +389,9 @@ static bool RB_SurfaceVaoCached(int numVerts, srfVert_t* verts, int numIndexes, 
 		RB_BeginSurface(tess.shader, tess.fogNum, tess.useCubemap, tess.cubemapOrigin, tess.cubemapBound);
 	}
 
-	if(recycleVertexBuffer) VaoCache_RecycleVertexBuffer();
-
+	/* Index recycling also clears the vertex buffer and all cached batches. */
 	if(recycleIndexBuffer) VaoCache_RecycleIndexBuffer();
+	else if(recycleVertexBuffer) VaoCache_RecycleVertexBuffer();
 
 	if(!tess.numVertexes) VaoCache_InitQueue();
 

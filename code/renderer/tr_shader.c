@@ -1387,6 +1387,7 @@ infoParm_t infoParms[] = {
     {"nolightmap", 0, SURF_NOLIGHTMAP, 0},                 // don't generate a lightmap
     {"cubemap", 0, SURF_CUBEMAP, 0},                       // reflective?
     {"cubemapCorrection", 0, SURF_CUBEMAP_CORRECTION, 0},  // correct reflect?
+    {"optimize", 0, SURF_OPTIMIZE, 0},                     // optimize?
 
 	// material flags (server/gameplay relevant)
     {"chainlink", 0, SURF_CHAINLINK, 0},

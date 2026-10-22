@@ -875,6 +875,7 @@ void R_Register(void) {
 	ri.Cmd_AddCommand("gfxinfo", GfxInfo_f);
 	ri.Cmd_AddCommand("minimize", GLimp_Minimize);
 	ri.Cmd_AddCommand("gfxmeminfo", GfxMemInfo_f);
+	ri.Cmd_AddCommand("vaoList", R_VaoList_f);
 }
 
 void R_InitQueries(void) {
@@ -989,6 +990,7 @@ void RE_Shutdown(bool destroyWindow) {
 	ri.Cmd_RemoveCommand("gfxinfo");
 	ri.Cmd_RemoveCommand("minimize");
 	ri.Cmd_RemoveCommand("gfxmeminfo");
+	ri.Cmd_RemoveCommand("vaoList");
 
 	if(tr.registered) {
 		R_IssuePendingRenderCommands();
