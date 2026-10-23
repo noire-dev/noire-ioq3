@@ -500,7 +500,7 @@ void main()
 	vec3 parallax = u_CubeMapParallaxInfo.xyz + 1.0f / 65536 * viewDir;
 	vec3 cubeLightColor = textureCubeLod(u_CubeMap, modifiedR + parallax, ROUGHNESS_MIPS * roughness).rgb * u_EnableTextures.w;
 
-	cubeLightColor *= cubeLightColor;
+	cubeLightColor *= abs(cubeLightColor);
 
 	gl_FragColor.rgb += cubeLightColor * reflectance;
   #endif
@@ -542,7 +542,7 @@ void main()
 	gl_FragColor.rgb += lightColor * reflectance * NL2;
   #endif
 
-	gl_FragColor.rgb = sqrt(gl_FragColor.rgb);
+	gl_FragColor.rgb = sign(gl_FragColor.rgb) * sqrt(abs(gl_FragColor.rgb));
 
 #else
 

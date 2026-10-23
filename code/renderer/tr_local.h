@@ -214,6 +214,7 @@ typedef enum {
 	AGEN_WAVEFORM,
 	AGEN_PORTAL,
 	AGEN_CONST,
+	AGEN_CVAR,
 	AGEN_WATER,
 } alphaGen_t;
 
@@ -344,7 +345,7 @@ typedef struct {
 
 	byte constantColor[4];  // for CGEN_CONST and AGEN_CONST
 
-	cvar_t* rgbCvars[3];
+	cvar_t* rgbaCvars[4];
 
 	unsigned stateBits;  // GLS_xxxx mask
 

@@ -929,7 +929,7 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 				for(i = 0; i < 3; i++) {
 					COM_ParseExt(text, false);
 					if(!token[0]) break;
-					stage->rgbCvars[i] = ri.Cvar_Get(token, "1.0", CVAR_ARCHIVE);
+					stage->rgbaCvars[i] = ri.Cvar_Get(token, "1.0", CVAR_ARCHIVE);
 				}
 				stage->rgbGen = CGEN_CVAR;
 			} else if(!Q_stricmp(token, "identity")) {
@@ -980,6 +980,11 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 				token = COM_ParseExt(text, false);
 				stage->constantColor[3] = 255 * atof(token);
 				stage->alphaGen = AGEN_CONST;
+			} else if(!Q_stricmp(token, "cvar")) {
+				COM_ParseExt(text, false);
+				if(!token[0]) break;
+				stage->rgbaCvars[3] = ri.Cvar_Get(token, "1.0", CVAR_ARCHIVE);
+				stage->alphaGen = AGEN_CVAR;
 			} else if(!Q_stricmp(token, "identity")) {
 				stage->alphaGen = AGEN_IDENTITY;
 			} else if(!Q_stricmp(token, "entity")) {

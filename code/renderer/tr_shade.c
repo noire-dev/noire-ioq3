@@ -359,9 +359,9 @@ static void ComputeShaderColors(shaderStage_t* pStage, vec4_t baseColor, vec4_t 
 			baseColor[3] = pStage->constantColor[3] / 255.0f;
 			break;
 		case CGEN_CVAR:
-			baseColor[0] = pStage->rgbCvars[0] ? pStage->rgbCvars[0]->value : 1.0f;
-			baseColor[1] = pStage->rgbCvars[1] ? pStage->rgbCvars[1]->value : 1.0f;
-			baseColor[2] = pStage->rgbCvars[2] ? pStage->rgbCvars[2]->value : 1.0f;
+			baseColor[0] = pStage->rgbaCvars[0] ? pStage->rgbaCvars[0]->value : 1.0f;
+			baseColor[1] = pStage->rgbaCvars[1] ? pStage->rgbaCvars[1]->value : 1.0f;
+			baseColor[2] = pStage->rgbaCvars[2] ? pStage->rgbaCvars[2]->value : 1.0f;
 			baseColor[3] = 1.0f;
 			break;
 		case CGEN_VERTEX:
@@ -421,6 +421,10 @@ static void ComputeShaderColors(shaderStage_t* pStage, vec4_t baseColor, vec4_t 
 		case AGEN_SKIP: break;
 		case AGEN_CONST:
 			baseColor[3] = pStage->constantColor[3] / 255.0f;
+			vertColor[3] = 0.0f;
+			break;
+		case AGEN_CVAR:
+			baseColor[3] = pStage->rgbaCvars[3] ? pStage->rgbaCvars[3]->value : 1.0f;
 			vertColor[3] = 0.0f;
 			break;
 		case AGEN_WAVEFORM:
@@ -1150,7 +1154,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 				}
 			}
 
-			enableTextures[3] = (r_reflections->integer && !(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap) ? 1.0f : 0.0f;
+			enableTextures[3] = (r_reflections->integer && input->useCubemap) ? 1.0f : 0.0f;
 
 			GLSL_SetUniformVec4(sp, UNIFORM_ENABLETEXTURES, enableTextures);
 		} else if(pStage->bundle[1].image[0] != 0) {
@@ -1172,7 +1176,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 		}
 
 		// testing cube map
-		if(!(tr.viewParms.flags & VPF_NOCUBEMAPS) && input->useCubemap && r_reflections->integer) {
+		if(input->useCubemap && r_reflections->integer) {
 			vec3_t vec3;
 			vec4_t vec4;
 
