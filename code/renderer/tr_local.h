@@ -232,6 +232,7 @@ typedef enum {
 	CGEN_LIGHTING_DIFFUSE,
 	CGEN_LIGHTING_DIFFUSE_ENTITY,  // entity RGB color multiplied times lighting diffuse
 	CGEN_FOG,                      // standard fog
+	CGEN_CVAR,                     // cvar handled
 	CGEN_CONST                     // fixed color
 } colorGen_t;
 
@@ -341,6 +342,8 @@ typedef struct {
 	alphaGen_t alphaGen;
 
 	byte constantColor[4];  // for CGEN_CONST and AGEN_CONST
+
+	cvar_t* rgbCvars[3];
 
 	unsigned stateBits;  // GLS_xxxx mask
 
@@ -985,6 +988,7 @@ typedef struct msurface_s {
 	// int					viewCount;		// if == tr.viewCount, already added
 	struct shader_s* shader;
 	int fogIndex;
+	int surfaceFlags;
 	bool hasFog;
 	bool useCubemap;
 	vec3_t cubemapOrigin;
@@ -1568,6 +1572,10 @@ extern cvar_t* r_fogColorB;
 extern cvar_t* r_fogStart;
 extern cvar_t* r_fogEnd;
 extern cvar_t* r_fogReflectionEnd;
+
+extern cvar_t* r_skyColorR;
+extern cvar_t* r_skyColorG;
+extern cvar_t* r_skyColorB;
 
 extern cvar_t* r_debugSort;
 

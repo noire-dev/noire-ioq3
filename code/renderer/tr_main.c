@@ -1658,10 +1658,7 @@ void R_RenderSunShadowMaps(const refdef_t* fd, int level) {
 			break;
 	}
 
-	if(level != 3)
-		VectorCopy(fd->vieworg, lightOrigin);
-	else
-		VectorCopy(tr.world->lightGridOrigin, lightOrigin);
+	VectorCopy(fd->vieworg, lightOrigin);
 
 	// Make up a projection
 	VectorScale(lightDir, -1.0f, lightViewAxis[0]);

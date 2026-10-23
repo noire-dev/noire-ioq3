@@ -273,6 +273,7 @@ static void R_FogCullSurface(msurface_t* surf) {
 }
 
 static void R_AddWorldSurface(msurface_t* surf, int dlightBits) {
+	if(surf->surfaceFlags & SURF_SKYBOX && (tr.viewParms.flags & VPF_NOCUBEMAPS || tr.viewParms.flags & VPF_DEPTHSHADOW)) return;
 	if(r_detailLevel->integer < surf->shader->detailLevel) return;
 	if(tr.viewParms.flags & VPF_NOCUBEMAPS && r_reflectionsDetail->integer < surf->shader->detailLevel) return;
 	R_FrustumCullSurface(surf);
@@ -375,7 +376,7 @@ static void R_RecursiveWorldNode(mnode_t* node, uint32_t planeBits, uint32_t dli
 		 */
 		if(tr.viewParms.flags & VPF_DLIGHTSHADOW) {
 			if(R_CullDlightShadowNode(node)) return;
-		} else if(!(tr.viewParms.flags & VPF_DEPTHSHADOW)) {
+		} else {
 			if(node->visCounts[tr.visIndex] != tr.visCounts[tr.visIndex]) return;
 		}
 
@@ -639,7 +640,7 @@ void R_AddWorldSurfaces(void) {
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
 	// determine which leaves are in the PVS / areamask
-	if(!(tr.viewParms.flags & VPF_DEPTHSHADOW)) R_MarkLeaves();
+	R_MarkLeaves();
 
 	// clear out the visible min/max
 	ClearBounds(tr.viewParms.visBounds[0], tr.viewParms.visBounds[1]);

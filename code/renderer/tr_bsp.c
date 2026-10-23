@@ -437,6 +437,9 @@ static void ParseFace(dsurface_t* ds, drawVert_t* verts, float* hdrVertColors, m
 	// get fog volume
 	surf->fogIndex = LittleLong(ds->fogNum) + 1;
 
+	// get surfFlags from bsp
+	surf->surfaceFlags = s_worldData.shaders[ds->shaderNum].surfaceFlags;
+
 	// get shader value
 	surf->shader = ShaderForShaderNum(ds->shaderNum, realLightmapNum);
 
@@ -533,6 +536,9 @@ static void ParseMesh(dsurface_t* ds, drawVert_t* verts, float* hdrVertColors, m
 	// get fog volume
 	surf->fogIndex = LittleLong(ds->fogNum) + 1;
 
+	// get surfFlags from bsp
+	surf->surfaceFlags = s_worldData.shaders[ds->shaderNum].surfaceFlags;
+
 	// get shader value
 	surf->shader = ShaderForShaderNum(ds->shaderNum, realLightmapNum);
 
@@ -587,6 +593,9 @@ static void ParseTriSurf(dsurface_t* ds, drawVert_t* verts, float* hdrVertColors
 
 	// get fog volume
 	surf->fogIndex = LittleLong(ds->fogNum) + 1;
+
+	// get surfFlags from bsp
+	surf->surfaceFlags = s_worldData.shaders[ds->shaderNum].surfaceFlags;
 
 	// get shader
 	surf->shader = ShaderForShaderNum(ds->shaderNum, LIGHTMAP_BY_VERTEX);

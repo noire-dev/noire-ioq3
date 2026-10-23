@@ -924,6 +924,14 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 				stage->constantColor[2] = 255 * color[2];
 
 				stage->rgbGen = CGEN_CONST;
+			} else if(!Q_stricmp(token, "cvar")) {
+				int i;
+				for(i = 0; i < 3; i++) {
+					COM_ParseExt(text, false);
+					if(!token[0]) break;
+					stage->rgbCvars[i] = ri.Cvar_Get(token, "1.0", CVAR_ARCHIVE);
+				}
+				stage->rgbGen = CGEN_CVAR;
 			} else if(!Q_stricmp(token, "identity")) {
 				stage->rgbGen = CGEN_IDENTITY;
 			} else if(!Q_stricmp(token, "identityLighting")) {
@@ -1387,7 +1395,7 @@ infoParm_t infoParms[] = {
     {"nolightmap", 0, SURF_NOLIGHTMAP, 0},                 // don't generate a lightmap
     {"cubemap", 0, SURF_CUBEMAP, 0},                       // reflective?
     {"cubemapCorrection", 0, SURF_CUBEMAP_CORRECTION, 0},  // correct reflect?
-    {"optimize", 0, SURF_OPTIMIZE, 0},                     // optimize?
+    {"skybox", 0, SURF_SKYBOX, 0},                         // skybox for optimize?
 
 	// material flags (server/gameplay relevant)
     {"chainlink", 0, SURF_CHAINLINK, 0},

@@ -90,6 +90,10 @@ cvar_t* r_fogColorB;
 cvar_t* r_fogStart;
 cvar_t* r_fogEnd;
 
+cvar_t* r_skyColorR;
+cvar_t* r_skyColorG;
+cvar_t* r_skyColorB;
+
 cvar_t* r_resolution;
 cvar_t* r_picmip;
 cvar_t* r_showtris;
@@ -838,6 +842,10 @@ void R_Register(void) {
 	r_fogColorB = ri.Cvar_Get("r_fogColorB", "0.5", CVAR_ARCHIVE);
 	r_fogStart = ri.Cvar_Get("r_fogStart", "0", CVAR_ARCHIVE);
 	r_fogEnd = ri.Cvar_Get("r_fogEnd", "131072", CVAR_ARCHIVE);
+
+	r_skyColorR = ri.Cvar_Get("r_skyColorR", "0.5", CVAR_ARCHIVE);
+	r_skyColorG = ri.Cvar_Get("r_skyColorG", "0.5", CVAR_ARCHIVE);
+	r_skyColorB = ri.Cvar_Get("r_skyColorB", "0.5", CVAR_ARCHIVE);
 
 	//
 	// archived variables that can change at any time
