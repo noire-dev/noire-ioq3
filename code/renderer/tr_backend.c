@@ -1114,6 +1114,8 @@ const void* RB_PostProcess(const void* data) {
 		// and can't read from an MSAA dstFbo later.
 		RB_ToneMap(srcFbo, srcBox, tr.screenScratchFbo, srcBox, autoExposure);
 		FBO_FastBlit(tr.screenScratchFbo, srcBox, srcFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+		RB_Bloom(srcFbo, srcBox, srcFbo, srcBox);
 	}
 
 	// RB_BokehBlur(srcFbo, srcBox, srcFbo, srcBox, backEnd.refdef.blurFactor);

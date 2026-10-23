@@ -1397,12 +1397,12 @@ infoParm_t infoParms[] = {
     {"nodamage", 0, SURF_NODAMAGE, 0},
 
     // drawsurf attributes
-    {"nodraw", 0, SURF_NODRAW, 0},                         // don't generate a drawsurface (or a lightmap)
-    {"pointlight", 0, SURF_POINTLIGHT, 0},                 // sample lighting at vertexes
-    {"nolightmap", 0, SURF_NOLIGHTMAP, 0},                 // don't generate a lightmap
-    {"cubemap", 0, SURF_CUBEMAP, 0},                       // reflective?
-    {"cubemapCorrection", 0, SURF_CUBEMAP_CORRECTION, 0},  // correct reflect?
-    {"skybox", 0, SURF_SKYBOX, 0},                         // skybox for optimize?
+    {"nodraw", 0, SURF_NODRAW, 0},               // don't generate a drawsurface (or a lightmap)
+    {"pointlight", 0, SURF_POINTLIGHT, 0},       // sample lighting at vertexes
+    {"nolightmap", 0, SURF_NOLIGHTMAP, 0},       // don't generate a lightmap
+    {"cubemap", 0, SURF_CUBEMAP, 0},             // reflective?
+    {"cubemapWater", 0, SURF_CUBEMAP_WATER, 0},  // correct reflect?
+    {"skybox", 0, SURF_SKYBOX, 0},               // skybox for optimize?
 
 	// material flags (server/gameplay relevant)
     {"chainlink", 0, SURF_CHAINLINK, 0},

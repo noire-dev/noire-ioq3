@@ -59,20 +59,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CONTENTS_TRIGGER 0x40000000
 #define CONTENTS_NODROP 0x80000000  // don't leave bodies or items (death fog, lava)
 
-#define SURF_NODAMAGE 1               // never give falling damage
-#define SURF_SLICK 2                  // effects game physics
-#define SURF_SKY 4                    // lighting from environment map
-#define SURF_NOMARKS 8                // don't leave missile marks
-#define SURF_NODRAW 16                // don't generate a drawsurface at all
-#define SURF_HINT 32                  // make a primary bsp splitter
-#define SURF_SKIP 64                  // completely ignore, allowing non-closed brushes
-#define SURF_NOLIGHTMAP 128           // surface doesn't need a lightmap
-#define SURF_POINTLIGHT 256           // generate lighting info at vertexes
-#define SURF_NONSOLID 512             // don't collide against curves with this set
-#define SURF_LIGHTFILTER 1024         // act as a light filter during q3map -light
-#define SURF_ALPHASHADOW 2048         // do per-pixel light shadow casting in q3map
-#define SURF_CUBEMAP 4096             // reflective?
-#define SURF_CUBEMAP_CORRECTION 8192  // correct reflect?
+#define SURF_NODAMAGE 1          // never give falling damage
+#define SURF_SLICK 2             // effects game physics
+#define SURF_SKY 4               // lighting from environment map
+#define SURF_NOMARKS 8           // don't leave missile marks
+#define SURF_NODRAW 16           // don't generate a drawsurface at all
+#define SURF_HINT 32             // make a primary bsp splitter
+#define SURF_SKIP 64             // completely ignore, allowing non-closed brushes
+#define SURF_NOLIGHTMAP 128      // surface doesn't need a lightmap
+#define SURF_POINTLIGHT 256      // generate lighting info at vertexes
+#define SURF_NONSOLID 512        // don't collide against curves with this set
+#define SURF_LIGHTFILTER 1024    // act as a light filter during q3map -light
+#define SURF_ALPHASHADOW 2048    // do per-pixel light shadow casting in q3map
+#define SURF_CUBEMAP 4096        // reflective?
+#define SURF_CUBEMAP_WATER 8192  // correct reflect?
 
 /* --- material flags --- */
 #define SURF_CHAINLINK 16384

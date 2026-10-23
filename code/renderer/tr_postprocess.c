@@ -290,3 +290,31 @@ void RB_Gamma(FBO_t* srcFbo, ivec4_t srcBox, FBO_t* dstFbo, ivec4_t dstBox) {
 
 	FBO_Blit(srcFbo, srcBox, NULL, dstFbo, dstBox, &tr.gammaShader, color, 0);
 }
+
+void RB_Bloom(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
+	vec4_t color;
+	float blurStrength;
+
+	if(!r_bloom->integer || !tr.bloomFbo[0] || !tr.bloomFbo[1]) return;
+	if(r_bloomIntensity->value <= 0.0f) return;
+
+	// 1) Bright-pass: только яркие пиксели, попадают в tr.bloomFbo[0]
+	GLSL_SetUniformFloat(&tr.bloomShader, UNIFORM_BLOOMTHRESHOLD, r_bloomThreshold->value);
+	GLSL_SetUniformFloat(&tr.bloomShader, UNIFORM_BLOOMKNEE, Com_Clamp(0.0001f, 1.0f, r_bloomKnee->value));
+
+	VectorSet4(color, 1.0f, 1.0f, 1.0f, 1.0f);
+	FBO_Blit(src, srcBox, NULL, tr.bloomFbo[0], NULL, &tr.bloomShader, color, 0);
+
+	// 2) Разделимый гауссовский блюр: H → bloomFbo[1], V → обратно в bloomFbo[0]
+	blurStrength = Com_Clamp(0.0f, 4.0f, r_bloomBlur->value);
+	if(blurStrength > 0.0f) {
+		RB_HBlur(tr.bloomFbo[0], tr.bloomFbo[1], blurStrength);
+		RB_VBlur(tr.bloomFbo[1], tr.bloomFbo[0], blurStrength);
+	}
+
+	// 3) Аддитивная композиция обратно в целевую FBO
+	color[0] = color[1] = color[2] = r_bloomIntensity->value;
+	color[3] = 1.0f;
+
+	FBO_Blit(tr.bloomFbo[0], NULL, NULL, dst, dstBox, NULL, color, GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE);
+}

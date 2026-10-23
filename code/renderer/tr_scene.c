@@ -416,27 +416,27 @@ void RE_RenderScene(const refdef_t* fd) {
 
 	// playing with even more shadows
 	if(glRefConfig.framebufferObject && r_shadows->integer && !(fd->rdflags & RDF_NOWORLDMODEL) && r_shadows->integer) {
-		if(r_shadowsUpdate->integer == 5) {
+		if(r_shadowUpdate->integer == 5) {
 			R_RenderSunShadowMaps(fd, 0);  // 1-й каскад: каждый кадр
 			R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждый кадр
 			R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждый кадр
-		} else if(r_shadowsUpdate->integer == 4) {
+		} else if(r_shadowUpdate->integer == 4) {
 			R_RenderSunShadowMaps(fd, 0);                               // 1-й каскад: каждый кадр
 			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждые 2 кадра
 			if((tr.frameCount & 3) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 4 кадра
-		} else if(r_shadowsUpdate->integer == 3) {
+		} else if(r_shadowUpdate->integer == 3) {
 			R_RenderSunShadowMaps(fd, 0);                               // 1-й каскад: каждый кадр
 			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждые 2 кадра
 			if((tr.frameCount & 7) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 8 кадров
-		} else if(r_shadowsUpdate->integer == 2) {
+		} else if(r_shadowUpdate->integer == 2) {
 			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);   // 1-й каскад: каждые 2 кадра
 			if((tr.frameCount & 3) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 4 кадра
 			if((tr.frameCount & 15) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 16 кадров
-		} else if(r_shadowsUpdate->integer == 1) {
+		} else if(r_shadowUpdate->integer == 1) {
 			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);   // 1-й каскад: каждые 2 кадра
 			if((tr.frameCount & 7) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 8 кадров
 			if((tr.frameCount & 31) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 32 кадров
-		} else if(r_shadowsUpdate->integer == 0) {
+		} else if(r_shadowUpdate->integer == 0) {
 			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);    // 1-й каскад: каждые 2 кадра
 			if((tr.frameCount & 63) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 64 кадров (без энтити)
 			if((tr.frameCount & 127) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 128 кадров (без энтити)

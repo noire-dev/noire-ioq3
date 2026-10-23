@@ -625,6 +625,9 @@ typedef enum {
 	UNIFORM_ZFADELOWEST,
 	UNIFORM_ZFADEHIGHEST,
 
+	UNIFORM_BLOOMTHRESHOLD,
+	UNIFORM_BLOOMKNEE,
+
 	UNIFORM_COUNT
 } uniform_t;
 
@@ -1392,6 +1395,7 @@ typedef struct {
 	image_t* screenScratchImage;
 	image_t* textureScratchImage[2];
 	image_t* quarterImage[2];
+	image_t* bloomImage[2];
 	image_t* calcLevelsImage;
 	image_t* targetLevelsImage;
 	image_t* fixedLevelsImage;
@@ -1409,6 +1413,7 @@ typedef struct {
 	FBO_t* screenScratchFbo;
 	FBO_t* textureScratchFbo[2];
 	FBO_t* quarterFbo[2];
+	FBO_t* bloomFbo[2];
 	FBO_t* calcLevelsFbo;
 	FBO_t* targetLevelsFbo;
 	FBO_t* sunShadowFbo[4];
@@ -1447,6 +1452,7 @@ typedef struct {
 	shaderProgram_t shadowmapShader[SHADOWMAPDEF_COUNT];
 	shaderProgram_t down4xShader;
 	shaderProgram_t bokehShader;
+	shaderProgram_t bloomShader;
 	shaderProgram_t tonemapShader;
 	shaderProgram_t gammaShader;
 	shaderProgram_t calclevels4xShader[2];
@@ -1544,6 +1550,8 @@ extern cvar_t* r_toneMapMin;
 extern cvar_t* r_toneMapAvg;
 extern cvar_t* r_toneMapMax;
 
+extern cvar_t* r_skybox;
+
 extern cvar_t* r_autoExposure;
 extern cvar_t* r_autoExposureMin;
 extern cvar_t* r_autoExposureMax;
@@ -1555,17 +1563,19 @@ extern cvar_t* r_parallaxMapShadows;
 extern cvar_t* r_reflections;
 extern cvar_t* r_reflectionsResolution;
 extern cvar_t* r_reflectionsGrid;
-extern cvar_t* r_reflectionsEnd;
-extern cvar_t* r_reflectionsDetail;
+extern cvar_t* r_reflectionsMaterials;
+extern cvar_t* r_reflectionsEntities;
+extern cvar_t* r_reflectionsSkybox;
 extern cvar_t* r_deluxeSpecular;
 extern cvar_t* r_detailLevel;
 extern cvar_t* r_shadows;
-extern cvar_t* r_shadowsUpdate;
+extern cvar_t* r_shadowUpdate;
 extern cvar_t* r_shadowResolution;
 extern cvar_t* r_shadowDistance;
 extern cvar_t* r_shadowLightScale;
 extern cvar_t* r_shadowAmbientScale;
 extern cvar_t* r_shadowFilter;
+extern cvar_t* r_shadowSkybox;
 
 extern cvar_t* r_fogDensity;
 extern cvar_t* r_fogColorR;
@@ -1578,6 +1588,13 @@ extern cvar_t* r_fogReflectionEnd;
 extern cvar_t* r_skyColorR;
 extern cvar_t* r_skyColorG;
 extern cvar_t* r_skyColorB;
+extern cvar_t* r_skyColorA;
+
+extern cvar_t* r_bloom;
+extern cvar_t* r_bloomIntensity;
+extern cvar_t* r_bloomThreshold;
+extern cvar_t* r_bloomKnee;
+extern cvar_t* r_bloomBlur;
 
 extern cvar_t* r_debugSort;
 

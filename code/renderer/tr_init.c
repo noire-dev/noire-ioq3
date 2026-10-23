@@ -62,6 +62,8 @@ cvar_t* r_toneMapMin;
 cvar_t* r_toneMapAvg;
 cvar_t* r_toneMapMax;
 
+cvar_t* r_skybox;
+
 cvar_t* r_autoExposure;
 cvar_t* r_autoExposureMin;
 cvar_t* r_autoExposureMax;
@@ -71,17 +73,19 @@ cvar_t* r_parallaxMapShadows;
 cvar_t* r_reflections;
 cvar_t* r_reflectionsResolution;
 cvar_t* r_reflectionsGrid;
-cvar_t* r_reflectionsEnd;
-cvar_t* r_reflectionsDetail;
+cvar_t* r_reflectionsMaterials;
+cvar_t* r_reflectionsEntities;
+cvar_t* r_reflectionsSkybox;
 cvar_t* r_deluxeSpecular;
 cvar_t* r_detailLevel;
 cvar_t* r_shadows;
-cvar_t* r_shadowsUpdate;
+cvar_t* r_shadowUpdate;
 cvar_t* r_shadowResolution;
 cvar_t* r_shadowDistance;
 cvar_t* r_shadowLightScale;
 cvar_t* r_shadowAmbientScale;
 cvar_t* r_shadowFilter;
+cvar_t* r_shadowSkybox;
 
 cvar_t* r_fogDensity;
 cvar_t* r_fogColorR;
@@ -93,6 +97,13 @@ cvar_t* r_fogEnd;
 cvar_t* r_skyColorR;
 cvar_t* r_skyColorG;
 cvar_t* r_skyColorB;
+cvar_t* r_skyColorA;
+
+cvar_t* r_bloom;
+cvar_t* r_bloomIntensity;
+cvar_t* r_bloomThreshold;
+cvar_t* r_bloomKnee;
+cvar_t* r_bloomBlur;
 
 cvar_t* r_resolution;
 cvar_t* r_picmip;
@@ -810,6 +821,8 @@ void R_Register(void) {
 	r_toneMapAvg = ri.Cvar_Get("r_toneMapAvg", "-2.48", CVAR_CHEAT);
 	r_toneMapMax = ri.Cvar_Get("r_toneMapMax", "-1.00", CVAR_CHEAT);
 
+	r_skybox = ri.Cvar_Get("r_skybox", "1", CVAR_ARCHIVE);
+
 	r_autoExposure = ri.Cvar_Get("r_autoExposure", "1", CVAR_ARCHIVE);
 	r_autoExposureMin = ri.Cvar_Get("r_autoExposureMin", "-2.0", CVAR_CHEAT);
 	r_autoExposureMax = ri.Cvar_Get("r_autoExposureMax", "2.0", CVAR_CHEAT);
@@ -821,31 +834,40 @@ void R_Register(void) {
 	r_reflections = ri.Cvar_Get("r_reflections", "3", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsResolution = ri.Cvar_Get("r_reflectionsResolution", "1024", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsGrid = ri.Cvar_Get("r_reflectionsGrid", "64", CVAR_ARCHIVE | CVAR_LATCH);
-	r_reflectionsEnd = ri.Cvar_Get("r_reflectionsEnd", "16384", CVAR_ARCHIVE);
-	r_reflectionsDetail = ri.Cvar_Get("r_reflectionsDetail", "5", CVAR_ARCHIVE);
+	r_reflectionsMaterials = ri.Cvar_Get("r_reflectionsMaterials", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflectionsEntities = ri.Cvar_Get("r_reflectionsEntities", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflectionsSkybox = ri.Cvar_Get("r_reflectionsSkybox", "0", CVAR_ARCHIVE);
 
 	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.3", CVAR_ARCHIVE | CVAR_LATCH);
 	r_detailLevel = ri.Cvar_Get("r_detailLevel", "5", CVAR_ARCHIVE);
 	ri.Cvar_CheckRange(r_detailLevel, 0, 5, true);
 
 	r_shadows = ri.Cvar_Get("r_shadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_shadowsUpdate = ri.Cvar_Get("r_shadowsUpdate", "5", CVAR_ARCHIVE | CVAR_LATCH);
+	r_shadowUpdate = ri.Cvar_Get("r_shadowUpdate", "0", CVAR_ARCHIVE);
 	r_shadowResolution = ri.Cvar_Get("r_shadowResolution", "4096", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowDistance = ri.Cvar_Get("r_shadowDistance", "8192", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowLightScale = ri.Cvar_Get("r_shadowLightScale", "0.50", CVAR_ARCHIVE);
 	r_shadowAmbientScale = ri.Cvar_Get("r_shadowAmbientScale", "0.32", CVAR_ARCHIVE);
 	r_shadowFilter = ri.Cvar_Get("r_shadowFilter", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_shadowSkybox = ri.Cvar_Get("r_shadowSkybox", "0", CVAR_ARCHIVE);
 
 	r_fogDensity = ri.Cvar_Get("r_fogDensity", "1.0", CVAR_ARCHIVE);
 	r_fogColorR = ri.Cvar_Get("r_fogColorR", "0.5", CVAR_ARCHIVE);
 	r_fogColorG = ri.Cvar_Get("r_fogColorG", "0.5", CVAR_ARCHIVE);
 	r_fogColorB = ri.Cvar_Get("r_fogColorB", "0.5", CVAR_ARCHIVE);
-	r_fogStart = ri.Cvar_Get("r_fogStart", "0", CVAR_ARCHIVE);
-	r_fogEnd = ri.Cvar_Get("r_fogEnd", "131072", CVAR_ARCHIVE);
+	r_fogStart = ri.Cvar_Get("r_fogStart", "4096", CVAR_ARCHIVE);
+	r_fogEnd = ri.Cvar_Get("r_fogEnd", "500000", CVAR_ARCHIVE);
 
 	r_skyColorR = ri.Cvar_Get("r_skyColorR", "0.5", CVAR_ARCHIVE);
 	r_skyColorG = ri.Cvar_Get("r_skyColorG", "0.5", CVAR_ARCHIVE);
 	r_skyColorB = ri.Cvar_Get("r_skyColorB", "0.5", CVAR_ARCHIVE);
+	r_skyColorA = ri.Cvar_Get("r_skyColorA", "0.0", CVAR_ARCHIVE);
+
+	r_bloom = ri.Cvar_Get("r_bloom", "1", CVAR_ARCHIVE);
+	r_bloomIntensity = ri.Cvar_Get("r_bloomIntensity", "0.32", CVAR_ARCHIVE);
+	r_bloomThreshold = ri.Cvar_Get("r_bloomThreshold", "0.64", CVAR_ARCHIVE);
+	r_bloomKnee = ri.Cvar_Get("r_bloomKnee", "0.64", CVAR_ARCHIVE);
+	r_bloomBlur = ri.Cvar_Get("r_bloomBlur", "1", CVAR_ARCHIVE);
 
 	//
 	// archived variables that can change at any time

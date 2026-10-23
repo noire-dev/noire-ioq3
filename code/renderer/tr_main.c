@@ -1900,7 +1900,7 @@ void R_RenderSunShadowMaps(const refdef_t* fd, int level) {
 			R_AddWorldSurfaces();
 			// R_AddPolygonSurfaces();
 
-			if(level != 3 && (level == 0 || r_shadowsUpdate->integer != 0)) R_AddEntitySurfaces();
+			if(level != 3 && (level == 0 || r_shadowUpdate->integer != 0)) R_AddEntitySurfaces();
 
 			R_SortDrawSurfs(tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf);
 		}

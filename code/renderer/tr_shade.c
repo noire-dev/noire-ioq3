@@ -798,11 +798,7 @@ void RB_FogPass(void) {
 	vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
 	float eyeT;
 	float startDist = r_fogStart->value;
-	float endDist;
-	if(tr.viewParms.flags & VPF_NOCUBEMAPS)
-		endDist = r_reflectionsEnd->value;
-	else
-		endDist = r_fogEnd->value;
+	float endDist = r_fogEnd->value;
 	float range = endDist - startDist;
 	float scale;
 	vec3_t local;

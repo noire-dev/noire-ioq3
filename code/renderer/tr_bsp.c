@@ -2076,10 +2076,10 @@ void R_AssignCubemapsToWorldSurfaces(void) {
 
 		if(!R_ShaderRequiresCubemap(surf->shader)) continue;
 
-		bool cubemapCorrection = surf->shader->surfaceFlags & SURF_CUBEMAP_CORRECTION;
+		bool cubemapCorrection = surf->shader->surfaceFlags & SURF_CUBEMAP_WATER;
 
 		if((surf->cullinfo.type & CULLINFO_SPHERE) || (surf->cullinfo.type & CULLINFO_BOX)) {
-			surf->useCubemap = R_CubemapForShader(true);
+			surf->useCubemap = R_CubemapForShader(r_reflectionsMaterials->integer || surf->shader->surfaceFlags & SURF_CUBEMAP_WATER);
 
 			if(surf->cullinfo.type & CULLINFO_BOX) {
 				vec3_t size;

@@ -1126,7 +1126,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 	bool personalModel;
 	int cull;
 	int fogNum;
-	bool useCubemap;
+	bool useCubemap = false;
 	shader_t* shader;
 	skin_t* skin;
 
@@ -1195,7 +1195,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 			drawSurf = surface;
 		}
 
-		useCubemap = R_ShaderRequiresCubemap(shader);
+		if(r_reflectionsEntities->integer) useCubemap = R_ShaderRequiresCubemap(shader);
 
 		if(!personalModel) {
 			R_AddDrawSurf(drawSurf, shader, fogNum, 0, useCubemap, vec3_origin, 0.0f);

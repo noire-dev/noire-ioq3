@@ -252,12 +252,6 @@ static void R_FrustumCullSurface(msurface_t* surf) {
 static void R_FogCullSurface(msurface_t* surf) {
 	vec3_t center;
 	float dist;
-	float fogEnd;
-
-	if(tr.viewParms.flags & VPF_NOCUBEMAPS)
-		fogEnd = r_reflectionsEnd->value;
-	else
-		fogEnd = r_fogEnd->value;
 
 	if(surf->doCull) return;
 
@@ -266,16 +260,15 @@ static void R_FogCullSurface(msurface_t* surf) {
 		center[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
 		center[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
 		dist = Distance(center, backEnd.viewParms.or.origin) - VectorLength(surf->cullinfo.bounds[1]) * 0.5f;
-		surf->doCull = dist > fogEnd;
+		surf->doCull = dist > r_fogEnd->value;
 	} else {
 		surf->doCull = false;
 	}
 }
 
 static void R_AddWorldSurface(msurface_t* surf, int dlightBits) {
-	if(surf->surfaceFlags & SURF_SKYBOX && (tr.viewParms.flags & VPF_NOCUBEMAPS || tr.viewParms.flags & VPF_DEPTHSHADOW)) return;
+	if(surf->surfaceFlags & SURF_SKYBOX && ((tr.viewParms.flags & VPF_NOCUBEMAPS && !r_reflectionsSkybox->integer) || (tr.viewParms.flags & VPF_DEPTHSHADOW && !r_shadowSkybox->integer) || !r_skybox->integer)) return;
 	if(r_detailLevel->integer < surf->shader->detailLevel) return;
-	if(tr.viewParms.flags & VPF_NOCUBEMAPS && r_reflectionsDetail->integer < surf->shader->detailLevel) return;
 	R_FrustumCullSurface(surf);
 	R_FogCullSurface(surf);
 	if(surf->doCull) return;
