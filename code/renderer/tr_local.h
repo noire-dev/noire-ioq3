@@ -628,6 +628,8 @@ typedef enum {
 	UNIFORM_BLOOMTHRESHOLD,
 	UNIFORM_BLOOMKNEE,
 
+	UNIFORM_MOVEMENTBLURSTRENGTH,
+
 	UNIFORM_COUNT
 } uniform_t;
 
@@ -1396,6 +1398,7 @@ typedef struct {
 	image_t* textureScratchImage[2];
 	image_t* quarterImage[2];
 	image_t* bloomImage[2];
+	image_t* movementBlurImage;
 	image_t* calcLevelsImage;
 	image_t* targetLevelsImage;
 	image_t* fixedLevelsImage;
@@ -1414,6 +1417,7 @@ typedef struct {
 	FBO_t* textureScratchFbo[2];
 	FBO_t* quarterFbo[2];
 	FBO_t* bloomFbo[2];
+	FBO_t* movementBlurFbo;
 	FBO_t* calcLevelsFbo;
 	FBO_t* targetLevelsFbo;
 	FBO_t* sunShadowFbo[4];
@@ -1454,6 +1458,7 @@ typedef struct {
 	shaderProgram_t bokehShader;
 	shaderProgram_t bloomShader;
 	shaderProgram_t tonemapShader;
+	shaderProgram_t movementBlurShader;
 	shaderProgram_t gammaShader;
 	shaderProgram_t calclevels4xShader[2];
 	shaderProgram_t shadowmaskShader;
@@ -1595,6 +1600,9 @@ extern cvar_t* r_bloomIntensity;
 extern cvar_t* r_bloomThreshold;
 extern cvar_t* r_bloomKnee;
 extern cvar_t* r_bloomBlur;
+
+extern cvar_t* r_movementBlur;
+extern cvar_t* r_movementBlurStrength;
 
 extern cvar_t* r_debugSort;
 

@@ -580,6 +580,14 @@ void CG_DrawActiveFrame(int serverTime, bool demoPlayback) {
 		}
 	}
 
+	{
+		float* vel = cg.snap->ps.velocity;
+		float* fwd = cg.refdef.viewaxis[0];
+		float forwardSpeed = vel[0] * fwd[0] + vel[1] * fwd[1] + vel[2] * fwd[2];
+
+		trap_Cvar_Set("r_movementBlurStrength", va("%f", forwardSpeed * 0.00005));
+	}
+
 	// actually issue the rendering calls
 	CG_DrawActive();
 

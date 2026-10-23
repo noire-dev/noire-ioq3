@@ -1459,6 +1459,8 @@ void R_CreateBuiltinImages(void) {
 			tr.bloomImage[x] = R_CreateImage(va("*bloom%d", x), NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8);
 		}
 
+		tr.movementBlurImage = R_CreateImage("*movementBlur", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
+
 		if(r_shadows->integer) {
 			for(x = 0; x < 4; x++) {
 				tr.sunShadowDepthImage[x] = R_CreateImage(va("*sunshadowdepth%i", x), NULL, r_shadowResolution->integer, r_shadowResolution->integer, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24);

@@ -105,6 +105,9 @@ cvar_t* r_bloomThreshold;
 cvar_t* r_bloomKnee;
 cvar_t* r_bloomBlur;
 
+cvar_t* r_movementBlur;
+cvar_t* r_movementBlurStrength;
+
 cvar_t* r_resolution;
 cvar_t* r_picmip;
 cvar_t* r_showtris;
@@ -828,8 +831,8 @@ void R_Register(void) {
 	r_autoExposureMax = ri.Cvar_Get("r_autoExposureMax", "2.0", CVAR_CHEAT);
 	r_cameraExposure = ri.Cvar_Get("r_cameraExposure", "1.08", CVAR_CHEAT);
 
-	r_parallaxMapping = ri.Cvar_Get("r_parallaxMapping", "2", CVAR_ARCHIVE | CVAR_LATCH);
-	r_parallaxMapShadows = ri.Cvar_Get("r_parallaxMapShadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_parallaxMapping = ri.Cvar_Get("r_parallaxMapping", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	r_parallaxMapShadows = ri.Cvar_Get("r_parallaxMapShadows", "0", CVAR_ARCHIVE | CVAR_LATCH);
 
 	r_reflections = ri.Cvar_Get("r_reflections", "3", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsResolution = ri.Cvar_Get("r_reflectionsResolution", "1024", CVAR_ARCHIVE | CVAR_LATCH);
@@ -838,7 +841,7 @@ void R_Register(void) {
 	r_reflectionsEntities = ri.Cvar_Get("r_reflectionsEntities", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsSkybox = ri.Cvar_Get("r_reflectionsSkybox", "0", CVAR_ARCHIVE);
 
-	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.3", CVAR_ARCHIVE | CVAR_LATCH);
+	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.25", CVAR_ARCHIVE | CVAR_LATCH);
 	r_detailLevel = ri.Cvar_Get("r_detailLevel", "5", CVAR_ARCHIVE);
 	ri.Cvar_CheckRange(r_detailLevel, 0, 5, true);
 
@@ -869,19 +872,16 @@ void R_Register(void) {
 	r_bloomKnee = ri.Cvar_Get("r_bloomKnee", "0.64", CVAR_ARCHIVE);
 	r_bloomBlur = ri.Cvar_Get("r_bloomBlur", "1", CVAR_ARCHIVE);
 
+	r_movementBlur = ri.Cvar_Get("r_movementBlur", "0", CVAR_ARCHIVE);
+	r_movementBlurStrength = ri.Cvar_Get("r_movementBlurStrength", "0.35", CVAR_ARCHIVE);
+
 	//
 	// archived variables that can change at any time
 	//
 	r_lodbias = ri.Cvar_Get("r_lodbias", "0", CVAR_ARCHIVE);
 	r_dynamiclight = ri.Cvar_Get("r_dynamiclight", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_textureMode = ri.Cvar_Get("r_textureMode", "GL_LINEAR_MIPMAP_LINEAR", CVAR_ARCHIVE);
-#ifdef __EMSCRIPTEN__
-	// Under Emscripten we don't throttle framerate with com_maxfps by default, so enable
-	// vsync by default instead.
 	r_swapInterval = ri.Cvar_Get("r_swapInterval", "1", CVAR_ARCHIVE | CVAR_LATCH);
-#else
-	r_swapInterval = ri.Cvar_Get("r_swapInterval", "0", CVAR_ARCHIVE | CVAR_LATCH);
-#endif
 	r_gamma = ri.Cvar_Get("r_gamma", "1", CVAR_ARCHIVE);
 
 	r_ambientScale = ri.Cvar_Get("r_ambientScale", "0.32", CVAR_CHEAT);

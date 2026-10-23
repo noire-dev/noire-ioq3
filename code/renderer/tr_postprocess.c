@@ -318,3 +318,56 @@ void RB_Bloom(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
 
 	FBO_Blit(tr.bloomFbo[0], NULL, NULL, dst, dstBox, NULL, color, GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE);
 }
+
+/*
+ * RB_MovementBlur — радиальный motion blur.
+ *
+ * Эффект имитирует смазывание картинки при вращении/движении камеры:
+ * центр остаётся чётким, а к краям экрана появляется всё более сильный
+ * "хвост" вдоль радиального направления. Реализовано одним шейдерным
+ * проходом с 7 сэмплами (центр + 3 симметричные пары с затухающим весом).
+ *
+ * Управляется cvar'ами:
+ *   r_movementBlur          0/1   — включён ли эффект (по умолчанию 0)
+ *   r_movementBlurStrength  0..1  — сила смазывания (по умолчанию 0.35)
+ *
+ * src/dst могут совпадать — в этом случае шейдер отрабатывает через
+ * промежуточный tr.movementBlurFbo, чтобы избежать чтения-записи в одну
+ * и ту же текстуру.
+ */
+void RB_MovementBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
+	vec4_t color;
+	float strength;
+
+	if(!r_movementBlur->integer) {
+		return;
+	}
+
+	if(!tr.movementBlurFbo || !tr.movementBlurShader.program) {
+		return;
+	}
+
+	strength = Com_Clamp(-1.0f, 1.0f, r_movementBlurStrength->value);
+	if(fabsf(strength) < 1e-6f) {
+		return;
+	}
+
+	GLSL_SetUniformFloat(&tr.movementBlurShader, UNIFORM_MOVEMENTBLURSTRENGTH, strength);
+
+	VectorSet4(color, 1.0f, 1.0f, 1.0f, 1.0f);
+
+	/*
+	 * Первый проход: FBO_Blit с dstBox = NULL неявно Y-переворачивает
+	 * картинку (это компенсируется flipped-texcoords во всех остальных
+	 * постпроцессах). Рендерим размытие в movementBlurFbo (Y-flipped).
+	 */
+	FBO_Blit(src, srcBox, NULL, tr.movementBlurFbo, NULL, &tr.movementBlurShader, color, 0);
+
+	/*
+	 * Второй проход ОБЯЗАТЕЛЬНО через FBO_Blit с явным dstBox —
+	 * он делает второй Y-флип и возвращает картинку в исходную
+	 * ориентацию. FBO_FastBlit здесь использовать нельзя: он
+	 * копирует 1:1 без флипа, и экран остаётся вверх ногами.
+	 */
+	FBO_Blit(tr.movementBlurFbo, NULL, NULL, dst, dstBox, NULL, color, 0);
+}

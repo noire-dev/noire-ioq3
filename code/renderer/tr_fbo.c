@@ -318,6 +318,12 @@ void FBO_Init(void) {
 		}
 	}
 
+	if(tr.movementBlurImage) {
+		tr.movementBlurFbo = FBO_Create("_movementBlur", tr.movementBlurImage->width, tr.movementBlurImage->height);
+		FBO_AttachImage(tr.movementBlurFbo, tr.movementBlurImage, GL_COLOR_ATTACHMENT0, 0);
+		R_CheckFBO(tr.movementBlurFbo);
+	}
+
 	if(tr.renderCubeImage) {
 		tr.renderCubeFbo = FBO_Create("_renderCubeFbo", tr.renderCubeImage->width, tr.renderCubeImage->height);
 		FBO_AttachImage(tr.renderCubeFbo, tr.renderCubeImage, GL_COLOR_ATTACHMENT0, 0);
