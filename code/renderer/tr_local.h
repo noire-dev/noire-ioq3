@@ -214,6 +214,7 @@ typedef enum {
 	AGEN_WAVEFORM,
 	AGEN_PORTAL,
 	AGEN_CONST,
+	AGEN_WATER,
 } alphaGen_t;
 
 typedef enum {

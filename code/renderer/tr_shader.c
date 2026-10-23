@@ -1001,6 +1001,8 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 				} else {
 					shader.portalRange = atof(token);
 				}
+			} else if(!Q_stricmp(token, "water")) {
+				stage->alphaGen = AGEN_WATER;
 			} else {
 				ri.Printf(PRINT_WARNING, "WARNING: unknown alphaGen parameter '%s' in shader '%s'\n", token, shader.name);
 				continue;

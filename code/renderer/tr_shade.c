@@ -450,6 +450,7 @@ static void ComputeShaderColors(shaderStage_t* pStage, vec4_t baseColor, vec4_t 
 		case AGEN_IDENTITY:
 		case AGEN_LIGHTING_SPECULAR:
 		case AGEN_PORTAL:
+		case AGEN_WATER:
 			// Done entirely in vertex program
 			baseColor[3] = 1.0f;
 			vertColor[3] = 0.0f;

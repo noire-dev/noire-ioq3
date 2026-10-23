@@ -353,9 +353,11 @@ static void GLSL_GetShaderHeader(GLenum shaderType, const GLchar* extra, char* d
 	            "#define alphaGen_t\n"
 	            "#define AGEN_LIGHTING_SPECULAR %i\n"
 	            "#define AGEN_PORTAL %i\n"
+	            "#define AGEN_WATER %i\n"
 	            "#endif\n",
 	            AGEN_LIGHTING_SPECULAR,
-	            AGEN_PORTAL));
+	            AGEN_PORTAL,
+	            AGEN_WATER));
 
 	Q_strcat(dest,
 	         size,
@@ -1313,7 +1315,8 @@ shaderProgram_t* GLSL_GetGenericShaderProgram(int stage) {
 
 	switch(pStage->alphaGen) {
 		case AGEN_LIGHTING_SPECULAR:
-		case AGEN_PORTAL: shaderAttribs |= GENERICDEF_USE_RGBAGEN; break;
+		case AGEN_PORTAL:
+		case AGEN_WATER: shaderAttribs |= GENERICDEF_USE_RGBAGEN; break;
 		default: break;
 	}
 

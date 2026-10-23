@@ -29,5 +29,15 @@ void main()
 	}
 	
 	gl_FragColor.rgb = color.rgb * var_Color.rgb;
-	gl_FragColor.a = alpha;
+	#if defined(USE_LIGHT)
+if (u_AlphaGen == AGEN_WATER) {
+// Schlick-френель: на скользящих углах alpha растёт к 1
+float waterFresnel = 0.02 + 0.98 * pow(1.0 - NE, 5.0);
+gl_FragColor.a = clamp(0.1 + 0.9 * waterFresnel, 0.0, 1.0) * alpha;
+} else {
+gl_FragColor.a = alpha;
+}
+#else
+gl_FragColor.a = alpha;
+#endif
 }

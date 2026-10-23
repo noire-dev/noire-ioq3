@@ -200,6 +200,15 @@ vec4 CalcColor(vec3 position, vec3 normal)
 	{
 		color.a = clamp(length(viewer) / u_PortalRange, 0.0, 1.0);
 	}
+	else if (u_AlphaGen == AGEN_WATER)
+	{
+		vec3 v = normalize(viewer);
+		vec3 n = normalize(normal);
+		float NV = abs(dot(n, v));
+		float F0 = 0.02;
+		float fresnel = F0 + (1.0 - F0) * pow(1.0 - NV, 5.0);
+		color.a = clamp(0.1 + 0.9 * fresnel, 0.0, 1.0);
+	}
 	
 	return color;
 }
