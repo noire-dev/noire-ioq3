@@ -867,13 +867,13 @@ void R_Register(void) {
 	r_skyColorA = ri.Cvar_Get("r_skyColorA", "0.0", CVAR_ARCHIVE);
 
 	r_bloom = ri.Cvar_Get("r_bloom", "1", CVAR_ARCHIVE);
-	r_bloomIntensity = ri.Cvar_Get("r_bloomIntensity", "0.32", CVAR_ARCHIVE);
+	r_bloomIntensity = ri.Cvar_Get("r_bloomIntensity", "0.48", CVAR_ARCHIVE);
 	r_bloomThreshold = ri.Cvar_Get("r_bloomThreshold", "0.64", CVAR_ARCHIVE);
 	r_bloomKnee = ri.Cvar_Get("r_bloomKnee", "0.64", CVAR_ARCHIVE);
 	r_bloomBlur = ri.Cvar_Get("r_bloomBlur", "1", CVAR_ARCHIVE);
 
-	r_movementBlur = ri.Cvar_Get("r_movementBlur", "0", CVAR_ARCHIVE);
-	r_movementBlurStrength = ri.Cvar_Get("r_movementBlurStrength", "0.35", CVAR_ARCHIVE);
+	r_movementBlur = ri.Cvar_Get("r_movementBlur", "1", CVAR_ARCHIVE);
+	r_movementBlurStrength = ri.Cvar_Get("r_movementBlurStrength", "0.00", CVAR_ARCHIVE);
 
 	//
 	// archived variables that can change at any time
