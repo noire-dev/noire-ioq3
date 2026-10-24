@@ -113,6 +113,7 @@ LIGHT SAMPLING
 
 extern cvar_t* r_ambientScale;
 extern cvar_t* r_directedScale;
+extern cvar_t* r_dlightScale;
 
 /*
 =================
@@ -328,6 +329,7 @@ void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
 			d = DLIGHT_MINIMUM_RADIUS;
 		}
 		d = power / (d * d);
+		d *= r_dlightScale->value;
 
 		VectorMA(ent->directedLight, d, dl->color, ent->directedLight);
 		VectorMA(lightDir, d, dir, lightDir);
