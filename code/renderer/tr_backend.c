@@ -1136,6 +1136,9 @@ const void* RB_PostProcess(const void* data) {
 		RB_ToneMap(srcFbo, srcBox, tr.screenScratchFbo, srcBox, autoExposure);
 		FBO_FastBlit(tr.screenScratchFbo, srcBox, srcFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
+		RB_LUT(srcFbo, srcBox, tr.screenScratchFbo, srcBox);
+		FBO_FastBlit(tr.screenScratchFbo, srcBox, srcFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
 		RB_Bloom(srcFbo, srcBox, srcFbo, srcBox);
 		RB_MovementBlur(srcFbo, srcBox, srcFbo, srcBox);
 		RB_CameraMotionBlur(srcFbo, srcBox, srcFbo, srcBox);

@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "tr_local.h"
+#include "tr_dsa.h"
 
 void RB_ToneMap(FBO_t* hdrFbo, ivec4_t hdrBox, FBO_t* ldrFbo, ivec4_t ldrBox, int autoExposure) {
 	ivec4_t srcBox, dstBox;
@@ -468,6 +469,199 @@ void RB_Bloom(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
 	color[3] = 1.0f;
 
 	FBO_Blit(tr.bloomFbo[0], NULL, NULL, dst, dstBox, NULL, color, GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE);
+}
+
+/*
+===============================================================================
+LUT color correction (r_lutFile + .cube files from lut/ folder)
+
+The LUT is loaded as a 3D texture with GL_LINEAR filtering, so sampling in
+the shader does hardware trilinear interpolation. The colour pipeline runs
+after tone mapping, so the LUT gets LDR (0..1) colour, which is exactly what
+.cube files expect.
+===============================================================================
+*/
+
+static char s_loadedLUTName[MAX_QEXTENDEDPATH] = {0};
+
+static void RB_LoadLUTFile(const char* name) {
+	if(tr.lutImage) {
+		qglDeleteTextures(1, &tr.lutImage->texnum);
+		tr.lutImage = NULL;
+	}
+
+	if(!name || !name[0]) {
+		return;
+	}
+
+	char fullpath[MAX_QEXTENDEDPATH];
+	Com_sprintf(fullpath, sizeof(fullpath), "lut/%s", name);
+
+	byte* buffer = NULL;
+	int len = ri.FS_ReadFile(fullpath, (void**)&buffer);
+
+	if(len <= 0 || !buffer) {
+		ri.Printf(PRINT_WARNING, "RB_LUT: couldn't load '%s'\n", fullpath);
+		return;
+	}
+
+	int lutSize = 0;
+	float* data = NULL;
+	int dataCount = 0;
+	int dataAlloc = 0;
+	bool failed = false;
+
+	char* p = (char*)buffer;
+	char* end = (char*)buffer + len;
+	char line[512];
+
+	while(p < end) {
+		char* lineStart = p;
+
+		while(p < end && *p != '\n' && *p != '\r') {
+			p++;
+		}
+
+		int lineLen = (int)(p - lineStart);
+
+		if(lineLen >= (int)sizeof(line)) {
+			lineLen = (int)sizeof(line) - 1;
+		}
+
+		Com_Memcpy(line, lineStart, lineLen);
+		line[lineLen] = '\0';
+
+		while(p < end && (*p == '\n' || *p == '\r')) {
+			p++;
+		}
+
+		char* s = line;
+
+		while(*s == ' ' || *s == '\t') {
+			s++;
+		}
+
+		if(!*s || *s == '#') {
+			continue;
+		}
+
+		if(!Q_stricmpn(s, "TITLE", 5)) {
+			continue;
+		}
+
+		if(!Q_stricmpn(s, "DOMAIN_MIN", 10)) {
+			continue;
+		}
+
+		if(!Q_stricmpn(s, "DOMAIN_MAX", 10)) {
+			continue;
+		}
+
+		if(!Q_stricmpn(s, "LUT_1D_SIZE", 11)) {
+			ri.Printf(PRINT_WARNING, "RB_LUT: 1D LUTs are not supported ('%s')\n", fullpath);
+			failed = true;
+			break;
+		}
+
+		if(!Q_stricmpn(s, "LUT_3D_SIZE", 11)) {
+			lutSize = atoi(s + 11);
+
+			if(lutSize < 2 || lutSize > 256) {
+				ri.Printf(PRINT_WARNING, "RB_LUT: invalid LUT_3D_SIZE %d in '%s'\n", lutSize, fullpath);
+				failed = true;
+				break;
+			}
+
+			dataAlloc = lutSize * lutSize * lutSize * 3;
+			data = ri.Malloc(dataAlloc * sizeof(float));
+			continue;
+		}
+
+		if(lutSize > 0 && data) {
+			float r, g, b;
+
+			if(sscanf(s, "%f %f %f", &r, &g, &b) == 3) {
+				if(dataCount + 3 <= dataAlloc) {
+					data[dataCount++] = r;
+					data[dataCount++] = g;
+					data[dataCount++] = b;
+				}
+			}
+		}
+	}
+
+	if(!failed && (!lutSize || !data || dataCount != dataAlloc)) {
+		ri.Printf(PRINT_WARNING, "RB_LUT: '%s' parsed %d of %d expected values\n", fullpath, dataCount, dataAlloc);
+		failed = true;
+	}
+
+	if(failed) {
+		if(data) {
+			ri.Free(data);
+		}
+
+		ri.FS_FreeFile(buffer);
+		return;
+	}
+
+	tr.lutImage = ri.Hunk_Alloc(sizeof(image_t), h_low);
+	Com_Memset(tr.lutImage, 0, sizeof(*tr.lutImage));
+
+	qglGenTextures(1, &tr.lutImage->texnum);
+
+	qglActiveTexture(GL_TEXTURE0 + TB_LIGHTMAP);
+	qglBindTexture(GL_TEXTURE_3D, tr.lutImage->texnum);
+	qglTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, lutSize, lutSize, lutSize, 0, GL_RGB, GL_FLOAT, data);
+	qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qglTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	qglActiveTexture(GL_TEXTURE0);
+
+	Q_strncpyz(tr.lutImage->imgName, fullpath, sizeof(tr.lutImage->imgName));
+	tr.lutImage->width = tr.lutImage->uploadWidth = lutSize;
+	tr.lutImage->height = tr.lutImage->uploadHeight = lutSize;
+	tr.lutImage->flags |= IMGFLAG_NO_COMPRESSION;
+
+	ri.Printf(PRINT_ALL, "RB_LUT: loaded '%s' (%dx%dx%d)\n", fullpath, lutSize, lutSize, lutSize);
+
+	ri.Free(data);
+	ri.FS_FreeFile(buffer);
+}
+
+void RB_LUT(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
+	vec4_t color;
+
+	if(!r_lutFile || !r_lutFile->string[0]) {
+		if(s_loadedLUTName[0]) {
+			RB_LoadLUTFile("");
+			s_loadedLUTName[0] = '\0';
+		}
+
+		return;
+	}
+
+	if(!tr.lutShader.program) {
+		return;
+	}
+
+	if(Q_stricmp(s_loadedLUTName, r_lutFile->string) != 0) {
+		RB_LoadLUTFile(r_lutFile->string);
+		Q_strncpyz(s_loadedLUTName, r_lutFile->string, sizeof(s_loadedLUTName));
+	}
+
+	if(!tr.lutImage) {
+		return;
+	}
+
+	GL_BindMultiTexture(GL_TEXTURE0 + TB_LIGHTMAP, GL_TEXTURE_3D, tr.lutImage->texnum);
+
+	GLSL_SetUniformInt(&tr.lutShader, UNIFORM_LUTMAP, TB_LIGHTMAP);
+
+	VectorSet4(color, 1.0f, 1.0f, 1.0f, 1.0f);
+
+	FBO_Blit(src, srcBox, NULL, dst, dstBox, &tr.lutShader, color, 0);
 }
 
 void RB_MovementBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {

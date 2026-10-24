@@ -131,10 +131,11 @@ extern void(APIENTRYP qglMultiTexCoord2fARB)(GLenum target, GLfloat s, GLfloat t
 	GLE(void, Orthof, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val)
 
 // OpenGL 1.3, was GL_ARB_texture_compression
-#define QGL_1_3_PROCS                                                                                                                                                    \
-	GLE(void, ActiveTexture, GLenum texture)                                                                                                                             \
-	GLE(void, CompressedTexImage2D, GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void* data) \
-	GLE(void, CompressedTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void* data)
+#define QGL_1_3_PROCS                                                                                                                                                               \
+	GLE(void, ActiveTexture, GLenum texture)                                                                                                                                        \
+	GLE(void, CompressedTexImage2D, GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void* data)            \
+	GLE(void, CompressedTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void* data) \
+	GLE(void, TexImage3D, GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* pixels)
 
 // GL_ARB_occlusion_query, built-in to OpenGL 1.5 but not OpenGL ES 2.0
 #define QGL_ARB_occlusion_query_PROCS                                   \

@@ -108,6 +108,8 @@ cvar_t* r_bloomThreshold;
 cvar_t* r_bloomKnee;
 cvar_t* r_bloomBlur;
 
+cvar_t* r_lutFile;
+
 cvar_t* r_movementBlur;
 cvar_t* r_movementBlurStrength;
 
@@ -882,6 +884,8 @@ void R_Register(void) {
 	r_bloomThreshold = ri.Cvar_Get("r_bloomThreshold", "0.64", CVAR_ARCHIVE);
 	r_bloomKnee = ri.Cvar_Get("r_bloomKnee", "0.64", CVAR_ARCHIVE);
 	r_bloomBlur = ri.Cvar_Get("r_bloomBlur", "1", CVAR_ARCHIVE);
+
+	r_lutFile = ri.Cvar_Get("r_lutFile", "", CVAR_ARCHIVE);
 
 	r_movementBlur = ri.Cvar_Get("r_movementBlur", "1", CVAR_ARCHIVE);
 	r_movementBlurStrength = ri.Cvar_Get("r_movementBlurStrength", "0.00", CVAR_ARCHIVE);

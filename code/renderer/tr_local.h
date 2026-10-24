@@ -634,6 +634,8 @@ typedef enum {
 	UNIFORM_CAMERABLURNEARTHRESHOLD,
 	UNIFORM_CAMERABLURNEARDSOFTNESS,
 
+	UNIFORM_LUTMAP,
+
 	UNIFORM_COUNT
 } uniform_t;
 
@@ -1404,6 +1406,7 @@ typedef struct {
 	image_t* quarterImage[2];
 	image_t* bloomImage[2];
 	image_t* movementBlurImage;
+	image_t* lutImage;
 	image_t* calcLevelsImage;
 	image_t* targetLevelsImage;
 	image_t* fixedLevelsImage;
@@ -1462,6 +1465,7 @@ typedef struct {
 	shaderProgram_t down4xShader;
 	shaderProgram_t bokehShader;
 	shaderProgram_t bloomShader;
+	shaderProgram_t lutShader;
 	shaderProgram_t tonemapShader;
 	shaderProgram_t movementBlurShader;
 	shaderProgram_t cameraBlurShader;
@@ -1617,6 +1621,7 @@ extern cvar_t* r_bloomIntensity;
 extern cvar_t* r_bloomThreshold;
 extern cvar_t* r_bloomKnee;
 extern cvar_t* r_bloomBlur;
+extern cvar_t* r_lutFile;
 
 extern cvar_t* r_movementBlur;
 extern cvar_t* r_movementBlurStrength;

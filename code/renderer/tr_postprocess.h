@@ -31,6 +31,7 @@ void RB_SunRays(FBO_t* srcFbo, ivec4_t srcBox, FBO_t* dstFbo, ivec4_t dstBox);
 void RB_GaussianBlur(FBO_t* srcFbo, FBO_t* dstFbo, float blur);
 void RB_Gamma(FBO_t* srcFbo, ivec4_t srcBox, FBO_t* dstFbo, ivec4_t dstBox);
 void RB_Bloom(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox);
+void RB_LUT(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox);
 void RB_MovementBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox);
 void RB_CameraMotionBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox);
 

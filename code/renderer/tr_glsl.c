@@ -182,6 +182,8 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_CameraBlurDir", GLSL_VEC2},
     {"u_CameraBlurNearThreshold", GLSL_FLOAT},
     {"u_CameraBlurNearSoftness", GLSL_FLOAT},
+
+    {"u_LUTMap", GLSL_INT},
 };
 
 typedef enum { GLSL_PRINTLOG_PROGRAM_INFO, GLSL_PRINTLOG_SHADER_INFO, GLSL_PRINTLOG_SHADER_SOURCE } glslPrintLog_t;
@@ -278,6 +280,7 @@ static void GLSL_GetShaderHeader(GLenum shaderType, const GLchar* extra, char* d
 			Q_strcat(dest, size, "out vec4 out_Color;\n");
 			Q_strcat(dest, size, "#define gl_FragColor out_Color\n");
 			Q_strcat(dest, size, "#define texture2D texture\n");
+			Q_strcat(dest, size, "#define texture3D texture\n");
 			Q_strcat(dest, size, "#define textureCubeLod textureLod\n");
 			Q_strcat(dest, size, "#define shadow2D texture\n");
 		}
@@ -1180,6 +1183,45 @@ void GLSL_InitGPUShaders(void) {
 
 	numEtcShaders++;
 
+	if(glRefConfig.framebufferObject && (!qglesMajorVersion || qglesMajorVersion >= 3)) {
+		static const char* lut_vp =
+		    "attribute vec3 attr_Position;\n"
+		    "attribute vec4 attr_TexCoord0;\n"
+		    "uniform mat4 u_ModelViewProjectionMatrix;\n"
+		    "varying vec2 var_TexCoords;\n"
+		    "void main()\n"
+		    "{\n"
+		    "	gl_Position = u_ModelViewProjectionMatrix * vec4(attr_Position, 1.0);\n"
+		    "	var_TexCoords = attr_TexCoord0.st;\n"
+		    "}\n";
+
+		static const char* lut_fp =
+		    "uniform sampler2D u_TextureMap;\n"
+		    "uniform sampler3D u_LUTMap;\n"
+		    "varying vec2 var_TexCoords;\n"
+		    "void main()\n"
+		    "{\n"
+		    "	vec4 color = texture2D(u_TextureMap, var_TexCoords);\n"
+		    "	vec3 lut = texture3D(u_LUTMap, clamp(color.rgb, 0.0, 1.0)).rgb;\n"
+		    "	gl_FragColor = vec4(lut, color.a);\n"
+		    "}\n";
+
+		attribs = ATTR_POSITION | ATTR_TEXCOORD;
+		extradefines[0] = '\0';
+
+		if(!GLSL_InitGPUShader(&tr.lutShader, "lut", attribs, true, extradefines, true, lut_vp, lut_fp)) {
+			ri.Printf(PRINT_WARNING, "Could not load lut shader, LUT color correction disabled\n");
+			Com_Memset(&tr.lutShader, 0, sizeof(tr.lutShader));
+		} else {
+			GLSL_InitUniforms(&tr.lutShader);
+			GLSL_SetUniformInt(&tr.lutShader, UNIFORM_TEXTUREMAP, TB_COLORMAP);
+			GLSL_SetUniformInt(&tr.lutShader, UNIFORM_LUTMAP, TB_LIGHTMAP);
+			GLSL_FinishGPUShader(&tr.lutShader);
+
+			numEtcShaders++;
+		}
+	}
+
 	attribs = ATTR_POSITION | ATTR_TEXCOORD;
 	extradefines[0] = '\0';
 
@@ -1342,6 +1384,7 @@ void GLSL_ShutdownGPUShaders(void) {
 	GLSL_DeleteGPUShader(&tr.down4xShader);
 	GLSL_DeleteGPUShader(&tr.bokehShader);
 	GLSL_DeleteGPUShader(&tr.bloomShader);
+	GLSL_DeleteGPUShader(&tr.lutShader);
 	GLSL_DeleteGPUShader(&tr.movementBlurShader);
 	GLSL_DeleteGPUShader(&tr.cameraBlurShader);
 	GLSL_DeleteGPUShader(&tr.tonemapShader);
