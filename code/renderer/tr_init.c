@@ -905,9 +905,9 @@ void R_Register(void) {
 	r_renderScale = ri.Cvar_Get("r_renderScale", "100", CVAR_ARCHIVE);
 	ri.Cvar_CheckRange(r_renderScale, 25, 100, true);
 
-	r_ambientScale = ri.Cvar_Get("r_ambientScale", "0.32", CVAR_CHEAT);
-	r_directedScale = ri.Cvar_Get("r_directedScale", "0.72", CVAR_CHEAT);
-	r_dlightScale = ri.Cvar_Get("r_dlightScale", "6.0", CVAR_ARCHIVE);
+	r_ambientScale = ri.Cvar_Get("r_ambientScale", "0.64", CVAR_CHEAT);
+	r_directedScale = ri.Cvar_Get("r_directedScale", "0.82", CVAR_CHEAT);
+	r_dlightScale = ri.Cvar_Get("r_dlightScale", "12.0", CVAR_ARCHIVE);
 
 	// temporary variables that can change at any time
 	r_debugSort = ri.Cvar_Get("r_debugSort", "0", CVAR_CHEAT);
