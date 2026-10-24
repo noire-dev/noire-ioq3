@@ -1397,6 +1397,7 @@ typedef struct {
 	image_t* shadowCubemaps[MAX_DLIGHTS];
 
 	image_t* renderImage;
+	image_t* sunRaysImage;
 	image_t* renderDepthImage;
 	image_t* screenScratchImage;
 	image_t* textureScratchImage[2];
@@ -1523,6 +1524,10 @@ typedef struct {
 	int numSkins;
 	skin_t* skins[MAX_SKINS];
 
+	GLuint sunFlareQuery[2];
+	int sunFlareQueryIndex;
+	bool sunFlareQueryActive[2];
+
 	float sinTable[FUNCTABLE_SIZE];
 	float squareTable[FUNCTABLE_SIZE];
 	float triangleTable[FUNCTABLE_SIZE];
@@ -1565,6 +1570,9 @@ extern cvar_t* r_toneMapAvg;
 extern cvar_t* r_toneMapMax;
 
 extern cvar_t* r_skybox;
+
+extern cvar_t* r_sunRays;
+extern cvar_t* r_sunRaysStrength;
 
 extern cvar_t* r_autoExposure;
 extern cvar_t* r_autoExposureMin;

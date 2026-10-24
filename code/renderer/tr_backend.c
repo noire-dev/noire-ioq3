@@ -897,6 +897,27 @@ const void* RB_DrawSurfs(const void* data) {
 		RB_DrawSun(0.1f, tr.sunShader);
 	}
 
+	if(glRefConfig.framebufferObject && r_sunRays->integer) {
+		FBO_t* oldFbo = glState.currentFBO;
+		FBO_Bind(tr.sunRaysFbo);
+
+		qglClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		qglClear(GL_COLOR_BUFFER_BIT);
+
+		if(glRefConfig.occlusionQuery) {
+			tr.sunFlareQueryActive[tr.sunFlareQueryIndex] = true;
+			qglBeginQuery(glRefConfig.occlusionQueryTarget, tr.sunFlareQuery[tr.sunFlareQueryIndex]);
+		}
+
+		RB_DrawSun(r_sunRaysStrength->value, tr.sunShader);
+
+		if(glRefConfig.occlusionQuery) {
+			qglEndQuery(glRefConfig.occlusionQueryTarget);
+		}
+
+		FBO_Bind(oldFbo);
+	}
+
 	if(glRefConfig.framebufferObject && tr.renderCubeFbo && backEnd.viewParms.targetFbo == tr.renderCubeFbo) {
 		cubemap_t* cubemap = tr.cubemap;
 
@@ -1120,7 +1141,9 @@ const void* RB_PostProcess(const void* data) {
 		RB_CameraMotionBlur(srcFbo, srcBox, srcFbo, srcBox);
 	}
 
-	// RB_BokehBlur(srcFbo, srcBox, srcFbo, srcBox, backEnd.refdef.blurFactor);
+	if(r_sunRays->integer) RB_SunRays(srcFbo, srcBox, srcFbo, srcBox);
+
+	// RB_BokehBlur(srcFbo, srcBox, srcFbo, srcBox, backEnd.refdef.blurFactor); // TODO: blur pass or blur ui
 
 	if(srcFbo != dstFbo) FBO_FastBlit(srcFbo, srcBox, dstFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
@@ -1142,6 +1165,12 @@ const void* RB_PostProcess(const void* data) {
 		FBO_BlitFromTexture(tr.renderDepthImage, NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
 		VectorSet4(dstBox2, 512, glConfig.vidHeight - 256, 256, 256);
 		FBO_BlitFromTexture(tr.screenShadowImage, NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
+	}
+
+	if(0) {
+		ivec4_t dstBox2;
+		VectorSet4(dstBox2, 256, glConfig.vidHeight - 256, 256, 256);
+		FBO_BlitFromTexture(tr.sunRaysImage, NULL, NULL, dstFbo, dstBox2, NULL, NULL, 0);
 	}
 
 	return (const void*)(cmd + 1);

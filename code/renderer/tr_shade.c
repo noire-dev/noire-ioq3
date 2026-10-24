@@ -1456,7 +1456,7 @@ void RB_StageIteratorGeneric(void) {
 			}
 		}
 
-		if(needsFogPass) {
+		if(needsFogPass && tess.shader != tr.sunShader) {
 			RB_FogPass();
 		}
 	}

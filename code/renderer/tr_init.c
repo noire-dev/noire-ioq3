@@ -64,6 +64,9 @@ cvar_t* r_toneMapMax;
 
 cvar_t* r_skybox;
 
+cvar_t* r_sunRays;
+cvar_t* r_sunRaysStrength;
+
 cvar_t* r_autoExposure;
 cvar_t* r_autoExposureMin;
 cvar_t* r_autoExposureMax;
@@ -831,6 +834,9 @@ void R_Register(void) {
 
 	r_skybox = ri.Cvar_Get("r_skybox", "1", CVAR_ARCHIVE);
 
+	r_sunRays = ri.Cvar_Get("r_sunRays", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_sunRaysStrength = ri.Cvar_Get("r_sunRaysStrength", "0.64", CVAR_ARCHIVE);
+
 	r_autoExposure = ri.Cvar_Get("r_autoExposure", "1", CVAR_ARCHIVE);
 	r_autoExposureMin = ri.Cvar_Get("r_autoExposureMin", "-2.0", CVAR_CHEAT);
 	r_autoExposureMax = ri.Cvar_Get("r_autoExposureMax", "2.0", CVAR_CHEAT);
@@ -920,10 +926,14 @@ void R_Register(void) {
 
 void R_InitQueries(void) {
 	if(!glRefConfig.occlusionQuery) return;
+
+	if(r_sunRays->integer) qglGenQueries(ARRAY_LEN(tr.sunFlareQuery), tr.sunFlareQuery);
 }
 
 void R_ShutDownQueries(void) {
 	if(!glRefConfig.occlusionQuery) return;
+
+	if(r_sunRays->integer) qglDeleteQueries(ARRAY_LEN(tr.sunFlareQuery), tr.sunFlareQuery);
 }
 
 /*

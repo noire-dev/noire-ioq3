@@ -259,6 +259,13 @@ void FBO_Init(void) {
 		R_CheckFBO(tr.screenScratchFbo);
 	}
 
+	if(tr.sunRaysImage) {
+		tr.sunRaysFbo = FBO_Create("_sunRays", tr.renderDepthImage->width, tr.renderDepthImage->height);
+		FBO_AttachImage(tr.sunRaysFbo, tr.sunRaysImage, GL_COLOR_ATTACHMENT0, 0);
+		FBO_AttachImage(tr.sunRaysFbo, tr.renderDepthImage, GL_DEPTH_ATTACHMENT, 0);
+		R_CheckFBO(tr.sunRaysFbo);
+	}
+
 	if(tr.shadowCubemaps[0]) {
 		tr.dlightShadowFbo = FBO_Create("_dlightShadow", DLIGHT_SHADOW_SIZE, DLIGHT_SHADOW_SIZE);
 		FBO_CreateBuffer(tr.dlightShadowFbo, GL_RGBA8, 0, 0);
