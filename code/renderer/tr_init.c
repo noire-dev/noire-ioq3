@@ -858,8 +858,8 @@ void R_Register(void) {
 
 	r_shadows = ri.Cvar_Get("r_shadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowUpdate = ri.Cvar_Get("r_shadowUpdate", "0", CVAR_ARCHIVE);
-	r_shadowResolution = ri.Cvar_Get("r_shadowResolution", "4096", CVAR_ARCHIVE | CVAR_LATCH);
-	r_shadowDistance = ri.Cvar_Get("r_shadowDistance", "8192", CVAR_ARCHIVE | CVAR_LATCH);
+	r_shadowResolution = ri.Cvar_Get("r_shadowResolution", "1024", CVAR_ARCHIVE | CVAR_LATCH);
+	r_shadowDistance = ri.Cvar_Get("r_shadowDistance", "2048", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowLightScale = ri.Cvar_Get("r_shadowLightScale", "0.50", CVAR_ARCHIVE);
 	r_shadowAmbientScale = ri.Cvar_Get("r_shadowAmbientScale", "0.32", CVAR_ARCHIVE);
 	r_shadowFilter = ri.Cvar_Get("r_shadowFilter", "1", CVAR_ARCHIVE | CVAR_LATCH);
