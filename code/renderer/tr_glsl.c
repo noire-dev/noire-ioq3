@@ -52,8 +52,10 @@ extern const char* fallbackShader_gamma_vp;
 extern const char* fallbackShader_gamma_fp;
 extern const char* fallbackShader_bloom_vp;
 extern const char* fallbackShader_bloom_fp;
-extern const char* fallbackShader_movementBlur_vp;
-extern const char* fallbackShader_movementBlur_fp;
+extern const char* fallbackShader_movementblur_vp;
+extern const char* fallbackShader_movementblur_fp;
+extern const char* fallbackShader_camerablur_vp;
+extern const char* fallbackShader_camerablur_fp;
 
 typedef struct uniformInfo_s {
 	char* name;
@@ -176,6 +178,10 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_BloomKnee", GLSL_FLOAT},
 
     {"u_MovementBlurStrength", GLSL_FLOAT},
+
+    {"u_CameraBlurDir", GLSL_VEC2},
+    {"u_CameraBlurNearThreshold", GLSL_FLOAT},
+    {"u_CameraBlurNearSoftness", GLSL_FLOAT},
 };
 
 typedef enum { GLSL_PRINTLOG_PROGRAM_INFO, GLSL_PRINTLOG_SHADER_INFO, GLSL_PRINTLOG_SHADER_SOURCE } glslPrintLog_t;
@@ -1177,13 +1183,27 @@ void GLSL_InitGPUShaders(void) {
 	attribs = ATTR_POSITION | ATTR_TEXCOORD;
 	extradefines[0] = '\0';
 
-	if(!GLSL_InitGPUShader(&tr.movementBlurShader, "movementblur", attribs, true, extradefines, true, fallbackShader_movementBlur_vp, fallbackShader_movementBlur_fp)) {
+	if(!GLSL_InitGPUShader(&tr.movementBlurShader, "movementblur", attribs, true, extradefines, true, fallbackShader_movementblur_vp, fallbackShader_movementblur_fp)) {
 		ri.Error(ERR_FATAL, "Could not load movementblur shader!");
 	}
 
 	GLSL_InitUniforms(&tr.movementBlurShader);
 	GLSL_SetUniformInt(&tr.movementBlurShader, UNIFORM_TEXTUREMAP, TB_COLORMAP);
 	GLSL_FinishGPUShader(&tr.movementBlurShader);
+
+	numEtcShaders++;
+
+	attribs = ATTR_POSITION | ATTR_TEXCOORD;
+	extradefines[0] = '\0';
+
+	if(!GLSL_InitGPUShader(&tr.cameraBlurShader, "cameraBlur", attribs, true, extradefines, true, fallbackShader_camerablur_vp, fallbackShader_camerablur_fp)) {
+		ri.Error(ERR_FATAL, "Could not load camerablur shader!");
+	}
+
+	GLSL_InitUniforms(&tr.cameraBlurShader);
+	GLSL_SetUniformInt(&tr.cameraBlurShader, UNIFORM_TEXTUREMAP, TB_COLORMAP);
+	GLSL_SetUniformInt(&tr.cameraBlurShader, UNIFORM_SCREENDEPTHMAP, TB_LIGHTMAP);
+	GLSL_FinishGPUShader(&tr.cameraBlurShader);
 
 	numEtcShaders++;
 
@@ -1323,6 +1343,7 @@ void GLSL_ShutdownGPUShaders(void) {
 	GLSL_DeleteGPUShader(&tr.bokehShader);
 	GLSL_DeleteGPUShader(&tr.bloomShader);
 	GLSL_DeleteGPUShader(&tr.movementBlurShader);
+	GLSL_DeleteGPUShader(&tr.cameraBlurShader);
 	GLSL_DeleteGPUShader(&tr.tonemapShader);
 
 	for(i = 0; i < 2; i++) GLSL_DeleteGPUShader(&tr.calclevels4xShader[i]);

@@ -1117,6 +1117,7 @@ const void* RB_PostProcess(const void* data) {
 
 		RB_Bloom(srcFbo, srcBox, srcFbo, srcBox);
 		RB_MovementBlur(srcFbo, srcBox, srcFbo, srcBox);
+		RB_CameraMotionBlur(srcFbo, srcBox, srcFbo, srcBox);
 	}
 
 	// RB_BokehBlur(srcFbo, srcBox, srcFbo, srcBox, backEnd.refdef.blurFactor);

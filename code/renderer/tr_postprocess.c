@@ -319,22 +319,6 @@ void RB_Bloom(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
 	FBO_Blit(tr.bloomFbo[0], NULL, NULL, dst, dstBox, NULL, color, GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE);
 }
 
-/*
- * RB_MovementBlur — радиальный motion blur.
- *
- * Эффект имитирует смазывание картинки при вращении/движении камеры:
- * центр остаётся чётким, а к краям экрана появляется всё более сильный
- * "хвост" вдоль радиального направления. Реализовано одним шейдерным
- * проходом с 7 сэмплами (центр + 3 симметричные пары с затухающим весом).
- *
- * Управляется cvar'ами:
- *   r_movementBlur          0/1   — включён ли эффект (по умолчанию 0)
- *   r_movementBlurStrength  0..1  — сила смазывания (по умолчанию 0.35)
- *
- * src/dst могут совпадать — в этом случае шейдер отрабатывает через
- * промежуточный tr.movementBlurFbo, чтобы избежать чтения-записи в одну
- * и ту же текстуру.
- */
 void RB_MovementBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
 	vec4_t color;
 	float strength;
@@ -356,18 +340,89 @@ void RB_MovementBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
 
 	VectorSet4(color, 1.0f, 1.0f, 1.0f, 1.0f);
 
-	/*
-	 * Первый проход: FBO_Blit с dstBox = NULL неявно Y-переворачивает
-	 * картинку (это компенсируется flipped-texcoords во всех остальных
-	 * постпроцессах). Рендерим размытие в movementBlurFbo (Y-flipped).
-	 */
 	FBO_Blit(src, srcBox, NULL, tr.movementBlurFbo, NULL, &tr.movementBlurShader, color, 0);
 
-	/*
-	 * Второй проход ОБЯЗАТЕЛЬНО через FBO_Blit с явным dstBox —
-	 * он делает второй Y-флип и возвращает картинку в исходную
-	 * ориентацию. FBO_FastBlit здесь использовать нельзя: он
-	 * копирует 1:1 без флипа, и экран остаётся вверх ногами.
-	 */
+	FBO_Blit(tr.movementBlurFbo, NULL, NULL, dst, dstBox, NULL, color, 0);
+}
+
+void RB_CameraMotionBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
+	vec4_t color;
+	vec2_t blurDir;
+	float yawDelta = 0.0f, pitchDelta = 0.0f;
+	float strength;
+
+	if(!r_cameraBlur->integer || !tr.cameraBlurShader.program) {
+		return;
+	}
+
+	if(!tr.movementBlurFbo) {
+		return;
+	}
+
+	strength = r_cameraBlurStrength->value;
+	if(strength == 0.0f) {
+		return;
+	}
+
+	if(tr.lastViewAxisValid) {
+		vec3_t prevFwd, curFwd;
+		float prevYaw, curYaw, prevPitch, curPitch;
+
+		VectorCopy(tr.lastViewAxis[0], prevFwd);
+		VectorCopy(backEnd.refdef.viewaxis[0], curFwd);
+
+		// yaw в горизонтальной плоскости XY
+		prevYaw = atan2f(prevFwd[1], prevFwd[0]);
+		curYaw = atan2f(curFwd[1], curFwd[0]);
+		yawDelta = curYaw - prevYaw;
+		if(yawDelta > M_PI) yawDelta -= 2.0f * M_PI;
+		if(yawDelta < -M_PI) yawDelta += 2.0f * M_PI;
+
+		// pitch = угол над горизонтом
+		prevPitch = asinf(Com_Clamp(-1.0f, 1.0f, prevFwd[2]));
+		curPitch = asinf(Com_Clamp(-1.0f, 1.0f, curFwd[2]));
+		pitchDelta = curPitch - prevPitch;
+
+		// телепорт / скачок камеры — не размазываем
+		if(fabsf(yawDelta) > 1.0f || fabsf(pitchDelta) > 1.0f) {
+			yawDelta = 0.0f;
+			pitchDelta = 0.0f;
+		} else {
+			// мягкий потолок для слишком быстрых фликов
+			const float softCap = 0.15f;
+			if(yawDelta > softCap) yawDelta = softCap;
+			if(yawDelta < -softCap) yawDelta = -softCap;
+			if(pitchDelta > softCap) pitchDelta = softCap;
+			if(pitchDelta < -softCap) pitchDelta = -softCap;
+		}
+	}
+
+	// запоминаем текущий axis для следующего кадра
+	VectorCopy(backEnd.refdef.viewaxis[0], tr.lastViewAxis[0]);
+	VectorCopy(backEnd.refdef.viewaxis[1], tr.lastViewAxis[1]);
+	VectorCopy(backEnd.refdef.viewaxis[2], tr.lastViewAxis[2]);
+	tr.lastViewAxisValid = true;
+
+	if(fabsf(yawDelta) < 0.0001f && fabsf(pitchDelta) < 0.0001f) {
+		return;
+	}
+
+	blurDir[0] = -yawDelta * strength * 0.12f;
+	blurDir[1] = pitchDelta * strength * 0.12f;
+
+	GLSL_SetUniformVec2(&tr.cameraBlurShader, UNIFORM_CAMERABLURDIR, blurDir);
+
+	if(tr.renderDepthImage) {
+		GL_BindToTMU(tr.renderDepthImage, TB_LIGHTMAP);
+		GLSL_SetUniformFloat(&tr.cameraBlurShader, UNIFORM_CAMERABLURNEARTHRESHOLD, r_cameraBlurNearThreshold->value);
+		GLSL_SetUniformFloat(&tr.cameraBlurShader, UNIFORM_CAMERABLURNEARDSOFTNESS, r_cameraBlurNearSoftness->value);
+	} else {
+		GLSL_SetUniformFloat(&tr.cameraBlurShader, UNIFORM_CAMERABLURNEARTHRESHOLD, 0.0f);
+		GLSL_SetUniformFloat(&tr.cameraBlurShader, UNIFORM_CAMERABLURNEARDSOFTNESS, 0.0f);
+	}
+
+	VectorSet4(color, 1.0f, 1.0f, 1.0f, 1.0f);
+
+	FBO_Blit(src, srcBox, NULL, tr.movementBlurFbo, NULL, &tr.cameraBlurShader, color, 0);
 	FBO_Blit(tr.movementBlurFbo, NULL, NULL, dst, dstBox, NULL, color, 0);
 }

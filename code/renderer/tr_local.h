@@ -630,6 +630,10 @@ typedef enum {
 
 	UNIFORM_MOVEMENTBLURSTRENGTH,
 
+	UNIFORM_CAMERABLURDIR,
+	UNIFORM_CAMERABLURNEARTHRESHOLD,
+	UNIFORM_CAMERABLURNEARDSOFTNESS,
+
 	UNIFORM_COUNT
 } uniform_t;
 
@@ -1459,6 +1463,7 @@ typedef struct {
 	shaderProgram_t bloomShader;
 	shaderProgram_t tonemapShader;
 	shaderProgram_t movementBlurShader;
+	shaderProgram_t cameraBlurShader;
 	shaderProgram_t gammaShader;
 	shaderProgram_t calclevels4xShader[2];
 	shaderProgram_t shadowmaskShader;
@@ -1484,6 +1489,10 @@ typedef struct {
 	vec3_t sunDirection;
 	vec3_t lastCascadeSunDirection;
 	float lastCascadeSunMvp[16];
+
+	// Camera rotation motion blur state (see RB_CameraMotionBlur)
+	vec3_t lastViewAxis[3];
+	bool lastViewAxisValid;
 
 	frontEndCounters_t pc;
 	int frontEndMsec;  // not in pc due to clearing issue
@@ -1603,6 +1612,11 @@ extern cvar_t* r_bloomBlur;
 
 extern cvar_t* r_movementBlur;
 extern cvar_t* r_movementBlurStrength;
+
+extern cvar_t* r_cameraBlur;
+extern cvar_t* r_cameraBlurStrength;
+extern cvar_t* r_cameraBlurNearThreshold;
+extern cvar_t* r_cameraBlurNearSoftness;
 
 extern cvar_t* r_debugSort;
 

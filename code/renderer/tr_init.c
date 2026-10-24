@@ -108,6 +108,11 @@ cvar_t* r_bloomBlur;
 cvar_t* r_movementBlur;
 cvar_t* r_movementBlurStrength;
 
+cvar_t* r_cameraBlur;
+cvar_t* r_cameraBlurStrength;
+cvar_t* r_cameraBlurNearThreshold;
+cvar_t* r_cameraBlurNearSoftness;
+
 cvar_t* r_resolution;
 cvar_t* r_picmip;
 cvar_t* r_showtris;
@@ -874,6 +879,11 @@ void R_Register(void) {
 
 	r_movementBlur = ri.Cvar_Get("r_movementBlur", "1", CVAR_ARCHIVE);
 	r_movementBlurStrength = ri.Cvar_Get("r_movementBlurStrength", "0.00", CVAR_ARCHIVE);
+
+	r_cameraBlur = ri.Cvar_Get("r_cameraBlur", "1", CVAR_ARCHIVE);
+	r_cameraBlurStrength = ri.Cvar_Get("r_cameraBlurStrength", "2", CVAR_ARCHIVE);
+	r_cameraBlurNearThreshold = ri.Cvar_Get("r_cameraBlurNearThreshold", "0.25", CVAR_ARCHIVE);
+	r_cameraBlurNearSoftness = ri.Cvar_Get("r_cameraBlurNearSoftness", "0.08", CVAR_ARCHIVE);
 
 	//
 	// archived variables that can change at any time
