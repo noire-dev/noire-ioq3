@@ -19,7 +19,7 @@ function SP_Worldspawn() {
     var fogR = spawnInfo.string("r_fogColorR", "0.50");
     var fogG = spawnInfo.string("r_fogColorG", "0.50");
     var fogB = spawnInfo.string("r_fogColorB", "0.50");
-    var fogDensity = spawnInfo.string("r_fogColorDensity", "1.00");
+    var fogDensity = spawnInfo.string("r_fogDensity", "1.00");
     var fogStart = spawnInfo.string("r_fogStart", "4096");
     var fogEnd = spawnInfo.string("r_fogEnd", "500000");
 
@@ -31,7 +31,7 @@ function SP_Worldspawn() {
     cvar.set("r_fogColorR", fogR);
     cvar.set("r_fogColorG", fogG);
     cvar.set("r_fogColorB", fogB);
-    cvar.set("r_fogColorDensity", fogDensity);
+    cvar.set("r_fogDensity", fogDensity);
     cvar.set("r_fogStart", fogStart);
     cvar.set("r_fogEnd", fogEnd);
 
