@@ -260,18 +260,17 @@ static void R_FogCullSurface(msurface_t* surf) {
 		center[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
 		center[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
 		dist = Distance(center, backEnd.viewParms.or.origin) - VectorLength(surf->cullinfo.bounds[1]) * 0.5f;
-		surf->doCull = dist > r_fogEnd->value;
+		surf->doFogCull = dist > r_fogEnd->value;
 	} else {
-		surf->doCull = false;
+		surf->doFogCull = false;
 	}
 }
 
 static void R_AddWorldSurface(msurface_t* surf, int dlightBits) {
 	if(surf->surfaceFlags & SURF_SKYBOX && ((tr.viewParms.flags & VPF_NOCUBEMAPS && !r_reflectionsSkybox->integer) || (tr.viewParms.flags & VPF_DEPTHSHADOW && !r_shadowSkybox->integer) || !r_skybox->integer)) return;
-	if(r_detailLevel->integer < surf->shader->detailLevel) return;
 	R_FrustumCullSurface(surf);
-	R_FogCullSurface(surf);
-	if(surf->doCull) return;
+	if(r_fogDensity->value >= 0.95 && (tr.frameCount & 255) == 0) R_FogCullSurface(surf);
+	if(surf->doCull || surf->doFogCull) return;
 
 	// try to cull before dlighting or adding
 	if(!(tr.viewParms.targetFbo == tr.dlightShadowFbo && (tr.viewParms.flags & VPF_DEPTHSHADOW))) {

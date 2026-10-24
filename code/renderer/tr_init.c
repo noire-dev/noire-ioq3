@@ -80,7 +80,6 @@ cvar_t* r_reflectionsMaterials;
 cvar_t* r_reflectionsEntities;
 cvar_t* r_reflectionsSkybox;
 cvar_t* r_deluxeSpecular;
-cvar_t* r_detailLevel;
 cvar_t* r_shadows;
 cvar_t* r_shadowUpdate;
 cvar_t* r_shadowResolution;
@@ -124,6 +123,7 @@ cvar_t* r_showtris;
 cvar_t* r_swapInterval;
 cvar_t* r_textureMode;
 cvar_t* r_gamma;
+cvar_t* r_renderScale;
 cvar_t* r_lockpvs;
 
 cvar_t* r_subdivisions;
@@ -855,8 +855,6 @@ void R_Register(void) {
 	r_reflectionsSkybox = ri.Cvar_Get("r_reflectionsSkybox", "0", CVAR_ARCHIVE);
 
 	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.25", CVAR_ARCHIVE | CVAR_LATCH);
-	r_detailLevel = ri.Cvar_Get("r_detailLevel", "5", CVAR_ARCHIVE);
-	ri.Cvar_CheckRange(r_detailLevel, 0, 5, true);
 
 	r_shadows = ri.Cvar_Get("r_shadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowUpdate = ri.Cvar_Get("r_shadowUpdate", "0", CVAR_ARCHIVE);
@@ -903,6 +901,8 @@ void R_Register(void) {
 	r_textureMode = ri.Cvar_Get("r_textureMode", "GL_LINEAR_MIPMAP_LINEAR", CVAR_ARCHIVE);
 	r_swapInterval = ri.Cvar_Get("r_swapInterval", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_gamma = ri.Cvar_Get("r_gamma", "1", CVAR_ARCHIVE);
+	r_renderScale = ri.Cvar_Get("r_renderScale", "100", CVAR_ARCHIVE);
+	ri.Cvar_CheckRange(r_renderScale, 25, 100, true);
 
 	r_ambientScale = ri.Cvar_Get("r_ambientScale", "0.32", CVAR_CHEAT);
 	r_directedScale = ri.Cvar_Get("r_directedScale", "0.72", CVAR_CHEAT);

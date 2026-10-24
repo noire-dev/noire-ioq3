@@ -312,14 +312,6 @@ void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
 		VectorCopy(tr.sunDirection, ent->lightDir);
 	}
 
-	// bonus items and view weapons have a fixed minimum add
-	if(1 /* ent->e.renderfx & RF_MINLIGHT */) {
-		// give everything a minimum light add
-		ent->ambientLight[0] += tr.identityLight * 32;
-		ent->ambientLight[1] += tr.identityLight * 32;
-		ent->ambientLight[2] += tr.identityLight * 32;
-	}
-
 	//
 	// modify the light by dynamic lights
 	//

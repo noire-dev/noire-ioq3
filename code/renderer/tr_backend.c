@@ -1150,6 +1150,23 @@ const void* RB_PostProcess(const void* data) {
 
 	if(srcFbo != dstFbo) FBO_FastBlit(srcFbo, srcBox, dstFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
+	if(r_renderScale && r_renderScale->integer < 100 && dstFbo && tr.screenScratchFbo) {
+		ivec4_t fullBox, scaledBox;
+
+		scaledBox[0] = backEnd.viewParms.viewportX;
+		scaledBox[1] = backEnd.viewParms.viewportY;
+		scaledBox[2] = backEnd.viewParms.viewportWidth;
+		scaledBox[3] = backEnd.viewParms.viewportHeight;
+
+		fullBox[0] = backEnd.refdef.x;
+		fullBox[1] = glConfig.vidHeight - (backEnd.refdef.y + backEnd.refdef.height);
+		fullBox[2] = backEnd.refdef.width;
+		fullBox[3] = backEnd.refdef.height;
+
+		FBO_FastBlit(dstFbo, scaledBox, tr.screenScratchFbo, fullBox, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		FBO_FastBlit(tr.screenScratchFbo, fullBox, dstFbo, fullBox, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	}
+
 	if(0) {
 		ivec4_t dstBox2;
 		VectorSet4(dstBox2, 0, glConfig.vidHeight - 128, 128, 128);

@@ -497,6 +497,14 @@ void RE_RenderScene(const refdef_t* fd) {
 	parms.viewportY = glConfig.vidHeight - (tr.refdef.y + tr.refdef.height);
 	parms.viewportWidth = tr.refdef.width;
 	parms.viewportHeight = tr.refdef.height;
+
+	if(!(fd->rdflags & RDF_NOWORLDMODEL) && r_renderScale->integer != 100) {
+		float scale = Com_Clamp(25, 100, r_renderScale->integer) / 100.0f;
+
+		parms.viewportWidth = MAX(1, (int)(parms.viewportWidth * scale));
+		parms.viewportHeight = MAX(1, (int)(parms.viewportHeight * scale));
+	}
+
 	parms.isPortal = false;
 
 	parms.fovX = tr.refdef.fov_x;

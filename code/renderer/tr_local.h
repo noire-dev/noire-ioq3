@@ -424,7 +424,6 @@ typedef struct shader_s {
 	int vertexAttribs;  // not all shaders will need all data to be gathered
 
 	bool noFog;
-	int detailLevel;
 
 	int numDeforms;
 	deformStage_t deforms[MAX_SHADER_DEFORMS];
@@ -633,6 +632,7 @@ typedef enum {
 	UNIFORM_CAMERABLURDIR,
 	UNIFORM_CAMERABLURNEARTHRESHOLD,
 	UNIFORM_CAMERABLURNEARDSOFTNESS,
+	UNIFORM_CAMERABLURSRCBOUNDS,
 
 	UNIFORM_LUTMAP,
 
@@ -1008,6 +1008,7 @@ typedef struct msurface_s {
 	float cubemapBound;
 	cullinfo_t cullinfo;
 	bool doCull;
+	bool doFogCull;
 
 	surfaceType_t* data;  // any of srf*_t
 } msurface_t;
@@ -1556,6 +1557,8 @@ extern cvar_t* r_speeds;  // various levels of information display
 
 extern cvar_t* r_gamma;
 
+extern cvar_t* r_renderScale;
+
 extern cvar_t* r_ext_framebuffer_multisample;
 
 extern cvar_t* r_picmip;  // controls picmip values
@@ -1593,7 +1596,6 @@ extern cvar_t* r_reflectionsMaterials;
 extern cvar_t* r_reflectionsEntities;
 extern cvar_t* r_reflectionsSkybox;
 extern cvar_t* r_deluxeSpecular;
-extern cvar_t* r_detailLevel;
 extern cvar_t* r_shadows;
 extern cvar_t* r_shadowUpdate;
 extern cvar_t* r_shadowResolution;

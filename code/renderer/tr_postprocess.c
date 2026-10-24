@@ -766,6 +766,15 @@ void RB_CameraMotionBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox)
 		GLSL_SetUniformFloat(&tr.cameraBlurShader, UNIFORM_CAMERABLURNEARDSOFTNESS, 0.0f);
 	}
 
+	{
+		vec4_t srcBounds;
+		srcBounds[0] = srcBox[0] / (float)src->width;
+		srcBounds[1] = srcBox[1] / (float)src->height;
+		srcBounds[2] = (srcBox[0] + srcBox[2]) / (float)src->width;
+		srcBounds[3] = (srcBox[1] + srcBox[3]) / (float)src->height;
+		GLSL_SetUniformVec4(&tr.cameraBlurShader, UNIFORM_CAMERABLURSRCBOUNDS, srcBounds);
+	}
+
 	VectorSet4(color, 1.0f, 1.0f, 1.0f, 1.0f);
 
 	FBO_Blit(src, srcBox, NULL, tr.movementBlurFbo, NULL, &tr.cameraBlurShader, color, 0);

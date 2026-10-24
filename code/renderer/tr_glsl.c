@@ -182,6 +182,7 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_CameraBlurDir", GLSL_VEC2},
     {"u_CameraBlurNearThreshold", GLSL_FLOAT},
     {"u_CameraBlurNearSoftness", GLSL_FLOAT},
+    {"u_CameraBlurSrcBounds", GLSL_VEC4},
 
     {"u_LUTMap", GLSL_INT},
 };

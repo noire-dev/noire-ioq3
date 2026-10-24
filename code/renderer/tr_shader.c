@@ -1339,25 +1339,6 @@ void ParseSort(char** text) {
 	}
 }
 
-/*
-=================
-ParseDetailLevel
-=================
-*/
-void ParseDetailLevel(char** text) {
-	char* token;
-
-	token = COM_ParseExt(text, false);
-	if(token[0] == 0) {
-		ri.Printf(PRINT_WARNING, "WARNING: missing detailLevel parameter in shader '%s'\n", shader.name);
-		return;
-	}
-
-	shader.detailLevel = atoi(token);
-	if(shader.detailLevel < 0) shader.detailLevel = 0;
-	if(shader.detailLevel > 5) shader.detailLevel = 5;
-}
-
 // this table is also present in q3map
 
 typedef struct {
@@ -1663,9 +1644,6 @@ static bool ParseShader(char** text) {
 		// sort
 		else if(!Q_stricmp(token, "sort")) {
 			ParseSort(text);
-			continue;
-		} else if(!Q_stricmp(token, "detailLevel")) {
-			ParseDetailLevel(text);
 			continue;
 		} else {
 			ri.Printf(PRINT_WARNING, "WARNING: unknown general shader parameter '%s' in '%s'\n", token, shader.name);
