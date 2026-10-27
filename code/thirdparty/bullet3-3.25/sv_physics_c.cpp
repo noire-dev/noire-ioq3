@@ -70,7 +70,6 @@ static void QuatToAngles(float qx, float qy, float qz, float qw, float* pitch, f
 #define MAX_WELDS 4096
 
 btPhysicsWorld_t* physWorld = NULL;
-static btCollisionShape_t* boxShape = NULL;
 static btCollisionShape_t* shapes[MAX_MODELS];
 static btRigidBody_t* bodies[MAX_GENTITIES];
 static float bodies_mass[MAX_GENTITIES];
@@ -83,7 +82,6 @@ static btTriangleMesh* bspPatchMesh = nullptr;
 void SV_PhysicsInit(void) {
 	if(physWorld) return;
 	physWorld = BT_Init();
-	boxShape = BT_CreateBoxShape(25, 25, 25);
 
 	physWorld->m_world->setGravity(btVector3(phys_gravity_x->integer, phys_gravity_y->integer, phys_gravity_z->integer));
 
@@ -200,11 +198,7 @@ void SV_CreateShape(int modelindex, const char* md3Path) {
 	btVector3 size = aabbMax - aabbMin;
 }
 
-// CCD's motion threshold is the distance travelled by the body's origin in one
-// Bullet substep, NOT a size derived from the object. Keep it below the 2-unit
-// walls used by this game; otherwise a fast body can cross a wall without CCD
-// ever being invoked (e.g. 16.7 units/substep < a 25-unit old threshold).
-static const btScalar SV_CCD_MOTION_THRESHOLD = btScalar(0.5f);
+static const btScalar SV_CCD_MOTION_THRESHOLD = btScalar(12.0f);
 static const btScalar SV_CCD_RADIUS_FRACTION = btScalar(0.45f);
 static const btScalar SV_CCD_MIN_RADIUS = btScalar(0.01f);
 
@@ -219,9 +213,6 @@ static void SV_PhysicsSetupCCD(int entityID) {
 	btCollisionShape* shape = bodies[entityID]->m_shape;
 	if(!shape) return;
 
-	// The swept sphere should be a conservative core of the shape. Using half
-	// the smallest AABB dimension is too optimistic for irregular convex hulls;
-	// a smaller sphere is more robust while still detecting crossings of thin walls.
 	btVector3 aabbMin, aabbMax;
 	shape->getAabb(btTransform::getIdentity(), aabbMin, aabbMax);
 	btVector3 size = aabbMax - aabbMin;
@@ -233,61 +224,7 @@ static void SV_PhysicsSetupCCD(int entityID) {
 	}
 
 	body->setCcdSweptSphereRadius(sphereRadius);
-	// Keep this independent from sphereRadius. The old threshold was equal to
-	// the radius (about 25 units on the default 50-unit box), so common throws
-	// moved less than the threshold and silently skipped CCD against 2-unit walls.
 	body->setCcdMotionThreshold(SV_CCD_MOTION_THRESHOLD);
-}
-
-void SV_PhysicsCreateBox(int entityID, float x, float y, float z, float mass) {
-	if(!physWorld || entityID < 0 || entityID >= MAX_GENTITIES) return;
-
-	if(bodies[entityID]) {  // Не спавним объект снова чтобы не сломать указатели
-		Com_Error(ERR_DROP, "SV_PhysicsCreateBox: attempt to recreate physics object\n");
-		return;
-	}
-
-	// Выбор формы объекта
-	btCollisionShape* shape = boxShape->m_shape;
-
-	// Расчёт момента инерции для динамики
-	btVector3 inertia(0, 0, 0);
-	if(mass > 0.0f) shape->calculateLocalInertia(mass, inertia);
-	bodies_mass[entityID] = mass;
-
-	// Настройка положения
-	btTransform trans;
-	trans.setIdentity();
-	trans.setOrigin(btVector3(x, y, z));
-
-	// Выбор состояния движения
-	btDefaultMotionState* ms = new btDefaultMotionState(trans);
-	btRigidBody::btRigidBodyConstructionInfo info(mass, ms, shape, inertia);
-
-	// Свойства объекта
-	info.m_restitution = 0.15f;
-	info.m_friction = 0.95f;
-	info.m_rollingFriction = 0.10f;
-	info.m_spinningFriction = 0.05f;
-
-	// Создание физического объекта
-	btRigidBody* bulletBody = new btRigidBody(info);
-	bulletBody->setSleepingThresholds(1.00f, 1.00f);
-	bulletBody->setDamping(0.10f, 0.10f);
-	bulletBody->setDeactivationTime(0.25f);
-	bulletBody->setUserIndex(entityID);
-	physWorld->m_world->addRigidBody(bulletBody);
-
-	// Враппер моделей
-	btRigidBody_t* wrapper = new btRigidBody_t();
-	wrapper->m_body = bulletBody;
-	wrapper->m_shape = shape;
-	wrapper->m_motionState = ms;
-	bodies[entityID] = wrapper;
-
-	SV_PhysicsSetupCCD(entityID);
-
-	return;
 }
 
 void SV_PhysicsCreateModel(int entityID, int modelindex, float x, float y, float z, float mass) {
@@ -321,16 +258,16 @@ void SV_PhysicsCreateModel(int entityID, int modelindex, float x, float y, float
 	btRigidBody::btRigidBodyConstructionInfo info(mass, ms, shape, inertia);
 
 	// Свойства объекта
-	info.m_restitution = 0.15f;
-	info.m_friction = 0.95f;
-	info.m_rollingFriction = 0.10f;
-	info.m_spinningFriction = 0.05f;
+	info.m_restitution = 0.00f;
+	info.m_friction = 0.90f;
+	info.m_rollingFriction = 0.02f;
+	info.m_spinningFriction = 0.02f;
 
 	// Создание физического объекта
 	btRigidBody* bulletBody = new btRigidBody(info);
-	bulletBody->setSleepingThresholds(1.00f, 1.00f);
-	bulletBody->setDamping(0.10f, 0.10f);
-	bulletBody->setDeactivationTime(0.25f);
+	bulletBody->setSleepingThresholds(1.25f, 1.5f);
+	bulletBody->setDamping(0.04f, 0.08f);
+	bulletBody->setDeactivationTime(1.0f);
 	bulletBody->setUserIndex(entityID);
 	physWorld->m_world->addRigidBody(bulletBody);
 
@@ -678,12 +615,6 @@ void SV_PhysicsShutdown(void) {
 		if(body && body->getCollisionShape()) delete body->getCollisionShape();
 
 		delete obj;
-	}
-
-	if(boxShape) {
-		delete boxShape->m_shape;
-		delete boxShape;
-		boxShape = NULL;
 	}
 
 	// Освобождаем Bullet Physics

@@ -182,7 +182,6 @@ typedef enum {
 	G_ENTITY_CONTACTCAPSULE,  // ( const vec3_t mins, const vec3_t maxs, const gentity_t *ent );
 
 	PHYS_CREATESHAPE,
-	PHYS_CREATEBOX,
 	PHYS_CREATEMODEL,
 	PHYS_DELETEOBJECT,
 	PHYS_GETPOSITION,

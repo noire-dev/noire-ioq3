@@ -583,9 +583,9 @@ void SV_Init(void) {
 	SV_AddOperatorCommands();
 
 	// Physics engine
-	phys_fps = Cvar_Get("phys_fps", "120", CVAR_ARCHIVE);
-	phys_steps = Cvar_Get("phys_steps", "4", CVAR_ARCHIVE);
-	phys_solver_iterations = Cvar_Get("phys_solver_iterations", "8", CVAR_ARCHIVE);
+	phys_fps = Cvar_Get("phys_fps", "60", CVAR_ARCHIVE);
+	phys_steps = Cvar_Get("phys_steps", "2", CVAR_ARCHIVE);
+	phys_solver_iterations = Cvar_Get("phys_solver_iterations", "16", CVAR_ARCHIVE);
 	phys_gravity_x = Cvar_Get("phys_gravity_x", "0", CVAR_ARCHIVE);
 	phys_gravity_y = Cvar_Get("phys_gravity_y", "0", CVAR_ARCHIVE);
 	phys_gravity_z = Cvar_Get("phys_gravity_z", "-800", CVAR_ARCHIVE);

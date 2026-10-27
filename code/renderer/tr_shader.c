@@ -2179,10 +2179,11 @@ static void FixRenderCommandList(int newShader) {
 
 					for(i = 0, drawSurf = ds_cmd->drawSurfs; i < ds_cmd->numDrawSurfs; i++, drawSurf++) {
 						R_DecomposeSort(drawSurf->sort, &entityNum, &pShader, &fogNum, &dlightMap);
-						sortedIndex = ((drawSurf->sort >> QSORT_SHADERNUM_SHIFT) & (MAX_SHADERS - 1));
+						sortedIndex = (int)((drawSurf->sort >> QSORT_SHADERNUM_SHIFT) & (MAX_SHADERS - 1));
 						if(sortedIndex >= newShader) {
 							sortedIndex++;
-							drawSurf->sort = (sortedIndex << QSORT_SHADERNUM_SHIFT) | entityNum | (fogNum << QSORT_FOGNUM_SHIFT) | (int)dlightMap;
+							drawSurf->sort = ((uint64_t)sortedIndex << QSORT_SHADERNUM_SHIFT) | ((uint64_t)entityNum << QSORT_REFENTITYNUM_SHIFT) |  // ← раньше было просто entityNum
+							                 ((uint64_t)fogNum << QSORT_FOGNUM_SHIFT) | (uint64_t)(dlightMap & 1);
 						}
 					}
 					curCmd = (const void*)(ds_cmd + 1);

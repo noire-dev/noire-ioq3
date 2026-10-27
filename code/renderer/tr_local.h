@@ -796,7 +796,7 @@ typedef enum {
 } surfaceType_t;
 
 typedef struct drawSurf_s {
-	unsigned int sort;  // bit combination for fast compares
+	uint64_t sort;  // bit combination for fast compares
 	bool useCubemap;
 	vec3_t cubemapOrigin;
 	float cubemapBound;
@@ -1209,7 +1209,7 @@ the bits are allocated as follows:
 #define QSORT_FOGNUM_SHIFT 1
 #define QSORT_REFENTITYNUM_SHIFT 6
 #define QSORT_SHADERNUM_SHIFT (QSORT_REFENTITYNUM_SHIFT + REFENTITYNUM_BITS)
-#if (QSORT_SHADERNUM_SHIFT + SHADERNUM_BITS) > 32
+#if (QSORT_SHADERNUM_SHIFT + SHADERNUM_BITS) > 64
 #error "Need to update sorting, too many bits."
 #endif
 
@@ -1673,7 +1673,7 @@ void R_AddLightningBoltSurfaces(trRefEntity_t* e);
 
 void R_AddPolygonSurfaces(void);
 
-void R_DecomposeSort(unsigned sort, int* entityNum, shader_t** shader, int* fogNum, int* dlightMap);
+void R_DecomposeSort(uint64_t sort, int* entityNum, shader_t** shader, int* fogNum, int* dlightMap);
 
 void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, bool useCubemap, vec3_t cubemapOrigin, float cubemapBound);
 

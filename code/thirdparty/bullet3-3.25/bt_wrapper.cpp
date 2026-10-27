@@ -33,7 +33,7 @@ btPhysicsWorld_t* BT_Init(void) {
 	phys->m_world->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER | SOLVER_FRICTION_SEPARATE | SOLVER_USE_2_FRICTION_DIRECTIONS | SOLVER_ENABLE_FRICTION_DIRECTION_CACHING;
 	phys->m_world->getSolverInfo().m_splitImpulse = true;
 	phys->m_world->getSolverInfo().m_splitImpulsePenetrationThreshold = -0.04f;
-	phys->m_world->getSolverInfo().m_erp = 0.65f;
+	phys->m_world->getSolverInfo().m_erp = 0.25f;
 	phys->m_world->getSolverInfo().m_globalCfm = 0.0f;
 	// Do not permit extra penetration in Bullet's CCD sweep. This matters for
 	// very thin static geometry; the normal contact solver still handles contacts.
@@ -50,10 +50,4 @@ void BT_Shutdown(btPhysicsWorld_t* phys) {
 	delete phys->m_dispatcher;
 	delete phys->m_config;
 	delete phys;
-}
-
-btCollisionShape_t* BT_CreateBoxShape(float hx, float hy, float hz) {
-	btCollisionShape_t* shape = new btCollisionShape_t();
-	shape->m_shape = new btBoxShape(btVector3(hx, hy, hz));
-	return shape;
 }

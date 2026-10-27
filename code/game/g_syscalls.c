@@ -84,8 +84,6 @@ bool trap_GetEntityToken(char* buffer, int bufferSize) { return syscall(G_GET_EN
 
 void trap_Phys_CreateShape(int modelindex, const char* objPath) { syscall(PHYS_CREATESHAPE, modelindex, objPath); }
 
-void trap_Phys_CreateBox(int entityID, float x, float y, float z, float mass) { syscall(PHYS_CREATEBOX, entityID, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(z), PASSFLOAT(mass)); }
-
 void trap_Phys_CreateModel(int entityID, int modelindex, float x, float y, float z, float mass) { syscall(PHYS_CREATEMODEL, entityID, modelindex, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(z), PASSFLOAT(mass)); }
 
 void trap_Phys_DeleteObject(int entityID) { syscall(PHYS_DELETEOBJECT, entityID); }

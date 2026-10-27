@@ -514,7 +514,6 @@ void trap_GetUsercmd(int clientNum, usercmd_t* cmd);
 bool trap_GetEntityToken(char* buffer, int bufferSize);
 
 void trap_Phys_CreateShape(int modelindex, const char* objPath);
-void trap_Phys_CreateBox(int entityID, float x, float y, float z, float mass);
 void trap_Phys_CreateModel(int entityID, int modelindex, float x, float y, float z, float mass);
 void trap_Phys_DeleteObject(int entityID);
 void trap_Phys_GetPosition(int entityID, float* x, float* y, float* z);

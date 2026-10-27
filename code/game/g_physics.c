@@ -128,16 +128,16 @@ void G_RunPhysics(gentity_t* ent) {
 			trap_Phys_GetAngles(ent->s.number, &angles[0], &angles[1], &angles[2]);
 		}
 
-		// Always publish the latest authoritative transform to game state.
-		// Network bandwidth is handled per-client in server/sv_snapshot.c;
-		// never throttle Bullet/game-state updates with a frame round-robin here.
 		ent->s.pos.trType = TR_INTERPOLATE;
 		ent->s.apos.trType = TR_INTERPOLATE;
 		VectorCopy(origin, ent->s.pos.trBase);
 		VectorCopy(angles, ent->s.apos.trBase);
 
+		bool needLink = (DistanceSquared(origin, ent->r.currentOrigin) > 2.0f);
+
 		VectorCopy(origin, ent->r.currentOrigin);
 		VectorCopy(angles, ent->r.currentAngles);
-		// trap_LinkEntity(ent);
+
+		if(needLink) trap_LinkEntity(ent);
 	}
 }

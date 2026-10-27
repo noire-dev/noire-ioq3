@@ -1254,12 +1254,16 @@ static void R_RadixSort(drawSurf_t* source, int size) {
 	R_Radix(1, size, scratch, source);
 	R_Radix(2, size, source, scratch);
 	R_Radix(3, size, scratch, source);
+	R_Radix(4, size, source, scratch);
+	R_Radix(5, size, scratch, source);  // 48 бит покрыто
 #else
+	R_Radix(5, size, source, scratch);
+	R_Radix(4, size, scratch, source);
 	R_Radix(3, size, source, scratch);
 	R_Radix(2, size, scratch, source);
 	R_Radix(1, size, source, scratch);
 	R_Radix(0, size, scratch, source);
-#endif  // Q3_LITTLE_ENDIAN
+#endif
 }
 
 //==========================================================================================
@@ -1270,14 +1274,10 @@ R_AddDrawSurf
 =================
 */
 void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int dlightMap, bool useCubemap, vec3_t cubemapOrigin, float cubemapBound) {
-	int index;
+	int index = tr.refdef.numDrawSurfs & DRAWSURF_MASK;
 
-	// instead of checking for overflow, we just mask the index
-	// so it wraps around
-	index = tr.refdef.numDrawSurfs & DRAWSURF_MASK;
-	// the sort data is packed into a single 32 bit value so it can be
-	// compared quickly during the qsorting process
-	tr.refdef.drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT) | tr.shiftedEntityNum | (fogIndex << QSORT_FOGNUM_SHIFT) | (int)dlightMap;
+	tr.refdef.drawSurfs[index].sort = ((uint64_t)shader->sortedIndex << QSORT_SHADERNUM_SHIFT) | ((uint64_t)tr.shiftedEntityNum) | ((uint64_t)fogIndex << QSORT_FOGNUM_SHIFT) | (uint64_t)(dlightMap & 1);
+
 	tr.refdef.drawSurfs[index].useCubemap = useCubemap;
 	VectorCopy(cubemapOrigin, tr.refdef.drawSurfs[index].cubemapOrigin);
 	tr.refdef.drawSurfs[index].cubemapBound = cubemapBound;
@@ -1290,11 +1290,11 @@ void R_AddDrawSurf(surfaceType_t* surface, shader_t* shader, int fogIndex, int d
 R_DecomposeSort
 =================
 */
-void R_DecomposeSort(unsigned sort, int* entityNum, shader_t** shader, int* fogNum, int* dlightMap) {
+void R_DecomposeSort(uint64_t sort, int* entityNum, shader_t** shader, int* fogNum, int* dlightMap) {
 	*fogNum = (sort >> QSORT_FOGNUM_SHIFT) & 31;
 	*shader = tr.sortedShaders[(sort >> QSORT_SHADERNUM_SHIFT) & (MAX_SHADERS - 1)];
-	*entityNum = (sort >> QSORT_REFENTITYNUM_SHIFT) & REFENTITYNUM_MASK;
-	*dlightMap = sort & 1;
+	*entityNum = (int)((sort >> QSORT_REFENTITYNUM_SHIFT) & (uint64_t)REFENTITYNUM_MASK);
+	*dlightMap = (int)(sort & 1);
 }
 
 /*

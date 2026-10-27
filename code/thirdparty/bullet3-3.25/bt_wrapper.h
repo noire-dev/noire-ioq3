@@ -42,9 +42,6 @@ typedef struct {
 btPhysicsWorld_t* BT_Init(void);
 void BT_Shutdown(btPhysicsWorld_t* world);
 
-// Создание форм
-btCollisionShape_t* BT_CreateBoxShape(float hx, float hy, float hz);
-
 // SV интеграция
 void SV_PhysicsInit(void);
 void SV_PhysicsStep(float dt);
@@ -52,7 +49,6 @@ void SV_PhysicsShutdown(void);
 
 // VM интеграция
 void SV_CreateShape(int modelindex, const char* objPath);
-void SV_PhysicsCreateBox(int entityID, float x, float y, float z, float mass);
 void SV_PhysicsCreateModel(int entityID, int modelindex, float x, float y, float z, float mass);
 void SV_PhysicsDeleteObject(int entityID);
 void SV_PhysicsGetPosition(int entityID, float* x, float* y, float* z);

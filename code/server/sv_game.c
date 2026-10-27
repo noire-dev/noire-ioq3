@@ -315,7 +315,6 @@ intptr_t SV_GameSystemCalls(intptr_t* args) {
 		}
 
 		case PHYS_CREATESHAPE: SV_CreateShape(args[1], VMA(2)); return 0;
-		case PHYS_CREATEBOX: SV_PhysicsCreateBox(args[1], VMF(2), VMF(3), VMF(4), VMF(5)); return 0;
 		case PHYS_CREATEMODEL: SV_PhysicsCreateModel(args[1], args[2], VMF(3), VMF(4), VMF(5), VMF(6)); return 0;
 		case PHYS_DELETEOBJECT: SV_PhysicsDeleteObject(args[1]); return 0;
 		case PHYS_GETPOSITION: SV_PhysicsGetPosition(args[1], (float*)VMA(2), (float*)VMA(3), (float*)VMA(4)); return 0;
