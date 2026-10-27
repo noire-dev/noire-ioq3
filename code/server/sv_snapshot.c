@@ -22,6 +22,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "server.h"
 
+// Maximum number of changed entity states emitted per active-client snapshot.
+// This is per client, not a global limit.
+#define SV_SNAPSHOT_ENTITY_UPDATE_BUDGET 256
+
+// SV_BuildClientSnapshot is called sequentially for each client, so these
+// scratch arrays can be shared. Copying the delta-base states here prevents
+// the circular snapshot-entity buffer from overwriting a state that we still
+// need to carry forward unchanged in the new frame.
+static entityState_t svSnapshotOldStates[MAX_GENTITIES];
+static byte svSnapshotOldStateValid[MAX_GENTITIES];
+static byte svSnapshotNeedsUpdate[MAX_GENTITIES];
+static byte svSnapshotSelected[MAX_GENTITIES];
+
 /*
 =============================================================================
 
@@ -112,6 +125,43 @@ static void SV_EmitPacketEntities(clientSnapshot_t* from, clientSnapshot_t* to, 
 }
 
 /*
+====================
+SV_GetSnapshotDeltaFrame
+
+Select the same delta base that will be used by SV_WriteSnapshotToClient.
+The projected entity count is used to make sure the base will not roll out
+of the circular entity buffer while the new snapshot is being built.
+====================
+*/
+static clientSnapshot_t* SV_GetSnapshotDeltaFrame(client_t* client, int projectedEntityCount, int* deltaMessageNum) {
+	clientSnapshot_t* oldframe;
+
+	*deltaMessageNum = 0;
+
+	if(client->deltaMessage <= 0 || client->state != CS_ACTIVE) {
+		return NULL;
+	}
+
+	if(client->netchan.outgoingSequence - client->deltaMessage >= (PACKET_BACKUP - 3)) {
+		Com_DPrintf("%s: Delta request from out of date packet.\n", client->name);
+		return NULL;
+	}
+
+	oldframe = &client->frames[client->deltaMessage & PACKET_MASK];
+
+	// Account for the entities that will be appended by this snapshot. If
+	// the old frame could roll out of the ring while building this frame,
+	// fall back to a full snapshot now rather than changing bases afterwards.
+	if(oldframe->first_entity <= svs.nextSnapshotEntities + projectedEntityCount - svs.numSnapshotEntities) {
+		Com_DPrintf("%s: Delta request from out of date entities.\n", client->name);
+		return NULL;
+	}
+
+	*deltaMessageNum = client->deltaMessage;
+	return oldframe;
+}
+
+/*
 ==================
 SV_WriteSnapshotToClient
 ==================
@@ -125,27 +175,15 @@ static void SV_WriteSnapshotToClient(client_t* client, msg_t* msg) {
 	// this is the snapshot we are creating
 	frame = &client->frames[client->netchan.outgoingSequence & PACKET_MASK];
 
-	// try to use a previous frame as the source for delta compressing the snapshot
-	if(client->deltaMessage <= 0 || client->state != CS_ACTIVE) {
-		// client is asking for a retransmit
-		oldframe = NULL;
-		lastframe = 0;
-	} else if(client->netchan.outgoingSequence - client->deltaMessage >= (PACKET_BACKUP - 3)) {
-		// client hasn't gotten a good message through in a long time
-		Com_DPrintf("%s: Delta request from out of date packet.\n", client->name);
+	// SV_BuildClientSnapshot already selected and validated this base using
+	// the projected size of the frame. Reuse that exact decision here so the
+	// states retained for deferred entities match the delta source on the wire.
+	if(frame->snapshotDeltaMessage <= 0) {
 		oldframe = NULL;
 		lastframe = 0;
 	} else {
-		// we have a valid snapshot to delta from
-		oldframe = &client->frames[client->deltaMessage & PACKET_MASK];
-		lastframe = client->netchan.outgoingSequence - client->deltaMessage;
-
-		// the snapshot's entities may still have rolled off the buffer, though
-		if(oldframe->first_entity <= svs.nextSnapshotEntities - svs.numSnapshotEntities) {
-			Com_DPrintf("%s: Delta request from out of date entities.\n", client->name);
-			oldframe = NULL;
-			lastframe = 0;
-		}
+		oldframe = &client->frames[frame->snapshotDeltaMessage & PACKET_MASK];
+		lastframe = client->netchan.outgoingSequence - frame->snapshotDeltaMessage;
 	}
 
 	MSG_WriteByte(msg, svc_snapshot);
@@ -524,6 +562,7 @@ static void SV_BuildClientSnapshot(client_t* client) {
 
 	// clear everything in this snapshot
 	entityNumbers.numSnapshotEntities = 0;
+	frame->snapshotDeltaMessage = 0;
 	Com_Memset(frame->areabits, 0, sizeof(frame->areabits));
 
 	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=62
@@ -575,19 +614,110 @@ static void SV_BuildClientSnapshot(client_t* client) {
 		((int*)frame->areabits)[i] = ((int*)frame->areabits)[i] ^ -1;
 	}
 
-	// copy the entity states out
-	frame->num_entities = 0;
-	frame->first_entity = svs.nextSnapshotEntities;
-	for(i = 0; i < entityNumbers.numSnapshotEntities; i++) {
-		ent = SV_GentityNum(entityNumbers.snapshotEntities[i]);
-		state = &svs.snapshotEntities[svs.nextSnapshotEntities % svs.numSnapshotEntities];
-		*state = ent->s;
-		svs.nextSnapshotEntities++;
-		// this should never hit, map should always be restarted first in SV_Frame
-		if(svs.nextSnapshotEntities >= 0x7FFFFFFE) {
-			Com_Error(ERR_FATAL, "svs.nextSnapshotEntities wrapped");
+	// Select a delta base only after collecting visibility, because we use
+	// the visible entity count to check that writing this frame cannot evict
+	// the base from the circular snapshot-entity buffer.
+	{
+		int deltaMessageNum;
+		clientSnapshot_t* oldframe;
+		int oldIndex;
+		int cursor;
+		int selectedCount;
+		int lastSelected;
+		int pass;
+		int entityNum;
+
+		oldframe = SV_GetSnapshotDeltaFrame(client, entityNumbers.numSnapshotEntities, &deltaMessageNum);
+		frame->snapshotDeltaMessage = deltaMessageNum;
+
+		Com_Memset(svSnapshotOldStateValid, 0, sizeof(svSnapshotOldStateValid));
+		Com_Memset(svSnapshotNeedsUpdate, 0, sizeof(svSnapshotNeedsUpdate));
+		Com_Memset(svSnapshotSelected, 0, sizeof(svSnapshotSelected));
+
+		if(oldframe) {
+			// Copy the delta-base entity states before advancing the circular
+			// buffer. They are the exact states to retain for deferred updates.
+			for(oldIndex = 0; oldIndex < oldframe->num_entities; oldIndex++) {
+				entityState_t* oldState;
+				int oldNum;
+
+				oldState = &svs.snapshotEntities[(oldframe->first_entity + oldIndex) % svs.numSnapshotEntities];
+				oldNum = oldState->number;
+				if(oldNum < 0 || oldNum >= MAX_GENTITIES) {
+					continue;
+				}
+				svSnapshotOldStates[oldNum] = *oldState;
+				svSnapshotOldStateValid[oldNum] = 1;
+			}
+
+			// Anything new to the delta base, or any entity whose state changed,
+			// is a candidate for this frame's 256 update slots.
+			for(i = 0; i < entityNumbers.numSnapshotEntities; i++) {
+				entityNum = entityNumbers.snapshotEntities[i];
+				ent = SV_GentityNum(entityNum);
+				if(!svSnapshotOldStateValid[entityNum] ||
+				   memcmp(&svSnapshotOldStates[entityNum], &ent->s, sizeof(ent->s)) != 0) {
+					svSnapshotNeedsUpdate[entityNum] = 1;
+				}
+			}
+
+			// Round-robin over entity numbers. The first pass handles candidates
+			// at/after the cursor; the second wraps to the beginning. This avoids
+			// low entity numbers monopolizing the update budget.
+			cursor = client->snapshotRoundRobinEntity;
+			if(cursor < 0 || cursor >= MAX_GENTITIES) {
+				cursor = 0;
+			}
+			selectedCount = 0;
+			lastSelected = -1;
+			for(pass = 0; pass < 2 && selectedCount < SV_SNAPSHOT_ENTITY_UPDATE_BUDGET; pass++) {
+				for(i = 0; i < entityNumbers.numSnapshotEntities && selectedCount < SV_SNAPSHOT_ENTITY_UPDATE_BUDGET; i++) {
+					entityNum = entityNumbers.snapshotEntities[i];
+					if((pass == 0 && entityNum < cursor) || (pass == 1 && entityNum >= cursor)) {
+						continue;
+					}
+					if(!svSnapshotNeedsUpdate[entityNum]) {
+						continue;
+					}
+					svSnapshotSelected[entityNum] = 1;
+					selectedCount++;
+					lastSelected = entityNum;
+				}
+			}
+			if(lastSelected >= 0) {
+				client->snapshotRoundRobinEntity = (lastSelected + 1) % MAX_GENTITIES;
+			}
 		}
-		frame->num_entities++;
+
+		// Publish the snapshot. Existing entities that did not get an update
+		// slot keep their old delta-base state in this frame, so they remain in
+		// the snapshot and are not mistaken for removals. New entities that did
+		// not get a slot are deferred until a later round-robin pass; they have
+		// no prior state that can safely be repeated.
+		frame->num_entities = 0;
+		frame->first_entity = svs.nextSnapshotEntities;
+		for(i = 0; i < entityNumbers.numSnapshotEntities; i++) {
+			entityNum = entityNumbers.snapshotEntities[i];
+			ent = SV_GentityNum(entityNum);
+
+			if(oldframe && !svSnapshotOldStateValid[entityNum] && !svSnapshotSelected[entityNum]) {
+				continue; // new entity, defer its first appearance until budget is available
+			}
+
+			state = &svs.snapshotEntities[svs.nextSnapshotEntities % svs.numSnapshotEntities];
+			if(oldframe && svSnapshotOldStateValid[entityNum] &&
+			   svSnapshotNeedsUpdate[entityNum] && !svSnapshotSelected[entityNum]) {
+				*state = svSnapshotOldStates[entityNum];
+			} else {
+				*state = ent->s;
+			}
+			svs.nextSnapshotEntities++;
+			// this should never hit, map should always be restarted first in SV_Frame
+			if(svs.nextSnapshotEntities >= 0x7FFFFFFE) {
+				Com_Error(ERR_FATAL, "svs.nextSnapshotEntities wrapped");
+			}
+			frame->num_entities++;
+		}
 	}
 }
 

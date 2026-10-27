@@ -105,6 +105,7 @@ typedef struct {
 	int first_entity;  // into the circular sv_packet_entities[]
 	                   // the entities MUST be in increasing state number
 	                   // order, otherwise the delta compression will fail
+	int snapshotDeltaMessage; // delta base selected while this snapshot was built; 0 means full snapshot
 	int messageSent;   // time the message was transmitted
 	int messageAcked;  // time the message was acked
 	int messageSize;   // used to rate drop packets
@@ -197,6 +198,7 @@ typedef struct client_s {
 	bool netError;
 	int viewDistance;
 	int dynamicViewDistance;
+	int snapshotRoundRobinEntity; // next entity number to prioritize for snapshot updates
 
 #ifdef LEGACY_PROTOCOL
 	bool compat;

@@ -116,37 +116,28 @@ void Phys_HoldFrame(gentity_t* player, vec3_t velocity, bool isPhysgun) {
 	}
 }
 
-void G_RunPhysics(gentity_t* ent, int i) {
+void G_RunPhysics(gentity_t* ent) {
+	vec3_t origin, angles;
+
 	if(!trap_Phys_IsSleeping(ent->s.number)) {
-		vec3_t origin, angles;
 		trap_Phys_GetPosition(ent->s.number, &origin[0], &origin[1], &origin[2]);
 		trap_Phys_GetAngles(ent->s.number, &angles[0], &angles[1], &angles[2]);
-		if(origin[2] < -65535) trap_Phys_SetPosition(ent->s.number, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2]);
-		// trap_Phys_GetPosition(ent->s.number, &ent->s.origin[0], &ent->s.origin[1], &ent->s.origin[2]);
-		// trap_Phys_GetAngles(ent->s.number, &ent->s.angles[0], &ent->s.angles[1], &ent->s.angles[2]);
-		if(i >= level.physEntNextFrame && level.physEntCount < PHYSICS_UPDATE_LIMIT) {  // Курсор для начала чтения массива + лимит по сети
-			ent->s.pos.trType = TR_INTERPOLATE;
-			ent->s.apos.trType = TR_INTERPOLATE;
-			VectorCopy(origin, ent->s.pos.trBase);
-			VectorCopy(angles, ent->s.apos.trBase);
-			level.physEntCount += 1;
-		} else if(i >= level.physEntNextFrame) {  // Достигли сетевого лимита, ждем следующий снапшот
-			if(!level.physEntNeedsSnapshot) level.physEntNextFrame = i;
-			level.physEntNeedsSnapshot = true;
+		if(origin[2] < -65535) {
+			trap_Phys_SetPosition(ent->s.number, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2]);
+			trap_Phys_GetPosition(ent->s.number, &origin[0], &origin[1], &origin[2]);
+			trap_Phys_GetAngles(ent->s.number, &angles[0], &angles[1], &angles[2]);
 		}
+
+		// Always publish the latest authoritative transform to game state.
+		// Network bandwidth is handled per-client in server/sv_snapshot.c;
+		// never throttle Bullet/game-state updates with a frame round-robin here.
+		ent->s.pos.trType = TR_INTERPOLATE;
+		ent->s.apos.trType = TR_INTERPOLATE;
+		VectorCopy(origin, ent->s.pos.trBase);
+		VectorCopy(angles, ent->s.apos.trBase);
+
 		VectorCopy(origin, ent->r.currentOrigin);
 		VectorCopy(angles, ent->r.currentAngles);
-		trap_LinkEntity(ent);
-	} else {
-		if(i >= level.physEntNextFrame && level.physEntCount < PHYSICS_UPDATE_LIMIT) {  // Курсор для начала чтения массива + лимит по сети
-			if(!VectorCompare(ent->r.currentOrigin, ent->s.pos.trBase)) {
-				VectorCopy(ent->r.currentOrigin, ent->s.pos.trBase);
-				VectorCopy(ent->r.currentAngles, ent->s.apos.trBase);
-				level.physEntCount += 1;
-			}
-		} else if(i >= level.physEntNextFrame) {  // Достигли сетевого лимита, ждем следующий снапшот
-			if(!level.physEntNeedsSnapshot) level.physEntNextFrame = i;
-			level.physEntNeedsSnapshot = true;
-		}
+		// trap_LinkEntity(ent);
 	}
 }

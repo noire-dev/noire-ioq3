@@ -208,7 +208,6 @@ struct gclient_s {
 //
 #define MAX_SPAWN_VARS 64
 #define MAX_SPAWN_VARS_CHARS 4096
-#define PHYSICS_UPDATE_LIMIT 256
 
 typedef struct {
 	struct gclient_s* clients;  // [maxclients]
@@ -235,10 +234,6 @@ typedef struct {
 
 	int bodyQueIndex;  // dead bodies
 	gentity_t* bodyQue[BODY_QUEUE_SIZE];
-
-	int physEntCount;
-	int physEntNextFrame;
-	bool physEntNeedsSnapshot;
 } level_locals_t;
 
 //
@@ -340,7 +335,7 @@ void Phys_HoldDropDynamic(gentity_t* player, vec3_t velocity, bool isPhysgun);
 void Phys_HoldSetup(gentity_t* player, bool isPhysgun);
 void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun);
 void Phys_HoldFrame(gentity_t* player, vec3_t velocity, bool isPhysgun);
-void G_RunPhysics(gentity_t* ent, int i);
+void G_RunPhysics(gentity_t* ent);
 
 //
 // g_trigger.c

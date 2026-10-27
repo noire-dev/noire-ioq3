@@ -292,8 +292,6 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	// even if they aren't all used, so numbers inside that
 	// range are NEVER anything but clients
 	level.num_entities = MAX_CLIENTS;
-	level.physEntNextFrame = 0;
-	level.physEntNeedsSnapshot = false;
 
 	for(i = 0; i < MAX_CLIENTS; i++) {
 		g_entities[i].classname = "clientslot";
@@ -446,8 +444,6 @@ void G_RunFrame(int levelTime) {
 	//
 	// go through all allocated objects
 	//
-	level.physEntCount = 0;
-	level.physEntNeedsSnapshot = false;
 	ent = &g_entities[0];
 	for(i = 0; i < level.num_entities; i++, ent++) {
 		if(!ent->inuse) {
@@ -496,7 +492,7 @@ void G_RunFrame(int levelTime) {
 		}
 
 		if(ent->s.eType == ET_PHYSICS) {
-			G_RunPhysics(ent, i);
+			G_RunPhysics(ent);
 			continue;
 		}
 
@@ -507,8 +503,6 @@ void G_RunFrame(int levelTime) {
 
 		G_RunThink(ent);
 	}
-
-	if(level.physEntCount < PHYSICS_UPDATE_LIMIT) level.physEntNextFrame = 0;  // Сбрасываем если энтити лимит не достигнут
 
 	// perform final fixups on the players
 	ent = &g_entities[0];
