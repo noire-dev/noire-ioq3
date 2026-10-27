@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_ents.c -- present snapshot entities, happens every single frame
 
 #include "cg_local.h"
+#include <math.h>
 
 /*
 ======================
@@ -182,6 +183,107 @@ static void CG_General(centity_t* cent) {
 }
 
 /*
+ * Quaternion helpers for physics-entity rendering.
+ *
+ * Physics orientations arrive as Euler angles in snapshots. Interpolating
+ * pitch/yaw/roll independently is not equivalent to interpolating a 3D
+ * orientation and can visibly jump when the Euler representation changes
+ * branch (most noticeable while a barrel is rolling through a steep angle).
+ * Convert the rendered endpoint axes to quaternions, slerp, then rebuild the
+ * render axis. This affects presentation only; Bullet's simulation is untouched.
+ */
+static void CG_AxisToQuat(vec3_t axis[3], float q[4]) {
+	/* AnglesToAxis stores each local basis vector in axis[local][world]. */
+	float m00 = axis[0][0], m01 = axis[1][0], m02 = axis[2][0];
+	float m10 = axis[0][1], m11 = axis[1][1], m12 = axis[2][1];
+	float m20 = axis[0][2], m21 = axis[1][2], m22 = axis[2][2];
+	float trace = m00 + m11 + m22;
+	float scale;
+
+	if(trace > 0.0f) {
+		scale = sqrtf(trace + 1.0f) * 2.0f;
+		q[3] = 0.25f * scale;
+		q[0] = (m21 - m12) / scale;
+		q[1] = (m02 - m20) / scale;
+		q[2] = (m10 - m01) / scale;
+	} else if(m00 > m11 && m00 > m22) {
+		scale = sqrtf(1.0f + m00 - m11 - m22) * 2.0f;
+		q[3] = (m21 - m12) / scale;
+		q[0] = 0.25f * scale;
+		q[1] = (m01 + m10) / scale;
+		q[2] = (m02 + m20) / scale;
+	} else if(m11 > m22) {
+		scale = sqrtf(1.0f + m11 - m00 - m22) * 2.0f;
+		q[3] = (m02 - m20) / scale;
+		q[0] = (m01 + m10) / scale;
+		q[1] = 0.25f * scale;
+		q[2] = (m12 + m21) / scale;
+	} else {
+		scale = sqrtf(1.0f + m22 - m00 - m11) * 2.0f;
+		q[3] = (m10 - m01) / scale;
+		q[0] = (m02 + m20) / scale;
+		q[1] = (m12 + m21) / scale;
+		q[2] = 0.25f * scale;
+	}
+}
+
+static void CG_QuatToAxis(const float q[4], vec3_t axis[3]) {
+	float x = q[0], y = q[1], z = q[2], w = q[3];
+	float xx = x * x, yy = y * y, zz = z * z;
+	float xy = x * y, xz = x * z, yz = y * z;
+	float xw = x * w, yw = y * w, zw = z * w;
+
+	/* Build the rotation matrix and transpose it into Quake's axis layout. */
+	axis[0][0] = 1.0f - 2.0f * (yy + zz);
+	axis[0][1] = 2.0f * (xy + zw);
+	axis[0][2] = 2.0f * (xz - yw);
+	axis[1][0] = 2.0f * (xy - zw);
+	axis[1][1] = 1.0f - 2.0f * (xx + zz);
+	axis[1][2] = 2.0f * (yz + xw);
+	axis[2][0] = 2.0f * (xz + yw);
+	axis[2][1] = 2.0f * (yz - xw);
+	axis[2][2] = 1.0f - 2.0f * (xx + yy);
+}
+
+static void CG_SlerpQuat(const float from[4], const float to[4], float frac, float out[4]) {
+	float target[4], dot = 0.0f;
+	float fromScale, toScale;
+	int i;
+
+	for(i = 0; i < 4; ++i) {
+		target[i] = to[i];
+		dot += from[i] * target[i];
+	}
+
+	/* q and -q describe the same rotation; choose the shorter arc. */
+	if(dot < 0.0f) {
+		dot = -dot;
+		for(i = 0; i < 4; ++i) target[i] = -target[i];
+	}
+
+	if(dot > 0.9995f) {
+		float length;
+		for(i = 0; i < 4; ++i) out[i] = from[i] + frac * (target[i] - from[i]);
+		length = sqrtf(out[0] * out[0] + out[1] * out[1] + out[2] * out[2] + out[3] * out[3]);
+		if(length > 1e-8f) {
+			for(i = 0; i < 4; ++i) out[i] /= length;
+		} else {
+			for(i = 0; i < 4; ++i) out[i] = from[i];
+		}
+		return;
+	}
+
+	if(dot > 1.0f) dot = 1.0f;
+	{
+		float theta = acosf(dot);
+		float sinTheta = sinf(theta);
+		fromScale = sinf((1.0f - frac) * theta) / sinTheta;
+		toScale = sinf(frac * theta) / sinTheta;
+	}
+	for(i = 0; i < 4; ++i) out[i] = fromScale * from[i] + toScale * target[i];
+}
+
+/*
 ==================
 CG_Physics
 ==================
@@ -207,8 +309,24 @@ static void CG_Physics(centity_t* cent) {
 
 	ent.hModel = cgs.gameModels[s1->modelindex];
 
-	// convert angles to axis
-	AnglesToAxis(cent->lerpAngles, ent.axis);
+	// Interpolate physics orientation as a quaternion, not as three Euler angles.
+	// The latter can jump when QuatToAngles changes Euler branch near a steep roll.
+	if(cent->interpolate && cent->currentState.pos.trType == TR_INTERPOLATE && cg.nextSnap) {
+		vec3_t currentAngles, nextAngles;
+		vec3_t currentAxis[3], nextAxis[3];
+		float currentQuat[4], nextQuat[4], lerpedQuat[4];
+
+		BG_EvaluateTrajectory(&cent->currentState.apos, cg.snap->serverTime, currentAngles);
+		BG_EvaluateTrajectory(&cent->nextState.apos, cg.nextSnap->serverTime, nextAngles);
+		AnglesToAxis(currentAngles, currentAxis);
+		AnglesToAxis(nextAngles, nextAxis);
+		CG_AxisToQuat(currentAxis, currentQuat);
+		CG_AxisToQuat(nextAxis, nextQuat);
+		CG_SlerpQuat(currentQuat, nextQuat, cg.frameInterpolation, lerpedQuat);
+		CG_QuatToAxis(lerpedQuat, ent.axis);
+	} else {
+		AnglesToAxis(cent->lerpAngles, ent.axis);
+	}
 
 	// add to refresh list
 	trap_R_AddRefEntityToScene(&ent);

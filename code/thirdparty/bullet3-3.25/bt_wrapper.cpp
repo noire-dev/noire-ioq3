@@ -35,6 +35,9 @@ btPhysicsWorld_t* BT_Init(void) {
 	phys->m_world->getSolverInfo().m_splitImpulsePenetrationThreshold = -0.04f;
 	phys->m_world->getSolverInfo().m_erp = 0.65f;
 	phys->m_world->getSolverInfo().m_globalCfm = 0.0f;
+	// Do not permit extra penetration in Bullet's CCD sweep. This matters for
+	// very thin static geometry; the normal contact solver still handles contacts.
+	phys->m_world->getDispatchInfo().m_allowedCcdPenetration = 0.0f;
 
 	return phys;
 }

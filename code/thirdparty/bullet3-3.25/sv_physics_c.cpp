@@ -200,38 +200,43 @@ void SV_CreateShape(int modelindex, const char* md3Path) {
 	btVector3 size = aabbMax - aabbMin;
 }
 
+// CCD's motion threshold is the distance travelled by the body's origin in one
+// Bullet substep, NOT a size derived from the object. Keep it below the 2-unit
+// walls used by this game; otherwise a fast body can cross a wall without CCD
+// ever being invoked (e.g. 16.7 units/substep < a 25-unit old threshold).
+static const btScalar SV_CCD_MOTION_THRESHOLD = btScalar(0.5f);
+static const btScalar SV_CCD_RADIUS_FRACTION = btScalar(0.45f);
+static const btScalar SV_CCD_MIN_RADIUS = btScalar(0.01f);
+
 static void SV_PhysicsSetupCCD(int entityID) {
 	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) return;
 
 	btRigidBody* body = bodies[entityID]->m_body;
 
-	// Работаем только с динамикой
-	if(body->getInvMass() == 0.0f) return;
+	// CCD is only useful for bodies that are currently dynamic.
+	if(body->getInvMass() <= 0.0f) return;
 
 	btCollisionShape* shape = bodies[entityID]->m_shape;
+	if(!shape) return;
 
-	// 1. Получаем точные размеры объекта
+	// The swept sphere should be a conservative core of the shape. Using half
+	// the smallest AABB dimension is too optimistic for irregular convex hulls;
+	// a smaller sphere is more robust while still detecting crossings of thin walls.
 	btVector3 aabbMin, aabbMax;
 	shape->getAabb(btTransform::getIdentity(), aabbMin, aabbMax);
 	btVector3 size = aabbMax - aabbMin;
+	btScalar minDim = btMin(size.x(), btMin(size.y(), size.z()));
 
-	// 2. Находим самую тонкую часть объекта
-	float minDim = fminf(size.x(), fminf(size.y(), size.z()));
+	btScalar sphereRadius = SV_CCD_MIN_RADIUS;
+	if(std::isfinite((double)minDim) && minDim > btScalar(0.0f)) {
+		sphereRadius = btMax(SV_CCD_MIN_RADIUS, minDim * SV_CCD_RADIUS_FRACTION);
+	}
 
-	// 3. Рассчитываем радиус сферы CCD
-	// Берем 50% от минимального размера. Это максимально возможный радиус,
-	// при котором сфера гарантированно поместится внутри объекта.
-	float sphereRadius = minDim * 0.5f;
-
-	// Если объект нулевой толщины (баг модели), ставим минимум чтобы не крашнуло Bullet
-	if(sphereRadius <= 0.0f) sphereRadius = 0.1f;
-
-	// 4. Применяем настройки
 	body->setCcdSweptSphereRadius(sphereRadius);
-
-	// Порог движения равен радиусу.
-	// CCD включится всегда, когда объект смещается быстрее чем на половину своей толщины за кадр.
-	body->setCcdMotionThreshold(sphereRadius);
+	// Keep this independent from sphereRadius. The old threshold was equal to
+	// the radius (about 25 units on the default 50-unit box), so common throws
+	// moved less than the threshold and silently skipped CCD against 2-unit walls.
+	body->setCcdMotionThreshold(SV_CCD_MOTION_THRESHOLD);
 }
 
 void SV_PhysicsCreateBox(int entityID, float x, float y, float z, float mass) {
@@ -614,7 +619,15 @@ void BT_PhysicsTrace(const float* start, const float* end, const float* mins, co
 }
 
 void SV_PhysicsStep(float dt) {
-	if(physWorld) physWorld->m_world->stepSimulation(dt, phys_steps->integer, 1.00f / phys_fps->integer);
+	if(!physWorld || !physWorld->m_world) return;
+	if(!std::isfinite((double)dt) || dt <= 0.0f) return;
+
+	// Never pass a zero/negative fixed timestep to Bullet. maxSubSteps must be
+	// positive as well: maxSubSteps == 0 switches Bullet to variable-step mode,
+	// which makes high-speed motion less predictable when server frame times spike.
+	int fps = (phys_fps && phys_fps->integer > 0) ? phys_fps->integer : 60;
+	int maxSubSteps = (phys_steps && phys_steps->integer > 0) ? phys_steps->integer : 1;
+	physWorld->m_world->stepSimulation(dt, maxSubSteps, 1.0f / (float)fps);
 }
 
 void SV_PhysicsShutdown(void) {
