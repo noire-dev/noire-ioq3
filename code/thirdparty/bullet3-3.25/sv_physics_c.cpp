@@ -168,13 +168,28 @@ void SV_CreateShape(int modelindex, const char* md3Path) {
 		return;
 	}
 
-	btCollisionShape* finalShape = nullptr;
-
 	// ConvexHull для простых объектов
-	btConvexHullShape* hull = new btConvexHullShape();
-	for(const auto& p : convexPoints) hull->addPoint(p, false);  // false = не пересчитывать AABB каждый раз
-	hull->recalcLocalAabb();
-	finalShape = hull;
+	btConvexHullShape* rawHull = new btConvexHullShape();
+	for(const auto& p : convexPoints) rawHull->addPoint(p, false);
+	rawHull->recalcLocalAabb();
+
+	// Уменьшаем оболочку до ~42 вершин
+	btShapeHull hullBuilder(rawHull);
+	hullBuilder.buildHull(rawHull->getMargin());
+
+	btCollisionShape* finalShape = nullptr;
+	if(hullBuilder.numVertices() > 0 && hullBuilder.numVertices() < rawHull->getNumPoints()) {
+		btConvexHullShape* simplified = new btConvexHullShape();
+		for(int i = 0; i < hullBuilder.numVertices(); i++) {
+			simplified->addPoint(hullBuilder.getVertexPointer()[i], false);
+		}
+		simplified->recalcLocalAabb();
+		finalShape = simplified;
+		Com_Printf("  Hull simplified: %d -> %d verts\n", rawHull->getNumPoints(), hullBuilder.numVertices());
+		delete rawHull;
+	} else {
+		finalShape = rawHull;
+	}
 
 	btCollisionShape_t* wrappedShape = new btCollisionShape_t();
 	wrappedShape->m_shape = finalShape;

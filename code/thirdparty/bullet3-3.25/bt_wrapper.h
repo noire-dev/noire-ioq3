@@ -11,6 +11,7 @@ extern "C" {
 }
 #include "btBulletCollisionCommon.h"
 #include "btBulletDynamicsCommon.h"
+#include "BulletCollision/CollisionShapes/btShapeHull.h"
 #endif
 
 #ifdef __cplusplus

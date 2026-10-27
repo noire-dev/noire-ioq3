@@ -1426,39 +1426,8 @@ void RB_StageIteratorGeneric(void) {
 	// now do fog
 	// не применяем туман для 2D-элементов интерфейса (projection2D),
 	// иначе новый FP_LE для blend-шейдеров затронет HUD/меню
-	if(tess.shader->fogPass && !backEnd.projection2D) {
-		bool needsFogPass = false;
-
-		if(tess.fogNum) {
-			// Внутри BSP-объёма тумана — применяем всегда.
-			needsFogPass = true;
-		} else if(tr.world != NULL) {
-			// Динамический туман — применяем только к поверхностям,
-			// которые находятся дальше, чем r_fogStart.
-			// Это избавляет от дорогого fog-pass для геометрии
-			// прямо перед игроком.
-			vec3_t worldPos;
-			float dist;
-
-			if(backEnd.currentEntity && backEnd.currentEntity != &tr.worldEntity) {
-				// Для энтити используем origin как дешёвое приближение.
-				VectorCopy(backEnd.currentEntity->e.origin, worldPos);
-			} else {
-				// Мировые поверхности: tess.xyz уже в мировых координатах.
-				VectorCopy(tess.xyz[0], worldPos);
-			}
-
-			VectorSubtract(worldPos, backEnd.viewParms.or.origin, worldPos);
-			dist = VectorLength(worldPos);
-
-			if(dist > r_fogStart->value) {
-				needsFogPass = true;
-			}
-		}
-
-		if(needsFogPass && tess.shader != tr.sunShader) {
-			RB_FogPass();
-		}
+	if(tess.shader->fogPass && !backEnd.projection2D && tess.shader != tr.sunShader) {
+		RB_FogPass();
 	}
 
 	//
