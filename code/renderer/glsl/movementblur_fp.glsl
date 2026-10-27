@@ -35,4 +35,4 @@ void main()
 	total += w3 * 2.0;
 
 	gl_FragColor = vec4(sum / total, 1.0);
-};
+}

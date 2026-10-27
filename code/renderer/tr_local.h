@@ -77,10 +77,8 @@ typedef struct dlight_s {
 	vec3_t origin;
 	vec3_t color;  // range from 0.0 to 1.0, should be color normalized
 	float radius;
-	float radiusInverseCubed;  // attenuation optimization
-	float intensity;           // 1.0 = fullbright, > 1.0 = overbright
+	float intensity;  // 1.0 = fullbright, > 1.0 = overbright
 	int flags;
-	struct shader_s* dlshader;
 
 	vec3_t transformed;  // origin in local coordinate system
 } dlight_t;
@@ -90,15 +88,12 @@ typedef struct dlight_s {
 typedef struct {
 	refEntity_t e;
 
-	float axisLength;  // compensate for non-normalized axis
-
 	bool needDlights;  // true for bmodels that touch a dlight
 	bool lightingCalculated;
 	bool mirrored;         // mirrored matrix, needs reversed culling
 	vec3_t lightDir;       // normalized direction towards light, in world space
 	vec3_t modelLightDir;  // normalized direction towards light, in model space
 	vec3_t ambientLight;   // color normalized to 0-255
-	int ambientLightInt;   // 32 bit rgba packed
 	vec3_t directedLight;
 } trRefEntity_t;
 
@@ -351,8 +346,6 @@ typedef struct {
 
 	acff_t adjustColorsForFog;
 
-	float zFadeBounds[2];
-
 	bool isDetail;
 	bool isFogged;  // used only for shaders that have fog disabled, so we can enable it for individual stages
 
@@ -422,8 +415,6 @@ typedef struct shader_s {
 	fogPass_t fogPass;  // draw a blended pass, possibly with depth test equals
 
 	int vertexAttribs;  // not all shaders will need all data to be gathered
-
-	bool noFog;
 
 	int numDeforms;
 	deformStage_t deforms[MAX_SHADER_DEFORMS];
@@ -550,8 +541,6 @@ typedef enum {
 	UNIFORM_DIFFUSETEXMATRIX6,
 	UNIFORM_DIFFUSETEXMATRIX7,
 
-	UNIFORM_TEXTURE1ENV,
-
 	UNIFORM_TCGEN0,
 	UNIFORM_TCGEN0VECTOR0,
 	UNIFORM_TCGEN0VECTOR1,
@@ -617,8 +606,6 @@ typedef enum {
 	UNIFORM_INTENSITY,
 	UNIFORM_GAMMA,
 	UNIFORM_DIFFUSECOLOR,
-
-	UNIFORM_GREYSCALE,
 
 	UNIFORM_FIRERISEDIR,
 	UNIFORM_ZFADELOWEST,
@@ -1235,17 +1222,11 @@ typedef struct {
 #define FUNCTABLE_MASK (FUNCTABLE_SIZE - 1)
 
 // dlight flags
-#define REF_ADDITIVE_DLIGHT 0x01  // texture detail is lost tho when the lightmap is dark
-#define REF_GRID_DLIGHT 0x02      // affect dynamic light grid
-#define REF_SURFACE_DLIGHT 0x04   // affect world surfaces
-#define REF_DIRECTED_DLIGHT 0x08  // global directional light, origin should be interpreted as a normal vector
-#define REF_VERTEX_DLIGHT 0x10    // ET style spherical dlight using vertex light rendering
-#define REF_FORCE_DLIGHT 0x20     // force this dlight under all conditions
+#define REF_SURFACE_DLIGHT 0x01  // affect world surfaces
 
 // the renderer front end should never modify glstate_t
 typedef struct {
 	bool finishCalled;
-	int texEnv[2];
 	int faceCulling;
 	int faceCullFront;
 	uint32_t glStateBits;
@@ -1351,13 +1332,11 @@ typedef struct {
 
 	bool projection2D;  // if true, drawstretchpic doesn't need to change modes
 	byte color2D[4];
-	bool vertexes2D;         // shader needs to be finished
 	trRefEntity_t entity2D;  // currentEntity will point at this when doing 2D rendering
 
 	FBO_t* last2DFBO;
 	bool colorMask[4];
 	bool depthFill;
-	float greyscale;
 } backEndState_t;
 
 /*
@@ -1384,8 +1363,6 @@ typedef struct {
 
 	bool worldMapLoaded;
 	bool worldDeluxeMapping;
-	vec2_t autoExposureMinMax;
-	vec3_t toneMinAvgMaxLevel;
 	world_t* world;
 
 	const byte* externalVisData;  // from RE_SetWorldVisData, shared with CM_Load
@@ -1393,9 +1370,8 @@ typedef struct {
 	image_t* defaultImage;
 	image_t* scratchImage[32];
 	image_t* fogImage;
-	image_t* dlightImage;         // inverse-quare highlight for projective adding
-	image_t* whiteImage;          // full of 0xff
-	image_t* identityLightImage;  // full of tr.identityLightByte
+	image_t* dlightImage;  // inverse-quare highlight for projective adding
+	image_t* whiteImage;   // full of 0xff
 
 	image_t* shadowCubemaps[MAX_DLIGHTS];
 
@@ -1415,12 +1391,9 @@ typedef struct {
 	image_t* screenShadowImage;
 	image_t* renderCubeImage;
 
-	image_t* textureDepthImage;
-
 	FBO_t* renderFbo;
 	FBO_t* msaaResolveFbo;
 	FBO_t* sunRaysFbo;
-	FBO_t* depthFbo;
 	FBO_t* dlightShadowFbo;
 	FBO_t* screenScratchFbo;
 	FBO_t* textureScratchFbo[2];
@@ -1431,7 +1404,6 @@ typedef struct {
 	FBO_t* targetLevelsFbo;
 	FBO_t* sunShadowFbo[4];
 	FBO_t* screenShadowFbo;
-	FBO_t* hdrDepthFbo;
 	FBO_t* renderCubeFbo;
 
 	shader_t* defaultShader;
@@ -1460,7 +1432,6 @@ typedef struct {
 	shaderProgram_t genericShader[GENERICDEF_COUNT];
 	shaderProgram_t textureColorShader;
 	shaderProgram_t fogShader[FOGDEF_COUNT];
-	shaderProgram_t dlightShader[DLIGHTDEF_COUNT];
 	shaderProgram_t lightallShader[LIGHTDEF_COUNT];
 	shaderProgram_t shadowmapShader[SHADOWMAPDEF_COUNT];
 	shaderProgram_t down4xShader;
@@ -1471,11 +1442,8 @@ typedef struct {
 	shaderProgram_t movementBlurShader;
 	shaderProgram_t cameraBlurShader;
 	shaderProgram_t gammaShader;
-	shaderProgram_t calclevels4xShader[2];
+	shaderProgram_t calclevels4xShader;
 	shaderProgram_t shadowmaskShader;
-	shaderProgram_t depthBlurShader[4];
-	shaderProgram_t testcubeShader;
-	shaderProgram_t greyscaleShader;
 
 	// -----------------------------------------
 
@@ -1487,8 +1455,6 @@ typedef struct {
 	orientationr_t or ;  // for current entity
 
 	trRefdef_t refdef;
-
-	int viewCluster;
 
 	float sunShadowScale;
 	vec3_t sunLight;  // from the sky shader for this level
@@ -1585,8 +1551,6 @@ extern cvar_t* r_autoExposure;
 extern cvar_t* r_autoExposureMin;
 extern cvar_t* r_autoExposureMax;
 
-extern cvar_t* r_cameraExposure;
-
 extern cvar_t* r_parallaxMapping;
 extern cvar_t* r_parallaxMapShadows;
 extern cvar_t* r_reflections;
@@ -1611,7 +1575,6 @@ extern cvar_t* r_fogColorG;
 extern cvar_t* r_fogColorB;
 extern cvar_t* r_fogStart;
 extern cvar_t* r_fogEnd;
-extern cvar_t* r_fogReflectionEnd;
 
 extern cvar_t* r_skyColorR;
 extern cvar_t* r_skyColorG;
@@ -1657,8 +1620,6 @@ static ID_INLINE bool ShaderRequiresCPUDeforms(const shader_t* shader) {
 }
 
 //====================================================================
-
-void R_SwapBuffers(int);
 
 void R_RenderView(viewParms_t* parms);
 void R_RenderDlightCubemaps(const refdef_t* fd);
@@ -1803,7 +1764,6 @@ shader_t* R_FindShader(const char* name, int lightmapIndex, bool mipRawImage);
 shader_t* R_FindShaderEx(const char* name, int lightmapIndex, bool mipRawImage, int realLightmapIndex);
 shader_t* R_GetShaderByHandle(qhandle_t hShader);
 bool R_ShaderRequiresCubemap(const shader_t* sh);
-shader_t* R_GetShaderByState(int index, long* cycleTime);
 shader_t* R_FindShaderByName(const char* name);
 void R_InitShaders(void);
 void R_ShaderList_f(void);
@@ -2034,10 +1994,6 @@ void RE_ClearScene(void);
 void RE_AddRefEntityToScene(const refEntity_t* ent);
 void RE_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num);
 void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
-void RE_AddAdditiveLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b);
-void RE_AddVertexLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b);
-void RE_AddJuniorLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b);
-void RE_AddDirectedLightToScene(const vec3_t normal, float intensity, float r, float g, float b);
 void RE_BeginScene(const refdef_t* fd);
 void RE_RenderScene(const refdef_t* fd);
 void RE_EndScene(void);

@@ -1155,20 +1155,9 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 			GLSL_SetUniformVec4(sp, UNIFORM_ENABLETEXTURES, enableTextures);
 		} else if(pStage->bundle[1].image[0] != 0) {
 			R_BindAnimatedImageToTMU(&pStage->bundle[0], 0);
-
-			//
-			// lightmap/secondary pass
-			//
-			GLSL_SetUniformInt(sp, UNIFORM_TEXTURE1ENV, pStage->multitextureEnv);
-
 			R_BindAnimatedImageToTMU(&pStage->bundle[1], 1);
 		} else {
-			//
-			// set state
-			//
 			R_BindAnimatedImageToTMU(&pStage->bundle[0], 0);
-
-			GLSL_SetUniformInt(sp, UNIFORM_TEXTURE1ENV, 0);
 		}
 
 		// testing cube map

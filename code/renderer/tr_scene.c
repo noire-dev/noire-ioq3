@@ -229,39 +229,21 @@ void RE_AddDynamicLightToScene(const vec3_t org, float radius, float intensity, 
 		return;
 	}
 
-	// allow forcing some dlights under all circumstances
-	if(r_dynamiclight->integer == 0 && !(flags & REF_FORCE_DLIGHT)) {
-		return;
-	}
+	if(r_dynamiclight->integer == 0) return;
 
 	// set up a new dlight
 	dl = &backEndData->dlights[r_numdlights++];
 	VectorCopy(org, dl->origin);
 	VectorCopy(org, dl->transformed);
 	dl->radius = radius;
-	dl->radiusInverseCubed = (1.0 / dl->radius);
-	dl->radiusInverseCubed = dl->radiusInverseCubed * dl->radiusInverseCubed * dl->radiusInverseCubed;
 	dl->intensity = intensity;
 	dl->color[0] = r;
 	dl->color[1] = g;
 	dl->color[2] = b;
 	dl->flags = flags;
-	if(hShader) {
-		dl->dlshader = R_GetShaderByHandle(hShader);
-	} else {
-		dl->dlshader = NULL;
-	}
 }
 
-void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT, hShader); }
-
-void RE_AddAdditiveLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_ADDITIVE_DLIGHT, 0); }
-
-void RE_AddVertexLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_VERTEX_DLIGHT, 0); }
-
-void RE_AddJuniorLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_GRID_DLIGHT, 0); }
-
-void RE_AddDirectedLightToScene(const vec3_t normal, float intensity, float r, float g, float b) { RE_AddDynamicLightToScene(normal, 256, intensity, r, g, b, REF_GRID_DLIGHT | REF_SURFACE_DLIGHT | REF_DIRECTED_DLIGHT, 0); }
+void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_SURFACE_DLIGHT, hShader); }
 
 void RE_BeginScene(const refdef_t* fd) {
 	Com_Memcpy(tr.refdef.text, fd->text, sizeof(tr.refdef.text));

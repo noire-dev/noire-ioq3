@@ -352,7 +352,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	oldDepthRange = false;
 	wasCrosshair = false;
 	oldDlighted = false;
-	oldCubemapIndex = -1;
+	oldCubemapIndex = false;
 	oldSort = -1;
 
 	backEnd.pc.c_surfaces += numDrawSurfs;
@@ -793,15 +793,6 @@ const void* RB_DrawSurfs(const void* data) {
 				if(!glRefConfig.intelGraphics) qglCopyTextureSubImage2DEXT(tr.renderDepthImage->texnum, GL_TEXTURE_2D, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
 			}
 
-			if(tr.hdrDepthFbo) {
-				// need the depth in a texture we can do GL_LINEAR sampling on, so copy it to an HDR image
-				vec4_t srcTexCoords;
-
-				VectorSet4(srcTexCoords, 0.0f, 0.0f, 1.0f, 1.0f);
-
-				FBO_BlitFromTexture(tr.renderDepthImage, srcTexCoords, NULL, tr.hdrDepthFbo, NULL, NULL, NULL, 0);
-			}
-
 			if(r_shadows->integer && backEnd.viewParms.flags & VPF_USESUNLIGHT) {
 				vec4_t quadVerts[4];
 				vec2_t texCoords[4];
@@ -991,37 +982,6 @@ const void* RB_ClearDepth(const void* data) {
 
 /*
 =============
-RB_DrawGreyscale
-
-=============
-*/
-static void RB_DrawGreyscale(const FBO_t* src) {
-	if(!src || !src->colorImage[0]) return;
-
-	FBO_Bind(NULL);
-	qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
-	qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
-	GL_State(GLS_DEPTHTEST_DISABLE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO);
-
-	GLSL_BindProgram(&tr.greyscaleShader);
-	GLSL_SetUniformInt(&tr.greyscaleShader, UNIFORM_TEXTUREMAP, 0);
-	GLSL_SetUniformFloat(&tr.greyscaleShader, UNIFORM_GREYSCALE, backEnd.greyscale);
-	GL_BindToTMU(src->colorImage[0], 0);
-
-	vec4_t quadVerts[4] = {
-	    {0.0f, 0.0f, 0.0f, 1.0f},
-	    {(float)glConfig.vidWidth, 0.0f, 0.0f, 1.0f},
-	    {(float)glConfig.vidWidth, (float)glConfig.vidHeight, 0.0f, 1.0f},
-	    {0.0f, (float)glConfig.vidHeight, 0.0f, 1.0f},
-	};
-
-	vec2_t texCoords[4] = {{0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}};
-
-	RB_InstantQuad2(quadVerts, texCoords);
-}
-
-/*
-=============
 RB_PresentToScreen
 
 =============
@@ -1041,11 +1001,7 @@ static void RB_PresentToScreen(void) {
 	}
 
 	if(src) {
-		if(backEnd.greyscale > 0.0f) {
-			RB_DrawGreyscale(src);
-		} else {
-			FBO_FastBlit(src, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		}
+		FBO_FastBlit(src, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		return;
 	}
 

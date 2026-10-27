@@ -1406,8 +1406,6 @@ void R_CreateBuiltinImages(void) {
 		}
 	}
 
-	tr.identityLightImage = R_CreateImage("*identityLight", (byte*)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0);
-
 	for(x = 0; x < 32; x++) {
 		// scratchimage is usually used for cinematic drawing
 		tr.scratchImage[x] = R_CreateImage("*scratch", (byte*)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0);
@@ -1434,8 +1432,6 @@ void R_CreateBuiltinImages(void) {
 		tr.screenScratchImage = R_CreateImage("screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
 
 		tr.renderDepthImage = R_CreateImage("*renderdepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24);
-		tr.textureDepthImage = R_CreateImage("*texturedepth", NULL, 512, 512, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24);
-
 		{
 			void* p;
 

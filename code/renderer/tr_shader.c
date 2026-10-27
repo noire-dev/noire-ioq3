@@ -1528,23 +1528,6 @@ static bool ParseShader(char** text) {
 				SkipRestOfLine(text);
 			}
 			continue;
-		}
-		// tonemap parms
-		else if(!Q_stricmp(token, "q3gl2_tonemap")) {
-			token = COM_ParseExt(text, false);
-			tr.toneMinAvgMaxLevel[0] = atof(token);
-			token = COM_ParseExt(text, false);
-			tr.toneMinAvgMaxLevel[1] = atof(token);
-			token = COM_ParseExt(text, false);
-			tr.toneMinAvgMaxLevel[2] = atof(token);
-
-			token = COM_ParseExt(text, false);
-			tr.autoExposureMinMax[0] = atof(token);
-			token = COM_ParseExt(text, false);
-			tr.autoExposureMinMax[1] = atof(token);
-
-			SkipRestOfLine(text);
-			continue;
 		} else if(!Q_stricmp(token, "deformVertexes")) {
 			ParseDeform(text);
 			continue;

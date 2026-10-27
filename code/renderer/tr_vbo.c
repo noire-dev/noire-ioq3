@@ -507,16 +507,10 @@ void R_VaoList_f(void) {
 		vao = tr.vaos[i];
 
 		ri.Printf(PRINT_ALL, "%d.%02d MB %s\n", vao->vertexesSize / (1024 * 1024), (vao->vertexesSize % (1024 * 1024)) * 100 / (1024 * 1024), vao->name);
-
-		vertexesSize += vao->vertexesSize;
-	}
-
-	for(i = 0; i < tr.numVaos; i++) {
-		vao = tr.vaos[i];
-
 		ri.Printf(PRINT_ALL, "%d.%02d MB %s\n", vao->indexesSize / (1024 * 1024), (vao->indexesSize % (1024 * 1024)) * 100 / (1024 * 1024), vao->name);
 
 		indexesSize += vao->indexesSize;
+		vertexesSize += vao->vertexesSize;
 	}
 
 	ri.Printf(PRINT_ALL, " %i total VAOs\n", tr.numVaos);
@@ -644,9 +638,7 @@ static struct {
 	int indexOffset;
 } vc;
 
-static uint64_t VaoCache_RotateLeft64(uint64_t value, unsigned int bits) {
-	return (value << bits) | (value >> (64 - bits));
-}
+static uint64_t VaoCache_RotateLeft64(uint64_t value, unsigned int bits) { return (value << bits) | (value >> (64 - bits)); }
 
 static uint64_t VaoCache_Mix64(uint64_t value) {
 	value ^= value >> 30;

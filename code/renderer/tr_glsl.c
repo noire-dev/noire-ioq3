@@ -28,10 +28,6 @@ extern const char* fallbackShader_bokeh_vp;
 extern const char* fallbackShader_bokeh_fp;
 extern const char* fallbackShader_calclevels4x_vp;
 extern const char* fallbackShader_calclevels4x_fp;
-extern const char* fallbackShader_depthblur_vp;
-extern const char* fallbackShader_depthblur_fp;
-extern const char* fallbackShader_dlight_vp;
-extern const char* fallbackShader_dlight_fp;
 extern const char* fallbackShader_down4x_vp;
 extern const char* fallbackShader_down4x_fp;
 extern const char* fallbackShader_fogpass_vp;
@@ -56,6 +52,8 @@ extern const char* fallbackShader_movementblur_vp;
 extern const char* fallbackShader_movementblur_fp;
 extern const char* fallbackShader_camerablur_vp;
 extern const char* fallbackShader_camerablur_fp;
+extern const char* fallbackShader_lut_vp;
+extern const char* fallbackShader_lut_fp;
 
 typedef struct uniformInfo_s {
 	char* name;
@@ -99,8 +97,6 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_DiffuseTexMatrix5", GLSL_VEC4},
     {"u_DiffuseTexMatrix6", GLSL_VEC4},
     {"u_DiffuseTexMatrix7", GLSL_VEC4},
-
-    {"u_Texture1Env", GLSL_INT},
 
     {"u_TCGen0", GLSL_INT},
     {"u_TCGen0Vector0", GLSL_VEC3},
@@ -167,8 +163,6 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_Intensity", GLSL_FLOAT},
     {"u_Gamma", GLSL_FLOAT},
     {"u_DiffuseColor", GLSL_VEC3},
-
-    {"u_Greyscale", GLSL_FLOAT},
 
     {"u_FireRiseDir", GLSL_VEC3},
     {"u_ZFadeLowest", GLSL_FLOAT},
@@ -961,27 +955,6 @@ void GLSL_InitGPUShaders(void) {
 		numEtcShaders++;
 	}
 
-	for(i = 0; i < DLIGHTDEF_COUNT; i++) {
-		attribs = ATTR_POSITION | ATTR_NORMAL | ATTR_TEXCOORD;
-		extradefines[0] = '\0';
-
-		if(i & DLIGHTDEF_USE_DEFORM_VERTEXES) {
-			Q_strcat(extradefines, 1024, "#define USE_DEFORM_VERTEXES\n");
-		}
-
-		if(!GLSL_InitGPUShader(&tr.dlightShader[i], "dlight", attribs, true, extradefines, true, fallbackShader_dlight_vp, fallbackShader_dlight_fp)) {
-			ri.Error(ERR_FATAL, "Could not load dlight shader!");
-		}
-
-		GLSL_InitUniforms(&tr.dlightShader[i]);
-
-		GLSL_SetUniformInt(&tr.dlightShader[i], UNIFORM_DIFFUSEMAP, TB_DIFFUSEMAP);
-
-		GLSL_FinishGPUShader(&tr.dlightShader[i]);
-
-		numEtcShaders++;
-	}
-
 	for(i = 0; i < LIGHTDEF_COUNT; i++) {
 		int lightType = i & LIGHTDEF_LIGHTTYPE_MASK;
 
@@ -1185,32 +1158,10 @@ void GLSL_InitGPUShaders(void) {
 	numEtcShaders++;
 
 	if(glRefConfig.framebufferObject && (!qglesMajorVersion || qglesMajorVersion >= 3)) {
-		static const char* lut_vp =
-		    "attribute vec3 attr_Position;\n"
-		    "attribute vec4 attr_TexCoord0;\n"
-		    "uniform mat4 u_ModelViewProjectionMatrix;\n"
-		    "varying vec2 var_TexCoords;\n"
-		    "void main()\n"
-		    "{\n"
-		    "	gl_Position = u_ModelViewProjectionMatrix * vec4(attr_Position, 1.0);\n"
-		    "	var_TexCoords = attr_TexCoord0.st;\n"
-		    "}\n";
-
-		static const char* lut_fp =
-		    "uniform sampler2D u_TextureMap;\n"
-		    "uniform sampler3D u_LUTMap;\n"
-		    "varying vec2 var_TexCoords;\n"
-		    "void main()\n"
-		    "{\n"
-		    "	vec4 color = texture2D(u_TextureMap, var_TexCoords);\n"
-		    "	vec3 lut = texture3D(u_LUTMap, clamp(color.rgb, 0.0, 1.0)).rgb;\n"
-		    "	gl_FragColor = vec4(lut, color.a);\n"
-		    "}\n";
-
 		attribs = ATTR_POSITION | ATTR_TEXCOORD;
 		extradefines[0] = '\0';
 
-		if(!GLSL_InitGPUShader(&tr.lutShader, "lut", attribs, true, extradefines, true, lut_vp, lut_fp)) {
+		if(!GLSL_InitGPUShader(&tr.lutShader, "lut", attribs, true, extradefines, true, fallbackShader_lut_vp, fallbackShader_lut_fp)) {
 			ri.Printf(PRINT_WARNING, "Could not load lut shader, LUT color correction disabled\n");
 			Com_Memset(&tr.lutShader, 0, sizeof(tr.lutShader));
 		} else {
@@ -1239,7 +1190,7 @@ void GLSL_InitGPUShaders(void) {
 	attribs = ATTR_POSITION | ATTR_TEXCOORD;
 	extradefines[0] = '\0';
 
-	if(!GLSL_InitGPUShader(&tr.cameraBlurShader, "cameraBlur", attribs, true, extradefines, true, fallbackShader_camerablur_vp, fallbackShader_camerablur_fp)) {
+	if(!GLSL_InitGPUShader(&tr.cameraBlurShader, "camerablur", attribs, true, extradefines, true, fallbackShader_camerablur_vp, fallbackShader_camerablur_fp)) {
 		ri.Error(ERR_FATAL, "Could not load camerablur shader!");
 	}
 
@@ -1250,24 +1201,20 @@ void GLSL_InitGPUShaders(void) {
 
 	numEtcShaders++;
 
-	for(i = 0; i < 2; i++) {
-		attribs = ATTR_POSITION | ATTR_TEXCOORD;
-		extradefines[0] = '\0';
+	attribs = ATTR_POSITION | ATTR_TEXCOORD;
+	extradefines[0] = '\0';
 
-		if(!i) Q_strcat(extradefines, 1024, "#define FIRST_PASS\n");
-
-		if(!GLSL_InitGPUShader(&tr.calclevels4xShader[i], "calclevels4x", attribs, true, extradefines, true, fallbackShader_calclevels4x_vp, fallbackShader_calclevels4x_fp)) {
-			ri.Error(ERR_FATAL, "Could not load calclevels4x shader!");
-		}
-
-		GLSL_InitUniforms(&tr.calclevels4xShader[i]);
-
-		GLSL_SetUniformInt(&tr.calclevels4xShader[i], UNIFORM_TEXTUREMAP, TB_DIFFUSEMAP);
-
-		GLSL_FinishGPUShader(&tr.calclevels4xShader[i]);
-
-		numEtcShaders++;
+	if(!GLSL_InitGPUShader(&tr.calclevels4xShader, "calclevels4x", attribs, true, extradefines, true, fallbackShader_calclevels4x_vp, fallbackShader_calclevels4x_fp)) {
+		ri.Error(ERR_FATAL, "Could not load calclevels4x shader!");
 	}
+
+	GLSL_InitUniforms(&tr.calclevels4xShader);
+
+	GLSL_SetUniformInt(&tr.calclevels4xShader, UNIFORM_TEXTUREMAP, TB_DIFFUSEMAP);
+
+	GLSL_FinishGPUShader(&tr.calclevels4xShader);
+
+	numEtcShaders++;
 
 	// GLSL 1.10+ or GL_EXT_shadow_samplers extension are required for sampler2DShadow type
 	if(glRefConfig.glslMajorVersion > 1 || (glRefConfig.glslMajorVersion == 1 && glRefConfig.glslMinorVersion >= 10) || glRefConfig.shadowSamplers) {
@@ -1299,63 +1246,6 @@ void GLSL_InitGPUShaders(void) {
 		numEtcShaders++;
 	}
 
-	// GLSL 1.10+ or GL_OES_standard_derivatives extension are required for dFdx() and dFdy() GLSL functions
-	if(glRefConfig.glslMajorVersion > 1 || (glRefConfig.glslMajorVersion == 1 && glRefConfig.glslMinorVersion >= 10) || glRefConfig.standardDerivatives) {
-		attribs = ATTR_POSITION | ATTR_TEXCOORD;
-		extradefines[0] = '\0';
-
-		if(qglesMajorVersion < 3 && glRefConfig.standardDerivatives) {
-			Q_strcat(extradefines, 1024, "#extension GL_OES_standard_derivatives : enable\n");
-		}
-
-		for(i = 0; i < 4; i++) {
-			attribs = ATTR_POSITION | ATTR_TEXCOORD;
-			extradefines[0] = '\0';
-
-			if(qglesMajorVersion < 3 && glRefConfig.standardDerivatives) {
-				Q_strcat(extradefines, 1024, "#extension GL_OES_standard_derivatives : enable\n");
-			}
-
-			if(i & 1)
-				Q_strcat(extradefines, 1024, "#define USE_VERTICAL_BLUR\n");
-			else
-				Q_strcat(extradefines, 1024, "#define USE_HORIZONTAL_BLUR\n");
-
-			if(!(i & 2)) Q_strcat(extradefines, 1024, "#define USE_DEPTH\n");
-
-			if(!GLSL_InitGPUShader(&tr.depthBlurShader[i], "depthBlur", attribs, true, extradefines, true, fallbackShader_depthblur_vp, fallbackShader_depthblur_fp)) {
-				ri.Error(ERR_FATAL, "Could not load depthBlur shader!");
-			}
-
-			GLSL_InitUniforms(&tr.depthBlurShader[i]);
-
-			GLSL_SetUniformInt(&tr.depthBlurShader[i], UNIFORM_SCREENIMAGEMAP, TB_COLORMAP);
-			GLSL_SetUniformInt(&tr.depthBlurShader[i], UNIFORM_SCREENDEPTHMAP, TB_LIGHTMAP);
-
-			GLSL_FinishGPUShader(&tr.depthBlurShader[i]);
-
-			numEtcShaders++;
-		}
-	}
-
-#if 0
-	attribs = ATTR_POSITION | ATTR_TEXCOORD;
-	extradefines[0] = '\0';
-
-	if (!GLSL_InitGPUShader(&tr.testcubeShader, "testcube", attribs, true, extradefines, true, NULL, NULL))
-	{
-		ri.Error(ERR_FATAL, "Could not load testcube shader!");
-	}
-
-	GLSL_InitUniforms(&tr.testcubeShader);
-
-	GLSL_SetUniformInt(&tr.testcubeShader, UNIFORM_TEXTUREMAP, TB_COLORMAP);
-
-	GLSL_FinishGPUShader(&tr.testcubeShader);
-
-	numEtcShaders++;
-#endif
-
 	endTime = ri.Milliseconds();
 
 	ri.Printf(PRINT_ALL, "loaded %i GLSL shaders (%i gen %i light %i etc) in %5.2f seconds\n", numGenShaders + numLightShaders + numEtcShaders, numGenShaders, numLightShaders, numEtcShaders, (endTime - startTime) / 1000.0);
@@ -1376,8 +1266,6 @@ void GLSL_ShutdownGPUShaders(void) {
 
 	for(i = 0; i < FOGDEF_COUNT; i++) GLSL_DeleteGPUShader(&tr.fogShader[i]);
 
-	for(i = 0; i < DLIGHTDEF_COUNT; i++) GLSL_DeleteGPUShader(&tr.dlightShader[i]);
-
 	for(i = 0; i < LIGHTDEF_COUNT; i++) GLSL_DeleteGPUShader(&tr.lightallShader[i]);
 
 	for(i = 0; i < SHADOWMAPDEF_COUNT; i++) GLSL_DeleteGPUShader(&tr.shadowmapShader[i]);
@@ -1389,12 +1277,9 @@ void GLSL_ShutdownGPUShaders(void) {
 	GLSL_DeleteGPUShader(&tr.movementBlurShader);
 	GLSL_DeleteGPUShader(&tr.cameraBlurShader);
 	GLSL_DeleteGPUShader(&tr.tonemapShader);
-
-	for(i = 0; i < 2; i++) GLSL_DeleteGPUShader(&tr.calclevels4xShader[i]);
+	GLSL_DeleteGPUShader(&tr.calclevels4xShader);
 
 	GLSL_DeleteGPUShader(&tr.shadowmaskShader);
-
-	for(i = 0; i < 4; i++) GLSL_DeleteGPUShader(&tr.depthBlurShader[i]);
 }
 
 void GLSL_BindProgram(shaderProgram_t* program) {

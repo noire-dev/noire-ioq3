@@ -143,11 +143,6 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 				continue;
 			}
 
-			// lightning dlights affect all surfaces
-			if(tr.refdef.dlights[i].flags & REF_DIRECTED_DLIGHT) {
-				continue;
-			}
-
 			dl = &tr.refdef.dlights[i];
 			d = DotProduct(dl->origin, surf->cullinfo.plane.normal) - surf->cullinfo.plane.dist;
 			if(d < -dl->radius || d > dl->radius) {
@@ -163,11 +158,6 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 				continue;
 			}
 
-			// lightning dlights affect all surfaces
-			if(tr.refdef.dlights[i].flags & REF_DIRECTED_DLIGHT) {
-				continue;
-			}
-
 			dl = &tr.refdef.dlights[i];
 			if(dl->origin[0] - dl->radius > surf->cullinfo.bounds[1][0] || dl->origin[0] + dl->radius < surf->cullinfo.bounds[0][0] || dl->origin[1] - dl->radius > surf->cullinfo.bounds[1][1] || dl->origin[1] + dl->radius < surf->cullinfo.bounds[0][1] || dl->origin[2] - dl->radius > surf->cullinfo.bounds[1][2] || dl->origin[2] + dl->radius < surf->cullinfo.bounds[0][2]) {
 				// dlight doesn't reach the bounds
@@ -179,11 +169,6 @@ static int R_DlightSurface(msurface_t* surf, int dlightBits) {
 	if(surf->cullinfo.type & CULLINFO_SPHERE) {
 		for(i = 0; i < tr.refdef.num_dlights; i++) {
 			if(!(dlightBits & (1 << i))) {
-				continue;
-			}
-
-			// lightning dlights affect all surfaces
-			if(tr.refdef.dlights[i].flags & REF_DIRECTED_DLIGHT) {
 				continue;
 			}
 
@@ -269,7 +254,7 @@ static void R_FogCullSurface(msurface_t* surf) {
 static void R_AddWorldSurface(msurface_t* surf, int dlightBits) {
 	if(surf->surfaceFlags & SURF_SKYBOX && ((tr.viewParms.flags & VPF_NOCUBEMAPS && !r_reflectionsSkybox->integer) || (tr.viewParms.flags & VPF_DEPTHSHADOW && !r_shadowSkybox->integer) || !r_skybox->integer)) return;
 	R_FrustumCullSurface(surf);
-	if(r_fogDensity->value >= 0.95 && (tr.frameCount & 255) == 0) R_FogCullSurface(surf);
+	if(r_fogDensity->value >= 0.95 && (tr.frameCount & 15) == 0) R_FogCullSurface(surf);
 	if(surf->doCull || surf->doFogCull) return;
 
 	// try to cull before dlighting or adding
@@ -422,8 +407,6 @@ static void R_RecursiveWorldNode(mnode_t* node, uint32_t planeBits, uint32_t dli
 		if(dlightBits) {
 			for(i = 0; i < tr.refdef.num_dlights; i++) {
 				if(dlightBits & (1 << i)) {
-					if(tr.refdef.dlights[i].flags & REF_DIRECTED_DLIGHT) continue;
-
 					dl = &tr.refdef.dlights[i];
 
 					if(node->surfMins[0] >= (dl->origin[0] + dl->radius) || node->surfMaxs[0] <= (dl->origin[0] - dl->radius) || node->surfMins[1] >= (dl->origin[1] + dl->radius) || node->surfMaxs[1] <= (dl->origin[1] - dl->radius) || node->surfMins[2] >= (dl->origin[2] + dl->radius) || node->surfMaxs[2] <= (dl->origin[2] - dl->radius)) {

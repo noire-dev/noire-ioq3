@@ -54,8 +54,6 @@ cvar_t* r_ext_max_anisotropy;
 
 cvar_t* r_ext_framebuffer_multisample;
 
-cvar_t* r_cameraExposure;
-
 cvar_t* r_externalGLSL;
 
 cvar_t* r_toneMapMin;
@@ -843,7 +841,6 @@ void R_Register(void) {
 	r_autoExposure = ri.Cvar_Get("r_autoExposure", "1", CVAR_ARCHIVE);
 	r_autoExposureMin = ri.Cvar_Get("r_autoExposureMin", "-2.0", CVAR_CHEAT);
 	r_autoExposureMax = ri.Cvar_Get("r_autoExposureMax", "2.0", CVAR_CHEAT);
-	r_cameraExposure = ri.Cvar_Get("r_cameraExposure", "1.08", CVAR_CHEAT);
 
 	r_parallaxMapping = ri.Cvar_Get("r_parallaxMapping", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_parallaxMapShadows = ri.Cvar_Get("r_parallaxMapShadows", "0", CVAR_ARCHIVE | CVAR_LATCH);
@@ -879,9 +876,9 @@ void R_Register(void) {
 	r_skyColorA = ri.Cvar_Get("r_skyColorA", "0.0", CVAR_ARCHIVE);
 
 	r_bloom = ri.Cvar_Get("r_bloom", "1", CVAR_ARCHIVE);
-	r_bloomIntensity = ri.Cvar_Get("r_bloomIntensity", "0.96", CVAR_ARCHIVE);
-	r_bloomThreshold = ri.Cvar_Get("r_bloomThreshold", "0.82", CVAR_ARCHIVE);
-	r_bloomKnee = ri.Cvar_Get("r_bloomKnee", "0.16", CVAR_ARCHIVE);
+	r_bloomIntensity = ri.Cvar_Get("r_bloomIntensity", "1.00", CVAR_ARCHIVE);
+	r_bloomThreshold = ri.Cvar_Get("r_bloomThreshold", "0.64", CVAR_ARCHIVE);
+	r_bloomKnee = ri.Cvar_Get("r_bloomKnee", "0.32", CVAR_ARCHIVE);
 	r_bloomBlur = ri.Cvar_Get("r_bloomBlur", "1", CVAR_ARCHIVE);
 
 	r_lutFile = ri.Cvar_Get("r_lutFile", "", CVAR_ARCHIVE);
@@ -1131,10 +1128,6 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t* rimp) {
 	re.AddPolyToScene = RE_AddPolyToScene;
 	re.LightForPoint = R_LightForPoint;
 	re.AddLightToScene = RE_AddLightToScene;
-	re.AddAdditiveLightToScene = RE_AddAdditiveLightToScene;
-	re.AddVertexLightToScene = RE_AddVertexLightToScene;
-	re.AddJuniorLightToScene = RE_AddJuniorLightToScene;
-	re.AddDirectedLightToScene = RE_AddDirectedLightToScene;
 	re.RenderScene = RE_RenderScene;
 
 	re.SetColor = RE_SetColor;
