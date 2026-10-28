@@ -1257,11 +1257,11 @@ void CG_MissileHitWall(int weapon, int clientNum, vec3_t origin, vec3_t dir, imp
 			lightColor[1] = 0.75;
 			lightColor[2] = 0.0;
 			if(cg_oldRocket.integer == 0) {
-				// explosion sprite animation
-				VectorMA(origin, 24, dir, sprOrg);
-				VectorScale(dir, 64, sprVel);
+				vec4_t explosionColor = {1.0f, 0.75f, 0.0f, 1.0f};
+				vec3_t explosionGravity = {0.0f, 0.0f, -20.0f};
 
-				CG_ParticleExplosion("explode1", sprOrg, sprVel, 1400, 20, 30);
+				VectorMA(origin, 24, dir, sprOrg);
+				CG_AddParticles(sprOrg, explosionColor, 1024, 200.0f, PF_SMOOTH_FADE | PF_GRAVITY, explosionGravity);
 			}
 			break;
 		case WP_RAILGUN:

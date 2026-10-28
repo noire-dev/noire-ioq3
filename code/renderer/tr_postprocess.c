@@ -450,11 +450,20 @@ after tone mapping, so the LUT gets LDR (0..1) colour, which is exactly what
 
 static char s_loadedLUTName[MAX_QEXTENDEDPATH] = {0};
 
-static void RB_LoadLUTFile(const char* name) {
+void RB_FreeLUT(void) {
 	if(tr.lutImage) {
-		qglDeleteTextures(1, &tr.lutImage->texnum);
+		if(tr.lutImage->texnum) {
+			qglDeleteTextures(1, &tr.lutImage->texnum);
+			tr.lutImage->texnum = 0;
+		}
+		ri.Free(tr.lutImage);
 		tr.lutImage = NULL;
 	}
+	s_loadedLUTName[0] = '\0';
+}
+
+static void RB_LoadLUTFile(const char* name) {
+	RB_FreeLUT();
 
 	if(!name || !name[0]) {
 		return;
@@ -570,7 +579,7 @@ static void RB_LoadLUTFile(const char* name) {
 		return;
 	}
 
-	tr.lutImage = ri.Hunk_Alloc(sizeof(image_t), h_low);
+	tr.lutImage = ri.Malloc(sizeof(image_t));
 	Com_Memset(tr.lutImage, 0, sizeof(*tr.lutImage));
 
 	qglGenTextures(1, &tr.lutImage->texnum);

@@ -1043,6 +1043,14 @@ void CG_InitMarkPolys(void);
 void CG_AddMarks(void);
 void CG_ImpactMark(qhandle_t markShader, const vec3_t origin, const vec3_t dir, float orientation, float r, float g, float b, float a, bool alphaFade, float radius, bool temporary);
 
+// cg_particles.c — упрощённая система частиц
+#define PF_SMOOTH_FADE 0x01  // ПЛАВНОЕ_ЗАТУХАНИЕ: линейное затухание альфы
+#define PF_GRAVITY 0x02      // ГРАВИТАЦИЯ: применять вектор ускорения
+
+void CG_ClearParticles(void);
+void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity);
+void CG_RenderParticles(void);
+
 //
 // cg_localents.c
 //
@@ -1144,17 +1152,3 @@ e_status trap_CIN_RunCinematic(int handle);
 void trap_CIN_DrawCinematic(int handle);
 void trap_CIN_SetExtents(int handle, int x, int y, int w, int h);
 bool trap_GetEntityToken(char* buffer, int bufferSize);
-
-void CG_ClearParticles(void);
-void CG_AddParticles(void);
-void CG_ParticleSnow(qhandle_t pshader, vec3_t origin, vec3_t origin2, int turb, float range, int snum);
-void CG_ParticleSmoke(qhandle_t pshader, centity_t* cent);
-void CG_AddParticleShrapnel(localEntity_t* le);
-void CG_ParticleSnowFlurry(qhandle_t pshader, centity_t* cent);
-void CG_ParticleBulletDebris(vec3_t org, vec3_t vel, int duration);
-void CG_ParticleSparks(vec3_t org, vec3_t vel, int duration, float x, float y, float speed);
-void CG_ParticleDust(centity_t* cent, vec3_t origin, vec3_t dir);
-void CG_ParticleMisc(qhandle_t pshader, vec3_t origin, int size, int duration, float alpha);
-void CG_ParticleExplosion(char* animStr, vec3_t origin, vec3_t vel, int duration, int sizeStart, int sizeEnd);
-extern bool initparticles;
-int CG_NewParticleArea(int num);

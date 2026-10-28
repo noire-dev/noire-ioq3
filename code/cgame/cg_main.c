@@ -564,7 +564,7 @@ static void CG_RegisterGraphics(void) {
 
 	cgs.media.deferShader = trap_R_RegisterShaderNoMip("gfx/2d/defer.tga");
 
-	cgs.media.smokePuffShader = trap_R_RegisterShader("smokePuff");
+	cgs.media.smokePuffShader = trap_R_RegisterShader("spark");
 	cgs.media.smokePuffRageProShader = trap_R_RegisterShader("smokePuffRagePro");
 	cgs.media.shotgunSmokePuffShader = trap_R_RegisterShader("shotgunSmokePuff");
 	cgs.media.plasmaBallShader = trap_R_RegisterShader("sprites/plasma1");

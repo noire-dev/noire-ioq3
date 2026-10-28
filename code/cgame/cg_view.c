@@ -549,7 +549,7 @@ void CG_DrawActiveFrame(int serverTime, bool demoPlayback) {
 	if(!cg.hyperspace) {
 		CG_AddPacketEntities();  // adter calcViewValues, so predicted player state is correct
 		CG_AddMarks();
-		CG_AddParticles();
+		CG_RenderParticles();
 		CG_AddLocalEntities();
 	}
 	CG_AddViewWeapon(&cg.predictedPlayerState);

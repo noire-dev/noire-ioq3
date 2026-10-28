@@ -1049,6 +1049,7 @@ void RE_Shutdown(bool destroyWindow) {
 		R_IssuePendingRenderCommands();
 		R_ShutDownQueries();
 		if(glRefConfig.framebufferObject) FBO_Shutdown();
+		RB_FreeLUT();
 		R_DeleteTextures();
 		R_ShutdownVaos();
 		GLSL_ShutdownGPUShaders();
