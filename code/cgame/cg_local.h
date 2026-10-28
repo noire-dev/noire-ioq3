@@ -889,6 +889,16 @@ typedef struct {
 	const char* missileSprite;
 	int missileRenderfx;
 
+	// Model color override (0 = none, 1 = client physRGB, 2 = fixed modelColor)
+	int modelColorSource;
+	float modelColor[3];
+
+	// Skip CG_LightningBolt for this weapon (beam drawn by another event, e.g. EV_RAILTRAIL)
+	bool skipLightningBolt;
+
+	// Emit red blood particles on flesh impact (grenade/rocket style)
+	bool explodeOnFleshHit;
+
 	// Weapon visual model overrides (NULL = derive from item->model)
 	const char* flashModel;
 	const char* barrelModel;

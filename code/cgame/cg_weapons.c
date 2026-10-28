@@ -66,7 +66,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireParticleFlags = PF_SMOOTH_FADE,
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
                 .tracerChance = 0.4f,
-                .tracerLength = 100.0f,
+                .tracerLength = 300.0f,
                 .tracerWidth = 1.0f,
                 .tracerParticleShader = "",
                 .tracerParticleColor = {1.0f, 1.0f, 0.7f, 1.0f},
@@ -109,7 +109,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireParticleFlags = PF_SMOOTH_FADE,
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
                 .tracerChance = 0.4f,
-                .tracerLength = 100.0f,
+                .tracerLength = 300.0f,
                 .tracerWidth = 1.0f,
                 .tracerParticleShader = "",
                 .tracerParticleColor = {1.0f, 1.0f, 0.7f, 1.0f},
@@ -132,6 +132,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_GRENADE_LAUNCHER] =
             {
+                .explodeOnFleshHit = true,
                 .hitLightColor = {1.0f, 0.7f, 0.0f},
                 .hitLightRadius = 300.0f,
                 .hitLightTime = 400,
@@ -161,6 +162,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_ROCKET_LAUNCHER] =
             {
+                .explodeOnFleshHit = true,
                 .hitLightColor = {1.0f, 0.75f, 0.0f},
                 .hitLightRadius = 400.0f,
                 .hitLightTime = 400,
@@ -217,6 +219,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_RAILGUN] =
             {
+                .skipLightningBolt = true,
                 .hitLightColor = {1.0f, 0.5f, 0.0f},
                 .hitLightRadius = 200.0f,
                 .hitLightTime = 200,
@@ -305,6 +308,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
         [WP_PHYSGUN] =
             {
                 .continuousFire = true,
+                .modelColorSource = 1,
                 .hitLightColor = {0.6f, 0.6f, 1.0f},
                 .hitLightRadius = 100.0f,
                 .hitLightTime = 50,
@@ -329,6 +333,8 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
         [WP_GRAVITYGUN] =
             {
                 .continuousFire = true,
+                .modelColorSource = 2,
+                .modelColor = {160.0f / 255.0f, 80.0f / 255.0f, 0.0f},
                 .hitLightColor = {1.0f, 0.5f, 0.0f},
                 .hitLightRadius = 100.0f,
                 .hitLightTime = 50,
@@ -833,13 +839,12 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 
 	if(cent->currentState.weapon <= WP_NONE || cent->currentState.weapon >= WEAPONS_NUM) return;
 
-	// Railgun beams are already drawn by the EV_RAILTRAIL handler. Calling
-	// CG_RailTrail from here too would render every rail shot twice
-	// (one predicted beam + one server-authoritative beam).
-	if(cent->currentState.weapon == WP_RAILGUN) return;
-
 	fx = &jsd_weaponFx[cent->currentState.weapon];
 	if(fx->beamType == 0) return;
+
+	// Beams flagged skipLightningBolt are already drawn by another event
+	// (e.g. EV_RAILTRAIL for the railgun); rendering here would duplicate them.
+	if(fx->skipLightningBolt) return;
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
 
@@ -971,16 +976,15 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 		VectorCopy(parent->lightingOrigin, gun.lightingOrigin);
 		gun.renderfx = parent->renderfx;
 
-		if(weaponNum == WP_PHYSGUN) {
+		if(fx->modelColorSource == 1) {
 			gun.shaderRGBA[0] = ci->physR;
 			gun.shaderRGBA[1] = ci->physG;
 			gun.shaderRGBA[2] = ci->physB;
 			gun.shaderRGBA[3] = 255;
-		}
-		if(weaponNum == WP_GRAVITYGUN) {
-			gun.shaderRGBA[0] = 160;
-			gun.shaderRGBA[1] = 80;
-			gun.shaderRGBA[2] = 0;
+		} else if(fx->modelColorSource == 2) {
+			gun.shaderRGBA[0] = fx->modelColor[0] * 255;
+			gun.shaderRGBA[1] = fx->modelColor[1] * 255;
+			gun.shaderRGBA[2] = fx->modelColor[2] * 255;
 			gun.shaderRGBA[3] = 255;
 		}
 
@@ -1335,12 +1339,12 @@ CG_MissileHitPlayer
 void CG_MissileHitPlayer(int weapon, vec3_t origin, vec3_t dir, int entityNum) {
 	CG_Bleed(origin, entityNum);
 
-	// some weapons will make an explosion with the blood, while
-	// others will just make the blood
-	switch(weapon) {
-		case WP_GRENADE_LAUNCHER:
-		case WP_ROCKET_LAUNCHER: CG_MissileHitWall(weapon, 0, origin, dir, IMPACTSOUND_FLESH); break;
-		default: break;
+	if(weapon > WP_NONE && weapon < WEAPONS_NUM && jsd_weaponFx[weapon].explodeOnFleshHit) {
+		vec4_t bloodColor = {0.75f, 0.0f, 0.0f, 1.0f};
+		vec3_t bloodGravity = {0.0f, 0.0f, -600.0f};
+
+		CG_AddParticles(origin, bloodColor, 32, 300.0f, PF_SMOOTH_FADE | PF_GRAVITY, bloodGravity, "", 5.0f, 0.7f);
+		CG_MissileHitWall(weapon, 0, origin, dir, IMPACTSOUND_FLESH);
 	}
 }
 
@@ -1481,7 +1485,7 @@ void CG_Tracer(vec3_t source, vec3_t dest, int weapon) {
 	if(len < 100) return;
 
 	begin = 50 + random() * (len - 60);
-	end = begin + (fx->tracerLength > 0.0f ? fx->tracerLength : 100.0f);
+	end = begin + (fx->tracerLength > 0.0f ? fx->tracerLength : 300.0f);
 	if(end > len) end = len;
 
 	// Particle tracer: emit a short streak of dots along the ray that fade out.
