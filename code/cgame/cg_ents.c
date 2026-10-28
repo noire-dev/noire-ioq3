@@ -439,13 +439,13 @@ static void CG_Item(centity_t* cent) {
 	// add to refresh list
 	trap_R_AddRefEntityToScene(&ent);
 
-	if(item->giType == IT_WEAPON && wi && wi->barrelModel) {
+	if(item->giType == IT_WEAPON && wi && jsd_weaponFx[item->giTag].barrelModelHandle) {
 		refEntity_t barrel;
 		vec3_t angles;
 
 		memset(&barrel, 0, sizeof(barrel));
 
-		barrel.hModel = wi->barrelModel;
+		barrel.hModel = jsd_weaponFx[item->giTag].barrelModelHandle;
 
 		VectorCopy(ent.lightingOrigin, barrel.lightingOrigin);
 		barrel.renderfx = ent.renderfx;
@@ -473,35 +473,31 @@ CG_Missile
 static void CG_Missile(centity_t* cent) {
 	refEntity_t ent;
 	entityState_t* s1;
-	const weaponInfo_t* weapon;
-	//	int	col;
+	weaponFx_t* fx;
 
 	s1 = &cent->currentState;
 	if(s1->weapon >= WEAPONS_NUM) {
 		s1->weapon = 0;
 	}
-	weapon = &cg_weapons[s1->weapon];
+	fx = &jsd_weaponFx[s1->weapon];
 
 	// calculate the axis
 	VectorCopy(s1->angles, cent->lerpAngles);
 
-	// add trails
-	if(weapon->missileTrailFunc) weapon->missileTrailFunc(cent, weapon);
+	// add trails (no-op if trailCount is 0)
+	CG_MissileTrail(cent);
 
 	// data-driven missile light
-	if(s1->weapon > WP_NONE && s1->weapon < WEAPONS_NUM && jsd_weaponFx[s1->weapon].missileLightRadius > 0.0f) {
-		weaponFx_t* fx = &jsd_weaponFx[s1->weapon];
+	if(fx->missileLightRadius > 0.0f) {
 		trap_R_AddLightToScene(cent->lerpOrigin, fx->missileLightRadius, 1.00f,
 		                       fx->missileLightColor[0], fx->missileLightColor[1], fx->missileLightColor[2], 0);
 	}
 
-	// add missile sound
-	if(weapon->missileSound) {
+	// add missile sound (fully data-driven)
+	if(fx->missileFlySoundHandle) {
 		vec3_t velocity;
-
 		BG_EvaluateTrajectoryDelta(&cent->currentState.pos, cg.time, velocity);
-
-		trap_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, velocity, weapon->missileSound);
+		trap_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, velocity, fx->missileFlySoundHandle);
 	}
 
 	// create the render entity
@@ -509,19 +505,20 @@ static void CG_Missile(centity_t* cent) {
 	VectorCopy(cent->lerpOrigin, ent.origin);
 	VectorCopy(cent->lerpOrigin, ent.oldorigin);
 
-	if(cent->currentState.weapon == WP_PLASMAGUN) {
+	// data-driven missile sprite takes precedence when set
+	if(fx->missileSpriteHandle) {
 		ent.reType = RT_SPRITE;
 		ent.radius = 16;
 		ent.rotation = 0;
-		ent.customShader = cgs.media.plasmaBallShader;
+		ent.customShader = fx->missileSpriteHandle;
 		trap_R_AddRefEntityToScene(&ent);
 		return;
 	}
 
 	// flicker between two skins
 	ent.skinNum = cg.clientFrame & 1;
-	ent.hModel = weapon->missileModel;
-	ent.renderfx = weapon->missileRenderfx;
+	ent.hModel = fx->missileModelHandle;
+	ent.renderfx = fx->missileRenderfx;
 
 	// convert direction of travel into axis
 	if(VectorNormalize2(s1->pos.trDelta, ent.axis[0]) == 0) {

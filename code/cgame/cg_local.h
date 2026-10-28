@@ -172,8 +172,8 @@ typedef struct {
 	bool barrelSpinning;
 
 	// Data-driven fire FX state
-	bool fireFxPending;      // set by CG_FireWeapon, consumed in CG_AddPlayerWeapon (burst weapons)
-	int lastFireFxTime;      // throttle for continuous fire FX
+	bool fireFxPending;  // set by CG_FireWeapon, consumed in CG_AddPlayerWeapon (burst weapons)
+	int lastFireFxTime;  // throttle for continuous fire FX
 } playerEntity_t;
 
 // Notifications
@@ -362,43 +362,14 @@ typedef struct {
 	sfxHandle_t sounds[MAX_CUSTOM_SOUNDS];
 } clientInfo_t;
 
-// each WP_* weapon enum has an associated weaponInfo_t
-// that contains media references necessary to present the
-// weapon and its effects
+// Minimal runtime cache for a weapon. All presentational data now lives in
+// jsd_weaponFx (see cg_local.h) so weapons can be fully described by the data
+// table alone (JS migration target).
 typedef struct weaponInfo_s {
-	bool registered;
 	item_t* item;
-
-	qhandle_t handsModel;  // the hands don't actually draw, they just position the weapon
 	qhandle_t weaponModel;
-	qhandle_t barrelModel;
-	qhandle_t flashModel;
-
-	vec3_t weaponMidpoint;  // so it will rotate centered instead of by tag
-
-	float flashDlight;
-	vec3_t flashDlightColor;
-	sfxHandle_t flashSound[4];  // fast firing weapons randomly choose
-
 	qhandle_t weaponIcon;
-	qhandle_t ammoIcon;
-
-	qhandle_t ammoModel;
-
-	qhandle_t missileModel;
-	sfxHandle_t missileSound;
-	void (*missileTrailFunc)(centity_t*, const struct weaponInfo_s* wi);
-	float missileDlight;
-	vec3_t missileDlightColor;
-	int missileRenderfx;
-
-	void (*ejectBrassFunc)(centity_t*);
-
-	float trailRadius;
-	float wiTrailTime;
-
-	sfxHandle_t readySound;
-	sfxHandle_t firingSound;
+	vec3_t weaponMidpoint;
 } weaponInfo_t;
 
 // each IT_* item has an associated itemInfo_t
@@ -637,14 +608,6 @@ typedef struct {
 
 	qhandle_t smoke2;
 
-	qhandle_t machinegunBrassModel;
-	qhandle_t shotgunBrassModel;
-
-	qhandle_t railRingsShader;
-	qhandle_t railCoreShader;
-
-	qhandle_t lightningShader;
-
 	qhandle_t friendShader;
 
 	qhandle_t balloonShader;
@@ -659,8 +622,6 @@ typedef struct {
 
 	qhandle_t smokePuffShader;
 	qhandle_t smokePuffRageProShader;
-	qhandle_t shotgunSmokePuffShader;
-	qhandle_t plasmaBallShader;
 	qhandle_t waterBubbleShader;
 	qhandle_t bloodTrailShader;
 
@@ -676,19 +637,7 @@ typedef struct {
 	qhandle_t holeMarkShader;
 	qhandle_t energyMarkShader;
 
-	// weapon effect models
-	qhandle_t bulletFlashModel;
-	qhandle_t ringFlashModel;
-	qhandle_t dishFlashModel;
-	qhandle_t lightningExplosionModel;
-
-	// weapon effect shaders
-	qhandle_t railExplosionShader;
-	qhandle_t plasmaExplosionShader;
-	qhandle_t bulletExplosionShader;
-	qhandle_t rocketExplosionShader;
-	qhandle_t grenadeExplosionShader;
-	qhandle_t bfgExplosionShader;
+	// weapon effect shaders (non-weapon-specific)
 	qhandle_t bloodExplosionShader;
 
 	// special effects models
@@ -703,20 +652,10 @@ typedef struct {
 	sfxHandle_t undoSound;
 
 	// sounds
-	sfxHandle_t tracerSound;
 	sfxHandle_t selectSound;
 	sfxHandle_t useNothingSound;
 	sfxHandle_t wearOffSound;
 	sfxHandle_t footsteps[FOOTSTEP_TOTAL][4];
-	sfxHandle_t sfx_lghit1;
-	sfxHandle_t sfx_lghit2;
-	sfxHandle_t sfx_lghit3;
-	sfxHandle_t sfx_ric1;
-	sfxHandle_t sfx_ric2;
-	sfxHandle_t sfx_ric3;
-	// sfxHandle_t	sfx_railg;
-	sfxHandle_t sfx_rockexp;
-	sfxHandle_t sfx_plasmaexp;
 	sfxHandle_t gibSound;
 	sfxHandle_t gibBounce1Sound;
 	sfxHandle_t gibBounce2Sound;
@@ -881,10 +820,13 @@ typedef struct {
 	float hitParticleSpeed;
 	int hitParticleFlags;
 	float hitParticleGravity[3];
+	float hitParticleSize;
+	float hitParticleLifetime;
 	const char* hitParticleShader;
 
 	// Fire (muzzle) effects
-	bool continuousFire;     // true: hold-to-fire (physgun / gravitygun / lightning / gauntlet), false: per-shot
+	bool continuousFire;
+	bool suppressRepeatFire;  // don't replay fire sound/fx on repeated EV_FIRE_WEAPON while already firing
 	float fireLightColor[3];
 	float fireLightRadius;
 	int fireLightTime;
@@ -893,6 +835,8 @@ typedef struct {
 	float fireParticleSpeed;
 	int fireParticleFlags;
 	float fireParticleGravity[3];
+	float fireParticleSize;
+	float fireParticleLifetime;
 	const char* fireParticleShader;
 
 	// Missile trail
@@ -901,6 +845,8 @@ typedef struct {
 	float trailSpeed;
 	int trailFlags;
 	float trailGravity[3];
+	float trailSize;
+	float trailLifetime;
 	const char* trailShader;
 	int trailInterval;
 
@@ -910,23 +856,84 @@ typedef struct {
 
 	// Hitscan tracer (particle based)
 	float tracerChance;
-	float tracerLength;                    // legacy, unused with particle tracers
-	float tracerWidth;                     // legacy, unused with particle tracers
-	const char* tracerShader;
+	float tracerLength;
+	float tracerWidth;
+	const char* tracerParticleShader;
 	float tracerParticleColor[4];
 	int tracerParticleCount;
 	float tracerParticleSpeed;
+	int tracerParticleFlags;
+	float tracerParticleGravity[3];
+	float tracerParticleSize;
+	float tracerParticleLifetime;
+	const char* tracerSound;
 
 	// Beam (rail / lightning)
 	int beamType;  // 0=none, RT_LIGHTNING, RT_RAIL_CORE
 	const char* beamShader;
+	float beamColor[4];
+	bool beamColorizeByClient;
+	float beamStartOffset[3];
+	float beamEndOffset[3];
 
-	// Runtime-registered shader handles
+	// Sounds
+	const char* readySound;
+	const char* fireSound[4];
+	const char* continuousFireSound;
+	const char* missileFlySound;
+	const char* missileBounceSound;
+	const char* missileExplodeSound;
+
+	// Missile visual
+	const char* missileModel;
+	const char* missileSprite;
+	int missileRenderfx;
+
+	// Weapon visual model overrides (NULL = derive from item->model)
+	const char* flashModel;
+	const char* barrelModel;
+	const char* handsModel;
+
+	// Muzzle smoke (shotgun etc.)
+	const char* muzzleSmokeShader;
+
+	// Brass (shells)
+	const char* brassModel;
+	int brassCount;
+	float brassOffset[3];
+	float brassVelocity[3];
+	float brassVelocitySpread[3];
+	float brassBounceFactor;
+	int brassLifetimeMult;
+	float brassSpinDelta[3];
+
+	// Barrel spin (minigun)
+	bool barrelSpins;
+	float barrelSpinSpeed;
+	int barrelCoastTime;
+
+	// Runtime-registered handles (populated by CG_RegisterWeapon)
 	qhandle_t hitParticleHandle;
 	qhandle_t fireParticleHandle;
 	qhandle_t trailHandle;
 	qhandle_t tracerHandle;
 	qhandle_t beamHandle;
+	qhandle_t muzzleSmokeHandle;
+	qhandle_t missileModelHandle;
+	qhandle_t missileSpriteHandle;
+	qhandle_t flashModelHandle;
+	qhandle_t barrelModelHandle;
+	qhandle_t handsModelHandle;
+	qhandle_t brassModelHandle;
+	sfxHandle_t readySoundHandle;
+	sfxHandle_t fireSoundHandle[4];
+	sfxHandle_t continuousFireSoundHandle;
+	sfxHandle_t missileFlySoundHandle;
+	sfxHandle_t missileBounceSoundHandle;
+	sfxHandle_t missileExplodeSoundHandle;
+	sfxHandle_t tracerSoundHandle;
+
+	bool registered;
 } weaponFx_t;
 
 extern weaponFx_t jsd_weaponFx[WEAPONS_NUM];
@@ -1098,6 +1105,7 @@ void CG_ShotgunFire(entityState_t* es, int weapon);
 void CG_Bullet(vec3_t origin, int sourceEntityNum, vec3_t normal, bool flesh, int fleshEntityNum, int weapon);
 
 void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon);
+void CG_MissileTrail(centity_t* ent);
 void CG_AddViewWeapon(playerState_t* ps);
 void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent, clientInfo_t* ci);
 
@@ -1113,8 +1121,8 @@ void CG_ImpactMark(qhandle_t markShader, const vec3_t origin, const vec3_t dir, 
 #define PF_GRAVITY 0x02      // ГРАВИТАЦИЯ: применять вектор ускорения
 
 void CG_ClearParticles(void);
-void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader);
-void CG_AddParticlesEx(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader, float lifetime);
+void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader, float size, float lifetime);
+void CG_AddParticlesEx(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader, float lifetime, float size);
 void CG_RenderParticles(void);
 
 //
