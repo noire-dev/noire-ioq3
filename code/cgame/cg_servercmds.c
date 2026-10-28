@@ -419,6 +419,12 @@ static void CG_ServerCommand(void) {
 		return;
 	}
 
+	if(!strcmp(cmd, "pg")) {
+		// Noire's Mod: server tells us which entity the physgun is holding
+		cg.grabbedEntityNum = atoi(CG_Argv(1));
+		return;
+	}
+
 	if(!strcmp(cmd, "map_restart")) {
 		CG_MapRestart();
 		return;

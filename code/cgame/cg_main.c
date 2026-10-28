@@ -771,6 +771,9 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 
 	cg.weaponSelect = WP_MACHINEGUN;
 
+	// Noire's Mod: no physgun grab yet
+	cg.grabbedEntityNum = -1;
+
 	cgs.redflag = cgs.blueflag = -1;  // For compatibily, default to unset for
 	cgs.flagStatus = -1;
 	// old servers

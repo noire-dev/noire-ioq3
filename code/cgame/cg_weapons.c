@@ -193,6 +193,8 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_LIGHTNING] =
             {
+                .isBeam = true,
+                .beamColor = {1.0f, 1.0f, 1.0f, 1.0f},
                 .continuousFire = true,
                 .suppressRepeatFire = true,
                 .hitLightColor = {0.6f, 0.6f, 1.0f},
@@ -211,7 +213,6 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireParticleSpeed = 80.0f,
                 .fireParticleFlags = PF_SMOOTH_FADE,
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .beamType = RT_LIGHTNING,
                 .beamShader = "lightningBoltNew",
                 .readySound = "sound/weapons/melee/fsthum.wav",
                 .fireSound = {"sound/weapons/lightning/lg_fire.wav"},
@@ -236,7 +237,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireParticleSpeed = 100.0f,
                 .fireParticleFlags = PF_SMOOTH_FADE,
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .beamType = RT_RAIL_CORE,
+                .isBeam = true,
                 .beamShader = "railCore",
                 .beamColor = {0.0f, 1.0f, 0.0f, 1.0f},
                 .beamStartOffset = {0.0f, 0.0f, -12.0f},
@@ -325,7 +326,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireParticleSpeed = 60.0f,
                 .fireParticleFlags = PF_SMOOTH_FADE,
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .beamType = RT_RAIL_CORE,
+                .isBeam = true,
                 .beamShader = "gfx/beams/core",
                 .beamColorizeByClient = true,
                 .fireSound = {"sound/misc/silence.wav"},
@@ -351,7 +352,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireParticleSpeed = 60.0f,
                 .fireParticleFlags = PF_SMOOTH_FADE,
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .beamType = RT_RAIL_CORE,
+                .isBeam = true,
                 .beamShader = "gfx/beams/core",
                 .beamColor = {120.0f / 255.0f, 60.0f / 255.0f, 0.0f, 1.0f},
                 .fireSound = {"sound/misc/silence.wav"},
@@ -374,7 +375,8 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireParticleSpeed = 60.0f,
                 .fireParticleFlags = PF_SMOOTH_FADE,
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .beamType = RT_LIGHTNING,
+                .isBeam = true,
+                .beamColor = {1.0f, 1.0f, 1.0f, 1.0f},
                 .beamShader = "lightningBoltNew",
                 .fireSound = {"sound/weapons/toolgun/fire1.wav", "sound/weapons/toolgun/fire2.wav"},
             },
@@ -504,17 +506,102 @@ static void CG_EjectBrass(centity_t* cent) {
 	}
 }
 
+// Noire's Mod: "rubbery tension" state for the physgun beam.
+// We track camera angular velocity and integrate a damped spring so the beam
+// bows like an elastic band under load, then wobbles back to perfectly straight
+// once the player stops turning. No constant sag.
+static float physBeamPrevYaw = 0.0f;
+static float physBeamPrevPitch = 0.0f;
+static float physBeamYawVel = 0.0f;
+static float physBeamPitchVel = 0.0f;
+static int physBeamLastTime = 0;
+
+// View-space bow offset (right/up components) and its spring velocity.
+static float physBeamBendRight = 0.0f;
+static float physBeamBendUp = 0.0f;
+static float physBeamBendRightVel = 0.0f;
+static float physBeamBendUpVel = 0.0f;
+
+// Noire's Mod: uniform beam rendering helper. Emits one poly quad (1 sector)
+// with a caller-selected shader, billboarded perpendicular to the beam axis in
+// view space.
+//
+// UV convention matches the physgun whip strip: U runs along the beam length
+// (0..1), V runs across the beam width (0..1). Per-weapon textures authored
+// rotated 90 degrees work with this layout.
+#define BEAM_HALFWIDTH 2.0f
+
+void CG_EmitBeamPoly(qhandle_t shader, const vec3_t start, const vec3_t end, float halfWidth, const vec4_t color) {
+	vec3_t dir, viewDir, side;
+	polyVert_t verts[4];
+	byte mod[4];
+	int i;
+
+	if(!shader) return;
+
+	mod[0] = (byte)(color[0] * 255);
+	mod[1] = (byte)(color[1] * 255);
+	mod[2] = (byte)(color[2] * 255);
+	mod[3] = (byte)(color[3] * 255);
+
+	VectorSubtract(end, start, dir);
+	if(VectorNormalize(dir) == 0) return;
+	VectorSubtract(start, cg.refdef.vieworg, viewDir);
+	VectorNormalize(viewDir);
+	CrossProduct(dir, viewDir, side);
+	if(VectorLengthSquared(side) < 1e-6f) {
+		// Beam axis points straight at the camera: use view right so the quad
+		// stays visible and doesn't collapse to zero width.
+		VectorCopy(cg.refdef.viewaxis[1], side);
+	}
+	VectorNormalize(side);
+	VectorScale(side, halfWidth, side);
+
+	verts[0].xyz[0] = start[0] - side[0];
+	verts[0].xyz[1] = start[1] - side[1];
+	verts[0].xyz[2] = start[2] - side[2];
+	verts[0].st[0] = 0.0f;
+	verts[0].st[1] = 0.0f;
+
+	verts[1].xyz[0] = start[0] + side[0];
+	verts[1].xyz[1] = start[1] + side[1];
+	verts[1].xyz[2] = start[2] + side[2];
+	verts[1].st[0] = 0.0f;
+	verts[1].st[1] = 1.0f;
+
+	verts[2].xyz[0] = end[0] + side[0];
+	verts[2].xyz[1] = end[1] + side[1];
+	verts[2].xyz[2] = end[2] + side[2];
+	verts[2].st[0] = 1.0f;
+	verts[2].st[1] = 1.0f;
+
+	verts[3].xyz[0] = end[0] - side[0];
+	verts[3].xyz[1] = end[1] - side[1];
+	verts[3].xyz[2] = end[2] - side[2];
+	verts[3].st[0] = 1.0f;
+	verts[3].st[1] = 0.0f;
+
+	for(i = 0; i < 4; i++) {
+		verts[i].modulate[0] = mod[0];
+		verts[i].modulate[1] = mod[1];
+		verts[i].modulate[2] = mod[2];
+		verts[i].modulate[3] = mod[3];
+	}
+
+	trap_R_AddPolysToScene(shader, 4, verts, 1);
+}
+
 void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 	weaponFx_t* fx;
-	refEntity_t direct;
 	localEntity_t* le;
 	refEntity_t* re;
 	vec3_t s, e;
+	bool physgunActive;
 	int i;
 
 	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
 	fx = &jsd_weaponFx[weapon];
-	if(fx->beamType != RT_RAIL_CORE) return;
+	if(!fx->isBeam) return;
 
 	VectorCopy(start, s);
 	VectorCopy(end, e);
@@ -524,69 +611,275 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 		e[i] += fx->beamEndOffset[i];
 	}
 
-	// Continuous beam weapons (physgun, gravitygun) re-trace every frame while
-	// fire is held. Render directly to the scene: exactly one beam per frame.
-	if(fx->continuousFire) {
-		memset(&direct, 0, sizeof(direct));
-		direct.reType = RT_RAIL_CORE;
-		direct.customShader = fx->beamHandle;
-		VectorCopy(s, direct.origin);
-		VectorCopy(e, direct.oldorigin);
-		AxisClear(direct.axis);
+	physgunActive = (fx->continuousFire && weapon == WP_PHYSGUN && cg.grabbedEntityNum > 0 && cg.grabbedEntityNum < MAX_GENTITIES);
 
-		if(fx->beamColorizeByClient && ci) {
-			direct.shaderRGBA[0] = ci->physR;
-			direct.shaderRGBA[1] = ci->physG;
-			direct.shaderRGBA[2] = ci->physB;
-			direct.shaderRGBA[3] = 255;
-		} else {
-			direct.shaderRGBA[0] = fx->beamColor[0] * 255;
-			direct.shaderRGBA[1] = fx->beamColor[1] * 255;
-			direct.shaderRGBA[2] = fx->beamColor[2] * 255;
-			direct.shaderRGBA[3] = fx->beamColor[3] * 255;
+	// No active grab -> no tension. Wipe spring state so the next grab starts
+	// perfectly straight instead of inheriting stale bend.
+	if(!physgunActive) {
+		physBeamPrevYaw = cg.refdefViewAngles[YAW];
+		physBeamPrevPitch = cg.refdefViewAngles[PITCH];
+		physBeamYawVel = 0.0f;
+		physBeamPitchVel = 0.0f;
+		physBeamBendRight = 0.0f;
+		physBeamBendUp = 0.0f;
+		physBeamBendRightVel = 0.0f;
+		physBeamBendUpVel = 0.0f;
+		physBeamLastTime = 0;
+	}
+
+	// Noire's Mod: physgun beam bends (32 sectors) toward the grabbed entity,
+	// because the grabbed prop is server-authoritative and client traces miss it.
+	if(physgunActive) {
+		centity_t* grabCent = &cg_entities[cg.grabbedEntityNum];
+		vec3_t grabOrigin;
+		vec3_t viewRight, viewUp, dummyForward;
+		vec4_t beamColor;
+		byte modulate[4];
+		float bendRight, bendUp;
+		float frameDt;
+		int seg, i;
+#define PHY_BEAM_SEGMENTS 32
+#define PHY_BEAM_BEND_SCALE 0.16f
+#define PHY_BEAM_BEND_MAXVEL 600.0f
+#define PHY_BEAM_STIFFNESS 55.0f
+#define PHY_BEAM_DAMPING 11.0f
+#define PHY_BEAM_HALFWIDTH 2.0f
+		vec3_t points[PHY_BEAM_SEGMENTS + 1];
+		vec3_t sides[PHY_BEAM_SEGMENTS + 1];
+		static polyVert_t stripVerts[PHY_BEAM_SEGMENTS * 4];
+
+		// Endpoint is the grab point on the prop, not its center. angles2
+		// stores the local offset; rotate it into world space with the
+		// entity's interpolated angles so it follows the prop's rotation.
+		{
+			vec3_t localOff, grabAxis[3];
+			int gi;
+			VectorCopy(grabCent->currentState.angles2, localOff);
+			AnglesToAxis(grabCent->lerpAngles, grabAxis);
+			for(gi = 0; gi < 3; gi++) {
+				grabOrigin[gi] = grabCent->lerpOrigin[gi]
+					+ localOff[0] * grabAxis[0][gi]
+					+ localOff[1] * grabAxis[1][gi]
+					+ localOff[2] * grabAxis[2][gi];
+			}
 		}
 
-		trap_R_AddRefEntityToScene(&direct);
+		frameDt = (float)cg.frametime * 0.001f;
+		if(frameDt <= 0.0f || frameDt > 0.1f) frameDt = 1.0f / 60.0f;
+
+		// --- Camera angular velocity tracking ---
+		{
+			float camYaw = cg.refdefViewAngles[YAW];
+			float camPitch = cg.refdefViewAngles[PITCH];
+			float rawYawVel = 0.0f, rawPitchVel = 0.0f;
+
+			if(physBeamLastTime > 0) {
+				int nowDt = cg.time - physBeamLastTime;
+				if(nowDt > 0 && nowDt < 200) {
+					float yawDelta = camYaw - physBeamPrevYaw;
+					float pitchDelta = camPitch - physBeamPrevPitch;
+					while(yawDelta > 180.0f) yawDelta -= 360.0f;
+					while(yawDelta < -180.0f) yawDelta += 360.0f;
+					while(pitchDelta > 180.0f) pitchDelta -= 360.0f;
+					while(pitchDelta < -180.0f) pitchDelta += 360.0f;
+					rawYawVel = yawDelta * 1000.0f / (float)nowDt;
+					rawPitchVel = pitchDelta * 1000.0f / (float)nowDt;
+				}
+			}
+
+			// Low-pass filter so mouse jitter doesn't jolt the beam.
+			physBeamYawVel += (rawYawVel - physBeamYawVel) * 0.35f;
+			physBeamPitchVel += (rawPitchVel - physBeamPitchVel) * 0.35f;
+
+			physBeamPrevYaw = camYaw;
+			physBeamPrevPitch = camPitch;
+			physBeamLastTime = cg.time;
+
+			if(physBeamYawVel > PHY_BEAM_BEND_MAXVEL) physBeamYawVel = PHY_BEAM_BEND_MAXVEL;
+			if(physBeamYawVel < -PHY_BEAM_BEND_MAXVEL) physBeamYawVel = -PHY_BEAM_BEND_MAXVEL;
+			if(physBeamPitchVel > PHY_BEAM_BEND_MAXVEL) physBeamPitchVel = PHY_BEAM_BEND_MAXVEL;
+			if(physBeamPitchVel < -PHY_BEAM_BEND_MAXVEL) physBeamPitchVel = -PHY_BEAM_BEND_MAXVEL;
+		}
+
+		// --- Damped spring: rubbery lag, opposite sign to camera turn ---
+		// Heavy prop drags on the beam. When the player turns, the beam's mid
+		// bows against the turn (the tension in the other direction), the
+		// spring overshoots, wobbles, then settles back to a straight line.
+		{
+			float targetRight = -physBeamYawVel * PHY_BEAM_BEND_SCALE;
+			float targetUp = -physBeamPitchVel * PHY_BEAM_BEND_SCALE;
+
+			physBeamBendRightVel += (targetRight - physBeamBendRight) * PHY_BEAM_STIFFNESS * frameDt;
+			physBeamBendRightVel -= physBeamBendRightVel * PHY_BEAM_DAMPING * frameDt;
+			physBeamBendRight += physBeamBendRightVel * frameDt;
+
+			physBeamBendUpVel += (targetUp - physBeamBendUp) * PHY_BEAM_STIFFNESS * frameDt;
+			physBeamBendUpVel -= physBeamBendUpVel * PHY_BEAM_DAMPING * frameDt;
+			physBeamBendUp += physBeamBendUpVel * frameDt;
+		}
+
+		bendRight = physBeamBendRight;
+		bendUp = physBeamBendUp;
+
+		AngleVectors(cg.refdefViewAngles, dummyForward, viewRight, viewUp);
+
+		if(fx->beamColorizeByClient && ci) {
+			beamColor[0] = ci->physR / 255.0f;
+			beamColor[1] = ci->physG / 255.0f;
+			beamColor[2] = ci->physB / 255.0f;
+			beamColor[3] = 1.0f;
+		} else {
+			Vector4Copy(fx->beamColor, beamColor);
+		}
+		modulate[0] = (byte)(beamColor[0] * 255);
+		modulate[1] = (byte)(beamColor[1] * 255);
+		modulate[2] = (byte)(beamColor[2] * 255);
+		modulate[3] = (byte)(beamColor[3] * 255);
+
+		// Noire's Mod: render the physgun beam as a single continuous mesh
+		// (trap_R_AddPolysToScene).
+		// Per-segment billboards produced two artifacts:
+		//   1. Each segment's cross-section was oriented by its own local
+		//      tangent, so segment joins had tiny geometric gaps/overlaps.
+		//   2. Every segment restarted UV V at 0..1, so a length-wise
+		//      textured shader showed a stripe at every join.
+		// Both are fixed by (a) sharing a per-vertex screen-space side
+		// vector between adjacent quads (boundary vertices become bit-
+		// identical, gap = 0) and (b) using a single continuous V across
+		// the whole beam.
+
+		// 1. Sample curve points. Straight line from muzzle to grab origin,
+		//    plus the spring-driven lateral bow in view space.
+		for(seg = 0; seg <= PHY_BEAM_SEGMENTS; seg++) {
+			float t = (float)seg / (float)PHY_BEAM_SEGMENTS;
+			float profile = sin(t * M_PI);
+			points[seg][0] = s[0] + (grabOrigin[0] - s[0]) * t;
+			points[seg][1] = s[1] + (grabOrigin[1] - s[1]) * t;
+			points[seg][2] = s[2] + (grabOrigin[2] - s[2]) * t;
+			points[seg][0] += (viewRight[0] * bendRight + viewUp[0] * bendUp) * profile;
+			points[seg][1] += (viewRight[1] * bendRight + viewUp[1] * bendUp) * profile;
+			points[seg][2] += (viewRight[2] * bendRight + viewUp[2] * bendUp) * profile;
+		}
+
+		// 2. Compute per-vertex screen-space side vectors. Central-difference
+		//    tangent, then billboard perpendicular = normalize(cross(T, viewDir)).
+		//    Adjacent quads share these side vectors, so their boundary verts
+		//    match exactly and the seam is mathematically zero.
+		for(seg = 0; seg <= PHY_BEAM_SEGMENTS; seg++) {
+			vec3_t tangent, viewDir;
+			if(seg == 0) {
+				VectorSubtract(points[1], points[0], tangent);
+			} else if(seg == PHY_BEAM_SEGMENTS) {
+				VectorSubtract(points[seg], points[seg - 1], tangent);
+			} else {
+				VectorSubtract(points[seg + 1], points[seg - 1], tangent);
+			}
+			VectorSubtract(points[seg], cg.refdef.vieworg, viewDir);
+			VectorNormalize(tangent);
+			VectorNormalize(viewDir);
+			CrossProduct(tangent, viewDir, sides[seg]);
+			if(VectorLengthSquared(sides[seg]) < 1e-6f) {
+				// Degenerate tangent (view looking straight along the beam
+				// axis): fall back to view-right so the quad stays on-screen.
+				VectorCopy(viewRight, sides[seg]);
+			}
+			VectorNormalize(sides[seg]);
+			VectorScale(sides[seg], PHY_BEAM_HALFWIDTH, sides[seg]);
+		}
+
+		// 3. Emit one quad per segment. V spans [seg/N .. (seg+1)/N] over
+		//    the full beam (continuous, no resets). Winding TL->TR->BR->BL
+		//    matches cg_particles.c; the beam shader has cull none so front/
+		//    back orientation is irrelevant.
+		// Noire's Mod: texture asset was authored rotated 90 degrees, so the
+		// beam-length axis of the strip maps to texture U and the beam-width
+		// axis maps to texture V. (Swap of the previous mapping.)
+		for(seg = 0; seg < PHY_BEAM_SEGMENTS; seg++) {
+			float v0 = (float)seg / (float)PHY_BEAM_SEGMENTS;
+			float v1 = (float)(seg + 1) / (float)PHY_BEAM_SEGMENTS;
+			polyVert_t* q = &stripVerts[seg * 4];
+
+			q[0].xyz[0] = points[seg][0] - sides[seg][0];
+			q[0].xyz[1] = points[seg][1] - sides[seg][1];
+			q[0].xyz[2] = points[seg][2] - sides[seg][2];
+			q[0].st[0] = v0;
+			q[0].st[1] = 0.0f;
+
+			q[1].xyz[0] = points[seg][0] + sides[seg][0];
+			q[1].xyz[1] = points[seg][1] + sides[seg][1];
+			q[1].xyz[2] = points[seg][2] + sides[seg][2];
+			q[1].st[0] = v0;
+			q[1].st[1] = 1.0f;
+
+			q[2].xyz[0] = points[seg + 1][0] + sides[seg + 1][0];
+			q[2].xyz[1] = points[seg + 1][1] + sides[seg + 1][1];
+			q[2].xyz[2] = points[seg + 1][2] + sides[seg + 1][2];
+			q[2].st[0] = v1;
+			q[2].st[1] = 1.0f;
+
+			q[3].xyz[0] = points[seg + 1][0] - sides[seg + 1][0];
+			q[3].xyz[1] = points[seg + 1][1] - sides[seg + 1][1];
+			q[3].xyz[2] = points[seg + 1][2] - sides[seg + 1][2];
+			q[3].st[0] = v1;
+			q[3].st[1] = 0.0f;
+
+			for(i = 0; i < 4; i++) {
+				q[i].modulate[0] = modulate[0];
+				q[i].modulate[1] = modulate[1];
+				q[i].modulate[2] = modulate[2];
+				q[i].modulate[3] = modulate[3];
+			}
+		}
+
+		// One batched call instead of 32 individual AddRefEntityToScene calls.
+		trap_R_AddPolysToScene(fx->beamHandle, 4, stripVerts, PHY_BEAM_SEGMENTS);
 		return;
 	}
 
-	// Per-shot beams (railgun): use a fading local entity so the trail lingers.
+	// Continuous beam weapons (physgun, gravitygun, lightning): one poly quad
+	// per frame, no fading. Uniform AddPolysToScene path.
+	if(fx->continuousFire) {
+		vec4_t localColor;
+
+		if(fx->beamColorizeByClient && ci) {
+			localColor[0] = ci->physR / 255.0f;
+			localColor[1] = ci->physG / 255.0f;
+			localColor[2] = ci->physB / 255.0f;
+			localColor[3] = 1.0f;
+		} else {
+			Vector4Copy(fx->beamColor, localColor);
+		}
+
+		CG_EmitBeamPoly(fx->beamHandle, s, e, BEAM_HALFWIDTH, localColor);
+		return;
+	}
+
+	// Per-shot beams (railgun, toolgun): fading trail via LE_FADE_RGB.
+	// CG_AddFadeRGB in cg_localents.c detects beam local entities by
+	// (hModel == 0 && customShader != 0 && radius > 0) and emits a poly quad
+	// via CG_EmitBeamPoly. Fade is driven by le->color
+	// scaled by le->lifeRate over le->endTime.
 	le = CG_AllocLocalEntity();
 	re = &le->refEntity;
 
 	le->leType = LE_FADE_RGB;
 	le->startTime = cg.time;
 	le->endTime = cg.time + 400;
-	re->shaderTime = cg.time / 1000.0f;
 	le->lifeRate = 1.0f / (le->endTime - le->startTime);
-
-	re->reType = RT_RAIL_CORE;
-	re->customShader = fx->beamHandle;
+	le->radius = BEAM_HALFWIDTH;
 
 	VectorCopy(s, re->origin);
 	VectorCopy(e, re->oldorigin);
+	re->customShader = fx->beamHandle;
 
 	if(fx->beamColorizeByClient && ci) {
-		re->shaderRGBA[0] = ci->physR;
-		re->shaderRGBA[1] = ci->physG;
-		re->shaderRGBA[2] = ci->physB;
-		re->shaderRGBA[3] = 255;
 		le->color[0] = ci->physR / 255.0f;
 		le->color[1] = ci->physG / 255.0f;
 		le->color[2] = ci->physB / 255.0f;
 		le->color[3] = 1.0f;
 	} else {
-		re->shaderRGBA[0] = fx->beamColor[0] * 255;
-		re->shaderRGBA[1] = fx->beamColor[1] * 255;
-		re->shaderRGBA[2] = fx->beamColor[2] * 255;
-		re->shaderRGBA[3] = fx->beamColor[3] * 255;
-		le->color[0] = fx->beamColor[0];
-		le->color[1] = fx->beamColor[1];
-		le->color[2] = fx->beamColor[2];
-		le->color[3] = fx->beamColor[3];
+		Vector4Copy(fx->beamColor, le->color);
 	}
-
-	AxisClear(re->axis);
 }
 
 /*
@@ -830,7 +1123,6 @@ angle)
 */
 static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 	trace_t trace;
-	refEntity_t beam;
 	vec3_t forward;
 	vec3_t muzzlePoint, endPoint;
 	int anim;
@@ -840,15 +1132,13 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 	if(cent->currentState.weapon <= WP_NONE || cent->currentState.weapon >= WEAPONS_NUM) return;
 
 	fx = &jsd_weaponFx[cent->currentState.weapon];
-	if(fx->beamType == 0) return;
+	if(!fx->isBeam) return;
 
 	// Beams flagged skipLightningBolt are already drawn by another event
 	// (e.g. EV_RAILTRAIL for the railgun); rendering here would duplicate them.
 	if(fx->skipLightningBolt) return;
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
-
-	memset(&beam, 0, sizeof(beam));
 
 	// CPMA "true" lightning
 	if((cent->currentState.number == cg.predictedPlayerState.clientNum) && (cg_trueLightning.value != 0)) {
@@ -884,27 +1174,13 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 
 	CG_Trace(&trace, muzzlePoint, vec3_origin, vec3_origin, endPoint, cent->currentState.number, MASK_SHOT);
 
-	VectorCopy(trace.endpos, beam.oldorigin);
-	VectorCopy(origin, beam.origin);
-
-	if(fx->beamType == RT_RAIL_CORE) {
-		CG_RailTrail(ci, origin, trace.endpos, cent->currentState.weapon);
-		if(trace.fraction < 1.0f) {
-			vec3_t invDir;
-			VectorNegate(trace.plane.normal, invDir);
-			CG_EmitWeaponHitFx(cent->currentState.weapon, trace.endpos, invDir);
-		}
-		return;
-	}
-
-	// Lightning-style beam
-	beam.reType = RT_LIGHTNING;
-	beam.customShader = fx->beamHandle;
-	trap_R_AddRefEntityToScene(&beam);
+	// Noire's Mod: route all beam weapons through CG_RailTrail for a single
+	// uniform AddPolysToScene emission path.
+	CG_RailTrail(ci, origin, trace.endpos, cent->currentState.weapon);
 
 	if(trace.fraction < 1.0f) {
 		vec3_t dir;
-		VectorSubtract(beam.oldorigin, beam.origin, dir);
+		VectorSubtract(trace.endpos, origin, dir);
 		VectorNormalize(dir);
 		CG_EmitWeaponHitFx(cent->currentState.weapon, trace.endpos, dir);
 	}
@@ -1337,8 +1613,6 @@ CG_MissileHitPlayer
 =================
 */
 void CG_MissileHitPlayer(int weapon, vec3_t origin, vec3_t dir, int entityNum) {
-	CG_Bleed(origin, entityNum);
-
 	if(weapon > WP_NONE && weapon < WEAPONS_NUM && jsd_weaponFx[weapon].explodeOnFleshHit) {
 		vec4_t bloodColor = {0.75f, 0.0f, 0.0f, 1.0f};
 		vec3_t bloodGravity = {0.0f, 0.0f, -600.0f};
@@ -1590,7 +1864,7 @@ void CG_Bullet(vec3_t end, int sourceEntityNum, vec3_t normal, bool flesh, int f
 
 	// impact splash
 	if(flesh)
-		CG_Bleed(end, fleshEntityNum);
+		CG_MissileHitPlayer(weapon, end, normal, fleshEntityNum);
 	else
 		CG_MissileHitWall(weapon, 0, end, normal, IMPACTSOUND_DEFAULT);
 }

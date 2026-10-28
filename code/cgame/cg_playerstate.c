@@ -135,6 +135,9 @@ void CG_Respawn(void) {
 	// no error decay on player movement
 	cg.thisFrameTeleport = true;
 
+	// Noire's Mod: clear physgun grab state on respawn
+	cg.grabbedEntityNum = -1;
+
 	for(i = 1; i < WEAPONS_NUM; i++) cg.swep_listcl[i] = cg.swep_spawncl[i];  // Noire's Mod weapon predict
 
 	// display weapons available

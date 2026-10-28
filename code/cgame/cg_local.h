@@ -241,7 +241,6 @@ typedef struct markPoly_s {
 typedef enum {
 	LE_MARK,
 	LE_EXPLOSION,
-	LE_SPRITE_EXPLOSION,
 	LE_FRAGMENT,
 	LE_MOVE_SCALE_FADE,
 	LE_FALL_SCALE_FADE,
@@ -503,6 +502,9 @@ typedef struct {
 	// crosshair client ID
 	int crosshairClientNum;
 	int crosshairClientTime;
+
+	// Noire's Mod: physgun grabbed entity (server-authoritative, client can't trace it)
+	int grabbedEntityNum;
 
 	// attacking player
 	int attackerTime;
@@ -868,8 +870,8 @@ typedef struct {
 	float tracerParticleLifetime;
 	const char* tracerSound;
 
-	// Beam (rail / lightning)
-	int beamType;  // 0=none, RT_LIGHTNING, RT_RAIL_CORE
+	// Beam (rail / lightning / physgun / toolgun)
+	bool isBeam;
 	const char* beamShader;
 	float beamColor[4];
 	bool beamColorizeByClient;
@@ -1105,6 +1107,8 @@ void CG_NextWeapon_f(void);
 void CG_PrevWeapon_f(void);
 void CG_Weapon_f(void);
 
+void CG_EmitBeamPoly(qhandle_t shader, const vec3_t start, const vec3_t end, float halfWidth, const vec4_t color);
+
 void CG_RegisterWeapon(int weaponNum);
 void CG_RegisterItemVisuals(int itemNum);
 
@@ -1152,10 +1156,6 @@ void CG_ScorePlum(int client, vec3_t org, int score);
 
 void CG_GibPlayer(vec3_t playerOrigin);
 void CG_BigExplode(vec3_t playerOrigin);
-
-void CG_Bleed(vec3_t origin, int entityNum);
-
-localEntity_t* CG_MakeExplosion(vec3_t origin, vec3_t dir, qhandle_t hModel, qhandle_t shader, int msec, bool isSprite);
 
 //
 // cg_snapshot.c

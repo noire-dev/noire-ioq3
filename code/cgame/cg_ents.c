@@ -330,6 +330,23 @@ static void CG_Physics(centity_t* cent) {
 
 	// add to refresh list
 	trap_R_AddRefEntityToScene(&ent);
+
+	if((int)s1->number == cg.grabbedEntityNum && cg.grabbedEntityNum > 0) {
+		refEntity_t outline;
+		clientInfo_t* ci = &cgs.clientinfo[cg.snap->ps.clientNum];
+
+		outline = ent;
+		outline.customShader = trap_R_RegisterShader("outline");
+		outline.shaderRGBA[0] = ci->physR;
+		outline.shaderRGBA[1] = ci->physG;
+		outline.shaderRGBA[2] = ci->physB;
+		outline.shaderRGBA[3] = 128;
+		VectorScale(outline.axis[0], 1.032f, outline.axis[0]);
+		VectorScale(outline.axis[1], 1.032f, outline.axis[1]);
+		VectorScale(outline.axis[2], 1.032f, outline.axis[2]);
+		outline.nonNormalizedAxes = true;
+		trap_R_AddRefEntityToScene(&outline);
+	}
 }
 
 /*
@@ -489,8 +506,7 @@ static void CG_Missile(centity_t* cent) {
 
 	// data-driven missile light
 	if(fx->missileLightRadius > 0.0f) {
-		trap_R_AddLightToScene(cent->lerpOrigin, fx->missileLightRadius, 1.00f,
-		                       fx->missileLightColor[0], fx->missileLightColor[1], fx->missileLightColor[2], 0);
+		trap_R_AddLightToScene(cent->lerpOrigin, fx->missileLightRadius, 1.00f, fx->missileLightColor[0], fx->missileLightColor[1], fx->missileLightColor[2], 0);
 	}
 
 	// add missile sound (fully data-driven)

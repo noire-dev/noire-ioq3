@@ -328,6 +328,20 @@ void CG_AddFadeRGB(localEntity_t* le) {
 	c = (le->endTime - cg.time) * le->lifeRate;
 	c *= 0xff;
 
+	// Noire's Mod: beam local entities (no model, customShader, radius set)
+	// render as a single poly quad via AddPolysToScene.
+	// CG_RailTrail marks per-shot beams this way so their trailing fade
+	// survives across frames while still using the uniform poly codepath.
+	if(!re->hModel && re->customShader && le->radius > 0.0f) {
+		vec4_t color;
+		color[0] = le->color[0];
+		color[1] = le->color[1];
+		color[2] = le->color[2];
+		color[3] = le->color[3] * (c / 255.0f);
+		CG_EmitBeamPoly(re->customShader, re->origin, re->oldorigin, le->radius, color);
+		return;
+	}
+
 	re->shaderRGBA[0] = le->color[0] * c;
 	re->shaderRGBA[1] = le->color[1] * c;
 	re->shaderRGBA[2] = le->color[2] * c;
@@ -480,47 +494,6 @@ static void CG_AddExplosion(localEntity_t* ex) {
 }
 
 /*
-================
-CG_AddSpriteExplosion
-================
-*/
-static void CG_AddSpriteExplosion(localEntity_t* le) {
-	refEntity_t re;
-	float c;
-
-	re = le->refEntity;
-
-	c = (le->endTime - cg.time) / (float)(le->endTime - le->startTime);
-	if(c > 1) {
-		c = 1.0;  // can happen during connection problems
-	}
-
-	re.shaderRGBA[0] = 0xff;
-	re.shaderRGBA[1] = 0xff;
-	re.shaderRGBA[2] = 0xff;
-	re.shaderRGBA[3] = 0xff * c * 0.33;
-
-	re.reType = RT_SPRITE;
-	re.radius = 42 * (1.0 - c) + 30;
-
-	trap_R_AddRefEntityToScene(&re);
-
-	// add the dlight
-	if(le->light) {
-		float light;
-
-		light = (float)(cg.time - le->startTime) / (le->endTime - le->startTime);
-		if(light < 0.5) {
-			light = 1.0;
-		} else {
-			light = 1.0 - (light - 0.5) * 2;
-		}
-		light = le->light * light;
-		trap_R_AddLightToScene(re.origin, light, 1.00f, le->lightColor[0], le->lightColor[1], le->lightColor[2], 0);
-	}
-}
-
-/*
 ===================
 CG_AddLocalEntities
 
@@ -545,8 +518,6 @@ void CG_AddLocalEntities(void) {
 			default: CG_Error("Bad leType: %i", le->leType); break;
 
 			case LE_MARK: break;
-
-			case LE_SPRITE_EXPLOSION: CG_AddSpriteExplosion(le); break;
 
 			case LE_EXPLOSION: CG_AddExplosion(le); break;
 

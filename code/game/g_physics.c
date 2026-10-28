@@ -8,6 +8,7 @@ void Phys_HoldDropStatic(gentity_t* player, vec3_t velocity) {
 	if(!ent->client) {
 		ent->sb_phys = PHYS_STATIC;
 		trap_Phys_FreezeObject(ent->s.number);
+		VectorClear(ent->s.angles2);
 		// if(ent->s.eType == ET_ITEM) ent->spawnflags = 1; // for items phys
 	} else {
 		VectorClear(ent->client->ps.velocity);
@@ -19,6 +20,7 @@ void Phys_HoldDropDynamic(gentity_t* player, vec3_t velocity, bool isPhysgun) {
 
 	if(!ent->client) {
 		ent->sb_phys = PHYS_DYNAMIC;
+		VectorClear(ent->s.angles2);
 		// if(ent->s.eType == ET_ITEM) ent->spawnflags = 0; // for items phys
 		if(!isPhysgun) {
 			VectorSubtract(ent->r.currentOrigin, player->r.currentOrigin, velocity);
@@ -63,6 +65,13 @@ void Phys_HoldSetup(gentity_t* player, bool isPhysgun) {
 		ent->grabAccumYaw = 0.0f;
 		ent->grabAccumRoll = 0.0f;
 	}
+
+	// Send the local grab offset to the client via angles2 so the physgun
+	// beam visually terminates at the grab point and rotates with the prop.
+	ent->s.angles2[0] = ent->grabOrigin[0];
+	ent->s.angles2[1] = ent->grabOrigin[1];
+	ent->s.angles2[2] = ent->grabOrigin[2];
+
 	// Use raw cmd input angles (see Phys_HoldFrame_Kinetic for why).
 	ent->grabLastPlayerYaw = SHORT2ANGLE(player->client->pers.cmd.angles[YAW] + player->client->ps.delta_angles[YAW]);
 	ent->grabLastPlayerPitch = SHORT2ANGLE(player->client->pers.cmd.angles[PITCH] + player->client->ps.delta_angles[PITCH]);
@@ -176,11 +185,11 @@ void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun) {
 	// Desired center so grab point ends up at crosshair target
 	VectorSubtract(target, grabWorldOffset, desiredCenter);
 
-	mass = 50.0f;
+	mass = 10.0f;
 	VectorSubtract(desiredCenter, currentPos, delta);
 
-	Kp = 48.0f;
-	Kd = 4.0f;
+	Kp = 128.0f;
+	Kd = 20.0f;
 
 	for(i = 0; i < 3; i++) {
 		float desiredAccel = Kp * delta[i] - Kd * currentVel[i];

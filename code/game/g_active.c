@@ -411,7 +411,11 @@ static void PhysgunHold(gentity_t* player) {
 				if(!G_PlayerIsOwner(player, findent)) return;
 				if(findent) player->grabbedEntity = findent;
 			}
-			if(player->grabbedEntity) Phys_HoldSetup(player, true);
+			if(player->grabbedEntity) {
+				Phys_HoldSetup(player, true);
+				// Noire's Mod: notify client so it can route the beam to the grabbed entity.
+				trap_SendServerCommand(player->s.clientNum, va("pg %d", player->grabbedEntity->s.number));
+			}
 		} else {
 			Phys_HoldFrame_Kinetic(player, true);
 		}
@@ -421,6 +425,8 @@ static void PhysgunHold(gentity_t* player) {
 		if(ent->grabNewPhys == PHYS_DYNAMIC) Phys_HoldDropDynamic(player, velocity, true);
 		VectorClear(player->grabOffset);
 		player->grabbedEntity = 0;
+		// Noire's Mod: tell client the beam target is gone.
+		trap_SendServerCommand(player->s.clientNum, "pg -1");
 	}
 }
 
