@@ -54,10 +54,18 @@ void Phys_HoldSetup(gentity_t* player, bool isPhysgun) {
 		ent->grabOrigin[0] = DotProduct(delta, fwd);
 		ent->grabOrigin[1] = -DotProduct(delta, right);
 		ent->grabOrigin[2] = DotProduct(delta, up);
+		ent->grabAccumPitch = angles[0];
+		ent->grabAccumYaw = angles[1];
+		ent->grabAccumRoll = angles[2];
 	} else {
 		VectorClear(ent->grabOrigin);
+		ent->grabAccumPitch = 0.0f;
+		ent->grabAccumYaw = 0.0f;
+		ent->grabAccumRoll = 0.0f;
 	}
-	ent->grabLastPlayerYaw = player->client->ps.viewangles[YAW];
+	// Use raw cmd input angles (see Phys_HoldFrame_Kinetic for why).
+	ent->grabLastPlayerYaw = SHORT2ANGLE(player->client->pers.cmd.angles[YAW] + player->client->ps.delta_angles[YAW]);
+	ent->grabLastPlayerPitch = SHORT2ANGLE(player->client->pers.cmd.angles[PITCH] + player->client->ps.delta_angles[PITCH]);
 }
 
 void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun) {
@@ -75,15 +83,34 @@ void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun) {
 	trap_Phys_GetLinearVelocity(ent->s.number, &currentVel[0], &currentVel[1], &currentVel[2]);
 	trap_Phys_GetAngles(ent->s.number, &propAngles[0], &propAngles[1], &propAngles[2]);
 
-	// Y-axis rotation around grabOrigin (physgun only)
+	// Rotation around grabOrigin (physgun only)
 	if(isPhysgun) {
-		float yawDelta = player->client->ps.viewangles[YAW] - ent->grabLastPlayerYaw;
-		while(yawDelta > 180) yawDelta -= 360;
-		while(yawDelta < -180) yawDelta += 360;
-		if(yawDelta > 30) yawDelta = 30;
-		if(yawDelta < -30) yawDelta = -30;
+		// PM_UpdateViewAngles early-returns while attack+gesture+physgun, so
+		// ps.viewangles stays frozen and its delta would be zero. Read the
+		// raw cmd input (cmd.angles + delta_angles) to get the real per-frame
+		// mouse delta regardless of the view freeze.
+		bool gestureHeld = (player->client->pers.cmd.buttons & BUTTON_GESTURE) != 0;
+		float rawYaw = SHORT2ANGLE(player->client->pers.cmd.angles[YAW] + player->client->ps.delta_angles[YAW]);
+		float rawPitch = SHORT2ANGLE(player->client->pers.cmd.angles[PITCH] + player->client->ps.delta_angles[PITCH]);
+		float yawDelta = rawYaw - ent->grabLastPlayerYaw;
+		float pitchDelta = rawPitch - ent->grabLastPlayerPitch;
+		while(yawDelta > 180.0f) yawDelta -= 360.0f;
+		while(yawDelta < -180.0f) yawDelta += 360.0f;
+		while(pitchDelta > 180.0f) pitchDelta -= 360.0f;
+		while(pitchDelta < -180.0f) pitchDelta += 360.0f;
+		float rotYaw = 0.0f;
+		float rotPitch = 0.0f;
 
-		if(fabs(yawDelta) > 0.0001f) {
+		if(gestureHeld) {
+			// Gesture mode: mouse up/down -> object pitch, mouse left/right -> object yaw.
+			rotPitch = pitchDelta * 64.0f;
+			rotYaw = yawDelta * 64.0f;
+		} else {
+			// Normal mode: mouse yaw -> object yaw (1:1).
+			rotYaw = yawDelta;
+		}
+
+		if(fabs(rotYaw) > 0.1f || (fabs(rotPitch) > 0.0001f && gestureHeld)) {
 			// Current world grab point (before rotation)
 			AngleVectors(propAngles, fwd, right, up);
 			grabWorldOffset[0] = ent->grabOrigin[0] * fwd[0] - ent->grabOrigin[1] * right[0] + ent->grabOrigin[2] * up[0];
@@ -91,8 +118,36 @@ void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun) {
 			grabWorldOffset[2] = ent->grabOrigin[0] * fwd[2] - ent->grabOrigin[1] * right[2] + ent->grabOrigin[2] * up[2];
 			VectorAdd(currentPos, grabWorldOffset, oldGrabWorld);
 
-			// Rotate prop around Y axis
-			propAngles[1] += yawDelta;
+			// Accumulate true (unbounded) rotation separately from the physics
+			// engine's Euler angles so we never feed the backend pitch > 90°
+			// (which triggers gimbal-lock / clamp in Euler<->quat conversion).
+			ent->grabAccumPitch += rotPitch;
+			ent->grabAccumYaw += rotYaw;
+
+			// Derive a displayable Euler representation that keeps pitch inside
+			// [-90, 90] using the standard Euler equivalence:
+			//   (p, y, r) == (180 - p, y + 180, r + 180)   for p > 90
+			//   (p, y, r) == (-180 - p, y + 180, r + 180)  for p < -90
+			// The full world orientation is preserved, so visuals, grab offset
+			// and subsequent accumulated rotation all stay continuous.
+			float dPitch = ent->grabAccumPitch;
+			float dYaw = ent->grabAccumYaw;
+			float dRoll = ent->grabAccumRoll;
+			while(dPitch > 180.0f) dPitch -= 360.0f;
+			while(dPitch < -180.0f) dPitch += 360.0f;
+			if(dPitch > 90.0f) {
+				dPitch = 180.0f - dPitch;
+				dYaw += 180.0f;
+				dRoll += 180.0f;
+			}
+			if(dPitch < -90.0f) {
+				dPitch = -180.0f - dPitch;
+				dYaw += 180.0f;
+				dRoll += 180.0f;
+			}
+			propAngles[0] = dPitch;
+			propAngles[1] = dYaw;
+			propAngles[2] = dRoll;
 
 			// New grab offset with rotated angles (center unchanged)
 			AngleVectors(propAngles, fwd, right, up);
@@ -100,15 +155,17 @@ void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun) {
 			newGrabWorldOffset[1] = ent->grabOrigin[0] * fwd[1] - ent->grabOrigin[1] * right[1] + ent->grabOrigin[2] * up[1];
 			newGrabWorldOffset[2] = ent->grabOrigin[0] * fwd[2] - ent->grabOrigin[1] * right[2] + ent->grabOrigin[2] * up[2];
 
-			// Shift center so the grab point stays at the same world position (rotate around grabOrigin)
+			// Shift center so the grab point stays at the same world position (rotate around grabOrigin).
+			// Physics engine resolves against walls afterwards, so placement stays comfortable.
 			VectorSubtract(oldGrabWorld, newGrabWorldOffset, currentPos);
 
 			trap_Phys_SetPosition(ent->s.number, currentPos[0], currentPos[1], currentPos[2]);
 			trap_Phys_SetAngles(ent->s.number, propAngles[0], propAngles[1], propAngles[2]);
-			trap_Phys_SetAngularVelocity(ent->s.number, 0.0f, 0.0f, 0.0f);
 		}
+		trap_Phys_SetAngularVelocity(ent->s.number, 0.0f, 0.0f, 0.0f);
+		ent->grabLastPlayerYaw = rawYaw;
+		ent->grabLastPlayerPitch = rawPitch;
 	}
-	ent->grabLastPlayerYaw = player->client->ps.viewangles[YAW];
 
 	// Recompute grab world offset with current rotation
 	AngleVectors(propAngles, fwd, right, up);

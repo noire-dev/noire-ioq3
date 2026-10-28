@@ -157,6 +157,10 @@ struct gentity_s {
 	vec3_t grabOrigin;         // local grab point on the prop (where crosshair hit)
 	vec3_t grabOldOrigin;      // physgun old origin for prop
 	float grabLastPlayerYaw;   // last player yaw for rotation tracking
+	float grabLastPlayerPitch; // last player pitch for rotation tracking (gesture mode)
+	float grabAccumPitch;      // accumulated true pitch (unbounded, gimbal-safe display)
+	float grabAccumYaw;        // accumulated true yaw (unbounded)
+	float grabAccumRoll;       // accumulated true roll (unbounded, preserved from grab)
 	int grabNewPhys;           // for freeze prop for prop
 
 	// Props
