@@ -154,7 +154,9 @@ struct gentity_s {
 	bool isGrabbed;            // object is grabbed by player for prop
 	float grabDist;            // physgun distance for player
 	vec3_t grabOffset;         // physgun offset for player
+	vec3_t grabOrigin;         // local grab point on the prop (where crosshair hit)
 	vec3_t grabOldOrigin;      // physgun old origin for prop
+	float grabLastPlayerYaw;   // last player yaw for rotation tracking
 	int grabNewPhys;           // for freeze prop for prop
 
 	// Props
