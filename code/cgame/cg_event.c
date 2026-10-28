@@ -471,12 +471,12 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		case EV_BULLET_HIT_WALL:
 			DEBUGNAME("EV_BULLET_HIT_WALL");
 			ByteToDir(es->eventParm, dir);
-			CG_Bullet(es->pos.trBase, es->otherEntityNum, dir, false, ENTITYNUM_WORLD);
+			CG_Bullet(es->pos.trBase, es->otherEntityNum, dir, false, ENTITYNUM_WORLD, es->weapon);
 			break;
 
 		case EV_BULLET_HIT_FLESH:
 			DEBUGNAME("EV_BULLET_HIT_FLESH");
-			CG_Bullet(es->pos.trBase, es->otherEntityNum, dir, true, es->eventParm);
+			CG_Bullet(es->pos.trBase, es->otherEntityNum, dir, true, es->eventParm, es->weapon);
 			break;
 
 		case EV_SHOTGUN:

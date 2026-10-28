@@ -170,6 +170,10 @@ typedef struct {
 	float barrelAngle;
 	int barrelTime;
 	bool barrelSpinning;
+
+	// Data-driven fire FX state
+	bool fireFxPending;      // set by CG_FireWeapon, consumed in CG_AddPlayerWeapon (burst weapons)
+	int lastFireFxTime;      // throttle for continuous fire FX
 } playerEntity_t;
 
 // Notifications
@@ -866,6 +870,67 @@ typedef struct {
 
 //==============================================================================
 
+// Data-driven weapon effects table (see cg_weapons.c)
+typedef struct {
+	// Hit effects
+	float hitLightColor[3];
+	float hitLightRadius;
+	int hitLightTime;
+	float hitParticleColor[4];
+	int hitParticleCount;
+	float hitParticleSpeed;
+	int hitParticleFlags;
+	float hitParticleGravity[3];
+	const char* hitParticleShader;
+
+	// Fire (muzzle) effects
+	bool continuousFire;     // true: hold-to-fire (physgun / gravitygun / lightning / gauntlet), false: per-shot
+	float fireLightColor[3];
+	float fireLightRadius;
+	int fireLightTime;
+	float fireParticleColor[4];
+	int fireParticleCount;
+	float fireParticleSpeed;
+	int fireParticleFlags;
+	float fireParticleGravity[3];
+	const char* fireParticleShader;
+
+	// Missile trail
+	float trailColor[4];
+	int trailCount;
+	float trailSpeed;
+	int trailFlags;
+	float trailGravity[3];
+	const char* trailShader;
+	int trailInterval;
+
+	// Missile light (per-frame)
+	float missileLightColor[3];
+	float missileLightRadius;
+
+	// Hitscan tracer (particle based)
+	float tracerChance;
+	float tracerLength;                    // legacy, unused with particle tracers
+	float tracerWidth;                     // legacy, unused with particle tracers
+	const char* tracerShader;
+	float tracerParticleColor[4];
+	int tracerParticleCount;
+	float tracerParticleSpeed;
+
+	// Beam (rail / lightning)
+	int beamType;  // 0=none, RT_LIGHTNING, RT_RAIL_CORE
+	const char* beamShader;
+
+	// Runtime-registered shader handles
+	qhandle_t hitParticleHandle;
+	qhandle_t fireParticleHandle;
+	qhandle_t trailHandle;
+	qhandle_t tracerHandle;
+	qhandle_t beamHandle;
+} weaponFx_t;
+
+extern weaponFx_t jsd_weaponFx[WEAPONS_NUM];
+
 extern cgs_t cgs;
 extern cg_t cg;
 extern centity_t cg_entities[MAX_GENTITIES];
@@ -1030,7 +1095,7 @@ void CG_FireWeapon(centity_t* cent);
 void CG_MissileHitWall(int weapon, int clientNum, vec3_t origin, vec3_t dir, impactSound_t soundType);
 void CG_MissileHitPlayer(int weapon, vec3_t origin, vec3_t dir, int entityNum);
 void CG_ShotgunFire(entityState_t* es, int weapon);
-void CG_Bullet(vec3_t origin, int sourceEntityNum, vec3_t normal, bool flesh, int fleshEntityNum);
+void CG_Bullet(vec3_t origin, int sourceEntityNum, vec3_t normal, bool flesh, int fleshEntityNum, int weapon);
 
 void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon);
 void CG_AddViewWeapon(playerState_t* ps);
@@ -1049,6 +1114,7 @@ void CG_ImpactMark(qhandle_t markShader, const vec3_t origin, const vec3_t dir, 
 
 void CG_ClearParticles(void);
 void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader);
+void CG_AddParticlesEx(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader, float lifetime);
 void CG_RenderParticles(void);
 
 //

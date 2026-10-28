@@ -488,9 +488,11 @@ static void CG_Missile(centity_t* cent) {
 	// add trails
 	if(weapon->missileTrailFunc) weapon->missileTrailFunc(cent, weapon);
 
-	// add dynamic light
-	if(weapon->missileDlight) {
-		trap_R_AddLightToScene(cent->lerpOrigin, weapon->missileDlight, 1.00f, weapon->missileDlightColor[0], weapon->missileDlightColor[1], weapon->missileDlightColor[2], 0);
+	// data-driven missile light
+	if(s1->weapon > WP_NONE && s1->weapon < WEAPONS_NUM && jsd_weaponFx[s1->weapon].missileLightRadius > 0.0f) {
+		weaponFx_t* fx = &jsd_weaponFx[s1->weapon];
+		trap_R_AddLightToScene(cent->lerpOrigin, fx->missileLightRadius, 1.00f,
+		                       fx->missileLightColor[0], fx->missileLightColor[1], fx->missileLightColor[2], 0);
 	}
 
 	// add missile sound

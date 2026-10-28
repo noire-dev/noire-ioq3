@@ -23,6 +23,343 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_weapons.c -- events and effects dealing with weapons
 #include "cg_local.h"
 
+weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
+    {
+        [WP_GAUNTLET] =
+            {
+                .continuousFire = true,
+                .hitLightColor = {0.6f, 0.6f, 1.0f},
+                .hitLightRadius = 80.0f,
+                .hitLightTime = 80,
+                .hitParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
+                .hitParticleCount = 8,
+                .hitParticleSpeed = 120.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE,
+                .hitParticleGravity = {0.0f, 0.0f, -200.0f},
+                .fireLightColor = {0.6f, 0.6f, 1.0f},
+                .fireLightRadius = 80.0f,
+                .fireLightTime = 50,
+                .fireParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
+                .fireParticleCount = 4,
+                .fireParticleSpeed = 60.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+            },
+        [WP_MACHINEGUN] =
+            {
+                .hitLightColor = {1.0f, 1.0f, 0.0f},
+                .hitLightRadius = 100.0f,
+                .hitLightTime = 50,
+                .hitParticleColor = {1.0f, 0.9f, 0.5f, 1.0f},
+                .hitParticleCount = 6,
+                .hitParticleSpeed = 150.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE | PF_GRAVITY,
+                .hitParticleGravity = {0.0f, 0.0f, -600.0f},
+                .fireLightColor = {1.0f, 1.0f, 0.0f},
+                .fireLightRadius = 150.0f,
+                .fireLightTime = 50,
+                .fireParticleColor = {1.0f, 0.9f, 0.5f, 1.0f},
+                .fireParticleCount = 3,
+                .fireParticleSpeed = 80.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .tracerChance = 0.4f,
+                .tracerLength = 100.0f,
+                .tracerWidth = 1.0f,
+                .tracerShader = "",
+                .tracerParticleColor = {1.0f, 1.0f, 0.7f, 1.0f},
+                .tracerParticleCount = 10,
+                .tracerParticleSpeed = 0.0f,
+            },
+        [WP_SHOTGUN] =
+            {
+                .hitLightColor = {1.0f, 1.0f, 0.0f},
+                .hitLightRadius = 100.0f,
+                .hitLightTime = 50,
+                .hitParticleColor = {1.0f, 0.9f, 0.5f, 1.0f},
+                .hitParticleCount = 6,
+                .hitParticleSpeed = 150.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE | PF_GRAVITY,
+                .hitParticleGravity = {0.0f, 0.0f, -600.0f},
+                .fireLightColor = {1.0f, 1.0f, 0.0f},
+                .fireLightRadius = 150.0f,
+                .fireLightTime = 50,
+                .fireParticleColor = {1.0f, 0.9f, 0.5f, 1.0f},
+                .fireParticleCount = 6,
+                .fireParticleSpeed = 100.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .tracerChance = 0.4f,
+                .tracerLength = 100.0f,
+                .tracerWidth = 1.0f,
+                .tracerShader = "",
+                .tracerParticleColor = {1.0f, 1.0f, 0.7f, 1.0f},
+                .tracerParticleCount = 10,
+                .tracerParticleSpeed = 0.0f,
+            },
+        [WP_GRENADE_LAUNCHER] =
+            {
+                .hitLightColor = {1.0f, 0.7f, 0.0f},
+                .hitLightRadius = 300.0f,
+                .hitLightTime = 400,
+                .hitParticleColor = {1.0f, 0.7f, 0.3f, 1.0f},
+                .hitParticleCount = 48,
+                .hitParticleSpeed = 300.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE | PF_GRAVITY,
+                .hitParticleGravity = {0.0f, 0.0f, -800.0f},
+                .fireLightColor = {1.0f, 0.7f, 0.0f},
+                .fireLightRadius = 150.0f,
+                .fireLightTime = 100,
+                .fireParticleColor = {1.0f, 0.7f, 0.3f, 1.0f},
+                .fireParticleCount = 8,
+                .fireParticleSpeed = 100.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .trailColor = {0.6f, 0.6f, 0.6f, 0.5f},
+                .trailCount = 2,
+                .trailSpeed = 30.0f,
+                .trailFlags = PF_SMOOTH_FADE,
+                .trailGravity = {0.0f, 0.0f, 30.0f},
+                .trailInterval = 50,
+                .missileLightColor = {1.0f, 0.7f, 0.0f},
+                .missileLightRadius = 150.0f,
+            },
+        [WP_ROCKET_LAUNCHER] =
+            {
+                .hitLightColor = {1.0f, 0.75f, 0.0f},
+                .hitLightRadius = 400.0f,
+                .hitLightTime = 400,
+                .hitParticleColor = {1.0f, 0.7f, 0.3f, 1.0f},
+                .hitParticleCount = 64,
+                .hitParticleSpeed = 400.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE | PF_GRAVITY,
+                .hitParticleGravity = {0.0f, 0.0f, -800.0f},
+                .fireLightColor = {1.0f, 0.75f, 0.0f},
+                .fireLightRadius = 200.0f,
+                .fireLightTime = 100,
+                .fireParticleColor = {1.0f, 0.7f, 0.3f, 1.0f},
+                .fireParticleCount = 10,
+                .fireParticleSpeed = 120.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .trailColor = {0.7f, 0.7f, 0.7f, 0.5f},
+                .trailCount = 2,
+                .trailSpeed = 30.0f,
+                .trailFlags = PF_SMOOTH_FADE,
+                .trailGravity = {0.0f, 0.0f, 20.0f},
+                .trailInterval = 50,
+                .missileLightColor = {1.0f, 0.75f, 0.0f},
+                .missileLightRadius = 200.0f,
+            },
+        [WP_LIGHTNING] =
+            {
+                .continuousFire = true,
+                .hitLightColor = {0.6f, 0.6f, 1.0f},
+                .hitLightRadius = 150.0f,
+                .hitLightTime = 100,
+                .hitParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
+                .hitParticleCount = 12,
+                .hitParticleSpeed = 200.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE,
+                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
+                .fireLightColor = {0.6f, 0.6f, 1.0f},
+                .fireLightRadius = 200.0f,
+                .fireLightTime = 50,
+                .fireParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
+                .fireParticleCount = 4,
+                .fireParticleSpeed = 80.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .beamType = RT_LIGHTNING,
+                .beamShader = "lightningBoltNew",
+            },
+        [WP_RAILGUN] =
+            {
+                .hitLightColor = {1.0f, 0.5f, 0.0f},
+                .hitLightRadius = 200.0f,
+                .hitLightTime = 200,
+                .hitParticleColor = {1.0f, 0.5f, 0.0f, 1.0f},
+                .hitParticleCount = 24,
+                .hitParticleSpeed = 250.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE,
+                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
+                .fireLightColor = {1.0f, 0.5f, 0.0f},
+                .fireLightRadius = 200.0f,
+                .fireLightTime = 100,
+                .fireParticleColor = {1.0f, 0.5f, 0.0f, 1.0f},
+                .fireParticleCount = 6,
+                .fireParticleSpeed = 100.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .beamType = RT_RAIL_CORE,
+                .beamShader = "railCore",
+            },
+        [WP_PLASMAGUN] =
+            {
+                .hitLightColor = {0.6f, 0.6f, 1.0f},
+                .hitLightRadius = 150.0f,
+                .hitLightTime = 100,
+                .hitParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
+                .hitParticleCount = 16,
+                .hitParticleSpeed = 200.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE,
+                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
+                .fireLightColor = {0.6f, 0.6f, 1.0f},
+                .fireLightRadius = 150.0f,
+                .fireLightTime = 50,
+                .fireParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
+                .fireParticleCount = 4,
+                .fireParticleSpeed = 80.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .trailColor = {0.6f, 0.6f, 1.0f, 0.5f},
+                .trailCount = 2,
+                .trailSpeed = 30.0f,
+                .trailFlags = PF_SMOOTH_FADE,
+                .trailGravity = {0.0f, 0.0f, 0.0f},
+                .trailInterval = 30,
+                .missileLightColor = {0.6f, 0.6f, 1.0f},
+                .missileLightRadius = 100.0f,
+            },
+        [WP_BFG] =
+            {
+                .hitLightColor = {1.0f, 0.7f, 1.0f},
+                .hitLightRadius = 500.0f,
+                .hitLightTime = 500,
+                .hitParticleColor = {1.0f, 0.7f, 1.0f, 1.0f},
+                .hitParticleCount = 80,
+                .hitParticleSpeed = 500.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE,
+                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
+                .fireLightColor = {1.0f, 0.7f, 1.0f},
+                .fireLightRadius = 300.0f,
+                .fireLightTime = 150,
+                .fireParticleColor = {1.0f, 0.7f, 1.0f, 1.0f},
+                .fireParticleCount = 12,
+                .fireParticleSpeed = 150.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .trailColor = {1.0f, 0.7f, 1.0f, 0.6f},
+                .trailCount = 4,
+                .trailSpeed = 50.0f,
+                .trailFlags = PF_SMOOTH_FADE,
+                .trailGravity = {0.0f, 0.0f, 0.0f},
+                .trailInterval = 30,
+                .missileLightColor = {1.0f, 0.7f, 1.0f},
+                .missileLightRadius = 300.0f,
+            },
+        [WP_PHYSGUN] =
+            {
+                .continuousFire = true,
+                .hitLightColor = {0.6f, 0.6f, 1.0f},
+                .hitLightRadius = 100.0f,
+                .hitLightTime = 50,
+                .hitParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
+                .hitParticleCount = 4,
+                .hitParticleSpeed = 100.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE,
+                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
+                .fireLightColor = {0.6f, 0.6f, 1.0f},
+                .fireLightRadius = 100.0f,
+                .fireLightTime = 50,
+                .fireParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
+                .fireParticleCount = 3,
+                .fireParticleSpeed = 60.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .beamType = RT_RAIL_CORE,
+                .beamShader = "railCore",
+            },
+        [WP_GRAVITYGUN] =
+            {
+                .continuousFire = true,
+                .hitLightColor = {1.0f, 0.5f, 0.0f},
+                .hitLightRadius = 100.0f,
+                .hitLightTime = 50,
+                .hitParticleColor = {1.0f, 0.5f, 0.0f, 1.0f},
+                .hitParticleCount = 4,
+                .hitParticleSpeed = 100.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE,
+                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
+                .fireLightColor = {1.0f, 0.5f, 0.0f},
+                .fireLightRadius = 100.0f,
+                .fireLightTime = 50,
+                .fireParticleColor = {1.0f, 0.5f, 0.0f, 1.0f},
+                .fireParticleCount = 3,
+                .fireParticleSpeed = 60.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .beamType = RT_RAIL_CORE,
+                .beamShader = "railCore",
+            },
+        [WP_TOOLGUN] =
+            {
+                .hitLightColor = {0.5f, 0.5f, 0.5f},
+                .hitLightRadius = 100.0f,
+                .hitLightTime = 50,
+                .hitParticleColor = {0.5f, 0.5f, 0.5f, 1.0f},
+                .hitParticleCount = 4,
+                .hitParticleSpeed = 100.0f,
+                .hitParticleFlags = PF_SMOOTH_FADE,
+                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
+                .fireLightColor = {0.5f, 0.5f, 0.5f},
+                .fireLightRadius = 100.0f,
+                .fireLightTime = 50,
+                .fireParticleColor = {0.5f, 0.5f, 0.5f, 1.0f},
+                .fireParticleCount = 3,
+                .fireParticleSpeed = 60.0f,
+                .fireParticleFlags = PF_SMOOTH_FADE,
+                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
+                .beamType = RT_LIGHTNING,
+                .beamShader = "lightningBoltNew",
+            },
+};
+
+// Spawns a fading light using a lightweight local entity.
+static void CG_SpawnWeaponLight(vec3_t origin, float radius, int duration, const float* color) {
+	localEntity_t* le;
+	if(radius <= 0.0f) return;
+	if(duration <= 0) {
+		trap_R_AddLightToScene(origin, radius, 1.00f, color[0], color[1], color[2], 0);
+		return;
+	}
+	le = CG_AllocLocalEntity();
+	le->leType = LE_EXPLOSION;
+	le->startTime = cg.time;
+	le->endTime = cg.time + duration;
+	le->light = radius;
+	VectorCopy(color, le->lightColor);
+	VectorCopy(origin, le->refEntity.origin);
+}
+
+// Emit a full weapon impact effect from the table.
+static void CG_EmitWeaponHitFx(int weapon, vec3_t origin, vec3_t dir) {
+	weaponFx_t* fx;
+	vec3_t sprOrg;
+	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	fx = &jsd_weaponFx[weapon];
+	if(fx->hitParticleCount > 0) {
+		VectorMA(origin, 24, dir, sprOrg);
+		CG_AddParticles(sprOrg, fx->hitParticleColor, fx->hitParticleCount, fx->hitParticleSpeed, fx->hitParticleFlags, fx->hitParticleGravity, fx->hitParticleShader ? fx->hitParticleShader : "");
+	}
+	if(fx->hitLightRadius > 0.0f) {
+		CG_SpawnWeaponLight(origin, fx->hitLightRadius, fx->hitLightTime, fx->hitLightColor);
+	}
+}
+
+// Emit muzzle fire effects from the table.
+static void CG_EmitWeaponFireFx(int weapon, vec3_t origin) {
+	weaponFx_t* fx;
+	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	fx = &jsd_weaponFx[weapon];
+	if(fx->fireParticleCount > 0) {
+		CG_AddParticles(origin, fx->fireParticleColor, fx->fireParticleCount, fx->fireParticleSpeed, fx->fireParticleFlags, fx->fireParticleGravity, fx->fireParticleShader ? fx->fireParticleShader : "");
+	}
+	if(fx->fireLightRadius > 0.0f) {
+		CG_SpawnWeaponLight(origin, fx->fireLightRadius, fx->fireLightTime, fx->fireLightColor);
+	}
+}
+
 /*
 ==========================
 CG_MachineGunEjectBrass
@@ -173,17 +510,53 @@ static void CG_ShotgunEjectBrass(centity_t* cent) {
 }
 
 void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
+	weaponFx_t* fx;
+	refEntity_t direct;
 	localEntity_t* le;
 	refEntity_t* re;
 	vec3_t s, e;
+
+	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	fx = &jsd_weaponFx[weapon];
+	if(fx->beamType != RT_RAIL_CORE) return;
+
 	VectorCopy(start, s);
 	VectorCopy(end, e);
 
 	if(weapon == WP_RAILGUN) {
 		s[2] -= 4;
-		e[2] -= 0;
 	}
 
+	// Continuous beam weapons (physgun, gravitygun) re-trace every frame while
+	// fire is held. If we spawned a fading local entity for each trace, several
+	// beams from the last ~60 ms would stack on screen — that's the "2-5 rays
+	// per frame" bug. Render them directly to the scene instead: exactly one
+	// beam per frame, no accumulation.
+	if(fx->continuousFire) {
+		memset(&direct, 0, sizeof(direct));
+		direct.reType = RT_RAIL_CORE;
+		direct.customShader = fx->beamHandle ? fx->beamHandle : cgs.media.railCoreShader;
+		VectorCopy(s, direct.origin);
+		VectorCopy(e, direct.oldorigin);
+		AxisClear(direct.axis);
+
+		if(weapon == WP_PHYSGUN) {
+			direct.shaderRGBA[0] = ci->physR;
+			direct.shaderRGBA[1] = ci->physG;
+			direct.shaderRGBA[2] = ci->physB;
+		} else if(weapon == WP_GRAVITYGUN) {
+			direct.shaderRGBA[0] = 120;
+			direct.shaderRGBA[1] = 60;
+			direct.shaderRGBA[2] = 0;
+		}
+		direct.shaderRGBA[3] = 255;
+
+		trap_R_AddRefEntityToScene(&direct);
+		return;
+	}
+
+	// Per-shot beams (railgun): use a fading local entity so the classic trail
+	// lingers for a moment after the shot.
 	le = CG_AllocLocalEntity();
 	re = &le->refEntity;
 
@@ -201,7 +574,7 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 	le->lifeRate = 1.0f / (le->endTime - le->startTime);
 
 	re->reType = RT_RAIL_CORE;
-	re->customShader = cgs.media.railCoreShader;
+	re->customShader = fx->beamHandle ? fx->beamHandle : cgs.media.railCoreShader;
 
 	VectorCopy(s, re->origin);
 	VectorCopy(e, re->oldorigin);
@@ -212,12 +585,10 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 			re->shaderRGBA[1] = 255;
 			re->shaderRGBA[2] = 0;
 			re->shaderRGBA[3] = 255;
-
 			le->color[0] = 0.0f;
 			le->color[1] = 1.0f;
 			le->color[2] = 0.0f;
 			le->color[3] = 1.0f;
-
 			re->origin[2] -= 8;
 			re->oldorigin[2] -= 8;
 			break;
@@ -227,7 +598,6 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 			re->shaderRGBA[1] = ci->physG;
 			re->shaderRGBA[2] = ci->physB;
 			re->shaderRGBA[3] = 255;
-
 			le->color[0] = ci->physR / 255.0f;
 			le->color[1] = ci->physG / 255.0f;
 			le->color[2] = ci->physB / 255.0f;
@@ -239,7 +609,6 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 			re->shaderRGBA[1] = 60;
 			re->shaderRGBA[2] = 0;
 			re->shaderRGBA[3] = 255;
-
 			le->color[0] = 120.0f / 255.0f;
 			le->color[1] = 60.0f / 255.0f;
 			le->color[2] = 0.0f;
@@ -252,152 +621,44 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 
 /*
 ==========================
-CG_RocketTrail
+CG_MissileTrail
+Data-driven particle trail for missiles.
 ==========================
 */
-static void CG_RocketTrail(centity_t* ent, const weaponInfo_t* wi) {
-	int step;
-	vec3_t origin, lastPos;
-	int t;
-	int startTime, contents;
-	int lastContents;
-	entityState_t* es;
-	vec3_t up;
-	localEntity_t* smoke;
+static void CG_MissileTrail(centity_t* ent, const weaponInfo_t* wi) {
+	weaponFx_t* fx;
+	vec3_t origin;
+	int contents;
 
-	if(cg_noProjectileTrail.integer) {
-		return;
-	}
+	if(cg_noProjectileTrail.integer) return;
+	if(ent->currentState.weapon <= WP_NONE || ent->currentState.weapon >= WEAPONS_NUM) return;
+	fx = &jsd_weaponFx[ent->currentState.weapon];
+	if(fx->trailCount <= 0) return;
 
-	up[0] = 0;
-	up[1] = 0;
-	up[2] = 0;
-
-	step = 50;
-
-	es = &ent->currentState;
-	startTime = ent->trailTime;
-	t = step * ((startTime + step) / step);
-
-	BG_EvaluateTrajectory(&es->pos, cg.time, origin);
-	contents = CG_PointContents(origin, -1);
-
-	// if object (e.g. grenade) is stationary, don't toss up smoke
-	if(es->pos.trType == TR_STATIONARY) {
+	if(ent->currentState.pos.trType == TR_STATIONARY) {
 		ent->trailTime = cg.time;
 		return;
 	}
 
-	BG_EvaluateTrajectory(&es->pos, ent->trailTime, lastPos);
-	lastContents = CG_PointContents(lastPos, -1);
+	if(fx->trailInterval > 0 && (cg.time - ent->trailTime) < fx->trailInterval) return;
 
+	BG_EvaluateTrajectory(&ent->currentState.pos, cg.time, origin);
+	contents = CG_PointContents(origin, -1);
 	ent->trailTime = cg.time;
 
-	if(contents & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA)) {
-		if(contents & lastContents & CONTENTS_WATER) {
-			CG_BubbleTrail(lastPos, origin, 8);
-		}
-		return;
-	}
+	if(contents & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA)) return;
 
-	for(; t <= ent->trailTime; t += step) {
-		BG_EvaluateTrajectory(&es->pos, t, lastPos);
-
-		smoke = CG_SmokePuff(lastPos, up, wi->trailRadius, 1, 1, 1, 0.33f, wi->wiTrailTime, t, 0, 0, cgs.media.smokePuffShader);
-		// use the optimized local entity add
-		smoke->leType = LE_SCALE_FADE;
-	}
+	CG_AddParticles(origin, fx->trailColor, fx->trailCount, fx->trailSpeed, fx->trailFlags, fx->trailGravity, fx->trailShader ? fx->trailShader : "");
 }
+
+static void CG_RocketTrail(centity_t* ent, const weaponInfo_t* wi) { CG_MissileTrail(ent, wi); }
 
 /*
 ==========================
 CG_PlasmaTrail
 ==========================
 */
-static void CG_PlasmaTrail(centity_t* cent, const weaponInfo_t* wi) {
-	localEntity_t* le;
-	refEntity_t* re;
-	entityState_t* es;
-	vec3_t velocity, xvelocity, origin;
-	vec3_t offset, xoffset;
-	vec3_t v[3];
-
-	float waterScale = 1.0f;
-
-	if(cg_noProjectileTrail.integer || cg_oldPlasma.integer) {
-		return;
-	}
-
-	es = &cent->currentState;
-
-	BG_EvaluateTrajectory(&es->pos, cg.time, origin);
-
-	le = CG_AllocLocalEntity();
-	re = &le->refEntity;
-
-	velocity[0] = 60 - 120 * crandom();
-	velocity[1] = 40 - 80 * crandom();
-	velocity[2] = 100 - 200 * crandom();
-
-	le->leType = LE_MOVE_SCALE_FADE;
-	le->leFlags = LEF_TUMBLE;
-	le->leBounceSoundType = LEBS_NONE;
-	le->leMarkType = LEMT_NONE;
-
-	le->startTime = cg.time;
-	le->endTime = le->startTime + 600;
-
-	le->pos.trType = TR_GRAVITY;
-	le->pos.trTime = cg.time;
-
-	AnglesToAxis(cent->lerpAngles, v);
-
-	offset[0] = 2;
-	offset[1] = 2;
-	offset[2] = 2;
-
-	xoffset[0] = offset[0] * v[0][0] + offset[1] * v[1][0] + offset[2] * v[2][0];
-	xoffset[1] = offset[0] * v[0][1] + offset[1] * v[1][1] + offset[2] * v[2][1];
-	xoffset[2] = offset[0] * v[0][2] + offset[1] * v[1][2] + offset[2] * v[2][2];
-
-	VectorAdd(origin, xoffset, re->origin);
-	VectorCopy(re->origin, le->pos.trBase);
-
-	if(CG_PointContents(re->origin, -1) & CONTENTS_WATER) {
-		waterScale = 0.10f;
-	}
-
-	xvelocity[0] = velocity[0] * v[0][0] + velocity[1] * v[1][0] + velocity[2] * v[2][0];
-	xvelocity[1] = velocity[0] * v[0][1] + velocity[1] * v[1][1] + velocity[2] * v[2][1];
-	xvelocity[2] = velocity[0] * v[0][2] + velocity[1] * v[1][2] + velocity[2] * v[2][2];
-	VectorScale(xvelocity, waterScale, le->pos.trDelta);
-
-	AxisCopy(axisDefault, re->axis);
-	re->shaderTime = cg.time / 1000.0f;
-	re->reType = RT_SPRITE;
-	re->radius = 0.25f;
-	re->customShader = cgs.media.railRingsShader;
-	le->bounceFactor = 0.3f;
-
-	re->shaderRGBA[0] = wi->flashDlightColor[0] * 63;
-	re->shaderRGBA[1] = wi->flashDlightColor[1] * 63;
-	re->shaderRGBA[2] = wi->flashDlightColor[2] * 63;
-	re->shaderRGBA[3] = 63;
-
-	le->color[0] = wi->flashDlightColor[0] * 0.2;
-	le->color[1] = wi->flashDlightColor[1] * 0.2;
-	le->color[2] = wi->flashDlightColor[2] * 0.2;
-	le->color[3] = 0.25f;
-
-	le->angles.trType = TR_LINEAR;
-	le->angles.trTime = cg.time;
-	le->angles.trBase[0] = rand() & 31;
-	le->angles.trBase[1] = rand() & 31;
-	le->angles.trBase[2] = rand() & 31;
-	le->angles.trDelta[0] = 1;
-	le->angles.trDelta[1] = 0.5;
-	le->angles.trDelta[2] = 0;
-}
+static void CG_PlasmaTrail(centity_t* cent, const weaponInfo_t* wi) { CG_MissileTrail(cent, wi); }
 
 /*
 ==========================
@@ -420,6 +681,16 @@ void CG_RegisterWeapon(int weaponNum) {
 
 	memset(weaponInfo, 0, sizeof(*weaponInfo));
 	weaponInfo->registered = true;
+
+	// Register data-driven effect shaders for this weapon
+	{
+		weaponFx_t* fx = &jsd_weaponFx[weaponNum];
+		if(fx->hitParticleShader && fx->hitParticleShader[0]) fx->hitParticleHandle = trap_R_RegisterShader(fx->hitParticleShader);
+		if(fx->fireParticleShader && fx->fireParticleShader[0]) fx->fireParticleHandle = trap_R_RegisterShader(fx->fireParticleShader);
+		if(fx->trailShader && fx->trailShader[0]) fx->trailHandle = trap_R_RegisterShader(fx->trailShader);
+		if(fx->tracerShader && fx->tracerShader[0]) fx->tracerHandle = trap_R_RegisterShader(fx->tracerShader);
+		if(fx->beamShader && fx->beamShader[0]) fx->beamHandle = trap_R_RegisterShader(fx->beamShader);
+	}
 
 	for(i = 0; i < jsd_itemCount; i++) {
 		if(jsd_item[i].giType == IT_WEAPON && jsd_item[i].giTag == weaponNum) {
@@ -694,41 +965,40 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 	vec3_t muzzlePoint, endPoint;
 	int anim;
 	clientInfo_t* ci;
+	weaponFx_t* fx;
+
+	if(cent->currentState.weapon <= WP_NONE || cent->currentState.weapon >= WEAPONS_NUM) return;
+
+	// Railgun beams are already drawn by the EV_RAILTRAIL handler. Calling
+	// CG_RailTrail from here too would render every rail shot twice
+	// (one predicted beam + one server-authoritative beam).
+	if(cent->currentState.weapon == WP_RAILGUN) return;
+
+	fx = &jsd_weaponFx[cent->currentState.weapon];
+	if(fx->beamType == 0) return;
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
 
-	if(cent->currentState.weapon != WP_LIGHTNING && cent->currentState.weapon != WP_TOOLGUN && cent->currentState.weapon != WP_PHYSGUN && cent->currentState.weapon != WP_GRAVITYGUN) return;
-
 	memset(&beam, 0, sizeof(beam));
 
-	// CPMA  "true" lightning
+	// CPMA "true" lightning
 	if((cent->currentState.number == cg.predictedPlayerState.clientNum) && (cg_trueLightning.value != 0)) {
 		vec3_t angle;
 		int i;
 
 		for(i = 0; i < 3; i++) {
 			float a = cent->lerpAngles[i] - cg.refdefViewAngles[i];
-			if(a > 180) {
-				a -= 360;
-			}
-			if(a < -180) {
-				a += 360;
-			}
+			if(a > 180) a -= 360;
+			if(a < -180) a += 360;
 
 			angle[i] = cg.refdefViewAngles[i] + a * (1.0 - cg_trueLightning.value);
-			if(angle[i] < 0) {
-				angle[i] += 360;
-			}
-			if(angle[i] > 360) {
-				angle[i] -= 360;
-			}
+			if(angle[i] < 0) angle[i] += 360;
+			if(angle[i] > 360) angle[i] -= 360;
 		}
 
 		AngleVectors(angle, forward, NULL, NULL);
 		VectorCopy(cent->lerpOrigin, muzzlePoint);
-		//		VectorCopy(cg.refdef.vieworg, muzzlePoint );
 	} else {
-		// !CPMA
 		AngleVectors(cent->lerpAngles, forward, NULL, NULL);
 		VectorCopy(cent->lerpOrigin, muzzlePoint);
 	}
@@ -741,48 +1011,33 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 	}
 
 	VectorMA(muzzlePoint, 14, forward, muzzlePoint);
-
-	// project forward by the lightning range
 	VectorMA(muzzlePoint, jsd_weapon[cent->currentState.weapon].range, forward, endPoint);
 
-	// see if it hit a wall
 	CG_Trace(&trace, muzzlePoint, vec3_origin, vec3_origin, endPoint, cent->currentState.number, MASK_SHOT);
 
-	// this is the endpoint
 	VectorCopy(trace.endpos, beam.oldorigin);
-
-	// use the provided origin, even though it may be slightly
-	// different than the muzzle origin
 	VectorCopy(origin, beam.origin);
 
-	if(cent->currentState.weapon == WP_PHYSGUN || cent->currentState.weapon == WP_GRAVITYGUN) {
+	if(fx->beamType == RT_RAIL_CORE) {
 		CG_RailTrail(ci, origin, trace.endpos, cent->currentState.weapon);
+		if(trace.fraction < 1.0f) {
+			vec3_t invDir;
+			VectorNegate(trace.plane.normal, invDir);
+			CG_EmitWeaponHitFx(cent->currentState.weapon, trace.endpos, invDir);
+		}
 		return;
 	}
 
+	// Lightning-style beam
 	beam.reType = RT_LIGHTNING;
-	beam.customShader = cgs.media.lightningShader;
+	beam.customShader = fx->beamHandle ? fx->beamHandle : cgs.media.lightningShader;
 	trap_R_AddRefEntityToScene(&beam);
 
-	// add the impact flare if it hit something
-	if(trace.fraction < 1.0) {
-		vec3_t angles;
+	if(trace.fraction < 1.0f) {
 		vec3_t dir;
-
 		VectorSubtract(beam.oldorigin, beam.origin, dir);
 		VectorNormalize(dir);
-
-		memset(&beam, 0, sizeof(beam));
-		beam.hModel = cgs.media.lightningExplosionModel;
-
-		VectorMA(trace.endpos, -16, dir, beam.origin);
-
-		// make a random orientation
-		angles[0] = rand() % 360;
-		angles[1] = rand() % 360;
-		angles[2] = rand() % 360;
-		AnglesToAxis(angles, beam.axis);
-		trap_R_AddRefEntityToScene(&beam);
+		CG_EmitWeaponHitFx(cent->currentState.weapon, trace.endpos, dir);
 	}
 }
 
@@ -973,13 +1228,46 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 	CG_PositionRotatedEntityOnTag(&flash, &gun, weapon->weaponModel, "tag_flash");
 	trap_R_AddRefEntityToScene(&flash);
 
-	if(ps || cg.renderingThirdPerson || cent->currentState.number != cg.predictedPlayerState.clientNum) {
-		// add lightning bolt
-		CG_LightningBolt(nonPredictedCent, flash.origin);
+	// Data-driven fire FX at tag_flash.
+	//
+	// In first-person we draw both the world model (for mirrors, but only
+	// rendered with RF_THIRD_PERSON) and the view weapon. The world model is
+	// emitted first by CG_AddPacketEntities, so without this guard it would
+	// steal the pending fire event and place FX on the body instead of on the
+	// view weapon. We therefore skip fire FX on the world model of the local
+	// player while in first person; the view weapon (ps != NULL) is responsible
+	// for it and runs later in CG_AddViewWeapon.
+	{
+		weaponFx_t* fx = &jsd_weaponFx[weaponNum];
+		bool isViewWeapon = (ps != NULL);
+		bool isLocalFirstPerson = (!isViewWeapon && cent->currentState.number == cg.snap->ps.clientNum && !cg.renderingThirdPerson);
+		bool shouldEmit = isViewWeapon || !isLocalFirstPerson;
 
-		if(weapon->flashDlightColor[0] || weapon->flashDlightColor[1] || weapon->flashDlightColor[2]) {
-			trap_R_AddLightToScene(flash.origin, 300 + (rand() & 31), 1.00f, weapon->flashDlightColor[0], weapon->flashDlightColor[1], weapon->flashDlightColor[2], 0);
+		if(shouldEmit) {
+			if(fx->continuousFire) {
+				// Hold-to-fire weapon: light is re-added every frame (no flicker);
+				// particles are throttled to avoid overspawning the pool.
+				if(nonPredictedCent->currentState.eFlags & EF_FIRING) {
+					if(fx->fireLightRadius > 0.0f) {
+						trap_R_AddLightToScene(flash.origin, fx->fireLightRadius, 1.00f, fx->fireLightColor[0], fx->fireLightColor[1], fx->fireLightColor[2], 0);
+					}
+					if(fx->fireParticleCount > 0 && (cg.time - cent->pe.lastFireFxTime) >= 30) {
+						CG_AddParticles(flash.origin, fx->fireParticleColor, fx->fireParticleCount, fx->fireParticleSpeed, fx->fireParticleFlags, fx->fireParticleGravity, fx->fireParticleShader ? fx->fireParticleShader : "");
+						cent->pe.lastFireFxTime = cg.time;
+					}
+				}
+				cent->pe.fireFxPending = false;
+			} else if(cent->pe.fireFxPending) {
+				// Per-shot weapon: one fading light + one particle burst per shot.
+				CG_EmitWeaponFireFx(weaponNum, flash.origin);
+				cent->pe.fireFxPending = false;
+			}
 		}
+	}
+
+	if(ps || cg.renderingThirdPerson || cent->currentState.number != cg.predictedPlayerState.clientNum) {
+		// add lightning bolt / rail trail for beam weapons
+		CG_LightningBolt(nonPredictedCent, flash.origin);
 	}
 }
 
@@ -1152,11 +1440,10 @@ void CG_FireWeapon(centity_t* cent) {
 	}
 	weap = &cg_weapons[ent->weapon];
 
-	// mark the entity as muzzle flashing, so when it is added it will
-	// append the flash to the weapon model
+	// mark the entity as muzzle flashing
 	cent->muzzleFlashTime = cg.time;
 
-	// lightning gun only does this this on initial press
+	// lightning gun only does this on initial press
 	if(ent->weapon == WP_LIGHTNING) {
 		if(cent->pe.lightningFiring) {
 			return;
@@ -1180,7 +1467,10 @@ void CG_FireWeapon(centity_t* cent) {
 		}
 	}
 
-	// do brass ejection
+	// Fire FX are emitted from CG_AddPlayerWeapon where tag_flash is available.
+	cent->pe.fireFxPending = true;
+
+	// brass ejection
 	if(weap->ejectBrassFunc && cg_brassTime.integer > 0) {
 		weap->ejectBrassFunc(cent);
 	}
@@ -1193,73 +1483,7 @@ CG_MissileHitWall
 Caused by an EV_MISSILE_MISS event, or directly by local bullet tracing
 =================
 */
-void CG_MissileHitWall(int weapon, int clientNum, vec3_t origin, vec3_t dir, impactSound_t soundType) {
-	qhandle_t mod;
-	qhandle_t mark;
-	qhandle_t shader;
-	sfxHandle_t sfx;
-	float radius;
-	float light;
-	vec3_t lightColor;
-	localEntity_t* le;
-	int r;
-	bool alphaFade;
-	bool isSprite;
-	int duration;
-	vec3_t sprOrg;
-	vec3_t sprVel;
-
-	mod = 0;
-	shader = 0;
-	light = 0;
-	lightColor[0] = 1;
-	lightColor[1] = 1;
-	lightColor[2] = 0;
-
-	// set defaults
-	isSprite = false;
-	duration = 600;
-
-	vec4_t explosionColor = {1.0f, 0.75f, 0.50f, 1.0f};
-	vec3_t explosionGravity = {0.0f, 0.0f, -800.0f};
-	VectorMA(origin, 24, dir, sprOrg);
-	CG_AddParticles(sprOrg, explosionColor, 32, 200.0f, PF_SMOOTH_FADE | PF_GRAVITY, explosionGravity, "");
-
-	if(sfx) {
-		trap_S_StartSound(origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx);
-	}
-
-	//
-	// create the explosion
-	//
-	if(mod) {
-		le = CG_MakeExplosion(origin, dir, mod, shader, duration, isSprite);
-		le->light = light;
-		VectorCopy(lightColor, le->lightColor);
-		if(weapon == WP_RAILGUN) {
-			// colorize with client color
-			VectorCopy(cgs.clientinfo[clientNum].color1, le->color);
-			le->refEntity.shaderRGBA[0] = le->color[0] * 0xff;
-			le->refEntity.shaderRGBA[1] = le->color[1] * 0xff;
-			le->refEntity.shaderRGBA[2] = le->color[2] * 0xff;
-			le->refEntity.shaderRGBA[3] = 0xff;
-		}
-	}
-
-	//
-	// impact mark
-	//
-	alphaFade = (mark == cgs.media.energyMarkShader);  // plasma fades alpha, all others fade color
-	if(weapon == WP_RAILGUN) {
-		float* color;
-
-		// colorize with client color
-		color = cgs.clientinfo[clientNum].color1;
-		CG_ImpactMark(mark, origin, dir, random() * 360, color[0], color[1], color[2], 1, alphaFade, radius, false);
-	} else {
-		CG_ImpactMark(mark, origin, dir, random() * 360, 1, 1, 1, 1, alphaFade, radius, false);
-	}
-}
+void CG_MissileHitWall(int weapon, int clientNum, vec3_t origin, vec3_t dir, impactSound_t soundType) { CG_EmitWeaponHitFx(weapon, origin, dir); }
 
 /*
 =================
@@ -1397,77 +1621,45 @@ BULLETS
 CG_Tracer
 ===============
 */
-void CG_Tracer(vec3_t source, vec3_t dest) {
-	vec3_t forward, right;
-	polyVert_t verts[4];
-	vec3_t line;
-	float len, begin, end;
-	vec3_t start, finish;
-	vec3_t midpoint;
+void CG_Tracer(vec3_t source, vec3_t dest, int weapon) {
+	weaponFx_t* fx;
+	vec3_t dir, pos;
+	float len, begin, end, f;
+	int i, numParticles;
 
-	// tracer
-	VectorSubtract(dest, source, forward);
-	len = VectorNormalize(forward);
+	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	fx = &jsd_weaponFx[weapon];
+	if(fx->tracerParticleCount <= 0) return;
 
-	// start at least a little ways from the muzzle
-	if(len < 100) {
-		return;
-	}
+	VectorSubtract(dest, source, dir);
+	len = VectorNormalize(dir);
+	if(len < 100) return;
+
 	begin = 50 + random() * (len - 60);
-	end = begin + cg_tracerLength.value;
-	if(end > len) {
-		end = len;
+	end = begin + (fx->tracerLength > 0.0f ? fx->tracerLength : 100.0f);
+	if(end > len) end = len;
+
+	// Particle tracer: emit a short streak of dots along the ray that fade out.
+	numParticles = fx->tracerParticleCount;
+	for(i = 0; i < numParticles; i++) {
+		f = (numParticles > 1) ? (float)i / (numParticles - 1) : 0.0f;
+		VectorMA(source, begin + (end - begin) * f, dir, pos);
+
+		// Small perpendicular jitter so the dots don't form a perfect line.
+		pos[0] += crandom() * 1.5f;
+		pos[1] += crandom() * 1.5f;
+		pos[2] += crandom() * 1.5f;
+
+		CG_AddParticlesEx(pos, fx->tracerParticleColor, 1, fx->tracerParticleSpeed, PF_SMOOTH_FADE, NULL, fx->tracerShader ? fx->tracerShader : "", 0.25f + crandom() * 0.10f);
 	}
-	VectorMA(source, begin, forward, start);
-	VectorMA(source, end, forward, finish);
 
-	line[0] = DotProduct(forward, cg.refdef.viewaxis[1]);
-	line[1] = DotProduct(forward, cg.refdef.viewaxis[2]);
-
-	VectorScale(cg.refdef.viewaxis[1], line[1], right);
-	VectorMA(right, -line[0], cg.refdef.viewaxis[2], right);
-	VectorNormalize(right);
-
-	VectorMA(finish, cg_tracerWidth.value, right, verts[0].xyz);
-	verts[0].st[0] = 0;
-	verts[0].st[1] = 1;
-	verts[0].modulate[0] = 255;
-	verts[0].modulate[1] = 255;
-	verts[0].modulate[2] = 255;
-	verts[0].modulate[3] = 255;
-
-	VectorMA(finish, -cg_tracerWidth.value, right, verts[1].xyz);
-	verts[1].st[0] = 1;
-	verts[1].st[1] = 0;
-	verts[1].modulate[0] = 255;
-	verts[1].modulate[1] = 255;
-	verts[1].modulate[2] = 255;
-	verts[1].modulate[3] = 255;
-
-	VectorMA(start, -cg_tracerWidth.value, right, verts[2].xyz);
-	verts[2].st[0] = 1;
-	verts[2].st[1] = 1;
-	verts[2].modulate[0] = 255;
-	verts[2].modulate[1] = 255;
-	verts[2].modulate[2] = 255;
-	verts[2].modulate[3] = 255;
-
-	VectorMA(start, cg_tracerWidth.value, right, verts[3].xyz);
-	verts[3].st[0] = 0;
-	verts[3].st[1] = 0;
-	verts[3].modulate[0] = 255;
-	verts[3].modulate[1] = 255;
-	verts[3].modulate[2] = 255;
-	verts[3].modulate[3] = 255;
-
-	trap_R_AddPolyToScene(cgs.media.tracerShader, 4, verts);
-
-	midpoint[0] = (start[0] + finish[0]) * 0.5;
-	midpoint[1] = (start[1] + finish[1]) * 0.5;
-	midpoint[2] = (start[2] + finish[2]) * 0.5;
-
-	// add the tracer sound
-	trap_S_StartSound(midpoint, ENTITYNUM_WORLD, CHAN_AUTO, cgs.media.tracerSound);
+	if(cgs.media.tracerSound) {
+		vec3_t midpoint;
+		midpoint[0] = (source[0] + dest[0]) * 0.5f;
+		midpoint[1] = (source[1] + dest[1]) * 0.5f;
+		midpoint[2] = (source[2] + dest[2]) * 0.5f;
+		trap_S_StartSound(midpoint, ENTITYNUM_WORLD, CHAN_AUTO, cgs.media.tracerSound);
+	}
 }
 
 /*
@@ -1515,43 +1707,41 @@ CG_Bullet
 Renders bullet effects.
 ======================
 */
-void CG_Bullet(vec3_t end, int sourceEntityNum, vec3_t normal, bool flesh, int fleshEntityNum) {
+void CG_Bullet(vec3_t end, int sourceEntityNum, vec3_t normal, bool flesh, int fleshEntityNum, int weapon) {
 	trace_t trace;
 	int sourceContentType, destContentType;
 	vec3_t start;
+	weaponFx_t* fx;
+
+	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) weapon = WP_MACHINEGUN;
+	fx = &jsd_weaponFx[weapon];
 
 	// if the shooter is currently valid, calc a source point and possibly
 	// do trail effects
-	if(sourceEntityNum >= 0 && cg_tracerChance.value > 0) {
+	if(sourceEntityNum >= 0 && fx->tracerChance > 0.0f) {
 		if(CG_CalcMuzzlePoint(sourceEntityNum, start)) {
 			sourceContentType = CG_PointContents(start, 0);
 			destContentType = CG_PointContents(end, 0);
 
-			// do a complete bubble trail if necessary
 			if((sourceContentType == destContentType) && (sourceContentType & CONTENTS_WATER)) {
 				CG_BubbleTrail(start, end, 32);
-			}
-			// bubble trail from water into air
-			else if((sourceContentType & CONTENTS_WATER)) {
+			} else if(sourceContentType & CONTENTS_WATER) {
 				trap_CM_BoxTrace(&trace, end, start, NULL, NULL, 0, CONTENTS_WATER);
 				CG_BubbleTrail(start, trace.endpos, 32);
-			}
-			// bubble trail from air into water
-			else if((destContentType & CONTENTS_WATER)) {
+			} else if(destContentType & CONTENTS_WATER) {
 				trap_CM_BoxTrace(&trace, start, end, NULL, NULL, 0, CONTENTS_WATER);
 				CG_BubbleTrail(trace.endpos, end, 32);
 			}
 
-			// draw a tracer
-			if(random() < cg_tracerChance.value) {
-				CG_Tracer(start, end);
+			if(random() < fx->tracerChance) {
+				CG_Tracer(start, end, weapon);
 			}
 		}
 	}
 
-	// impact splash and mark
+	// impact splash
 	if(flesh)
 		CG_Bleed(end, fleshEntityNum);
 	else
-		CG_MissileHitWall(WP_MACHINEGUN, 0, end, normal, IMPACTSOUND_DEFAULT);
+		CG_MissileHitWall(weapon, 0, end, normal, IMPACTSOUND_DEFAULT);
 }
