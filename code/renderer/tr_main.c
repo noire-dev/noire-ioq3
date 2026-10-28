@@ -1433,13 +1433,7 @@ R_GenerateDrawSurfs
 void R_GenerateDrawSurfs(void) {
 	R_AddWorldSurfaces();
 
-	R_AddPolygonSurfaces();
-
-	// set the projection matrix with the minimum zfar
-	// now that we have the world bounded
-	// this needs to be done before entities are
-	// added, because they use the projection
-	// matrix for lod calculation
+	if(!(tr.viewParms.flags & VPF_NOCUBEMAPS)) R_AddPolygonSurfaces();
 
 	// dynamically compute far clip plane distance
 	if(!(tr.viewParms.flags & VPF_SHADOWMAP)) {

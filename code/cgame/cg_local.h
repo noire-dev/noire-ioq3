@@ -1048,7 +1048,7 @@ void CG_ImpactMark(qhandle_t markShader, const vec3_t origin, const vec3_t dir, 
 #define PF_GRAVITY 0x02      // ГРАВИТАЦИЯ: применять вектор ускорения
 
 void CG_ClearParticles(void);
-void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity);
+void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader);
 void CG_RenderParticles(void);
 
 //

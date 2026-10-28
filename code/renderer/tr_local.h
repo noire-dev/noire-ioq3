@@ -2160,8 +2160,8 @@ typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_D
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --
 // the main view, all the 3D icons, etc
-#define MAX_POLYS 6000
-#define MAX_POLYVERTS 30000
+#define MAX_POLYS 262144
+#define MAX_POLYVERTS 1310720
 
 // all of the information needed by the back end must be
 // contained in a backEndData_t
