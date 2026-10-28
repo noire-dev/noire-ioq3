@@ -234,6 +234,10 @@ void CG_RegisterCvars(void) {
 	trap_Cvar_Register(NULL, "headmodel", DEFAULT_MODEL, CVAR_USERINFO | CVAR_ARCHIVE);
 	trap_Cvar_Register(NULL, "team_model", DEFAULT_TEAM_MODEL, CVAR_USERINFO | CVAR_ARCHIVE);
 	trap_Cvar_Register(NULL, "team_headmodel", DEFAULT_TEAM_HEAD, CVAR_USERINFO | CVAR_ARCHIVE);
+
+	// Global fallback hands model used when a weapon has no <model>_hand.md3.
+	// Configurable so no per-weapon hardcoded path remains in the C code.
+	trap_Cvar_Register(NULL, "cg_defaultHandsModel", "models/weapons2/shotgun/shotgun_hand.md3", CVAR_ARCHIVE);
 }
 
 /*
@@ -421,7 +425,6 @@ static void CG_RegisterSounds(void) {
 	cgs.media.countFightSound = trap_S_RegisterSound("sound/feedback/fight.wav", true);
 	cgs.media.countPrepareSound = trap_S_RegisterSound("sound/feedback/prepare.wav", true);
 
-	cgs.media.tracerSound = trap_S_RegisterSound("sound/weapons/machinegun/buletby1.wav", false);
 	cgs.media.selectSound = trap_S_RegisterSound("sound/weapons/change.wav", false);
 	cgs.media.wearOffSound = trap_S_RegisterSound("sound/items/wearoff.wav", false);
 	cgs.media.useNothingSound = trap_S_RegisterSound("sound/items/use_nothing.wav", false);
@@ -499,14 +502,6 @@ static void CG_RegisterSounds(void) {
 		cgs.gameSounds[i] = trap_S_RegisterSound(soundName, false);
 	}
 
-	// FIXME: only needed with item
-	cgs.media.sfx_ric1 = trap_S_RegisterSound("sound/weapons/machinegun/ric1.wav", false);
-	cgs.media.sfx_ric2 = trap_S_RegisterSound("sound/weapons/machinegun/ric2.wav", false);
-	cgs.media.sfx_ric3 = trap_S_RegisterSound("sound/weapons/machinegun/ric3.wav", false);
-	// cgs.media.sfx_railg = trap_S_RegisterSound ("sound/weapons/railgun/railgf1a.wav", false);
-	cgs.media.sfx_rockexp = trap_S_RegisterSound("sound/weapons/rocket/rocklx1a.wav", false);
-	cgs.media.sfx_plasmaexp = trap_S_RegisterSound("sound/weapons/plasma/plasmx1a.wav", false);
-
 	cgs.media.protectSound = trap_S_RegisterSound("sound/items/protect3.wav", false);
 	cgs.media.n_healthSound = trap_S_RegisterSound("sound/items/n_health.wav", false);
 	cgs.media.hgrenb1aSound = trap_S_RegisterSound("sound/weapons/grenade/hgrenb1a.wav", false);
@@ -566,8 +561,6 @@ static void CG_RegisterGraphics(void) {
 
 	cgs.media.smokePuffShader = trap_R_RegisterShader("spark");
 	cgs.media.smokePuffRageProShader = trap_R_RegisterShader("smokePuffRagePro");
-	cgs.media.shotgunSmokePuffShader = trap_R_RegisterShader("shotgunSmokePuff");
-	cgs.media.plasmaBallShader = trap_R_RegisterShader("sprites/plasma1");
 	cgs.media.bloodTrailShader = trap_R_RegisterShader("bloodTrail");
 	cgs.media.connectionShader = trap_R_RegisterShader("disconnected");
 
@@ -586,9 +579,6 @@ static void CG_RegisterGraphics(void) {
 	cgs.media.armorModel = trap_R_RegisterModel("models/powerups/armor/armor_yel.md3");
 	cgs.media.armorIcon = trap_R_RegisterShaderNoMip("icons/iconr_yellow");
 
-	cgs.media.machinegunBrassModel = trap_R_RegisterModel("models/weapons2/shells/m_shell.md3");
-	cgs.media.shotgunBrassModel = trap_R_RegisterModel("models/weapons2/shells/s_shell.md3");
-
 	cgs.media.gibAbdomen = trap_R_RegisterModel("models/gibs/abdomen.md3");
 	cgs.media.gibArm = trap_R_RegisterModel("models/gibs/arm.md3");
 	cgs.media.gibChest = trap_R_RegisterModel("models/gibs/chest.md3");
@@ -606,9 +596,6 @@ static void CG_RegisterGraphics(void) {
 
 	cgs.media.bloodExplosionShader = trap_R_RegisterShader("bloodExplosion");
 
-	cgs.media.bulletFlashModel = trap_R_RegisterModel("models/weaphits/bullet.md3");
-	cgs.media.ringFlashModel = trap_R_RegisterModel("models/weaphits/ring02.md3");
-	cgs.media.dishFlashModel = trap_R_RegisterModel("models/weaphits/boom01.md3");
 	cgs.media.teleportEffectModel = trap_R_RegisterModel("models/misc/telep.md3");
 	cgs.media.teleportEffectShader = trap_R_RegisterShader("teleportEffect");
 
