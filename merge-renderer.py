@@ -10,7 +10,7 @@ from pathlib import Path
 #  Settings
 # ============================================================
 DEFAULT_FOLDER = "code/renderer/"
-DEFAULT_OUTPUT = "merged.txt"
+DEFAULT_OUTPUT = "merged-renderer.txt"
 DEFAULT_EXTS   = [".c", ".h", ".glsl"]
 # ============================================================
 
