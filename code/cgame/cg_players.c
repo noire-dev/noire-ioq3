@@ -22,8 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_players.c -- handle the media and animation for player entities
 #include "../qcommon/vm_javascript.h"
 
-
-
 /*
 =============================================================================
 
@@ -322,7 +320,6 @@ static void CG_LoadClientInfo(int clientNum, clientInfo_t* ci) {
 			CG_Error("DEFAULT_MODEL (%s) failed to register", DEFAULT_MODEL);
 		}
 	}
-
 
 	ci->deferred = false;
 	for(i = 0; i < MAX_GENTITIES; i++) {
@@ -955,7 +952,6 @@ void CG_Player(centity_t* cent) {
 		CG_Add3DString(cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2] + 48, ci->name, FONTSTYLE_DROPSHADOW, color_white, 0.50, 512, 1536, true);
 	}
 
-	// IQM models may expose a tag_weapon attachment for the existing weapon system.
 	CG_AddPlayerWeapon(&player, NULL, cent, ci);
 }
 
