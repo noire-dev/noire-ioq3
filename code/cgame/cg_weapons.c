@@ -669,10 +669,7 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 			VectorCopy(grabCent->currentState.angles2, localOff);
 			AnglesToAxis(grabCent->lerpAngles, grabAxis);
 			for(gi = 0; gi < 3; gi++) {
-				grabOrigin[gi] = grabCent->lerpOrigin[gi]
-					+ localOff[0] * grabAxis[0][gi]
-					+ localOff[1] * grabAxis[1][gi]
-					+ localOff[2] * grabAxis[2][gi];
+				grabOrigin[gi] = grabCent->lerpOrigin[gi] + localOff[0] * grabAxis[0][gi] + localOff[1] * grabAxis[1][gi] + localOff[2] * grabAxis[2][gi];
 			}
 		}
 
@@ -1276,12 +1273,9 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 			}
 		}
 
-		// IQM models are not required to expose the legacy MD3 tag_weapon.
-		// Initialize a safe identity attachment when the joint/tag is absent.
 		memset(&lerped, 0, sizeof(lerped));
 		AxisClear(lerped.axis);
-		if(!trap_CM_LerpTag(&lerped, parent->hModel, parent->oldframe, parent->frame,
-		                    1.0 - parent->backlerp, "tag_weapon")) {
+		if(!trap_CM_LerpTag(&lerped, parent->hModel, parent->oldframe, parent->frame, 1.0 - parent->backlerp, "anim_attachment_RH")) {
 			VectorSet(lerped.origin, 0.0f, 0.0f, 0.0f);
 			AxisClear(lerped.axis);
 		}
