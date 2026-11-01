@@ -192,7 +192,7 @@ static void CG_DrawWeaponSelect(void) {
 	x = activeX;
 	/* If weapon #0 is selected, its expanded header occupies the first card. */
 	firstWeaponSelected = (count > 0 && sectionWeapons[0] == cg.weaponSelect);
-	y += firstWeaponSelected ? (WEAPON_SELECTOR_ROW_SELECTED_H + WEAPON_SELECTOR_GAP) : WEAPON_SELECTOR_LIST_Y;
+	y += firstWeaponSelected ? (WEAPON_SELECTOR_ROW_SELECTED_H + WEAPON_SELECTOR_GAP) : (WEAPON_SELECTOR_HEADER_ACTIVE_H + WEAPON_SELECTOR_GAP);
 	for(i = 1; i < count; i++) {
 		weapon = sectionWeapons[i];
 		bool selected = (weapon == cg.weaponSelect);
