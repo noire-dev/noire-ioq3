@@ -4,6 +4,7 @@
 void trap_UpdateScreen(void);
 void trap_GetGlconfig(glconfig_t* glconfig);
 qhandle_t trap_R_RegisterModel(const char* name);
+qhandle_t trap_R_RegisterModelEx(const char* name, const char* animName);
 qhandle_t trap_R_RegisterSkin(const char* name);
 sfxHandle_t trap_S_RegisterSound(const char* sample, bool compressed);
 qhandle_t trap_R_RegisterShader(const char* name);

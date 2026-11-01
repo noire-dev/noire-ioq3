@@ -27,6 +27,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
     {
         [WP_GAUNTLET] =
             {
+                .animType = AMTYPE_MELEE,
                 .continuousFire = true,
                 .hitLightColor = {0.6f, 0.6f, 1.0f},
                 .hitLightRadius = 80.0f,
@@ -49,6 +50,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_MACHINEGUN] =
             {
+                .animType = AMTYPE_SMG1,
                 .hitLightColor = {1.0f, 1.0f, 0.0f},
                 .hitLightRadius = 100.0f,
                 .hitLightTime = 50,
@@ -92,6 +94,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_SHOTGUN] =
             {
+                .animType = AMTYPE_SHOTGUN,
                 .hitLightColor = {1.0f, 1.0f, 0.0f},
                 .hitLightRadius = 100.0f,
                 .hitLightTime = 50,
@@ -132,6 +135,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_GRENADE_LAUNCHER] =
             {
+                .animType = AMTYPE_GRENADE,
                 .explodeOnFleshHit = true,
                 .hitLightColor = {1.0f, 0.7f, 0.0f},
                 .hitLightRadius = 300.0f,
@@ -162,6 +166,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_ROCKET_LAUNCHER] =
             {
+                .animType = AMTYPE_RPG,
                 .explodeOnFleshHit = true,
                 .hitLightColor = {1.0f, 0.75f, 0.0f},
                 .hitLightRadius = 400.0f,
@@ -193,6 +198,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_LIGHTNING] =
             {
+                .animType = AMTYPE_AR2,
                 .isBeam = true,
                 .beamColor = {1.0f, 1.0f, 1.0f, 1.0f},
                 .continuousFire = true,
@@ -220,6 +226,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_RAILGUN] =
             {
+                .animType = AMTYPE_CROSSBOW,
                 .skipLightningBolt = true,
                 .hitLightColor = {1.0f, 0.5f, 0.0f},
                 .hitLightRadius = 200.0f,
@@ -247,6 +254,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_PLASMAGUN] =
             {
+                .animType = AMTYPE_MAGIC,
                 .hitLightColor = {0.6f, 0.6f, 1.0f},
                 .hitLightRadius = 150.0f,
                 .hitLightTime = 100,
@@ -277,6 +285,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_BFG] =
             {
+                .animType = AMTYPE_MAGIC,
                 .hitLightColor = {1.0f, 0.7f, 1.0f},
                 .hitLightRadius = 500.0f,
                 .hitLightTime = 500,
@@ -308,6 +317,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_PHYSGUN] =
             {
+                .animType = AMTYPE_PHYSGUN,
                 .continuousFire = true,
                 .modelColorSource = 1,
                 .hitLightColor = {0.6f, 0.6f, 1.0f},
@@ -333,6 +343,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_GRAVITYGUN] =
             {
+                .animType = AMTYPE_FIST,
                 .continuousFire = true,
                 .modelColorSource = 2,
                 .modelColor = {160.0f / 255.0f, 80.0f / 255.0f, 0.0f},
@@ -359,6 +370,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_TOOLGUN] =
             {
+                .animType = AMTYPE_CAMERA,
                 .hitLightColor = {0.5f, 0.5f, 0.5f},
                 .hitLightRadius = 100.0f,
                 .hitLightTime = 50,
@@ -1050,24 +1062,6 @@ CG_MapTorsoToWeaponFrame
 
 =================
 */
-static int CG_MapTorsoToWeaponFrame(clientInfo_t* ci, int frame) {
-	// change weapon
-	if(frame >= ci->animations[TORSO_DROP].firstFrame && frame < ci->animations[TORSO_DROP].firstFrame + 9) {
-		return frame - ci->animations[TORSO_DROP].firstFrame + 6;
-	}
-
-	// stand attack
-	if(frame >= ci->animations[TORSO_ATTACK].firstFrame && frame < ci->animations[TORSO_ATTACK].firstFrame + 6) {
-		return 1 + frame - ci->animations[TORSO_ATTACK].firstFrame;
-	}
-
-	// stand attack 2
-	if(frame >= ci->animations[TORSO_ATTACK2].firstFrame && frame < ci->animations[TORSO_ATTACK2].firstFrame + 6) {
-		return 1 + frame - ci->animations[TORSO_ATTACK2].firstFrame;
-	}
-
-	return 0;
-}
 
 /*
 ==============
@@ -1163,7 +1157,7 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 	}
 
 	anim = cent->currentState.legsAnim & ~ANIM_TOGGLEBIT;
-	if(anim == LEGS_WALKCR || anim == LEGS_IDLECR) {
+	if(anim == AM_CRONCHIDLE || (anim >= AM_CRONCH_E && anim <= AM_CRONCH_W)) {
 		muzzlePoint[2] += CROUCH_VIEWHEIGHT;
 	} else {
 		muzzlePoint[2] += DEFAULT_VIEWHEIGHT;
@@ -1282,7 +1276,15 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 			}
 		}
 
-		trap_CM_LerpTag(&lerped, parent->hModel, parent->oldframe, parent->frame, 1.0 - parent->backlerp, "tag_weapon");
+		// IQM models are not required to expose the legacy MD3 tag_weapon.
+		// Initialize a safe identity attachment when the joint/tag is absent.
+		memset(&lerped, 0, sizeof(lerped));
+		AxisClear(lerped.axis);
+		if(!trap_CM_LerpTag(&lerped, parent->hModel, parent->oldframe, parent->frame,
+		                    1.0 - parent->backlerp, "tag_weapon")) {
+			VectorSet(lerped.origin, 0.0f, 0.0f, 0.0f);
+			AxisClear(lerped.axis);
+		}
 		VectorCopy(parent->origin, gun.origin);
 
 		VectorMA(gun.origin, lerped.origin[0], parent->axis[0], gun.origin);
@@ -1458,9 +1460,11 @@ void CG_AddViewWeapon(playerState_t* ps) {
 	AnglesToAxis(angles, hand.axis);
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
-	hand.frame = CG_MapTorsoToWeaponFrame(ci, cent->pe.torso.frame);
-	hand.oldframe = CG_MapTorsoToWeaponFrame(ci, cent->pe.torso.oldFrame);
-	hand.backlerp = cent->pe.torso.backlerp;
+	// The IQM body is animated as one skeleton; legacy split-body hand-frame
+	// remapping is no longer applicable to the separate first-person hand model.
+	hand.frame = 0;
+	hand.oldframe = 0;
+	hand.backlerp = 0.0f;
 
 	hand.hModel = jsd_weaponFx[ps->weapon].handsModelHandle;
 	hand.renderfx = RF_DEPTHHACK | RF_FIRST_PERSON | RF_MINLIGHT;
@@ -1812,7 +1816,7 @@ static bool CG_CalcMuzzlePoint(int entityNum, vec3_t muzzle) {
 
 	AngleVectors(cent->currentState.apos.trBase, forward, NULL, NULL);
 	anim = cent->currentState.legsAnim & ~ANIM_TOGGLEBIT;
-	if(anim == LEGS_WALKCR || anim == LEGS_IDLECR) {
+	if(anim == AM_CRONCHIDLE || (anim >= AM_CRONCH_E && anim <= AM_CRONCH_W)) {
 		muzzle[2] += CROUCH_VIEWHEIGHT;
 	} else {
 		muzzle[2] += DEFAULT_VIEWHEIGHT;

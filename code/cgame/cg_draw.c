@@ -33,7 +33,7 @@ void CG_DrawHead(float x, float y, float w, float h, int clientNum) {
 	clientInfo_t* ci;
 
 	ci = &cgs.clientinfo[clientNum];
-	drawhShaderAdjusted(x, y, w, h, ci->modelIcon);
+	drawhShaderAdjusted(x, y, w, h, ci->modelIcon ? ci->modelIcon : cgs.media.deferShader);
 }
 
 #define WICON_SIDE 32 * 0.60

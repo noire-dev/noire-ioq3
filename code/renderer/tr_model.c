@@ -295,6 +295,231 @@ qhandle_t RE_RegisterModel(const char* name) {
 	return hModel;
 }
 
+static bool R_NameContainsNoCase(const char* s, const char* sub) {
+	size_t n = strlen(sub);
+
+	for(; *s; s++) {
+		if(!Q_stricmpn(s, sub, n)) return true;
+	}
+	return false;
+}
+
+/*
+====================
+RE_RegisterModelEx
+
+Loads a model and binds an external IQM animation to it.
+The cache key is the composite "<model>:<anim>", so the same model can be
+registered with different animations without clobbering each other.
+====================
+*/
+qhandle_t RE_RegisterModelEx(const char* name, const char* animName) {
+	model_t* mod;
+	qhandle_t hModel;
+	iqmAnimation_t* anim;
+	int i;
+	char compositeName[MAX_QEXTENDEDPATH * 2 + 2];
+	char modelName[MAX_QEXTENDEDPATH];
+
+	if(!name || !name[0]) {
+		ri.Printf(PRINT_ALL, "RE_RegisterModelEx: NULL name\n");
+		return 0;
+	}
+
+	if(!animName || !animName[0]) {
+		// no animation requested: fall back to the regular path
+		return RE_RegisterModel(name);
+	}
+
+	if(strlen(name) >= MAX_QEXTENDEDPATH) {
+		ri.Printf(PRINT_ALL, "RE_RegisterModelEx: model name exceeds MAX_QEXTENDEDPATH\n");
+		return 0;
+	}
+
+	Com_sprintf(compositeName, sizeof(compositeName), "%s:%s", name, animName);
+
+	//
+	// look up the composite name first
+	//
+	for(hModel = 1; hModel < tr.numModels; hModel++) {
+		mod = tr.models[hModel];
+		if(!strcmp(mod->name, compositeName)) {
+			if(mod->type == MOD_BAD) {
+				return 0;
+			}
+			return hModel;
+		}
+	}
+
+	//
+	// make sure the underlying model is registered (this loads geometry,
+	// VAOs and surfaces as usual)
+	//
+	hModel = RE_RegisterModel(name);
+	if(!hModel) {
+		ri.Printf(PRINT_WARNING, "RE_RegisterModelEx: failed to load base model '%s'\n", name);
+		return 0;
+	}
+
+	mod = tr.models[hModel];
+	if(mod->type != MOD_IQM) {
+		ri.Printf(PRINT_WARNING, "RE_RegisterModelEx: '%s' is not an IQM model, animations ignored\n", name);
+		return hModel;
+	}
+
+	//
+	// load / cache the animation
+	//
+	anim = R_LoadIQMAnimation(animName);
+	if(!anim) {
+		ri.Printf(PRINT_WARNING, "RE_RegisterModelEx: failed to load animation '%s'\n", animName);
+		return hModel;
+	}
+
+	int* poseMap = NULL;
+	byte* motionMask = NULL;
+
+	{
+		iqmData_t* baseData = (iqmData_t*)mod->modelData;
+		const bool animHasNames = anim->num_joints > 0 && anim->num_joints == anim->num_poses && anim->jointNames;
+		const bool baseHasNames = baseData->num_joints > 0 && baseData->jointNames;
+
+		if(animHasNames && baseHasNames) {
+			// Always match poses to joints BY NAME, even when both skeletons
+			// have the same number of bones: models of the same family often
+			// have equal bone counts but a different bone order (fingers,
+			// twist bones, attachments), and an index-based mapping would drive
+			// the wrong bones.
+			int matched = 0, unmatched = 0, badParents = 0;
+			const char* animNamePtr = anim->jointNames;
+
+			poseMap = ri.Hunk_Alloc(sizeof(int) * anim->num_poses, h_low);
+
+			for(i = 0; i < anim->num_poses; i++) {
+				const char* baseNamePtr = baseData->jointNames;
+				int found = -1;
+
+				for(int j = 0; j < baseData->num_joints; j++) {
+					if(!Q_stricmp(baseNamePtr, animNamePtr)) {
+						found = j;
+						break;
+					}
+					baseNamePtr += strlen(baseNamePtr) + 1;
+				}
+
+				if(found < 0) {
+					ri.Printf(PRINT_DEVELOPER, "RE_RegisterModelEx: joint '%s' from '%s' not found in '%s'\n", animNamePtr, animName, name);
+					unmatched++;
+				} else {
+					matched++;
+				}
+
+				poseMap[i] = found;
+				animNamePtr += strlen(animNamePtr) + 1;
+			}
+
+			if(matched == 0) {
+				ri.Printf(PRINT_WARNING, "RE_RegisterModelEx: no joint of '%s' matches '%s', animation ignored\n", animName, name);
+				return hModel;
+			}
+
+			if(unmatched) {
+				ri.Printf(PRINT_WARNING, "RE_RegisterModelEx: %d of %d joints of '%s' not found in '%s' (they stay in bind pose)\n", unmatched, anim->num_poses, animName, name);
+			}
+
+			// hierarchy sanity check: parent of a retargeted pose must map
+			// to the same joint that the model's parent joint maps to.
+			for(i = 0; i < anim->num_poses; i++) {
+				int animParent = anim->jointParents ? anim->jointParents[i] : -1;
+
+				if(poseMap[i] < 0 || animParent < 0 || animParent >= anim->num_poses) continue;
+
+				if(poseMap[animParent] != baseData->jointParents[poseMap[i]]) {
+					badParents++;
+				}
+			}
+
+			if(badParents) {
+				ri.Printf(PRINT_WARNING, "RE_RegisterModelEx: hierarchy of '%s' differs from '%s' for %d joints\n", animName, name, badParents);
+			}
+
+			ri.Printf(PRINT_ALL, "RE_RegisterModelEx: retargeted '%s' (%d poses) -> '%s' (%d joints), %d matched\n", animName, anim->num_poses, name, baseData->num_joints, matched);
+		} else if(anim->num_poses == baseData->num_joints) {
+			// no joint names to go by: assume identical skeletons
+			ri.Printf(PRINT_WARNING, "RE_RegisterModelEx: '%s' has no joint names, assuming the same bone order as '%s'\n", animName, name);
+		} else {
+			ri.Printf(PRINT_WARNING, "RE_RegisterModelEx: skeleton mismatch for '%s' + '%s' (%d poses vs %d joints), cannot retarget without joint names\n", name, animName, anim->num_poses, baseData->num_joints);
+			return hModel;
+		}
+
+		// Joints that are allowed to MOVE with the animation: roots and the
+		// pelvis. Every other bone keeps the model's own bone length, so the
+		// proportions of the model never change.
+		if(baseData->num_joints > 0 && baseData->jointParents) {
+			const char* jn = baseData->jointNames;
+
+			motionMask = ri.Hunk_Alloc(baseData->num_joints, h_low);
+			for(i = 0; i < baseData->num_joints; i++) {
+				if(baseData->jointParents[i] < 0) {
+					motionMask[i] = 1;
+				} else if(jn && (R_NameContainsNoCase(jn, "pelvis") || R_NameContainsNoCase(jn, "hips"))) {
+					motionMask[i] = 1;
+				}
+				if(jn) jn += strlen(jn) + 1;
+			}
+		}
+	}
+
+	//
+	// clone the model_t and iqmData_t so that different animations on the
+	// same base model do not clobber each other in the model cache
+	//
+	Q_strncpyz(modelName, name, sizeof(modelName));
+
+	if((mod = R_AllocModel()) == NULL) {
+		ri.Printf(PRINT_WARNING, "RE_RegisterModelEx: R_AllocModel() failed for '%s'\n", compositeName);
+		return hModel;
+	}
+
+	Q_strncpyz(mod->name, compositeName, sizeof(mod->name));
+
+	{
+		model_t* baseMod = tr.models[hModel];
+		iqmData_t* baseData = (iqmData_t*)baseMod->modelData;
+		iqmData_t* newData;
+		srfIQModel_t* surf;
+		srfVaoIQModel_t* vaoSurf;
+		int k;
+
+		// shallow-copy the model_t
+		*mod = *baseMod;
+		mod->index = tr.numModels - 1;
+		Q_strncpyz(mod->name, compositeName, sizeof(mod->name));
+
+		// shallow-copy the iqmData_t into the hunk
+		newData = (iqmData_t*)ri.Hunk_Alloc(sizeof(*newData), h_low);
+		*newData = *baseData;
+		newData->anim = anim;
+		newData->animPoseMap = poseMap;
+		newData->animMotionMask = motionMask;
+
+		mod->modelData = newData;
+
+		// fix surface back-pointers
+		surf = newData->surfaces;
+		for(k = 0; k < newData->num_surfaces; k++, surf++) {
+			surf->data = newData;
+		}
+
+		vaoSurf = newData->vaoSurfaces;
+		for(k = 0; k < newData->numVaoSurfaces; k++, vaoSurf++) {
+			vaoSurf->iqmData = newData;
+		}
+	}
+
+	return mod->index;
+}
+
 /*
 =================
 R_LoadMD3

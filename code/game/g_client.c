@@ -386,17 +386,8 @@ void CopyToBodyQue(gentity_t* ent) {
 	}
 	body->s.event = 0;
 
-	// change the animation to the last-frame only, so the sequence
-	// doesn't repeat anew for the body
-	switch(body->s.legsAnim & ~ANIM_TOGGLEBIT) {
-		case BOTH_DEATH1:
-		case BOTH_DEAD1: body->s.torsoAnim = body->s.legsAnim = BOTH_DEAD1; break;
-		case BOTH_DEATH2:
-		case BOTH_DEAD2: body->s.torsoAnim = body->s.legsAnim = BOTH_DEAD2; break;
-		case BOTH_DEATH3:
-		case BOTH_DEAD3:
-		default: body->s.torsoAnim = body->s.legsAnim = BOTH_DEAD3; break;
-	}
+	// IQM full-body death clips are non-looping; keep the selected action on the corpse.
+	body->s.torsoAnim = body->s.legsAnim;
 
 	body->r.svFlags = ent->r.svFlags;
 	VectorCopy(ent->r.mins, body->r.mins);
@@ -505,7 +496,6 @@ void ClientUserinfoChanged(int clientNum) {
 	int health;
 	char* s;
 	char model[MAX_QPATH];
-	char headModel[MAX_QPATH];
 	char oldname[MAX_STRING_CHARS];
 	gclient_t* client;
 	char c1[MAX_INFO_STRING];
@@ -538,7 +528,6 @@ void ClientUserinfoChanged(int clientNum) {
 
 	// set model
 	Q_strncpyz(model, Info_ValueForKey(userinfo, "model"), sizeof(model));
-	Q_strncpyz(headModel, Info_ValueForKey(userinfo, "headmodel"), sizeof(headModel));
 
 	// colors
 	Q_strncpyz(c1, Info_ValueForKey(userinfo, "color1"), sizeof(c1));
@@ -550,7 +539,7 @@ void ClientUserinfoChanged(int clientNum) {
 
 	// send over a subset of the userinfo keys so other clients can
 	// print scoreboards, display models, and play custom sounds
-	s = va("n\\%s\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\pr\\%s\\pg\\%s\\pb\\%s", client->pers.netname, model, headModel, c1, c2, physR, physG, physB);
+	s = va("n\\%s\\model\\%s\\c1\\%s\\c2\\%s\\pr\\%s\\pg\\%s\\pb\\%s", client->pers.netname, model, c1, c2, physR, physG, physB);
 
 	trap_SetConfigstring(CS_PLAYERS + clientNum, s);
 }
@@ -778,8 +767,8 @@ void ClientSpawn(gentity_t* ent) {
 	client->inactivityTime = level.time + g_inactivity.integer * 1000;
 
 	// set default animations
-	client->ps.torsoAnim = TORSO_STAND;
-	client->ps.legsAnim = LEGS_IDLE;
+	client->ps.torsoAnim = AM_IDLE;
+	client->ps.legsAnim = AM_IDLE;
 
 	G_KillBox(ent);
 	// force the base weapon up

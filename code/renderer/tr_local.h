@@ -871,6 +871,24 @@ typedef struct {
 	vec3_t scale;
 } iqmTransform_t;
 
+typedef struct iqmAnimation_s {
+	char name[MAX_QEXTENDEDPATH];
+	int num_poses;
+	int num_frames;
+	iqmTransform_t* poses;
+	float* bounds;
+
+	// join/pose metadata needed for name-based retargeting
+	int num_joints;
+	char* jointNames;
+	int* jointParents;
+
+	// local bind pose (TRS per joint) from the animation's joint section,
+	// used to retarget rotations onto other skeletons
+	bool hasBindPose;
+	iqmTransform_t* jointBindLocal;  // [num_joints]
+} iqmAnimation_t;
+
 // inter-quake-model
 typedef struct {
 	int num_vertexes;
@@ -880,6 +898,10 @@ typedef struct {
 	int num_joints;
 	int num_poses;
 	struct srfIQModel_s* surfaces;
+
+	int* animPoseMap;           // external animation pose -> model joint (NULL = identity)
+	byte* animMotionMask;       // [num_joints] joints that may translate with an external animation (root / pelvis)
+	iqmTransform_t* bindLocal;  // [num_joints] local bind pose of this model (translate / rotate / scale)
 
 	int* triangles;
 
@@ -912,6 +934,8 @@ typedef struct {
 
 	int numVaoSurfaces;
 	struct srfVaoIQModel_s* vaoSurfaces;
+
+	struct iqmAnimation_s* anim;
 } iqmData_t;
 
 // inter-quake-model surface
@@ -1158,6 +1182,7 @@ typedef struct model_s {
 } model_t;
 
 #define MAX_MOD_KNOWN 16384
+#define MAX_IQM_ANIMATIONS 256
 
 void R_ModelInit(void);
 model_t* R_GetModelByHandle(qhandle_t hModel);
@@ -1476,6 +1501,9 @@ typedef struct {
 	model_t* models[MAX_MOD_KNOWN];
 	int numModels;
 
+	iqmAnimation_t* iqmAnimations[MAX_IQM_ANIMATIONS];
+	int numIQMAnimations;
+
 	int numImages;
 	image_t* images[MAX_DRAWIMAGES];
 
@@ -1558,6 +1586,7 @@ extern cvar_t* r_reflectionsResolution;
 extern cvar_t* r_reflectionsGrid;
 extern cvar_t* r_reflectionsMaterials;
 extern cvar_t* r_reflectionsEntities;
+extern cvar_t* r_iqmRetargetMode;
 extern cvar_t* r_reflectionsSkybox;
 extern cvar_t* r_deluxeSpecular;
 extern cvar_t* r_shadows;
@@ -1729,6 +1758,7 @@ void RE_BeginRegistration(glconfig_t* glconfig);
 void RE_LoadWorldMap(const char* mapname);
 void RE_SetWorldVisData(const byte* vis);
 qhandle_t RE_RegisterModel(const char* name);
+qhandle_t RE_RegisterModelEx(const char* name, const char* animName);
 qhandle_t RE_RegisterSkin(const char* name);
 void RE_Shutdown(bool destroyWindow);
 
@@ -1943,6 +1973,8 @@ void Vao_SetVertexPointers(vao_t* vao);
 void R_InitVaos(void);
 void R_ShutdownVaos(void);
 void R_VaoList_f(void);
+
+iqmAnimation_t* R_LoadIQMAnimation(const char* name);
 
 void RB_UpdateTessVao(unsigned int attribBits);
 

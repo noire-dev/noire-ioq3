@@ -188,12 +188,8 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 			// normal death
 			static int lastDeath;
 
-			switch(lastDeath) {
-				case 0: anim = BOTH_DEATH1; break;
-				case 1: anim = BOTH_DEATH2; break;
-				case 2:
-				default: anim = BOTH_DEATH3; break;
-			}
+			if(lastDeath < 0 || lastDeath >= 4) lastDeath = 0;
+			anim = AM_DEATH1 + lastDeath;
 
 			// for the no-blood option, we need to prevent the health
 			// from going to gib level
@@ -202,13 +198,13 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 			self->client->ps.legsAnim = ((self->client->ps.legsAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
 			self->client->ps.torsoAnim = ((self->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
 
-			G_AddEvent(self, EV_DEATH1 + lastDeath, killer);
+			G_AddEvent(self, EV_DEATH1 + (lastDeath % 3), killer);
 
 			// the body can still be gibbed
 			self->die = body_die;
 
 			// globally cycle through the different death animations
-			lastDeath = (lastDeath + 1) % 3;
+			lastDeath = (lastDeath + 1) % 4;
 		}
 
 		trap_LinkEntity(self);

@@ -119,7 +119,7 @@ int CG_WaterLevel(centity_t* cent) {
 
 	anim = cent->currentState.legsAnim & ~ANIM_TOGGLEBIT;
 
-	if(anim == LEGS_WALKCR || anim == LEGS_IDLECR) {
+	if(anim == AM_CRONCHIDLE || (anim >= AM_CRONCH_E && anim <= AM_CRONCH_W)) {
 		viewheight = CROUCH_VIEWHEIGHT;
 	} else {
 		viewheight = DEFAULT_VIEWHEIGHT;
@@ -164,32 +164,11 @@ Also called by playerstate transition
 ================
 */
 void CG_PainEvent(centity_t* cent, int health) {
-	char* snd;
-
 	// don't do more than two pain sounds a second
 	if(cg.time - cent->pe.painTime < 500) {
 		return;
 	}
 
-	if(health < 25) {
-		snd = "*pain25_1.wav";
-	} else if(health < 50) {
-		snd = "*pain50_1.wav";
-	} else if(health < 75) {
-		snd = "*pain75_1.wav";
-	} else {
-		snd = "*pain100_1.wav";
-	}
-	// play a gurp sound instead of a normal pain sound
-	if(CG_WaterLevel(cent) == 3) {
-		if(rand() & 1) {
-			trap_S_StartSound(NULL, cent->currentState.number, CHAN_VOICE, CG_CustomSound(cent->currentState.number, "sound/player/gurp1.wav"));
-		} else {
-			trap_S_StartSound(NULL, cent->currentState.number, CHAN_VOICE, CG_CustomSound(cent->currentState.number, "sound/player/gurp2.wav"));
-		}
-	} else {
-		trap_S_StartSound(NULL, cent->currentState.number, CHAN_VOICE, CG_CustomSound(cent->currentState.number, snd));
-	}
 	// save pain time for programitic twitch animation
 	cent->pe.painTime = cg.time;
 	cent->pe.painDirection ^= 1;
@@ -259,7 +238,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		case EV_FALL_MEDIUM:
 			DEBUGNAME("EV_FALL_MEDIUM");
 			// use normal pain sound
-			trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*pain100_1.wav"));
+			trap_S_StartSound(NULL, es->number, CHAN_VOICE, cgs.media.landSound);
 			if(clientNum == cg.predictedPlayerState.clientNum) {
 				// smooth landing z changes
 				cg.landChange = -16;
@@ -268,7 +247,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 			break;
 		case EV_FALL_FAR:
 			DEBUGNAME("EV_FALL_FAR");
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, CG_CustomSound(es->number, "*fall1.wav"));
+			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.fallSound);
 			cent->pe.painTime = cg.time;  // don't play a pain sound right after this
 			if(clientNum == cg.predictedPlayerState.clientNum) {
 				// smooth landing z changes
@@ -323,17 +302,9 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 
 			// boing sound at origin, jump sound on player
 			trap_S_StartSound(cent->lerpOrigin, -1, CHAN_VOICE, cgs.media.jumpPadSound);
-			trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*jump1.wav"));
 			break;
 
-		case EV_JUMP:
-			DEBUGNAME("EV_JUMP");
-			trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*jump1.wav"));
-			break;
-		case EV_TAUNT:
-			DEBUGNAME("EV_TAUNT");
-			trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*taunt.wav"));
-			break;
+		case EV_JUMP: DEBUGNAME("EV_JUMP"); break;
 		case EV_GRAVITY_LAUNCH:
 			DEBUGNAME("EV_GRAVITY_LAUNCH");
 			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.gravityLaunch[rand() & 3]);
@@ -342,10 +313,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 			DEBUGNAME("EV_WATER_SPLASH");
 			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.waterSplash[rand() & 2]);
 			break;
-		case EV_WATER_CLEAR:
-			DEBUGNAME("EV_WATER_CLEAR");
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, CG_CustomSound(es->number, "*gasp.wav"));
-			break;
+		case EV_WATER_CLEAR: DEBUGNAME("EV_WATER_CLEAR"); break;
 
 		case EV_ITEM_PICKUP:
 			DEBUGNAME("EV_ITEM_PICKUP");
@@ -486,22 +454,12 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 
 		case EV_GENERAL_SOUND:
 			DEBUGNAME("EV_GENERAL_SOUND");
-			if(cgs.gameSounds[es->eventParm]) {
-				trap_S_StartSound(NULL, es->number, CHAN_VOICE, cgs.gameSounds[es->eventParm]);
-			} else {
-				s = CG_ConfigString(CS_SOUNDS + es->eventParm);
-				trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, s));
-			}
+			trap_S_StartSound(NULL, es->number, CHAN_VOICE, cgs.gameSounds[es->eventParm]);
 			break;
 
 		case EV_GLOBAL_SOUND:  // play from the player's head so it never diminishes
 			DEBUGNAME("EV_GLOBAL_SOUND");
-			if(cgs.gameSounds[es->eventParm]) {
-				trap_S_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.gameSounds[es->eventParm]);
-			} else {
-				s = CG_ConfigString(CS_SOUNDS + es->eventParm);
-				trap_S_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, CG_CustomSound(es->number, s));
-			}
+			trap_S_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.gameSounds[es->eventParm]);
 			break;
 
 		case EV_GLOBAL_TEAM_SOUND:  // play from the player's head so it never diminishes
@@ -520,16 +478,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 
 		case EV_DEATH1:
 		case EV_DEATH2:
-		case EV_DEATH3:
-			DEBUGNAME("EV_DEATHx");
-
-			if(CG_WaterLevel(cent) == 3) {
-				trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*drown.wav"));
-			} else {
-				trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, va("*death%i.wav", event - EV_DEATH1 + 1)));
-			}
-
-			break;
+		case EV_DEATH3: DEBUGNAME("EV_DEATHx"); break;
 
 		case EV_OBITUARY:
 			DEBUGNAME("EV_OBITUARY");

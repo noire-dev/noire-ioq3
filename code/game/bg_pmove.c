@@ -362,10 +362,10 @@ static bool PM_CheckJump(void) {
 	PM_AddEvent(EV_JUMP);
 
 	if(pm->cmd.forwardmove >= 0) {
-		PM_ForceLegsAnim(LEGS_JUMP);
+		PM_ForceLegsAnim(AM_JUMP);
 		pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
 	} else {
-		PM_ForceLegsAnim(LEGS_JUMPB);
+		PM_ForceLegsAnim(AM_JUMP);
 		pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
 	}
 
@@ -805,14 +805,8 @@ static void PM_CrashLand(void) {
 	float t;
 	float a, b, c, den;
 
-	// decide which landing animation to use
-	if(pm->ps->pm_flags & PMF_BACKWARDS_JUMP) {
-		PM_ForceLegsAnim(LEGS_LANDB);
-	} else {
-		PM_ForceLegsAnim(LEGS_LAND);
-	}
-
-	pm->ps->legsTimer = TIMER_LAND;
+	// The IQM set has no separate landing clip; allow locomotion to resume.
+	pm->ps->legsTimer = 0;
 
 	// calculate the exact velocity on landing
 	dist = pm->ps->origin[2] - pml.previous_origin[2];
@@ -958,10 +952,10 @@ static void PM_GroundTraceMissed(void) {
 		pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, point, pm->ps->clientNum, pm->tracemask);
 		if(trace.fraction == 1.0) {
 			if(pm->cmd.forwardmove >= 0) {
-				PM_ForceLegsAnim(LEGS_JUMP);
+				PM_ForceLegsAnim(AM_JUMP);
 				pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
 			} else {
-				PM_ForceLegsAnim(LEGS_JUMPB);
+				PM_ForceLegsAnim(AM_JUMP);
 				pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
 			}
 		}
@@ -1008,10 +1002,10 @@ static void PM_GroundTrace(void) {
 		}
 		// go into jump animation
 		if(pm->cmd.forwardmove >= 0) {
-			PM_ForceLegsAnim(LEGS_JUMP);
+			PM_ForceLegsAnim(AM_JUMP);
 			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
 		} else {
-			PM_ForceLegsAnim(LEGS_JUMPB);
+			PM_ForceLegsAnim(AM_JUMP);
 			pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
 		}
 
@@ -1161,77 +1155,83 @@ static void PM_CheckDuck(void) {
 PM_Footsteps
 ===============
 */
+static int PM_DirectionalAnimation(int base) {
+	bool forward = (pm->cmd.forwardmove > 0);
+	bool backward = (pm->cmd.forwardmove < 0);
+	bool right = (pm->cmd.rightmove > 0);
+	bool left = (pm->cmd.rightmove < 0);
+
+	// The animation directions are relative to the player's command axes:
+	// N = forward, E = right, S = backward, W = left.
+	if(forward) {
+		if(right) return base + 2;  // NE
+		if(left) return base + 3;   // NW
+		return base + 1;            // N
+	}
+	if(backward) {
+		if(right) return base + 5;  // SE
+		if(left) return base + 6;   // SW
+		return base + 4;            // S
+	}
+	if(right) return base;         // E
+	if(left) return base + 7;      // W
+	return base + 1;
+}
+
 static void PM_Footsteps(void) {
 	float bobmove;
 	int old;
 	bool footstep;
+	bool moving;
+	int anim;
 
-	//
-	// calculate speed and cycle to be used for
-	// all cyclic walking effects
-	//
 	pm->xyspeed = sqrt(pm->ps->velocity[0] * pm->ps->velocity[0] + pm->ps->velocity[1] * pm->ps->velocity[1]);
+	moving = (pm->cmd.forwardmove != 0 || pm->cmd.rightmove != 0) && pm->xyspeed >= 5.0f;
 
 	if(pm->ps->groundEntityNum == ENTITYNUM_NONE) {
-		// airborne leaves position in cycle intact, but doesn't advance
 		if(pm->waterlevel > 1) {
-			PM_ContinueLegsAnim(LEGS_SWIM);
+			anim = PM_DirectionalAnimation(AM_SWIM_E);
+			PM_ContinueLegsAnim(anim);
 		}
 		return;
 	}
 
-	// if not trying to move
-	if(!pm->cmd.forwardmove && !pm->cmd.rightmove) {
-		if(pm->xyspeed < 5) {
-			pm->ps->bobCycle = 0;  // start at beginning of cycle again
-			if(pm->ps->pm_flags & PMF_DUCKED) {
-				PM_ContinueLegsAnim(LEGS_IDLECR);
-			} else {
-				PM_ContinueLegsAnim(LEGS_IDLE);
-			}
+	if(pm->waterlevel > 1 && moving) {
+		anim = PM_DirectionalAnimation(AM_SWIM_E);
+		PM_ContinueLegsAnim(anim);
+		return;
+	}
+
+	if(!moving) {
+		pm->ps->bobCycle = 0;
+		if(pm->ps->pm_flags & PMF_DUCKED) {
+			PM_ContinueLegsAnim(AM_CRONCHIDLE);
+		} else {
+			PM_ContinueLegsAnim(AM_IDLE);
 		}
 		return;
 	}
 
 	footstep = false;
-
 	if(pm->ps->pm_flags & PMF_DUCKED) {
-		bobmove = 0.5;  // ducked characters bob much faster
-		if(pm->ps->pm_flags & PMF_BACKWARDS_RUN) {
-			PM_ContinueLegsAnim(LEGS_BACKCR);
-		} else {
-			PM_ContinueLegsAnim(LEGS_WALKCR);
-		}
+		bobmove = 0.5f;
+		anim = PM_DirectionalAnimation(AM_CRONCH_E);
+	} else if(pm->cmd.buttons & BUTTON_WALKING) {
+		bobmove = 0.3f;
+		anim = PM_DirectionalAnimation(AM_WALK_E);
 	} else {
-		if(!(pm->cmd.buttons & BUTTON_WALKING)) {
-			bobmove = 0.4f;  // faster speeds bob faster
-			if(pm->ps->pm_flags & PMF_BACKWARDS_RUN) {
-				PM_ContinueLegsAnim(LEGS_BACK);
-			} else {
-				PM_ContinueLegsAnim(LEGS_RUN);
-			}
-			footstep = true;
-		} else {
-			bobmove = 0.3f;  // walking bobs slow
-			if(pm->ps->pm_flags & PMF_BACKWARDS_RUN) {
-				PM_ContinueLegsAnim(LEGS_BACKWALK);
-			} else {
-				PM_ContinueLegsAnim(LEGS_WALK);
-			}
-		}
+		bobmove = 0.4f;
+		anim = PM_DirectionalAnimation(AM_RUN_E);
+		footstep = true;
 	}
+	PM_ContinueLegsAnim(anim);
 
-	// check for footstep / splash sounds
 	old = pm->ps->bobCycle;
 	pm->ps->bobCycle = (int)(old + bobmove * pml.msec) & 255;
-
-	// if we just crossed a cycle boundary, play an appropriate footstep event
 	if(((old + 64) ^ (pm->ps->bobCycle + 64)) & 128) {
 		if(!pm->waterlevel) {
-			// on ground will only play sounds if running
 			if(footstep) PM_AddEvent(PM_FootstepForSurface());
-		} else if(pm->waterlevel) {
-			// wading / swimming at surface
+		} else {
 			PM_AddEvent(EV_FOOTSTEP_SLOSH);
 		}
 	}
@@ -1261,7 +1261,7 @@ static void PM_BeginWeaponChange(int weapon) {
 	PM_AddEvent(EV_CHANGE_WEAPON);
 	pm->ps->weaponstate = WEAPON_DROPPING;
 	pm->ps->weaponTime += 200;
-	PM_StartTorsoAnim(TORSO_DROP);
+	PM_ContinueTorsoAnim(AM_IDLE);
 }
 
 static void PM_FinishWeaponChange(void) {
@@ -1277,7 +1277,7 @@ static void PM_FinishWeaponChange(void) {
 	pm->ps->weapon = weapon;
 	pm->ps->weaponstate = WEAPON_RAISING;
 	pm->ps->weaponTime += 250;
-	PM_StartTorsoAnim(TORSO_RAISE);
+	PM_ContinueTorsoAnim(AM_IDLE);
 }
 
 /*
@@ -1287,14 +1287,11 @@ PM_TorsoAnimation
 ==============
 */
 static void PM_TorsoAnimation(void) {
-	if(pm->ps->weaponstate == WEAPON_READY) {
-		if(pm->ps->weapon == WP_GAUNTLET) {
-			PM_ContinueTorsoAnim(TORSO_STAND2);
-		} else {
-			PM_ContinueTorsoAnim(TORSO_STAND);
-		}
+	// A timed full-body action (gesture, taunt, melee or throw) owns the pose.
+	if(pm->ps->torsoTimer > 0 || pm->ps->pm_type >= PM_DEAD) {
 		return;
 	}
+	PM_ContinueTorsoAnim(AM_IDLE);
 }
 
 /*
@@ -1344,11 +1341,7 @@ static void PM_Weapon(void) {
 
 	if(pm->ps->weaponstate == WEAPON_RAISING) {
 		pm->ps->weaponstate = WEAPON_READY;
-		if(pm->ps->weapon == WP_GAUNTLET) {
-			PM_StartTorsoAnim(TORSO_STAND2);
-		} else {
-			PM_StartTorsoAnim(TORSO_STAND);
-		}
+		PM_ContinueTorsoAnim(AM_IDLE);
 		return;
 	}
 
@@ -1367,9 +1360,11 @@ static void PM_Weapon(void) {
 			pm->ps->weaponstate = WEAPON_READY;
 			return;
 		}
-		PM_StartTorsoAnim(TORSO_ATTACK2);
-	} else {
-		PM_StartTorsoAnim(TORSO_ATTACK);
+		PM_StartTorsoAnim(AM_MELEEATTACK);
+		pm->ps->torsoTimer = 350;
+	} else if(pm->ps->weapon == WP_GRENADE_LAUNCHER) {
+		PM_StartTorsoAnim(AM_THROW);
+		pm->ps->torsoTimer = 450;
 	}
 
 	pm->ps->weaponstate = WEAPON_FIRING;
@@ -1401,22 +1396,6 @@ static void PM_Weapon(void) {
 	addTime = jsd_weapon[pm->ps->weapon].delay;
 
 	pm->ps->weaponTime += addTime;
-}
-
-/*
-================
-PM_Animate
-================
-*/
-
-static void PM_Animate(void) {
-	if(pm->cmd.buttons & BUTTON_GESTURE && pm->cmd.weapon != WP_PHYSGUN) {
-		if(pm->ps->torsoTimer == 0) {
-			PM_StartTorsoAnim(TORSO_GESTURE);
-			pm->ps->torsoTimer = TIMER_GESTURE;
-			PM_AddEvent(EV_TAUNT);
-		}
-	}
 }
 
 /*
@@ -1627,7 +1606,6 @@ void PmoveSingle(pmove_t* pmove) {
 		PM_AirMove();
 	}
 
-	PM_Animate();
 
 	// set groundentity, watertype, and waterlevel
 	PM_GroundTrace();

@@ -106,6 +106,85 @@ static void Matrix34Invert(const float* inMat, float* outMat) {
 	outMat[7] = -DotProduct(outMat + 4, trans);
 	outMat[11] = -DotProduct(outMat + 8, trans);
 }
+
+static vec_t QuatNormalize2(const quat_t v, quat_t out) {
+	float length, ilength;
+
+	length = v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3];
+
+	if(length) {
+		/* writing it this way allows gcc to recognize that rsqrt can be used */
+		ilength = 1 / (float)sqrt(length);
+		/* sqrt(length) = length * (1 / sqrt(length)) */
+		length *= ilength;
+		out[0] = v[0] * ilength;
+		out[1] = v[1] * ilength;
+		out[2] = v[2] * ilength;
+		out[3] = v[3] * ilength;
+	} else {
+		out[0] = out[1] = out[2] = 0;
+		out[3] = -1;
+	}
+
+	return length;
+}
+
+static void Matrix34Decompose(const float* mat, vec3_t trans, quat_t rot, vec3_t scale) {
+	trans[0] = mat[3];
+	trans[1] = mat[7];
+	trans[2] = mat[11];
+
+	// row lengths of 3x3 = scales (IQM stores scale by rows)
+	{
+		float sx = sqrtf(mat[0] * mat[0] + mat[1] * mat[1] + mat[2] * mat[2]);
+		float sy = sqrtf(mat[4] * mat[4] + mat[5] * mat[5] + mat[6] * mat[6]);
+		float sz = sqrtf(mat[8] * mat[8] + mat[9] * mat[9] + mat[10] * mat[10]);
+
+		float r00 = sx > 1e-6f ? mat[0] / sx : 1.0f;
+		float r01 = sx > 1e-6f ? mat[1] / sx : 0.0f;
+		float r02 = sx > 1e-6f ? mat[2] / sx : 0.0f;
+		float r10 = sy > 1e-6f ? mat[4] / sy : 0.0f;
+		float r11 = sy > 1e-6f ? mat[5] / sy : 1.0f;
+		float r12 = sy > 1e-6f ? mat[6] / sy : 0.0f;
+		float r20 = sz > 1e-6f ? mat[8] / sz : 0.0f;
+		float r21 = sz > 1e-6f ? mat[9] / sz : 0.0f;
+		float r22 = sz > 1e-6f ? mat[10] / sz : 1.0f;
+
+		float trace = r00 + r11 + r22;
+
+		scale[0] = sx;
+		scale[1] = sy;
+		scale[2] = sz;
+
+		if(trace > 0.0f) {
+			float s = sqrtf(trace + 1.0f) * 2.0f;
+			rot[3] = 0.25f * s;
+			rot[0] = (r21 - r12) / s;
+			rot[1] = (r02 - r20) / s;
+			rot[2] = (r10 - r01) / s;
+		} else if(r00 > r11 && r00 > r22) {
+			float s = sqrtf(1.0f + r00 - r11 - r22) * 2.0f;
+			rot[3] = (r21 - r12) / s;
+			rot[0] = 0.25f * s;
+			rot[1] = (r01 + r10) / s;
+			rot[2] = (r02 + r20) / s;
+		} else if(r11 > r22) {
+			float s = sqrtf(1.0f + r11 - r00 - r22) * 2.0f;
+			rot[3] = (r02 - r20) / s;
+			rot[0] = (r01 + r10) / s;
+			rot[1] = 0.25f * s;
+			rot[2] = (r12 + r21) / s;
+		} else {
+			float s = sqrtf(1.0f + r22 - r00 - r11) * 2.0f;
+			rot[3] = (r10 - r01) / s;
+			rot[0] = (r02 + r20) / s;
+			rot[1] = (r12 + r21) / s;
+			rot[2] = 0.25f * s;
+		}
+
+		QuatNormalize2(rot, rot);
+	}
+}
 static void QuatSlerp(const quat_t from, const quat_t _to, float fraction, quat_t out) {
 	float angle, cosAngle, sinAngle, backlerp, lerp;
 	quat_t to;
@@ -141,26 +220,304 @@ static void QuatSlerp(const quat_t from, const quat_t _to, float fraction, quat_
 	out[2] = from[2] * backlerp + to[2] * lerp;
 	out[3] = from[3] * backlerp + to[3] * lerp;
 }
-static vec_t QuatNormalize2(const quat_t v, quat_t out) {
-	float length, ilength;
 
-	length = v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3];
+// Hamilton product a * b for (x, y, z, w) quaternions. As rotations this is
+// "apply b first, then a", i.e. R(a * b) = R(a) * R(b).
+static void IQM_QuatMultiply(const quat_t a, const quat_t b, quat_t out) {
+	quat_t r;
 
-	if(length) {
-		/* writing it this way allows gcc to recognize that rsqrt can be used */
-		ilength = 1 / (float)sqrt(length);
-		/* sqrt(length) = length * (1 / sqrt(length)) */
-		length *= ilength;
-		out[0] = v[0] * ilength;
-		out[1] = v[1] * ilength;
-		out[2] = v[2] * ilength;
-		out[3] = v[3] * ilength;
-	} else {
-		out[0] = out[1] = out[2] = 0;
-		out[3] = -1;
+	r[3] = a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2];
+	r[0] = a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1];
+	r[1] = a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0];
+	r[2] = a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3];
+
+	out[0] = r[0];
+	out[1] = r[1];
+	out[2] = r[2];
+	out[3] = r[3];
+}
+
+static void IQM_QuatConjugate(const quat_t q, quat_t out) {
+	out[0] = -q[0];
+	out[1] = -q[1];
+	out[2] = -q[2];
+	out[3] = q[3];
+}
+
+/*
+===============================================================================
+External IQM animation loader.
+
+Loads only pose/frame/bounds data from an IQM file and caches it by name.
+The bind pose and joint hierarchy are always taken from the model, so
+compatible skeletons (for example valveBiped) can share animations freely.
+===============================================================================
+*/
+iqmAnimation_t* R_LoadIQMAnimation(const char* name) {
+	union {
+		unsigned* u;
+		void* v;
+	} buf;
+	int filesize;
+	iqmHeader_t* header;
+	iqmPose_t* pose;
+	iqmBounds_t* bounds;
+	iqmJoint_t* joint;
+	unsigned short* framedata;
+	iqmTransform_t* transform;
+	iqmAnimation_t* anim;
+	int i, j;
+	int posesSize, boundsSize, jointNamesSize;
+
+	if(!name || !name[0]) {
+		return NULL;
 	}
 
-	return length;
+	for(i = 0; i < tr.numIQMAnimations; i++) {
+		if(!Q_stricmp(tr.iqmAnimations[i]->name, name)) {
+			return tr.iqmAnimations[i];
+		}
+	}
+
+	if(tr.numIQMAnimations >= MAX_IQM_ANIMATIONS) {
+		ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: MAX_IQM_ANIMATIONS hit (%d)\n", MAX_IQM_ANIMATIONS);
+		return NULL;
+	}
+
+	filesize = ri.FS_ReadFile(name, (void**)&buf.v);
+	if(!buf.u) {
+		ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: couldn't load '%s'\n", name);
+		return NULL;
+	}
+
+	if(filesize < (int)sizeof(iqmHeader_t)) {
+		ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: '%s' is too small\n", name);
+		ri.FS_FreeFile(buf.v);
+		return NULL;
+	}
+
+	header = (iqmHeader_t*)buf.u;
+	if(Q_strncmp(header->magic, IQM_MAGIC, sizeof(header->magic))) {
+		ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: '%s' is not an IQM file\n", name);
+		ri.FS_FreeFile(buf.v);
+		return NULL;
+	}
+
+	LL(header->version);
+	if(header->version != IQM_VERSION) {
+		ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: '%s' has unsupported IQM version %d\n", name, header->version);
+		ri.FS_FreeFile(buf.v);
+		return NULL;
+	}
+
+	LL(header->filesize);
+	if(header->filesize > filesize || header->filesize > 128 << 20) {
+		ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: '%s' has invalid filesize\n", name);
+		ri.FS_FreeFile(buf.v);
+		return NULL;
+	}
+
+	LL(header->num_text);
+	LL(header->ofs_text);
+	LL(header->num_meshes);
+	LL(header->ofs_meshes);
+	LL(header->num_vertexarrays);
+	LL(header->num_vertexes);
+	LL(header->ofs_vertexarrays);
+	LL(header->num_triangles);
+	LL(header->ofs_triangles);
+	LL(header->ofs_adjacency);
+	LL(header->num_joints);
+	LL(header->ofs_joints);
+	LL(header->num_poses);
+	LL(header->ofs_poses);
+	LL(header->num_anims);
+	LL(header->ofs_anims);
+	LL(header->num_frames);
+	LL(header->num_framechannels);
+	LL(header->ofs_frames);
+	LL(header->ofs_bounds);
+
+	if(header->num_poses == 0 || header->num_frames == 0) {
+		ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: '%s' has no pose or frame data\n", name);
+		ri.FS_FreeFile(buf.v);
+		return NULL;
+	}
+
+	if(header->num_poses > IQM_MAX_JOINTS) {
+		ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: '%s' has too many poses (%d)\n", name, header->num_poses);
+		ri.FS_FreeFile(buf.v);
+		return NULL;
+	}
+
+	if(IQM_CheckRange(header, header->ofs_poses, header->num_poses, sizeof(iqmPose_t)) || IQM_CheckRange(header, header->ofs_frames, header->num_frames * header->num_framechannels, sizeof(unsigned short)) || (header->ofs_bounds && IQM_CheckRange(header, header->ofs_bounds, header->num_frames, sizeof(iqmBounds_t)))) {
+		ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: '%s' has invalid data ranges\n", name);
+		ri.FS_FreeFile(buf.v);
+		return NULL;
+	}
+
+	// joint metadata is optional (older files may lack ofs_joints), but if
+	// present it lets us retarget by name against the base model.
+	if(header->num_joints && header->ofs_joints) {
+		if(IQM_CheckRange(header, header->ofs_joints, header->num_joints, sizeof(iqmJoint_t))) {
+			ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: '%s' has invalid joint data\n", name);
+			ri.FS_FreeFile(buf.v);
+			return NULL;
+		}
+
+		jointNamesSize = 0;
+		joint = (iqmJoint_t*)((byte*)header + header->ofs_joints);
+		for(i = 0; i < header->num_joints; i++, joint++) {
+			LL(joint->name);
+			LL(joint->parent);
+			if(joint->name >= header->num_text) {
+				ri.Printf(PRINT_WARNING, "R_LoadIQMAnimation: '%s' has invalid joint name index\n", name);
+				ri.FS_FreeFile(buf.v);
+				return NULL;
+			}
+			jointNamesSize += strlen((char*)header + header->ofs_text + joint->name) + 1;
+		}
+	} else {
+		jointNamesSize = 0;
+	}
+
+	posesSize = header->num_poses * header->num_frames * sizeof(iqmTransform_t);
+	boundsSize = header->ofs_bounds ? header->num_frames * 6 * sizeof(float) : 0;
+
+	// Memory layout (everything 4-byte aligned, names last because they have
+	// arbitrary length):
+	//   anim | poses | bounds | jointBindLocal | jointParents | jointNames
+	// NOTE: the joint data must start AFTER the bounds array. It used to start
+	// at the bounds pointer, so copying the bounds below overwrote the joint
+	// parents / names / bind pose of the animation.
+	anim = (iqmAnimation_t*)ri.Hunk_Alloc(sizeof(*anim) + posesSize + boundsSize + (header->num_joints ? header->num_joints * (sizeof(iqmTransform_t) + sizeof(int)) : 0) + jointNamesSize, h_low);
+	Q_strncpyz(anim->name, name, sizeof(anim->name));
+	anim->num_poses = header->num_poses;
+	anim->num_frames = header->num_frames;
+	anim->poses = (iqmTransform_t*)((byte*)anim + sizeof(*anim));
+	anim->bounds = header->ofs_bounds ? (float*)((byte*)anim + sizeof(*anim) + posesSize) : NULL;
+
+	anim->hasBindPose = false;
+	anim->jointBindLocal = NULL;
+
+	if(header->num_joints && header->ofs_joints) {
+		byte* tail = (byte*)anim + sizeof(*anim) + posesSize + boundsSize;
+
+		anim->num_joints = header->num_joints;
+
+		anim->jointBindLocal = (iqmTransform_t*)tail;
+		tail += header->num_joints * sizeof(iqmTransform_t);
+
+		anim->jointParents = (int*)tail;
+		tail += header->num_joints * sizeof(int);
+
+		anim->jointNames = (char*)tail;
+		tail += jointNamesSize;
+
+		anim->hasBindPose = true;
+
+		joint = (iqmJoint_t*)((byte*)header + header->ofs_joints);
+		{
+			char* namePtr = anim->jointNames;
+			for(i = 0; i < header->num_joints; i++, joint++) {
+				char* srcName = (char*)header + header->ofs_text + joint->name;
+				int len = strlen(srcName) + 1;
+				Com_Memcpy(namePtr, srcName, len);
+				namePtr += len;
+				anim->jointParents[i] = joint->parent;
+
+				// local bind pose of the animation skeleton (TRS, no matrices:
+				// retargeting works on rotations only)
+				VectorCopy(joint->translate, anim->jointBindLocal[i].translate);
+				QuatNormalize2(joint->rotate, anim->jointBindLocal[i].rotate);
+				VectorCopy(joint->scale, anim->jointBindLocal[i].scale);
+			}
+		}
+	} else {
+		anim->num_joints = 0;
+		anim->jointNames = NULL;
+		anim->jointParents = NULL;
+	}
+
+	pose = (iqmPose_t*)((byte*)header + header->ofs_poses);
+	for(i = 0; i < header->num_poses; i++, pose++) {
+		LL(pose->parent);
+		LL(pose->mask);
+		for(j = 0; j < 10; j++) {
+			LL(pose->channeloffset[j]);
+			LL(pose->channelscale[j]);
+		}
+	}
+
+	if(header->ofs_bounds) {
+		bounds = (iqmBounds_t*)((byte*)header + header->ofs_bounds);
+		for(i = 0; i < header->num_frames; i++, bounds++) {
+			LL(bounds->bbmin[0]);
+			LL(bounds->bbmin[1]);
+			LL(bounds->bbmin[2]);
+			LL(bounds->bbmax[0]);
+			LL(bounds->bbmax[1]);
+			LL(bounds->bbmax[2]);
+		}
+	}
+
+	transform = anim->poses;
+	framedata = (unsigned short*)((byte*)header + header->ofs_frames);
+	for(i = 0; i < header->num_frames; i++) {
+		pose = (iqmPose_t*)((byte*)header + header->ofs_poses);
+		for(j = 0; j < header->num_poses; j++, pose++, transform++) {
+			vec3_t translate;
+			quat_t rotate;
+			vec3_t scale;
+
+			translate[0] = pose->channeloffset[0];
+			if(pose->mask & 0x001) translate[0] += *framedata++ * pose->channelscale[0];
+			translate[1] = pose->channeloffset[1];
+			if(pose->mask & 0x002) translate[1] += *framedata++ * pose->channelscale[1];
+			translate[2] = pose->channeloffset[2];
+			if(pose->mask & 0x004) translate[2] += *framedata++ * pose->channelscale[2];
+
+			rotate[0] = pose->channeloffset[3];
+			if(pose->mask & 0x008) rotate[0] += *framedata++ * pose->channelscale[3];
+			rotate[1] = pose->channeloffset[4];
+			if(pose->mask & 0x010) rotate[1] += *framedata++ * pose->channelscale[4];
+			rotate[2] = pose->channeloffset[5];
+			if(pose->mask & 0x020) rotate[2] += *framedata++ * pose->channelscale[5];
+			rotate[3] = pose->channeloffset[6];
+			if(pose->mask & 0x040) rotate[3] += *framedata++ * pose->channelscale[6];
+
+			scale[0] = pose->channeloffset[7];
+			if(pose->mask & 0x080) scale[0] += *framedata++ * pose->channelscale[7];
+			scale[1] = pose->channeloffset[8];
+			if(pose->mask & 0x100) scale[1] += *framedata++ * pose->channelscale[8];
+			scale[2] = pose->channeloffset[9];
+			if(pose->mask & 0x200) scale[2] += *framedata++ * pose->channelscale[9];
+
+			VectorCopy(translate, transform->translate);
+			QuatNormalize2(rotate, transform->rotate);
+			VectorCopy(scale, transform->scale);
+		}
+	}
+
+	if(header->ofs_bounds) {
+		bounds = (iqmBounds_t*)((byte*)header + header->ofs_bounds);
+		for(i = 0; i < header->num_frames; i++, bounds++) {
+			anim->bounds[i * 6 + 0] = bounds->bbmin[0];
+			anim->bounds[i * 6 + 1] = bounds->bbmin[1];
+			anim->bounds[i * 6 + 2] = bounds->bbmin[2];
+			anim->bounds[i * 6 + 3] = bounds->bbmax[0];
+			anim->bounds[i * 6 + 4] = bounds->bbmax[1];
+			anim->bounds[i * 6 + 5] = bounds->bbmax[2];
+		}
+	}
+
+	ri.FS_FreeFile(buf.v);
+
+	tr.iqmAnimations[tr.numIQMAnimations++] = anim;
+
+	ri.Printf(PRINT_DEVELOPER, "R_LoadIQMAnimation: loaded '%s' (%d poses x %d frames, %d joints)\n", name, anim->num_poses, anim->num_frames, anim->num_joints);
+
+	return anim;
 }
 
 /*
@@ -212,7 +569,7 @@ bool R_LoadIQM(model_t* mod, void* buffer, int filesize, const char* mod_name) {
 	}
 
 	LL(header->filesize);
-	if(header->filesize > filesize || header->filesize > 16 << 20) {
+	if(header->filesize > filesize || header->filesize > 128 << 20) {
 		return false;
 	}
 
@@ -577,6 +934,11 @@ bool R_LoadIQM(model_t* mod, void* buffer, int filesize, const char* mod_name) {
 	iqmData = (iqmData_t*)ri.Hunk_Alloc(size, h_low);
 	mod->modelData = iqmData;
 
+	iqmData->anim = NULL;
+	iqmData->animPoseMap = NULL;
+	iqmData->animMotionMask = NULL;
+	iqmData->bindLocal = NULL;
+
 	// fill header
 	iqmData->num_vertexes = (header->num_meshes > 0) ? header->num_vertexes : 0;
 	iqmData->num_triangles = (header->num_meshes > 0) ? header->num_triangles : 0;
@@ -780,6 +1142,11 @@ bool R_LoadIQM(model_t* mod, void* buffer, int filesize, const char* mod_name) {
 			iqmData->jointParents[i] = joint->parent;
 		}
 
+		// local bind pose (TRS) of every joint. External animations are
+		// retargeted against this, so bone lengths and scale always come from
+		// the model itself and never from the animation.
+		iqmData->bindLocal = (iqmTransform_t*)ri.Hunk_Alloc(header->num_joints * sizeof(iqmTransform_t), h_low);
+
 		// calculate bind joint matrices and their inverses
 		mat = iqmData->bindJoints;
 		matInv = iqmData->invBindJoints;
@@ -788,6 +1155,10 @@ bool R_LoadIQM(model_t* mod, void* buffer, int filesize, const char* mod_name) {
 			float baseFrame[12], invBaseFrame[12];
 
 			QuatNormalize2(joint->rotate, joint->rotate);
+
+			VectorCopy(joint->translate, iqmData->bindLocal[i].translate);
+			QuatCopy(joint->rotate, iqmData->bindLocal[i].rotate);
+			VectorCopy(joint->scale, iqmData->bindLocal[i].scale);
 
 			JointToMatrix(joint->rotate, joint->scale, joint->translate, baseFrame);
 			Matrix34Invert(baseFrame, invBaseFrame);
@@ -1037,17 +1408,25 @@ R_CullIQM
 */
 static int R_CullIQM(iqmData_t* data, trRefEntity_t* ent) {
 	vec3_t bounds[2];
-	vec_t *oldBounds, *newBounds;
-	int i;
+	vec_t *oldBounds, *newBounds, *allBounds;
+	int i, nframes;
 
-	if(!data->bounds) {
+	allBounds = data->anim ? data->anim->bounds : data->bounds;
+	nframes = data->anim ? data->anim->num_frames : data->num_frames;
+
+	if(!allBounds) {
 		tr.pc.c_box_cull_md3_clip++;
 		return CULL_CLIP;
 	}
 
+	if(nframes > 0) {
+		if(ent->e.oldframe < 0 || ent->e.oldframe >= nframes) ent->e.oldframe = 0;
+		if(ent->e.frame < 0 || ent->e.frame >= nframes) ent->e.frame = 0;
+	}
+
 	// compute bounds pointers
-	oldBounds = data->bounds + 6 * ent->e.oldframe;
-	newBounds = data->bounds + 6 * ent->e.frame;
+	oldBounds = allBounds + 6 * ent->e.oldframe;
+	newBounds = allBounds + 6 * ent->e.frame;
 
 	// calculate a bounding box in the current coordinate system
 	for(i = 0; i < 3; i++) {
@@ -1083,10 +1462,18 @@ int R_ComputeIQMFogNum(iqmData_t* data, trRefEntity_t* ent) {
 	}
 
 	// FIXME: non-normalized axis issues
-	if(data->bounds) {
-		bounds = data->bounds + 6 * ent->e.frame;
-	} else {
-		bounds = defaultBounds;
+	{
+		const float* allBounds = data->anim ? data->anim->bounds : data->bounds;
+
+		if(allBounds) {
+			int frame = ent->e.frame;
+			int nframes = data->anim ? data->anim->num_frames : data->num_frames;
+
+			if(nframes > 0 && (frame < 0 || frame >= nframes)) frame = 0;
+			bounds = allBounds + 6 * frame;
+		} else {
+			bounds = defaultBounds;
+		}
 	}
 	VectorSubtract(bounds + 3, bounds, diag);
 	VectorMA(bounds, 0.5f, diag, center);
@@ -1136,21 +1523,27 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 	// don't add third_person objects if not in a portal
 	personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !(tr.viewParms.isPortal || (tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)));
 
-	if(ent->e.renderfx & RF_WRAP_FRAMES) {
-		ent->e.frame %= data->num_frames;
-		ent->e.oldframe %= data->num_frames;
-	}
+	{
+		int nframes = data->anim ? data->anim->num_frames : data->num_frames;
 
-	//
-	// Validate the frames so there is no chance of a crash.
-	// This will write directly into the entity structure, so
-	// when the surfaces are rendered, they don't need to be
-	// range checked again.
-	//
-	if((ent->e.frame >= data->num_frames) || (ent->e.frame < 0) || (ent->e.oldframe >= data->num_frames) || (ent->e.oldframe < 0)) {
-		ri.Printf(PRINT_DEVELOPER, "R_AddIQMSurfaces: no such frame %d to %d for '%s'\n", ent->e.oldframe, ent->e.frame, tr.currentModel->name);
-		ent->e.frame = 0;
-		ent->e.oldframe = 0;
+		if(ent->e.renderfx & RF_WRAP_FRAMES) {
+			if(nframes > 0) {
+				ent->e.frame %= nframes;
+				ent->e.oldframe %= nframes;
+			}
+		}
+
+		//
+		// Validate the frames so there is no chance of a crash.
+		// This will write directly into the entity structure, so
+		// when the surfaces are rendered, they don't need to be
+		// range checked again.
+		//
+		if((ent->e.frame >= nframes) || (ent->e.frame < 0) || (ent->e.oldframe >= nframes) || (ent->e.oldframe < 0)) {
+			ri.Printf(PRINT_DEVELOPER, "R_AddIQMSurfaces: no such frame %d to %d for '%s'\n", ent->e.oldframe, ent->e.frame, tr.currentModel->name);
+			ent->e.frame = 0;
+			ent->e.oldframe = 0;
+		}
 	}
 
 	//
@@ -1205,40 +1598,204 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 	}
 }
 
+/*
+=================
+IQM_GetBindLocal
+
+Local bind pose (translate / rotate / scale, relative to the parent joint)
+of joint i of the model.
+=================
+*/
+static void IQM_GetBindLocal(const iqmData_t* data, int i, iqmTransform_t* out) {
+	float local[12];
+
+	if(data->bindLocal) {
+		*out = data->bindLocal[i];
+		return;
+	}
+
+	// fallback: rebuild it from the model-space bind matrices
+	if(data->jointParents[i] >= 0) {
+		float invParent[12];
+
+		Matrix34Invert(&data->bindJoints[data->jointParents[i] * 12], invParent);
+		Matrix34Multiply(invParent, &data->bindJoints[i * 12], local);
+	} else {
+		Com_Memcpy(local, &data->bindJoints[i * 12], sizeof(local));
+	}
+
+	Matrix34Decompose(local, out->translate, out->rotate, out->scale);
+}
+
+/*
+=================
+IQM_BlendPose
+
+Pose of animation joint i, interpolated between oldframe and frame.
+=================
+*/
+static void IQM_BlendPose(const iqmTransform_t* all_poses, int nposes, int frame, int oldframe, float backlerp, int i, iqmTransform_t* out) {
+	const iqmTransform_t* pose = &all_poses[frame * nposes + i];
+	const iqmTransform_t* oldpose;
+	float lerp;
+	int k;
+
+	if(frame == oldframe) {
+		*out = *pose;
+		return;
+	}
+
+	oldpose = &all_poses[oldframe * nposes + i];
+	lerp = 1.0f - backlerp;
+
+	for(k = 0; k < 3; k++) {
+		out->translate[k] = oldpose->translate[k] * backlerp + pose->translate[k] * lerp;
+		out->scale[k] = oldpose->scale[k] * backlerp + pose->scale[k] * lerp;
+	}
+	QuatSlerp(oldpose->rotate, pose->rotate, lerp, out->rotate);
+}
+
+/*
+=================
+ComputePoseMats
+
+Builds the skinning matrices of all joints for the (interpolated) frame.
+
+Models that use their own embedded animation behave exactly like stock ioq3.
+
+With an external animation (RE_RegisterModelEx) only ROTATIONS are taken from
+the animation. Bone offsets (translation) and scale always come from the
+model's own bind pose, so the proportions of the model can never change no
+matter which skeleton the animation was made for. The one exception is the
+motion carrier (root / pelvis): its movement relative to the animation's
+bind pose is added to the model's bind position, scaled by the ratio of the
+two skeleton heights, so the feet stay at the right height on every model.
+
+r_iqmRetargetMode selects how rotations are transferred:
+  0  copy the local rotation of the animation (Source engine behaviour)
+  1  rotate in parent space:  anim * inv(animBind) * modelBind   (default)
+  2  rotate in bone space:    modelBind * inv(animBind) * anim
+Modes 1 and 2 give identical results when both skeletons have the same
+rest rotations and differ only if the rest poses differ (finger curl,
+A-pose / T-pose).
+=================
+*/
 static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float backlerp, float* poseMats) {
 	iqmTransform_t relativeJoints[IQM_MAX_JOINTS];
+	iqmTransform_t bindLocal[IQM_MAX_JOINTS];
 	iqmTransform_t* relativeJoint;
-	const iqmTransform_t* pose;
-	const iqmTransform_t* oldpose;
+	const iqmTransform_t* all_poses;
+	const iqmAnimation_t* anim = data->anim;
 	const int* jointParent;
+	const int* poseMap;
 	const float* invBindMat;
-	float *poseMat, lerp;
-	int i;
+	float* poseMat;
+	int i, nposes, nframes, numJoints;
 
-	relativeJoint = relativeJoints;
+	all_poses = anim ? anim->poses : data->poses;
+	nposes = anim ? anim->num_poses : data->num_poses;
+	nframes = anim ? anim->num_frames : data->num_frames;
+	numJoints = data->num_joints;
+	poseMap = anim ? data->animPoseMap : NULL;
 
-	// copy or lerp animation frame pose
-	if(oldframe == frame) {
-		pose = &data->poses[frame * data->num_poses];
-		for(i = 0; i < data->num_poses; i++, pose++, relativeJoint++) {
-			VectorCopy(pose->translate, relativeJoint->translate);
-			QuatCopy(pose->rotate, relativeJoint->rotate);
-			VectorCopy(pose->scale, relativeJoint->scale);
+	// Clamp frames to valid range in case the caller uses frames
+	// that are only valid for the base model.
+	if(nframes > 0) {
+		if(frame < 0 || frame >= nframes) frame = 0;
+		if(oldframe < 0 || oldframe >= nframes) oldframe = 0;
+	}
+
+	if(nposes > IQM_MAX_JOINTS) nposes = IQM_MAX_JOINTS;
+	if(numJoints > IQM_MAX_JOINTS) numJoints = IQM_MAX_JOINTS;
+
+	if(!anim) {
+		// embedded animation: the poses are used as they are
+		for(i = 0; i < numJoints; i++) {
+			relativeJoints[i].translate[0] = 0.0f;
+			relativeJoints[i].translate[1] = 0.0f;
+			relativeJoints[i].translate[2] = 0.0f;
+			relativeJoints[i].rotate[0] = 0.0f;
+			relativeJoints[i].rotate[1] = 0.0f;
+			relativeJoints[i].rotate[2] = 0.0f;
+			relativeJoints[i].rotate[3] = 1.0f;
+			relativeJoints[i].scale[0] = 1.0f;
+			relativeJoints[i].scale[1] = 1.0f;
+			relativeJoints[i].scale[2] = 1.0f;
+		}
+
+		for(i = 0; i < nposes && i < numJoints; i++) {
+			IQM_BlendPose(all_poses, nposes, frame, oldframe, backlerp, i, &relativeJoints[i]);
 		}
 	} else {
-		lerp = 1.0f - backlerp;
-		pose = &data->poses[frame * data->num_poses];
-		oldpose = &data->poses[oldframe * data->num_poses];
-		for(i = 0; i < data->num_poses; i++, oldpose++, pose++, relativeJoint++) {
-			relativeJoint->translate[0] = oldpose->translate[0] * backlerp + pose->translate[0] * lerp;
-			relativeJoint->translate[1] = oldpose->translate[1] * backlerp + pose->translate[1] * lerp;
-			relativeJoint->translate[2] = oldpose->translate[2] * backlerp + pose->translate[2] * lerp;
+		const bool haveAnimBind = anim->hasBindPose && anim->jointBindLocal && anim->num_poses == anim->num_joints;
+		const int mode = r_iqmRetargetMode ? r_iqmRetargetMode->integer : 1;
 
-			relativeJoint->scale[0] = oldpose->scale[0] * backlerp + pose->scale[0] * lerp;
-			relativeJoint->scale[1] = oldpose->scale[1] * backlerp + pose->scale[1] * lerp;
-			relativeJoint->scale[2] = oldpose->scale[2] * backlerp + pose->scale[2] * lerp;
+		// every joint starts in the model's own bind pose; joints the
+		// animation doesn't drive simply stay there
+		for(i = 0; i < numJoints; i++) {
+			IQM_GetBindLocal(data, i, &bindLocal[i]);
+			relativeJoints[i] = bindLocal[i];
+		}
 
-			QuatSlerp(oldpose->rotate, pose->rotate, lerp, relativeJoint->rotate);
+		for(i = 0; i < nposes; i++) {
+			const iqmTransform_t* tgt;
+			const iqmTransform_t* ab = haveAnimBind ? &anim->jointBindLocal[i] : NULL;
+			iqmTransform_t a;
+			iqmTransform_t* out;
+			bool motionJoint;
+			int dst = poseMap ? poseMap[i] : i;
+
+			if(dst < 0 || dst >= numJoints) continue;
+
+			IQM_BlendPose(all_poses, nposes, frame, oldframe, backlerp, i, &a);
+
+			tgt = &bindLocal[dst];
+			out = &relativeJoints[dst];
+
+			// --- rotation ---
+			if(ab && mode != 0) {
+				quat_t inv, tmp;
+
+				IQM_QuatConjugate(ab->rotate, inv);
+				if(mode == 2) {
+					IQM_QuatMultiply(tgt->rotate, inv, tmp);
+					IQM_QuatMultiply(tmp, a.rotate, out->rotate);
+				} else {
+					IQM_QuatMultiply(a.rotate, inv, tmp);
+					IQM_QuatMultiply(tmp, tgt->rotate, out->rotate);
+				}
+			} else {
+				QuatCopy(a.rotate, out->rotate);
+			}
+			QuatNormalize2(out->rotate, out->rotate);
+
+			// --- translation: bone length always comes from the model ---
+			VectorCopy(tgt->translate, out->translate);
+
+			motionJoint = data->animMotionMask ? (data->animMotionMask[dst] != 0) : (data->jointParents[dst] < 0);
+			if(motionJoint) {
+				if(ab) {
+					float lenA = VectorLength(ab->translate);
+					float lenT = VectorLength(tgt->translate);
+					float ratio = 1.0f;
+					int k;
+
+					if(lenA > 1e-3f && lenT > 1e-3f) {
+						ratio = lenT / lenA;
+						if(ratio < 0.1f) ratio = 0.1f;
+						if(ratio > 10.0f) ratio = 10.0f;
+					}
+
+					for(k = 0; k < 3; k++) {
+						out->translate[k] = tgt->translate[k] + (a.translate[k] - ab->translate[k]) * ratio;
+					}
+				} else {
+					VectorCopy(a.translate, out->translate);
+				}
+			}
+
+			// --- scale: never changes ---
+			VectorCopy(tgt->scale, out->scale);
 		}
 	}
 
@@ -1247,7 +1804,7 @@ static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float back
 	jointParent = data->jointParents;
 	invBindMat = data->invBindJoints;
 	poseMat = poseMats;
-	for(i = 0; i < data->num_poses; i++, relativeJoint++, jointParent++, invBindMat += 12, poseMat += 12) {
+	for(i = 0; i < numJoints; i++, relativeJoint++, jointParent++, invBindMat += 12, poseMat += 12) {
 		float mat1[12], mat2[12];
 
 		JointToMatrix(relativeJoint->rotate, relativeJoint->scale, relativeJoint->translate, mat1);
@@ -1266,7 +1823,7 @@ static void ComputeJointMats(iqmData_t* data, int frame, int oldframe, float bac
 	float* mat1;
 	int i;
 
-	if(data->num_poses == 0) {
+	if((data->anim ? data->anim->num_poses : data->num_poses) == 0) {
 		Com_Memcpy(mat, data->bindJoints, data->num_joints * 12 * sizeof(float));
 		return;
 	}
@@ -1309,8 +1866,9 @@ void RB_IQMSurfaceAnim(surfaceType_t* surface) {
 	vec2_t* outTexCoord;
 	uint16_t* outColor;
 
-	int frame = data->num_frames ? backEnd.currentEntity->e.frame % data->num_frames : 0;
-	int oldframe = data->num_frames ? backEnd.currentEntity->e.oldframe % data->num_frames : 0;
+	int nframes = data->anim ? data->anim->num_frames : data->num_frames;
+	int frame = nframes ? backEnd.currentEntity->e.frame % nframes : 0;
+	int oldframe = nframes ? backEnd.currentEntity->e.oldframe % nframes : 0;
 	float backlerp = backEnd.currentEntity->e.backlerp;
 
 	int* tri;
@@ -1336,7 +1894,7 @@ void RB_IQMSurfaceAnim(surfaceType_t* surface) {
 	outTexCoord = &tess.texCoords[tess.numVertexes];
 	outColor = tess.color[tess.numVertexes];
 
-	if(data->num_poses > 0) {
+	if((data->anim ? data->anim->num_poses : data->num_poses) > 0) {
 		// compute interpolated joint matrices
 		ComputePoseMats(data, frame, oldframe, backlerp, poseMats);
 
@@ -1506,6 +2064,8 @@ RB_IQMSurfaceAnimVao
 */
 void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 	iqmData_t* data = surface->iqmData;
+	int activePoses;
+	int i;
 
 	if(ShaderRequiresCPUDeforms(tess.shader)) {
 		RB_IQMSurfaceAnim((surfaceType_t*)surface->iqmSurface);
@@ -1525,20 +2085,19 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 	tess.numIndexes = surface->numIndexes;
 	tess.numVertexes = surface->numVerts;
 
-	glState.boneAnimation = data->num_poses;
+	activePoses = data->anim ? data->anim->num_poses : data->num_poses;
+	glState.boneAnimation = 0;
 
-	if(glState.boneAnimation) {
+	if(activePoses) {
 		float jointMats[IQM_MAX_JOINTS * 12];
-		int frame = data->num_frames ? backEnd.currentEntity->e.frame % data->num_frames : 0;
-		int oldframe = data->num_frames ? backEnd.currentEntity->e.oldframe % data->num_frames : 0;
+		int nframes = data->anim ? data->anim->num_frames : data->num_frames;
+		int frame = nframes ? backEnd.currentEntity->e.frame % nframes : 0;
+		int oldframe = nframes ? backEnd.currentEntity->e.oldframe % nframes : 0;
 		float backlerp = backEnd.currentEntity->e.backlerp;
-		int i;
 
-		// compute interpolated joint matrices
 		ComputePoseMats(surface->iqmData, frame, oldframe, backlerp, jointMats);
 
-		// convert row-major order 3x4 matrix to column-major order 4x4 matrix
-		for(i = 0; i < data->num_poses; i++) {
+		for(i = 0; i < data->num_joints; i++) {
 			glState.boneMatrix[i][0] = jointMats[i * 12 + 0];
 			glState.boneMatrix[i][1] = jointMats[i * 12 + 4];
 			glState.boneMatrix[i][2] = jointMats[i * 12 + 8];
@@ -1556,6 +2115,11 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 			glState.boneMatrix[i][14] = jointMats[i * 12 + 11];
 			glState.boneMatrix[i][15] = 1.0f;
 		}
+
+		// Upload ALL model joints to u_BoneMatrix, not just the animation
+		// poses. attr_BoneIndexes for finger vertices references joints
+		// 56..71; without their matrices the fingers collapse to origin.
+		glState.boneAnimation = data->num_joints;
 	}
 
 	RB_EndSurface();

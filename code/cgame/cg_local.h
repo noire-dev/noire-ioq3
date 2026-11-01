@@ -77,9 +77,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define TEAM_OVERLAY_MAXNAME_WIDTH 12
 #define TEAM_OVERLAY_MAXLOCATION_WIDTH 16
 
-#define DEFAULT_MODEL "sarge"
-#define DEFAULT_TEAM_MODEL "sarge"
-#define DEFAULT_TEAM_HEAD "sarge"
+#define DEFAULT_MODEL "kleiner"
 
 #define DEFAULT_REDTEAM_NAME "Stroggs"
 #define DEFAULT_BLUETEAM_NAME "Pagans"
@@ -148,18 +146,13 @@ typedef struct {
 
 	float backlerp;
 
-	float yawAngle;
-	bool yawing;
-	float pitchAngle;
-	bool pitching;
-
 	int animationNumber;  // may include ANIM_TOGGLEBIT
 	animation_t* animation;
 	int animationTime;  // time when the first frame of the animation will be exact
 } lerpFrame_t;
 
 typedef struct {
-	lerpFrame_t legs, torso, flag;
+	lerpFrame_t legs;
 	int painTime;
 	int painDirection;  // flip from 0 to 1
 	int lightningFiring;
@@ -299,8 +292,6 @@ typedef struct {
 // client model and other color coded effects
 // this is regenerated each time a client's configstring changes,
 // usually as a result of a userinfo (name, model, etc) change
-#define MAX_CUSTOM_SOUNDS 32
-
 typedef struct {
 	bool infoValid;
 
@@ -332,33 +323,21 @@ typedef struct {
 	// gameplay
 	char modelName[MAX_QPATH];
 	char skinName[MAX_QPATH];
-	char headModelName[MAX_QPATH];
-	char headSkinName[MAX_QPATH];
 	char redTeam[MAX_TEAMNAME];
 	char blueTeam[MAX_TEAMNAME];
 	bool deferred;
 
-	bool newAnims;    // true if using the new mission pack animations
-	bool fixedlegs;   // true if legs yaw is always the same as torso yaw
-	bool fixedtorso;  // true if torso never changes yaw
+	gender_t gender;
 
-	vec3_t headOffset;  // move head in icon views
-	gender_t gender;    // from model
-
-	qhandle_t legsModel;
-	qhandle_t legsSkin;
-
-	qhandle_t torsoModel;
-	qhandle_t torsoSkin;
-
-	qhandle_t headModel;
-	qhandle_t headSkin;
-
+	// A single IQM model and one material skin replace lower/upper/head MD3s.
+	qhandle_t model;
+	qhandle_t modelSkin;
 	qhandle_t modelIcon;
 
+	// Indexed by animNumber_t; model/animation.cfg supplies IQM frame ranges.
 	animation_t animations[MAX_TOTALANIMATIONS];
 
-	sfxHandle_t sounds[MAX_CUSTOM_SOUNDS];
+	char animFile[MAX_QPATH];
 } clientInfo_t;
 
 // Minimal runtime cache for a weapon. All presentational data now lives in
@@ -813,6 +792,7 @@ typedef struct {
 
 // Data-driven weapon effects table (see cg_weapons.c)
 typedef struct {
+	animType_t animType;  // Selects the weapon-specific IQM locomotion block.
 	// Hit effects
 	float hitLightColor[3];
 	float hitLightRadius;
@@ -1071,7 +1051,6 @@ void CG_DrawActive(void);
 void CG_Player(centity_t* cent);
 void CG_ResetPlayerEntity(centity_t* cent);
 void CG_NewClientInfo(int clientNum);
-sfxHandle_t CG_CustomSound(int clientNum, const char* soundName);
 
 //
 // cg_predict.c

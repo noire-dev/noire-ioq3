@@ -1,6 +1,7 @@
 case TRAP_UPDATESCREEN: SCR_UpdateScreen(); return 0;
 case TRAP_GETGLCONFIG: CL_GetGlconfig(VMA(1)); return 0;
 case TRAP_R_REGISTERMODEL: return re.RegisterModel(VMA(1));
+case TRAP_R_REGISTERMODELEX: return re.RegisterModelEx(VMA(1), VMA(2));
 case TRAP_R_REGISTERSKIN: return re.RegisterSkin(VMA(1));
 case TRAP_S_REGISTERSOUND: return S_RegisterSound(VMA(1), args[2]);
 case TRAP_R_REGISTERSHADER: return re.RegisterShader(VMA(1));

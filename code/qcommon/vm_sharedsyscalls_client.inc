@@ -1,6 +1,7 @@
 void trap_UpdateScreen(void) { syscall(TRAP_UPDATESCREEN); }
 void trap_GetGlconfig(glconfig_t* glconfig) { syscall(TRAP_GETGLCONFIG, glconfig); }
 qhandle_t trap_R_RegisterModel(const char* name) { return syscall(TRAP_R_REGISTERMODEL, name); }
+qhandle_t trap_R_RegisterModelEx(const char* name, const char* animName) { return syscall(TRAP_R_REGISTERMODELEX, name, animName); }
 qhandle_t trap_R_RegisterSkin(const char* name) { return syscall(TRAP_R_REGISTERSKIN, name); }
 sfxHandle_t trap_S_RegisterSound(const char* sample, bool compressed) { return syscall(TRAP_S_REGISTERSOUND, sample, compressed); }
 qhandle_t trap_R_RegisterShader(const char* name) { return syscall(TRAP_R_REGISTERSHADER, name); }

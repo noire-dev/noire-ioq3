@@ -559,6 +559,58 @@ static void Cmd_PhysgunDist_f(gentity_t* ent) {
 
 /*
 =================
+Cmd_Gesture_f
+
+Play one of the full-body IQM gestures requested by the player:
+  gesture agree|disagree|becon|bow|salute|wave|cheer|dance|laugh|muscle|persistence|robot|zombie
+=================
+*/
+static void Cmd_Gesture_f(gentity_t* ent) {
+	static const struct {
+		const char* name;
+		int animation;
+	} gestureAnimations[] = {
+	    {"agree", AM_GESTURE_AGREE},
+	    {"disagree", AM_GESTURE_DISAGREE},
+	    {"becon", AM_GESTURE_BECON},
+	    {"beckon", AM_GESTURE_BECON},
+	    {"bow", AM_GESTURE_BOW},
+	    {"salute", AM_GESTURE_SALUTE},
+	    {"wave", AM_GESTURE_WAVE},
+	    {"cheer", AM_TAUNT_CHEER},
+	    {"dance", AM_TAUNT_DANCE},
+	    {"laugh", AM_TAUNT_LAUGH},
+	    {"muscle", AM_TAUNT_MUSCLE},
+	    {"persistence", AM_TAUNT_PERSISTENCE},
+	    {"robot", AM_TAUNT_ROBOT},
+	    {"zombie", AM_TAUNT_ZOMBIE},
+	};
+	char name[MAX_TOKEN_CHARS];
+	int i, animation;
+
+	if(!ent || !ent->client || ent->health <= 0 || ent->client->ps.pm_type >= PM_DEAD) return;
+
+	trap_Argv(1, name, sizeof(name));
+	animation = -1;
+	for(i = 0; i < ARRAY_LEN(gestureAnimations); i++) {
+		if(!Q_stricmp(name, gestureAnimations[i].name)) {
+			animation = gestureAnimations[i].animation;
+			break;
+		}
+	}
+
+	if(animation < 0) {
+		trap_SendServerCommand(ent - g_entities, "print \"gesture: cheer dance laugh muscle persistence robot zombie agree disagree becon bow salute wave\n\"");
+		return;
+	}
+
+	ent->client->ps.torsoAnim = ((ent->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | animation;
+	ent->client->ps.torsoTimer = 1600;
+	ent->client->ps.legsTimer = 0;
+}
+
+/*
+=================
 ClientCommand
 =================
 */
@@ -576,6 +628,10 @@ void ClientCommand(int clientNum) {
 	}
 	if(Q_stricmp(cmd, "score") == 0) {
 		Cmd_Score_f(ent);
+		return;
+	}
+	if(Q_stricmp(cmd, "gesture") == 0) {
+		Cmd_Gesture_f(ent);
 		return;
 	}
 
