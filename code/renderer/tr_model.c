@@ -1038,18 +1038,21 @@ int R_LerpTag(orientation_t* tag, qhandle_t handle, int startFrame, int endFrame
 	model_t* model;
 
 	model = R_GetModelByHandle(handle);
-	if(!model->mdv[0]) {
-		if(model->type == MOD_IQM) {
-			return R_IQMLerpTag(tag, model->modelData, startFrame, endFrame, frac, tagName);
-		} else {
-			start = end = NULL;
-		}
+
+	/* IQM uses joints as tags; route there unconditionally. */
+	if(model->type == MOD_IQM) {
+		return R_IQMLerpTag(tag, model->modelData, startFrame, endFrame, frac, tagName);
+	}
+
+	if(!model->mdv[0] || !model->mdv[0]->tagNames || model->mdv[0]->numTags <= 0) {
+		start = end = NULL;
 	} else {
 		start = R_GetTag(model->mdv[0], startFrame, tagName);
 		end = R_GetTag(model->mdv[0], endFrame, tagName);
 	}
 
 	if(!start || !end) {
+		ri.Printf(PRINT_DEVELOPER, "R_LerpTag: tag '%s' not found in model '%s' (type %d)\n", tagName, model->name, model->type);
 		AxisClear(tag->axis);
 		VectorClear(tag->origin);
 		return false;

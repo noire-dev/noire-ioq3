@@ -2130,14 +2130,86 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 int R_IQMLerpTag(orientation_t* tag, iqmData_t* data, int startFrame, int endFrame, float frac, const char* tagName) {
 	float jointMats[IQM_MAX_JOINTS * 12];
 	int joint;
-	char* names = data->jointNames;
+	const char* names;
+	int nframes;
 
-	// get joint number by reading the joint names
+	if(!tag || !data || !tagName || !tagName[0]) {
+		AxisClear(tag->axis);
+		VectorClear(tag->origin);
+		return false;
+	}
+
+	if(!data->jointNames || data->num_joints <= 0) {
+		ri.Printf(PRINT_DEVELOPER, "R_IQMLerpTag: model has no joints (num_joints=%d), tag '%s' not available\n", data->num_joints, tagName);
+		AxisClear(tag->axis);
+		VectorClear(tag->origin);
+		return false;
+	}
+
+	/* Clamp frames - callers routinely pass MD3-style frames that are
+	   out of range for an IQM or use -1 for "current". */
+	nframes = data->anim ? data->anim->num_frames : data->num_frames;
+	if(nframes > 0) {
+		if(startFrame < 0) startFrame = 0;
+		if(startFrame >= nframes) startFrame = nframes - 1;
+		if(endFrame < 0) endFrame = 0;
+		if(endFrame >= nframes) endFrame = nframes - 1;
+	} else {
+		startFrame = 0;
+		endFrame = 0;
+	}
+	if(frac < 0.0f) frac = 0.0f;
+	if(frac > 1.0f) frac = 1.0f;
+
+	/* ---- lookup pass 1: exact match ---- */
+	names = data->jointNames;
 	for(joint = 0; joint < data->num_joints; joint++) {
 		if(!strcmp(tagName, names)) break;
 		names += strlen(names) + 1;
 	}
+
+	/* ---- lookup pass 2: case-insensitive ---- */
 	if(joint >= data->num_joints) {
+		names = data->jointNames;
+		for(joint = 0; joint < data->num_joints; joint++) {
+			if(!Q_stricmp(tagName, names)) break;
+			names += strlen(names) + 1;
+		}
+	}
+
+	/* ---- lookup pass 3: strip a leading "tag_" prefix and retry case-insensitive ---- */
+	if(joint >= data->num_joints && !Q_stricmpn(tagName, "tag_", 4)) {
+		const char* bare = tagName + 4;
+		names = data->jointNames;
+		for(joint = 0; joint < data->num_joints; joint++) {
+			if(!Q_stricmp(bare, names)) break;
+			names += strlen(names) + 1;
+		}
+	}
+
+	/* ---- lookup pass 4: match ignoring spaces / underscores ---- */
+	if(joint >= data->num_joints) {
+		names = data->jointNames;
+		for(joint = 0; joint < data->num_joints; joint++) {
+			const char* a = tagName;
+			const char* b = names;
+			while(*a && *b) {
+				while(*a == ' ' || *a == '_' || *a == '.') a++;
+				while(*b == ' ' || *b == '_' || *b == '.') b++;
+				if(tolower((unsigned char)*a) != tolower((unsigned char)*b)) break;
+				a++;
+				b++;
+			}
+			/* both strings exhausted -> match */
+			while(*a == ' ' || *a == '_' || *a == '.') a++;
+			while(*b == ' ' || *b == '_' || *b == '.') b++;
+			if(!*a && !*b) break;
+			names += strlen(names) + 1;
+		}
+	}
+
+	if(joint >= data->num_joints) {
+		ri.Printf(PRINT_DEVELOPER, "R_IQMLerpTag: joint '%s' not found (%d joints)\n", tagName, data->num_joints);
 		AxisClear(tag->axis);
 		VectorClear(tag->origin);
 		return false;
@@ -2145,14 +2217,19 @@ int R_IQMLerpTag(orientation_t* tag, iqmData_t* data, int startFrame, int endFra
 
 	ComputeJointMats(data, startFrame, endFrame, frac, jointMats);
 
+	/* Layout mirrors what MD3 code returns through orientation_t:
+	   axis[i][j] = row i, column j of the model-space rotation,
+	   origin    = model-space translation. */
 	tag->axis[0][0] = jointMats[12 * joint + 0];
 	tag->axis[1][0] = jointMats[12 * joint + 1];
 	tag->axis[2][0] = jointMats[12 * joint + 2];
 	tag->origin[0] = jointMats[12 * joint + 3];
+
 	tag->axis[0][1] = jointMats[12 * joint + 4];
 	tag->axis[1][1] = jointMats[12 * joint + 5];
 	tag->axis[2][1] = jointMats[12 * joint + 6];
 	tag->origin[1] = jointMats[12 * joint + 7];
+
 	tag->axis[0][2] = jointMats[12 * joint + 8];
 	tag->axis[1][2] = jointMats[12 * joint + 9];
 	tag->axis[2][2] = jointMats[12 * joint + 10];

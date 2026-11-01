@@ -743,13 +743,13 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 				stage->type = ST_DIFFUSEMAP;
 			} else if(!Q_stricmp(token, "normalMap") || !Q_stricmp(token, "bumpMap")) {
 				stage->type = ST_NORMALMAP;
-				VectorSet4(stage->normalScale, 1.16f, 1.16f, 1.0f, 0.03f);
+				VectorSet4(stage->normalScale, 1.50f, 1.50f, 1.0f, 0.03f);
 			} else if(!Q_stricmp(token, "normalParallaxMap") || !Q_stricmp(token, "bumpParallaxMap")) {
 				if(r_parallaxMapping->integer)
 					stage->type = ST_NORMALPARALLAXMAP;
 				else
 					stage->type = ST_NORMALMAP;
-				VectorSet4(stage->normalScale, 1.16f, 1.16f, 1.0f, 0.03f);
+				VectorSet4(stage->normalScale, 1.50f, 1.50f, 1.0f, 0.03f);
 			} else if(!Q_stricmp(token, "specularMap")) {
 				stage->type = ST_SPECULARMAP;
 				VectorSet4(stage->specularScale, 1.0f, 1.0f, 1.0f, 1.0f);
@@ -1841,7 +1841,7 @@ static void CollapseStagesToLightall(shaderStage_t* diffuse, shaderStage_t* norm
 
 			if(parallax && r_parallaxMapping->integer) defs |= LIGHTDEF_USE_PARALLAXMAP;
 
-			VectorSet4(diffuse->normalScale, 1.16f, 1.16f, 1.0f, 0.03f);
+			VectorSet4(diffuse->normalScale, 1.50f, 1.50f, 1.0f, 0.03f);
 		}
 	}
 

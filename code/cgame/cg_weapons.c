@@ -1275,9 +1275,16 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 
 		memset(&lerped, 0, sizeof(lerped));
 		AxisClear(lerped.axis);
-		if(!trap_CM_LerpTag(&lerped, parent->hModel, parent->oldframe, parent->frame, 1.0 - parent->backlerp, "anim_attachment_RH")) {
-			VectorSet(lerped.origin, 0.0f, 0.0f, 0.0f);
-			AxisClear(lerped.axis);
+		trap_CM_LerpTag(&lerped, parent->hModel, parent->oldframe, parent->frame, 1.0 - parent->backlerp, "ValveBiped.Bip01_R_Hand");
+
+		vec3_t localAngles = {0.0f, 0.0f, 180.0f};
+		vec3_t locAx[3];
+		AngleVectors(localAngles, locAx[0], locAx[1], locAx[2]);
+
+		for(int i = 0; i < 3; i++) {
+			lerped.axis[i][0] = locAx[0][i] * lerped.axis[0][0] + locAx[1][i] * lerped.axis[1][0] + locAx[2][i] * lerped.axis[2][0];
+			lerped.axis[i][1] = locAx[0][i] * lerped.axis[0][1] + locAx[1][i] * lerped.axis[1][1] + locAx[2][i] * lerped.axis[2][1];
+			lerped.axis[i][2] = locAx[0][i] * lerped.axis[0][2] + locAx[1][i] * lerped.axis[1][2] + locAx[2][i] * lerped.axis[2][2];
 		}
 		VectorCopy(parent->origin, gun.origin);
 
