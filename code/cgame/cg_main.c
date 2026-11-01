@@ -422,7 +422,7 @@ static void CG_RegisterSounds(void) {
 	cgs.media.countFightSound = trap_S_RegisterSound("sound/feedback/fight.wav", true);
 	cgs.media.countPrepareSound = trap_S_RegisterSound("sound/feedback/prepare.wav", true);
 
-	cgs.media.selectSound = trap_S_RegisterSound("sound/weapons/change.wav", false);
+	cgs.media.selectSound = trap_S_RegisterSound("sound/weapons/wpn_moveselect", false);
 	cgs.media.wearOffSound = trap_S_RegisterSound("sound/items/wearoff.wav", false);
 	cgs.media.useNothingSound = trap_S_RegisterSound("sound/items/use_nothing.wav", false);
 	cgs.media.gibSound = trap_S_RegisterSound("sound/player/gibsplt1.wav", false);

@@ -1173,8 +1173,8 @@ static int PM_DirectionalAnimation(int base) {
 		if(left) return base + 6;   // SW
 		return base + 4;            // S
 	}
-	if(right) return base;         // E
-	if(left) return base + 7;      // W
+	if(right) return base;     // E
+	if(left) return base + 7;  // W
 	return base + 1;
 }
 
@@ -1258,7 +1258,6 @@ static void PM_BeginWeaponChange(int weapon) {
 	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
 	if(pm->ps->weaponstate == WEAPON_DROPPING) return;
 
-	PM_AddEvent(EV_CHANGE_WEAPON);
 	pm->ps->weaponstate = WEAPON_DROPPING;
 	pm->ps->weaponTime += 200;
 	PM_ContinueTorsoAnim(AM_IDLE);
@@ -1605,7 +1604,6 @@ void PmoveSingle(pmove_t* pmove) {
 		// airborne
 		PM_AirMove();
 	}
-
 
 	// set groundentity, watertype, and waterlevel
 	PM_GroundTrace();

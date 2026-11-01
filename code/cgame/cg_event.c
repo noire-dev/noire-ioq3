@@ -350,10 +350,6 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		//
 		// weapon events
 		//
-		case EV_CHANGE_WEAPON:
-			DEBUGNAME("EV_CHANGE_WEAPON");
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.selectSound);
-			break;
 		case EV_FIRE_WEAPON:
 			DEBUGNAME("EV_FIRE_WEAPON");
 			CG_FireWeapon(cent);

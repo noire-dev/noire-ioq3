@@ -228,7 +228,6 @@ char* eventnames[] = {
     "EV_GLOBAL_ITEM_PICKUP",  // powerup / team sounds are broadcast to everyone
 
     "EV_NOAMMO",
-    "EV_CHANGE_WEAPON",
     "EV_FIRE_WEAPON",
 
     "EV_ITEM_RESPAWN",

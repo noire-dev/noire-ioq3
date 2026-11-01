@@ -36,92 +36,187 @@ void CG_DrawHead(float x, float y, float w, float h, int clientNum) {
 	drawhShaderAdjusted(x, y, w, h, ci->modelIcon ? ci->modelIcon : cgs.media.deferShader);
 }
 
-#define WICON_SIDE 32 * 0.60
-#define WICON_SELECT 32 * 1.10
-#define WICON_SPACE 3
-#define WICONS_SIDES 12
-#define WEAPON_SELECT_TIME 1350
-#define WEAPON_SELECT_FADEOUT_TIME 350
-#define WEAPON_SELECT_FADEIN_TIME 300
+#define WEAPON_SELECTOR_SECTIONS 6
+#define WEAPON_SELECTOR_Y 38.0f
+#define WEAPON_SELECTOR_HEADER_ACTIVE_W 270.0f
+#define WEAPON_SELECTOR_HEADER_ACTIVE_H 48.0f
+#define WEAPON_SELECTOR_HEADER_IDLE 77.0f
+#define WEAPON_SELECTOR_GAP 19.0f
+#define WEAPON_SELECTOR_LIST_Y 106.0f
+#define WEAPON_SELECTOR_ROW_H 48.0f
+#define WEAPON_SELECTOR_ROW_SELECTED_H 192.0f
+#define WEAPON_SELECTOR_TIME 1800
+#define WEAPON_SELECTOR_FADEOUT 300
+#define WEAPON_SELECTOR_SCALE (1.0f / 2.0f)
+
+/* Apply one-half scale to every selector element. The menu is centered
+ * horizontally and remains anchored near the top of the screen. */
+static void CG_DrawWeaponSelectorRect(float x, float y, float w, float h, float radius, vec4_t color) { drawRoundedRect(x * cgui.scale * WEAPON_SELECTOR_SCALE, y * cgui.scale * WEAPON_SELECTOR_SCALE, w * cgui.scale * WEAPON_SELECTOR_SCALE, h * cgui.scale * WEAPON_SELECTOR_SCALE, radius * cgui.scale * WEAPON_SELECTOR_SCALE, color, 0); }
+
+static void CG_DrawWeaponSelectorText(float x, float y, const char* text, int style, vec4_t color, float size) { drawString(x * cgui.scale * WEAPON_SELECTOR_SCALE, y * cgui.scale * WEAPON_SELECTOR_SCALE, text, style, color, size * cgui.scale * WEAPON_SELECTOR_SCALE, 128); }
+
+static int CG_GetWeaponSectionList(int section, int* weapons, int maxWeapons) {
+	int count = 0;
+	int order, weapon;
+
+	for(order = 1; order <= WEAPONS_NUM * 4; order++) {
+		for(weapon = 1; weapon < WEAPONS_NUM; weapon++) {
+			weaponFx_t* fx = &jsd_weaponFx[weapon];
+			int weaponOrder;
+
+			if(fx->weaponSection != section || !cg.swep_listcl[weapon]) continue;
+			weaponOrder = fx->sectionOrder > 0 ? fx->sectionOrder : weapon;
+			if(weaponOrder != order) continue;
+			if(count < maxWeapons) weapons[count] = weapon;
+			count++;
+		}
+	}
+
+	return count < maxWeapons ? count : maxWeapons;
+}
+
+static void CG_DrawWeaponSelectorIcon(int weapon, float x, float y, float w, float h, float alpha) {
+	weaponFx_t* fx;
+	vec4_t iconColor = {1.0f, 1.0f, 1.0f, 1.0f};
+	qhandle_t icon;
+
+	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	CG_RegisterWeapon(weapon);
+	fx = &jsd_weaponFx[weapon];
+	icon = cg_weapons[weapon].weaponIcon;
+	if(!icon) return;
+
+	iconColor[3] = alpha;
+	if(fx->colorizeItemIcon) {
+		iconColor[0] = 1.0f;
+		iconColor[1] = 0.78f;
+		iconColor[2] = 0.20f;
+	}
+
+	trap_R_SetColor(iconColor);
+	drawhShader(x * cgui.scale * WEAPON_SELECTOR_SCALE, y * cgui.scale * WEAPON_SELECTOR_SCALE, w * cgui.scale * WEAPON_SELECTOR_SCALE, h * cgui.scale * WEAPON_SELECTOR_SCALE, icon);
+	trap_R_SetColor(NULL);
+
+	if(cg.swep_listcl[weapon] == WS_NOAMMO) {
+		drawhShader(x * cgui.scale * WEAPON_SELECTOR_SCALE, y * cgui.scale * WEAPON_SELECTOR_SCALE, w * cgui.scale * WEAPON_SELECTOR_SCALE, h * cgui.scale * WEAPON_SELECTOR_SCALE, cgs.media.noammoShader);
+	}
+}
+
 static void CG_DrawWeaponSelect(void) {
-	vec4_t weaponWhiteColor = {1.0f, 1.0f, 1.0f, 1.0f};
-	vec4_t weaponWhiteTextColor = {1.0f, 1.0f, 1.0f, 1.0f};
-	vec4_t weaponBlackColor = {0.0f, 0.0f, 0.0f, 1.0f};
-	float y, x, originalX = 320, originalY = 380;
-	int i, j;
-	float remaining, elapsed, alpha;
+	vec4_t inactiveColor = {0.0f, 0.0f, 0.0f, 1.00f};
+	vec4_t activeColor = {0.0f, 0.0f, 0.0f, 1.00f};
+	vec4_t selectedColor = {0.0f, 0.0f, 0.0f, 1.00f};
+	vec4_t numberColor = {1.0f, 0.86f, 0.20f, 1.00f};
+	vec4_t weaponNameColor = {1.0f, 0.86f, 0.20f, 1.00f};
+	int sectionWeapons[WEAPONS_NUM];
+	int activeSection, section, count, i, weapon;
+	bool firstWeaponSelected;
+	float x, y, width, height, activeX, alpha = 1.0f;
+	float layoutWidth;
+	float screenWidth;
+	float remaining;
 
 	if(cg.predictedPlayerState.stats[STAT_HEALTH] <= 0) return;
-	if(!cg_draw2D.integer || cg.showScores) return;
-	if(cg.time > cg.weaponSelectTime + WEAPON_SELECT_TIME) return;
+	if(!cg_draw2D.integer || cg.showScores || !cg.weaponSelectTime) return;
+	if(cg.time > cg.weaponSelectTime + WEAPON_SELECTOR_TIME) return;
 
-	y = originalY + (WICON_SELECT * 0.25);
-	x = originalX + (WICON_SELECT / 2) + WICON_SPACE;
+	remaining = (float)(cg.weaponSelectTime + WEAPON_SELECTOR_TIME - cg.time);
+	if(remaining < WEAPON_SELECTOR_FADEOUT) alpha = remaining / WEAPON_SELECTOR_FADEOUT;
+	if(alpha < 0.0f) alpha = 0.0f;
+	if(alpha > 1.0f) alpha = 1.0f;
 
-	remaining = (float)(cg.weaponSelectTime + WEAPON_SELECT_TIME - cg.time);
-	if(remaining < WEAPON_SELECT_FADEOUT_TIME && remaining > 0) {
-		alpha = remaining / WEAPON_SELECT_FADEOUT_TIME;
-		if(alpha < 0.00) alpha = 1.00;
-		weaponWhiteColor[3] = alpha;
-		weaponWhiteTextColor[3] = alpha;
-		weaponBlackColor[3] = alpha;
+	activeSection = 1;
+	if(cg.weaponSelect > WP_NONE && cg.weaponSelect < WEAPONS_NUM && jsd_weaponFx[cg.weaponSelect].weaponSection >= 1 && jsd_weaponFx[cg.weaponSelect].weaponSection <= WEAPON_SELECTOR_SECTIONS) {
+		activeSection = jsd_weaponFx[cg.weaponSelect].weaponSection;
 	}
 
-	elapsed = cg.time - cg.weaponSelectTime;
-	if(elapsed < WEAPON_SELECT_FADEIN_TIME) {
-		weaponWhiteTextColor[3] = elapsed / WEAPON_SELECT_FADEOUT_TIME;
-	}
-
-	drawStringAdjusted(320, 356, cg_weapons[cg.weaponSelect].item->pickup_name, FONTSTYLE_BOLD | FONTSTYLE_CENTER | FONTSTYLE_DROPSHADOW, weaponWhiteTextColor, 0.75, 256);
-
-	for(i = cg.weaponSelect + 1, j = 0; i <= WEAPONS_NUM; i++) {
-		if(j >= WICONS_SIDES) {
-			continue;
-		} else if(i >= WEAPONS_NUM) {
-			i = 1;
+	// Keep horizontal centering, but anchor the menu at a fixed top offset.
+	// Only the x origin depends on the current screen resolution.
+	layoutWidth = WEAPON_SELECTOR_HEADER_ACTIVE_W + ((WEAPON_SELECTOR_SECTIONS - 1) * WEAPON_SELECTOR_HEADER_IDLE) + ((WEAPON_SELECTOR_SECTIONS - 1) * WEAPON_SELECTOR_GAP);
+	screenWidth = (cgui.scale > 0.0f) ? ((float)glconfig.vidWidth / cgui.scale) : 640.0f;
+	x = ((screenWidth / WEAPON_SELECTOR_SCALE) - layoutWidth) * 0.5f;
+	y = WEAPON_SELECTOR_Y;
+	activeX = x + (activeSection - 1) * (WEAPON_SELECTOR_HEADER_IDLE + WEAPON_SELECTOR_GAP);
+	for(section = 1; section <= WEAPON_SELECTOR_SECTIONS; section++) {
+		count = CG_GetWeaponSectionList(section, sectionWeapons, ARRAY_LEN(sectionWeapons));
+		if(section == activeSection) {
+			width = WEAPON_SELECTOR_HEADER_ACTIVE_W;
+			firstWeaponSelected = (count > 0 && sectionWeapons[0] == cg.weaponSelect);
+			height = firstWeaponSelected ? WEAPON_SELECTOR_ROW_SELECTED_H : WEAPON_SELECTOR_HEADER_ACTIVE_H;
+			if(firstWeaponSelected) {
+				selectedColor[3] = 0.23f * alpha;
+				CG_DrawWeaponSelectorRect(x, y, width, height, 6.0f, selectedColor);
+			} else {
+				activeColor[3] = 0.21f * alpha;
+				CG_DrawWeaponSelectorRect(x, y, width, height, 6.0f, activeColor);
+			}
+		} else {
+			width = WEAPON_SELECTOR_HEADER_IDLE;
+			height = WEAPON_SELECTOR_HEADER_IDLE;
+			inactiveColor[3] = 0.15f * alpha;
+			CG_DrawWeaponSelectorRect(x, y, width, height, 6.0f, inactiveColor);
 		}
 
-		if(!cg.swep_listcl[i]) continue;
-
-		CG_RegisterWeapon(i);
-		trap_R_SetColor(weaponBlackColor);
-		drawhShaderAdjusted(x + 1, y + 1, WICON_SIDE, WICON_SIDE, cg_weapons[i].weaponIcon);
-		trap_R_SetColor(weaponWhiteColor);
-		drawhShaderAdjusted(x, y, WICON_SIDE, WICON_SIDE, cg_weapons[i].weaponIcon);
-
-		if(cg.swep_listcl[i] == WS_NOAMMO) drawhShaderAdjusted(x, y, WICON_SIDE, WICON_SIDE, cgs.media.noammoShader);
-
-		x += WICON_SIDE + WICON_SPACE;
-		j++;
-	}
-
-	x = originalX - (WICON_SELECT / 2) - (WICON_SIDE + WICON_SPACE);
-	for(i = cg.weaponSelect - 1, j = 0; i >= 0; i--) {
-		if(j >= WICONS_SIDES) {
-			continue;
-		} else if(i <= 0) {
-			i = WEAPONS_NUM - 1;
+		{
+			char number[2];
+			number[0] = '0' + section;
+			number[1] = '\0';
+			numberColor[3] = alpha;
+			CG_DrawWeaponSelectorText(x + 9.0f, y + 8.0f, number, FONTSTYLE_BOLD, numberColor, 0.85f);
 		}
 
-		if(!cg.swep_listcl[i]) continue;
+		if(section == activeSection && count > 0) {
+			const char* name;
+			weapon = sectionWeapons[0];
+			CG_RegisterWeapon(weapon);
+			name = (cg_weapons[weapon].item && cg_weapons[weapon].item->pickup_name) ? cg_weapons[weapon].item->pickup_name : "WEAPON";
+			if(weapon == cg.weaponSelect) {
+				/* The first weapon is represented by the active section header.
+				 * Expand that header vertically too, just like selected rows below. */
+				CG_DrawWeaponSelectorIcon(weapon, x + 35.0f, y + 39.0f, 200.0f, 100.0f, alpha);
+				weaponNameColor[3] = alpha;
+				CG_DrawWeaponSelectorText(x + (width * 0.5f), y + height - 20.0f, name, FONTSTYLE_BOLD | FONTSTYLE_CENTER, weaponNameColor, 0.65f);
+			} else {
+				weaponNameColor[3] = alpha;
+				CG_DrawWeaponSelectorText(x + (width * 0.5f), y + 30.0f, name, FONTSTYLE_BOLD | FONTSTYLE_CENTER, weaponNameColor, 0.65f);
+			}
+		}
 
-		CG_RegisterWeapon(i);
-		trap_R_SetColor(weaponBlackColor);
-		drawhShaderAdjusted(x + 1, y + 1, WICON_SIDE, WICON_SIDE, cg_weapons[i].weaponIcon);
-		trap_R_SetColor(weaponWhiteColor);
-		drawhShaderAdjusted(x, y, WICON_SIDE, WICON_SIDE, cg_weapons[i].weaponIcon);
-
-		if(cg.swep_listcl[i] == WS_NOAMMO) drawhShaderAdjusted(x, y, WICON_SIDE, WICON_SIDE, cgs.media.noammoShader);
-
-		x -= WICON_SIDE + WICON_SPACE;
-		j++;
+		x += width + WEAPON_SELECTOR_GAP;
 	}
 
-	trap_R_SetColor(weaponBlackColor);
-	drawhShaderAdjusted((originalX - WICON_SELECT / 2) + 1, (originalY + 2) + 1, WICON_SELECT, WICON_SELECT, cg_weapons[cg.weaponSelect].weaponIcon);
-	trap_R_SetColor(weaponWhiteColor);
-	drawhShaderAdjusted(originalX - WICON_SELECT / 2, originalY + 2, WICON_SELECT, WICON_SELECT, cg_weapons[cg.weaponSelect].weaponIcon);
-	if(cg.swep_listcl[cg.weaponSelect] == WS_NOAMMO) drawhShaderAdjusted(originalX - WICON_SELECT / 2, originalY + 2, WICON_SELECT, WICON_SELECT, cgs.media.noammoShader);
+	// The first weapon in the active section is represented by the expanded
+	// header. Remaining weapons are listed below; the selected row is tall and
+	// displays the rectangular item icon.
+	count = CG_GetWeaponSectionList(activeSection, sectionWeapons, ARRAY_LEN(sectionWeapons));
+	x = activeX;
+	/* If weapon #0 is selected, its expanded header occupies the first card. */
+	firstWeaponSelected = (count > 0 && sectionWeapons[0] == cg.weaponSelect);
+	y += firstWeaponSelected ? (WEAPON_SELECTOR_ROW_SELECTED_H + WEAPON_SELECTOR_GAP) : WEAPON_SELECTOR_LIST_Y;
+	for(i = 1; i < count; i++) {
+		weapon = sectionWeapons[i];
+		bool selected = (weapon == cg.weaponSelect);
+		const char* name;
+
+		CG_RegisterWeapon(weapon);
+		name = (cg_weapons[weapon].item && cg_weapons[weapon].item->pickup_name) ? cg_weapons[weapon].item->pickup_name : "WEAPON";
+		height = selected ? WEAPON_SELECTOR_ROW_SELECTED_H : WEAPON_SELECTOR_ROW_H;
+
+		if(selected) {
+			selectedColor[3] = 0.23f * alpha;
+			CG_DrawWeaponSelectorRect(x, y, WEAPON_SELECTOR_HEADER_ACTIVE_W, height, 6.0f, selectedColor);
+			CG_DrawWeaponSelectorIcon(weapon, x + 35.0f, y + 39.0f, 200.0f, 100.0f, alpha);
+			weaponNameColor[3] = alpha;
+			CG_DrawWeaponSelectorText(x + (WEAPON_SELECTOR_HEADER_ACTIVE_W * 0.5f), y + height - 20.0f, name, FONTSTYLE_BOLD | FONTSTYLE_CENTER, weaponNameColor, 0.65f);
+		} else {
+			inactiveColor[3] = 0.16f * alpha;
+			CG_DrawWeaponSelectorRect(x, y, WEAPON_SELECTOR_HEADER_ACTIVE_W, height, 6.0f, inactiveColor);
+			weaponNameColor[3] = alpha;
+			CG_DrawWeaponSelectorText(x + (WEAPON_SELECTOR_HEADER_ACTIVE_W * 0.5f), y + 30.0f, name, FONTSTYLE_BOLD | FONTSTYLE_CENTER, weaponNameColor, 0.65f);
+		}
+
+		y += height + WEAPON_SELECTOR_GAP;
+	}
 }
 
 static void CG_DrawCounterElement(float x, float y, const char* value, const char* text) {

@@ -27,6 +27,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
     {
         [WP_GAUNTLET] =
             {
+                .weaponSection = 1,
+                .sectionOrder = 1,
+                .colorizeItemIcon = true,
                 .animType = AMTYPE_MELEE,
                 .continuousFire = true,
                 .hitLightColor = {0.6f, 0.6f, 1.0f},
@@ -50,6 +53,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_MACHINEGUN] =
             {
+                .weaponSection = 2,
+                .sectionOrder = 1,
+                .colorizeItemIcon = false,
                 .animType = AMTYPE_SMG1,
                 .hitLightColor = {1.0f, 1.0f, 0.0f},
                 .hitLightRadius = 100.0f,
@@ -94,6 +100,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_SHOTGUN] =
             {
+                .weaponSection = 3,
+                .sectionOrder = 1,
+                .colorizeItemIcon = false,
                 .animType = AMTYPE_SHOTGUN,
                 .hitLightColor = {1.0f, 1.0f, 0.0f},
                 .hitLightRadius = 100.0f,
@@ -135,6 +144,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_GRENADE_LAUNCHER] =
             {
+                .weaponSection = 4,
+                .sectionOrder = 1,
+                .colorizeItemIcon = false,
                 .animType = AMTYPE_GRENADE,
                 .explodeOnFleshHit = true,
                 .hitLightColor = {1.0f, 0.7f, 0.0f},
@@ -166,6 +178,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_ROCKET_LAUNCHER] =
             {
+                .weaponSection = 4,
+                .sectionOrder = 2,
+                .colorizeItemIcon = false,
                 .animType = AMTYPE_RPG,
                 .explodeOnFleshHit = true,
                 .hitLightColor = {1.0f, 0.75f, 0.0f},
@@ -198,6 +213,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_LIGHTNING] =
             {
+                .weaponSection = 5,
+                .sectionOrder = 1,
+                .colorizeItemIcon = false,
                 .animType = AMTYPE_AR2,
                 .isBeam = true,
                 .beamColor = {1.0f, 1.0f, 1.0f, 1.0f},
@@ -226,6 +244,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_RAILGUN] =
             {
+                .weaponSection = 5,
+                .sectionOrder = 2,
+                .colorizeItemIcon = false,
                 .animType = AMTYPE_CROSSBOW,
                 .skipLightningBolt = true,
                 .hitLightColor = {1.0f, 0.5f, 0.0f},
@@ -254,6 +275,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_PLASMAGUN] =
             {
+                .weaponSection = 6,
+                .sectionOrder = 1,
+                .colorizeItemIcon = false,
                 .animType = AMTYPE_MAGIC,
                 .hitLightColor = {0.6f, 0.6f, 1.0f},
                 .hitLightRadius = 150.0f,
@@ -285,6 +309,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_BFG] =
             {
+                .weaponSection = 6,
+                .sectionOrder = 2,
+                .colorizeItemIcon = false,
                 .animType = AMTYPE_MAGIC,
                 .hitLightColor = {1.0f, 0.7f, 1.0f},
                 .hitLightRadius = 500.0f,
@@ -317,6 +344,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_PHYSGUN] =
             {
+                .weaponSection = 1,
+                .sectionOrder = 3,
+                .colorizeItemIcon = true,
                 .animType = AMTYPE_PHYSGUN,
                 .continuousFire = true,
                 .modelColorSource = 1,
@@ -343,6 +373,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_GRAVITYGUN] =
             {
+                .weaponSection = 1,
+                .sectionOrder = 2,
+                .colorizeItemIcon = true,
                 .animType = AMTYPE_FIST,
                 .continuousFire = true,
                 .modelColorSource = 2,
@@ -370,6 +403,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_TOOLGUN] =
             {
+                .weaponSection = 6,
+                .sectionOrder = 4,
+                .colorizeItemIcon = false,
                 .animType = AMTYPE_REVOLVER,
                 .hitLightColor = {0.5f, 0.5f, 0.5f},
                 .hitLightRadius = 100.0f,
@@ -1563,58 +1599,86 @@ void CG_AddViewWeapon(playerState_t* ps) {
 	CG_AddPlayerWeapon(&hand, ps, &cg.predictedPlayerEntity, ci);
 }
 
+/*
+ * Build a stable, data-driven list of weapons in selector order.
+ * Weapons are grouped by weaponFX.weaponSection and ordered by
+ * weaponFX.sectionOrder (weapon index is the tie breaker).
+ */
+static int CG_BuildWeaponSelectorOrder(int* weapons, int maxWeapons) {
+	int count = 0;
+	int section, order, weapon;
+
+	for(section = 1; section <= 6; section++) {
+		for(order = 1; order <= WEAPONS_NUM * 4; order++) {
+			for(weapon = 1; weapon < WEAPONS_NUM; weapon++) {
+				weaponFx_t* fx = &jsd_weaponFx[weapon];
+				int weaponOrder;
+
+				if(fx->weaponSection != section || !cg.swep_listcl[weapon]) continue;
+				weaponOrder = fx->sectionOrder > 0 ? fx->sectionOrder : weapon;
+				if(weaponOrder != order) continue;
+				if(count < maxWeapons) weapons[count] = weapon;
+				count++;
+			}
+		}
+	}
+
+	return count < maxWeapons ? count : maxWeapons;
+}
+
+static void CG_StepWeaponSelector(int direction) {
+	int weapons[WEAPONS_NUM];
+	int count, i, currentIndex = -1, nextIndex;
+
+	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
+
+	count = CG_BuildWeaponSelectorOrder(weapons, ARRAY_LEN(weapons));
+	if(count <= 0) return;
+
+	for(i = 0; i < count; i++) {
+		if(weapons[i] == cg.weaponSelect) {
+			currentIndex = i;
+			break;
+		}
+	}
+
+	if(currentIndex < 0) {
+		for(i = 0; i < count; i++) {
+			if(weapons[i] == cg.snap->ps.weapon) {
+				currentIndex = i;
+				break;
+			}
+		}
+	}
+
+	if(currentIndex < 0) currentIndex = direction > 0 ? -1 : 0;
+	nextIndex = (currentIndex + direction + count) % count;
+
+	cg.weaponSelect = weapons[nextIndex];
+	cg.weaponSelectTime = cg.time;
+	trap_S_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.media.selectSound);
+}
+
 void CG_NextWeapon_f(void) {
-	bool weaponFound = false;
-	int original, i;
+	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
 
-	if(!cg.snap || cg.snap->ps.pm_flags & PMF_FOLLOW) return;
-
-	if(cg.snap->ps.weapon == WP_PHYSGUN && cg.snap->ps.eFlags & EF_FIRING) {
+	if(cg.snap->ps.weapon == WP_PHYSGUN && (cg.snap->ps.eFlags & EF_FIRING)) {
 		trap_SendConsoleCommand(EXEC_INSERT, "physgun_dist 0\n");
 		return;
 	}
 
-	cg.weaponSelectTime = cg.time;
-	original = cg.weaponSelect;
-
-	for(i = 1; i < WEAPONS_NUM; i++) {
-		cg.weaponSelect++;
-		if(cg.weaponSelect >= WEAPONS_NUM) cg.weaponSelect = 1;
-
-		if(cg.swep_listcl[cg.weaponSelect]) {
-			weaponFound = true;
-			break;
-		}
-	}
-
-	if(!weaponFound) cg.weaponSelect = original;
+	CG_StepWeaponSelector(1);
 }
 
 void CG_PrevWeapon_f(void) {
-	bool weaponFound = false;
-	int original, i;
+	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
 
-	if(!cg.snap || cg.snap->ps.pm_flags & PMF_FOLLOW) return;
-
-	if(cg.snap->ps.weapon == WP_PHYSGUN && cg.snap->ps.eFlags & EF_FIRING) {
+	if(cg.snap->ps.weapon == WP_PHYSGUN && (cg.snap->ps.eFlags & EF_FIRING)) {
 		trap_SendConsoleCommand(EXEC_INSERT, "physgun_dist 1\n");
 		return;
 	}
 
-	cg.weaponSelectTime = cg.time;
-	original = cg.weaponSelect;
-
-	for(i = 1; i < WEAPONS_NUM; i++) {
-		cg.weaponSelect--;
-		if(cg.weaponSelect <= 0) cg.weaponSelect = WEAPONS_NUM;
-
-		if(cg.swep_listcl[cg.weaponSelect]) {
-			weaponFound = true;
-			break;
-		}
-	}
-
-	if(!weaponFound) cg.weaponSelect = original;
+	CG_StepWeaponSelector(-1);
 }
 
 void CG_Weapon_f(void) {
@@ -1624,9 +1688,10 @@ void CG_Weapon_f(void) {
 
 	num = atoi(CG_Argv(1));
 
-	if(!cg.swep_listcl[num]) return;
+	if(num <= WP_NONE || num >= WEAPONS_NUM || !cg.swep_listcl[num]) return;
 
 	cg.weaponSelect = num;
+	cg.weaponSelectTime = cg.time;
 }
 
 /*
