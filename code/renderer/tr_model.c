@@ -227,6 +227,20 @@ qhandle_t RE_RegisterModel(const char* name) {
 		}
 	}
 
+	// special-case the error model: it always lives at handle 0
+	if(Q_stricmp(name, "models/error.md3") == 0) {
+		mod = tr.models[0];
+		if(mod->type == MOD_BAD) {
+			R_IssuePendingRenderCommands();
+			mod->numLods = 0;
+			Q_strncpyz(mod->name, name, sizeof(mod->name));
+			if(!R_RegisterMD3(name, mod)) {
+				ri.Printf(PRINT_WARNING, "RE_RegisterModel: failed to load '%s'\n", name);
+			}
+		}
+		return 0;
+	}
+
 	// allocate a new model_t
 
 	if((mod = R_AllocModel()) == NULL) {
@@ -294,12 +308,13 @@ qhandle_t RE_RegisterModel(const char* name) {
 	}
 
 	if(!hModel && Q_stricmp(name, "models/error.md3") != 0) {
-		qhandle_t err = RE_RegisterModel("models/error.md3");
-		if(err) {
+		RE_RegisterModel("models/error.md3");
+		if(tr.models[0]->type != MOD_BAD) {
 			ri.Printf(PRINT_DEVELOPER, "WARNING: %s not found, using models/error.md3 instead\n", name);
-			return err;
+		} else {
+			ri.Printf(PRINT_WARNING, "WARNING: %s not found and models/error.md3 missing, model invisible\n", name);
 		}
-		ri.Printf(PRINT_WARNING, "WARNING: %s not found and models/error.md3 missing, model invisible\n", name);
+		return 0;
 	}
 
 	return hModel;
@@ -976,7 +991,8 @@ R_ModelInit
 void R_ModelInit(void) {
 	model_t* mod;
 
-	// leave a space for NULL model
+	// handle 0 is reserved for the error model, but is only
+	// populated on demand by RE_RegisterModel
 	tr.numModels = 0;
 
 	mod = R_AllocModel();

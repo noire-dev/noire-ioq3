@@ -370,7 +370,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
             },
         [WP_TOOLGUN] =
             {
-                .animType = AMTYPE_CAMERA,
+                .animType = AMTYPE_REVOLVER,
                 .hitLightColor = {0.5f, 0.5f, 0.5f},
                 .hitLightRadius = 100.0f,
                 .hitLightTime = 50,
@@ -383,8 +383,9 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireLightRadius = 100.0f,
                 .fireLightTime = 50,
                 .fireParticleColor = {0.5f, 0.5f, 0.5f, 1.0f},
-                .fireParticleCount = 0,
-                .fireParticleSpeed = 60.0f,
+                .fireParticleCount = 50,
+                .fireParticleSpeed = 20.0f,
+                .fireParticleSize = 0.2f,
                 .fireParticleFlags = PF_SMOOTH_FADE,
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
                 .isBeam = true,
@@ -1228,7 +1229,6 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 	weapon_t weaponNum;
 	weaponInfo_t* weapon;
 	centity_t* nonPredictedCent;
-	orientation_t lerped;
 
 	weaponNum = cent->currentState.weapon;
 
@@ -1273,32 +1273,115 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 			}
 		}
 
-		memset(&lerped, 0, sizeof(lerped));
-		AxisClear(lerped.axis);
-		trap_CM_LerpTag(&lerped, parent->hModel, parent->oldframe, parent->frame, 1.0 - parent->backlerp, "ValveBiped.Bip01_R_Hand");
+		// Align the weapon's own "ValveBiped.Bip01_R_Hand" tag with the
+		// hand model's "ValveBiped.Bip01_R_Hand" tag, 1:1.
+		//
+		// Quake 3 stores bases as ROWS and rotates vectors with
+		// world = local * axis (VectorRotate). Composing frames therefore
+		// follows the same order as the engine's CG_PositionRotatedEntityOnTag:
+		// a tag's world basis is tag.axis * parent->axis (tag applied first,
+		// then the parent). Multiplying the other way around (parent * tag)
+		// yields the transposed rotation, which is exactly the "gun anchored
+		// at the hand but rotated wrong" artifact.
+		//
+		// So, with H = hand tag basis in world space (rows) and W = weapon
+		// tag basis in weapon-local space (rows), the weapon entity axis must
+		// be W^-1 * H (W orthonormal => W^-1 == W^T), NOT H * W^T. The weapon
+		// tag origin is then subtracted along the rows of the final basis.
+		//
+		// If the weapon tag basis is left-handed (mirrored, common for
+		// imported HL2/Source models), it is first normalized to right-handed
+		// so that its inverse is a pure rotation; the dropped reflection is
+		// restored afterwards by flipping one axis of gun.axis.
+		{
+			orientation_t handTag;
+			orientation_t weaponTag;
+			vec3_t handTagAxis[3];
+			vec3_t weaponTagAxis[3];
+			vec3_t weaponTagInvAxis[3];
+			vec3_t handTagOrigin;
+			float detW, detH;
 
-		vec3_t localAngles = {0.0f, 0.0f, 180.0f};
-		vec3_t locAx[3];
-		AngleVectors(localAngles, locAx[0], locAx[1], locAx[2]);
+			// --- Hand tag in world space ---
+			memset(&handTag, 0, sizeof(handTag));
+			AxisClear(handTag.axis);
+			trap_CM_LerpTag(&handTag, parent->hModel, parent->oldframe, parent->frame, 1.0 - parent->backlerp, "ValveBiped.Bip01_R_Hand");
 
-		for(int i = 0; i < 3; i++) {
-			lerped.axis[i][0] = locAx[0][i] * lerped.axis[0][0] + locAx[1][i] * lerped.axis[1][0] + locAx[2][i] * lerped.axis[2][0];
-			lerped.axis[i][1] = locAx[0][i] * lerped.axis[0][1] + locAx[1][i] * lerped.axis[1][1] + locAx[2][i] * lerped.axis[2][1];
-			lerped.axis[i][2] = locAx[0][i] * lerped.axis[0][2] + locAx[1][i] * lerped.axis[1][2] + locAx[2][i] * lerped.axis[2][2];
+			VectorCopy(parent->origin, handTagOrigin);
+			VectorMA(handTagOrigin, handTag.origin[0], parent->axis[0], handTagOrigin);
+			VectorMA(handTagOrigin, handTag.origin[1], parent->axis[1], handTagOrigin);
+			VectorMA(handTagOrigin, handTag.origin[2], parent->axis[2], handTagOrigin);
+
+			// handTagAxis = handTag.axis * parent->axis  (tag first, then
+			// parent — same order as CG_PositionRotatedEntityOnTag uses)
+			MatrixMultiply(handTag.axis, parent->axis, handTagAxis);
+
+			// --- Weapon tag in weapon-model local space ---
+			memset(&weaponTag, 0, sizeof(weaponTag));
+			AxisClear(weaponTag.axis);
+			trap_CM_LerpTag(&weaponTag, weapon->weaponModel, 0, 0, 0.0f, "ValveBiped.Bip01_R_Hand");
+
+			VectorCopy(weaponTag.axis[0], weaponTagAxis[0]);
+			VectorCopy(weaponTag.axis[1], weaponTagAxis[1]);
+			VectorCopy(weaponTag.axis[2], weaponTagAxis[2]);
+
+			// If the weapon tag basis is left-handed (mirrored, common for
+			// imported HL2/Source models), negate one column so its inverse
+			// is a pure rotation, not a rotation + reflection. The missing
+			// reflection is compensated by flipping the model on that axis
+			// via negative scale in gun.axis (the axis stays a valid basis,
+			// the model just appears mirrored on one side, which for a
+			// weapon held in hand is what "ValveBiped" tags usually imply).
+			detW = weaponTagAxis[0][0] * (weaponTagAxis[1][1] * weaponTagAxis[2][2] - weaponTagAxis[1][2] * weaponTagAxis[2][1]) - weaponTagAxis[1][0] * (weaponTagAxis[0][1] * weaponTagAxis[2][2] - weaponTagAxis[0][2] * weaponTagAxis[2][1]) + weaponTagAxis[2][0] * (weaponTagAxis[0][1] * weaponTagAxis[1][2] - weaponTagAxis[0][2] * weaponTagAxis[1][1]);
+
+			detH = handTagAxis[0][0] * (handTagAxis[1][1] * handTagAxis[2][2] - handTagAxis[1][2] * handTagAxis[2][1]) - handTagAxis[1][0] * (handTagAxis[0][1] * handTagAxis[2][2] - handTagAxis[0][2] * handTagAxis[2][1]) + handTagAxis[2][0] * (handTagAxis[0][1] * handTagAxis[1][2] - handTagAxis[0][2] * handTagAxis[1][1]);
+
+			// Make both bases right-handed.
+			if(detW < 0.0f) {
+				VectorNegate(weaponTagAxis[1], weaponTagAxis[1]);
+			}
+			if(detH < 0.0f) {
+				VectorNegate(handTagAxis[1], handTagAxis[1]);
+			}
+
+			// --- Orientation: gun.axis = inverse(weaponTagAxis) * handTagAxis ---
+			// weaponTagAxis is orthonormal right-handed; inverse == transpose.
+			weaponTagInvAxis[0][0] = weaponTagAxis[0][0];
+			weaponTagInvAxis[0][1] = weaponTagAxis[1][0];
+			weaponTagInvAxis[0][2] = weaponTagAxis[2][0];
+			weaponTagInvAxis[1][0] = weaponTagAxis[0][1];
+			weaponTagInvAxis[1][1] = weaponTagAxis[1][1];
+			weaponTagInvAxis[1][2] = weaponTagAxis[2][1];
+			weaponTagInvAxis[2][0] = weaponTagAxis[0][2];
+			weaponTagInvAxis[2][1] = weaponTagAxis[1][2];
+			weaponTagInvAxis[2][2] = weaponTagAxis[2][2];
+
+			MatrixMultiply(weaponTagInvAxis, handTagAxis, gun.axis);
+
+			// If the original weapon basis was left-handed, restore the
+			// mirror by flipping the same local axis (row 1 of gun.axis,
+			// i.e. the "left" axis) in the final orientation. This makes
+			// the model appear as authored, not mirror-twisted.
+			if(detW < 0.0f) {
+				VectorNegate(gun.axis[1], gun.axis[1]);
+			}
+
+			// --- Position: gun.origin = handTagOrigin - gun.axis * weaponTag.origin ---
+			// Use the ORIGINAL (pre-normalization) weaponTag.origin so the
+			// weapon tag still lands exactly on the hand tag.
+			VectorCopy(handTagOrigin, gun.origin);
+			VectorMA(gun.origin, -weaponTag.origin[0], gun.axis[0], gun.origin);
+			VectorMA(gun.origin, -weaponTag.origin[1], gun.axis[1], gun.origin);
+			VectorMA(gun.origin, -weaponTag.origin[2], gun.axis[2], gun.origin);
 		}
-		VectorCopy(parent->origin, gun.origin);
 
-		VectorMA(gun.origin, lerped.origin[0], parent->axis[0], gun.origin);
+		// Make weapon appear left-handed for 2 and centered for 3.
+		if(ps && cg_drawGun.integer == 2) {
+			vec3_t tmp;
+			VectorScale(parent->axis[1], 2.0f, tmp);
+			VectorAdd(gun.origin, tmp, gun.origin);
+		}
 
-		// Make weapon appear left-handed for 2 and centered for 3
-		if(ps && cg_drawGun.integer == 2)
-			VectorMA(gun.origin, -lerped.origin[1], parent->axis[1], gun.origin);
-		else if(!ps || cg_drawGun.integer != 3)
-			VectorMA(gun.origin, lerped.origin[1], parent->axis[1], gun.origin);
-
-		VectorMA(gun.origin, lerped.origin[2], parent->axis[2], gun.origin);
-
-		MatrixMultiply(lerped.axis, ((refEntity_t*)parent)->axis, gun.axis);
 		gun.backlerp = parent->backlerp;
 
 		trap_R_AddRefEntityToScene(&gun);
@@ -1350,7 +1433,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 		angles[ROLL] = crandom() * 10;
 		AnglesToAxis(angles, flash.axis);
 
-		CG_PositionRotatedEntityOnTag(&flash, &gun, weapon->weaponModel, "tag_flash");
+		CG_PositionRotatedEntityOnTag(&flash, &gun, weapon->weaponModel, "ValveBiped.Muzzle");
 		if(flash.hModel) {
 			trap_R_AddRefEntityToScene(&flash);
 		}
@@ -1454,23 +1537,29 @@ void CG_AddViewWeapon(playerState_t* ps) {
 	// set up gun position
 	CG_CalculateWeaponPosition(hand.origin, angles);
 
-	VectorMA(hand.origin, 5, cg.refdef.viewaxis[0], hand.origin);
-	VectorMA(hand.origin, -1, cg.refdef.viewaxis[1], hand.origin);
-	VectorMA(hand.origin, (-1 + fovOffset), cg.refdef.viewaxis[2], hand.origin);
+	VectorMA(hand.origin, trap_Cvar_VariableValue("gunX"), cg.refdef.viewaxis[0], hand.origin);
+	VectorMA(hand.origin, trap_Cvar_VariableValue("gunY"), cg.refdef.viewaxis[1], hand.origin);
+	VectorMA(hand.origin, (trap_Cvar_VariableValue("gunZ") + fovOffset), cg.refdef.viewaxis[2], hand.origin);
 
 	AnglesToAxis(angles, hand.axis);
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
-	// The IQM body is animated as one skeleton; legacy split-body hand-frame
-	// remapping is no longer applicable to the separate first-person hand model.
-	hand.frame = 0;
-	hand.oldframe = 0;
-	hand.backlerp = 0.0f;
 
-	hand.hModel = jsd_weaponFx[ps->weapon].handsModelHandle;
+	hand.frame = cent->pe.legs.frame;
+	hand.oldframe = cent->pe.legs.oldFrame;
+	hand.backlerp = cent->pe.legs.backlerp;
+
 	hand.renderfx = RF_DEPTHHACK | RF_FIRST_PERSON | RF_MINLIGHT;
 
-	// add everything onto the hand
+	if(ci->handsModel) {
+		hand.hModel = ci->handsModel;
+	} else {
+		hand.hModel = trap_R_RegisterModel("models/players/kleiner/phands");
+	}
+
+	hand.skinNum = ci->modelSkin;
+	trap_R_AddRefEntityToScene(&hand);
+
 	CG_AddPlayerWeapon(&hand, ps, &cg.predictedPlayerEntity, ci);
 }
 

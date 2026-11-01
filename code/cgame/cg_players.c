@@ -254,6 +254,17 @@ static bool CG_RegisterClientModelname(clientInfo_t* ci, const char* modelName, 
 		}
 	}
 
+	// First-person hands IQM: same skeleton and frame layout as the body,
+	// so it is loaded with the same animation map (animFile). Optional;
+	// if missing, CG_AddViewWeapon falls back to the per-weapon static hand.
+	ci->handsModel = 0;
+	Com_sprintf(filename, sizeof(filename), "models/players/%s/phands", modelName);
+	ci->handsModel = trap_R_RegisterModelEx(filename, animFile);
+	if(!ci->handsModel) {
+		Com_sprintf(filename, sizeof(filename), "models/players/characters/%s/phands", modelName);
+		ci->handsModel = trap_R_RegisterModelEx(filename, animFile);
+	}
+
 	ci->modelIcon = 0;
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/icon_%s.tga", modelName, skinName);
 	ci->modelIcon = trap_R_RegisterShaderNoMip(filename);
@@ -339,6 +350,7 @@ static void CG_CopyClientInfoModel(clientInfo_t* from, clientInfo_t* to) {
 	to->model = from->model;
 	to->modelSkin = from->modelSkin;
 	to->modelIcon = from->modelIcon;
+	to->handsModel = from->handsModel;
 	Q_strncpyz(to->animFile, from->animFile, sizeof(to->animFile));
 	memcpy(to->animations, from->animations, sizeof(to->animations));
 }

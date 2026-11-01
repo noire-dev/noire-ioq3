@@ -10,4 +10,4 @@ item.register("weapon_plasmagun", "models/weapons2/plasma/plasma.md3", "icons/ic
 item.register("weapon_bfg", "models/weapons2/bfg/bfg.md3", "icons/iconw_bfg", "BFG10K", 20, 1, 9);
 item.register("weapon_physgun", "models/weapons/physgun/physgun", "icons/iconw_physgun", "Physgun", 0, 1, 10);
 item.register("weapon_gravitygun", "models/weapons/physgun/physgun", "icons/iconw_gravitygun", "Gravitygun", 0, 1, 11);
-item.register("weapon_toolgun", "models/weapons/toolgun/toolgun", "icons/iconw_toolgun", "Toolgun", 0, 1, 12);
+item.register("weapon_toolgun", "models/weapons/toolgun/wmodel", "icons/iconw_toolgun", "Toolgun", 0, 1, 12);
