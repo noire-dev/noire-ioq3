@@ -236,7 +236,7 @@ void R_AddMD3Surfaces(trRefEntity_t* ent) {
 	// range checked again.
 	//
 	if((ent->e.frame >= tr.currentModel->mdv[0]->numFrames) || (ent->e.frame < 0) || (ent->e.oldframe >= tr.currentModel->mdv[0]->numFrames) || (ent->e.oldframe < 0)) {
-		ri.Printf(PRINT_DEVELOPER, "R_AddMD3Surfaces: no such frame %d to %d for '%s'\n", ent->e.oldframe, ent->e.frame, tr.currentModel->name);
+		if(ent->e.frame != 0) ri.Printf(PRINT_DEVELOPER, "R_AddMD3Surfaces: no such frame %d to %d for '%s'\n", ent->e.oldframe, ent->e.frame, tr.currentModel->name);
 		ent->e.frame = 0;
 		ent->e.oldframe = 0;
 	}

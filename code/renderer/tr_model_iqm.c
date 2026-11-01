@@ -1540,7 +1540,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 		// range checked again.
 		//
 		if((ent->e.frame >= nframes) || (ent->e.frame < 0) || (ent->e.oldframe >= nframes) || (ent->e.oldframe < 0)) {
-			ri.Printf(PRINT_DEVELOPER, "R_AddIQMSurfaces: no such frame %d to %d for '%s'\n", ent->e.oldframe, ent->e.frame, tr.currentModel->name);
+			if(ent->e.frame != 0) ri.Printf(PRINT_DEVELOPER, "R_AddIQMSurfaces: no such frame %d to %d for '%s'\n", ent->e.oldframe, ent->e.frame, tr.currentModel->name);
 			ent->e.frame = 0;
 			ent->e.oldframe = 0;
 		}
