@@ -213,13 +213,14 @@ qhandle_t RE_RegisterModel(const char* name) {
 		return 0;
 	}
 
-	//
 	// search the currently loaded models
-	//
 	for(hModel = 1; hModel < tr.numModels; hModel++) {
 		mod = tr.models[hModel];
 		if(!strcmp(mod->name, name)) {
 			if(mod->type == MOD_BAD) {
+				if(Q_stricmp(name, "models/error.md3") != 0) {
+					return RE_RegisterModel("models/error.md3");
+				}
 				return 0;
 			}
 			return hModel;
@@ -290,6 +291,15 @@ qhandle_t RE_RegisterModel(const char* name) {
 
 			break;
 		}
+	}
+
+	if(!hModel && Q_stricmp(name, "models/error.md3") != 0) {
+		qhandle_t err = RE_RegisterModel("models/error.md3");
+		if(err) {
+			ri.Printf(PRINT_DEVELOPER, "WARNING: %s not found, using models/error.md3 instead\n", name);
+			return err;
+		}
+		ri.Printf(PRINT_WARNING, "WARNING: %s not found and models/error.md3 missing, model invisible\n", name);
 	}
 
 	return hModel;
