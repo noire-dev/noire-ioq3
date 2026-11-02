@@ -1003,7 +1003,6 @@ void CG_RegisterWeapon(int weaponNum) {
 	if(fx->brassModel && fx->brassModel[0]) fx->brassModelHandle = trap_R_RegisterModel(fx->brassModel);
 	if(fx->barrelModel && fx->barrelModel[0]) fx->barrelModelHandle = trap_R_RegisterModel(fx->barrelModel);
 	if(fx->flashModel && fx->flashModel[0]) fx->flashModelHandle = trap_R_RegisterModel(fx->flashModel);
-	if(fx->handsModel && fx->handsModel[0]) fx->handsModelHandle = trap_R_RegisterModel(fx->handsModel);
 
 	// Find the corresponding item.
 	for(i = 0; i < jsd_itemCount; i++) {
@@ -1036,17 +1035,6 @@ void CG_RegisterWeapon(int weaponNum) {
 		COM_StripExtension(weaponItem->model, path, sizeof(path));
 		Q_strcat(path, sizeof(path), "_barrel.md3");
 		fx->barrelModelHandle = trap_R_RegisterModel(path);
-	}
-	if(!fx->handsModelHandle) {
-		COM_StripExtension(weaponItem->model, path, sizeof(path));
-		Q_strcat(path, sizeof(path), "_hand.md3");
-		fx->handsModelHandle = trap_R_RegisterModel(path);
-	}
-	if(!fx->handsModelHandle) {
-		// Global default, configurable via cvar (no per-weapon hardcode).
-		fallback[0] = '\0';
-		trap_Cvar_VariableStringBuffer("cg_defaultHandsModel", fallback, sizeof(fallback));
-		if(fallback[0]) fx->handsModelHandle = trap_R_RegisterModel(fallback);
 	}
 }
 
@@ -1580,21 +1568,6 @@ void CG_AddViewWeapon(playerState_t* ps) {
 	AnglesToAxis(angles, hand.axis);
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
-
-	hand.frame = cent->pe.legs.frame;
-	hand.oldframe = cent->pe.legs.oldFrame;
-	hand.backlerp = cent->pe.legs.backlerp;
-
-	hand.renderfx = RF_DEPTHHACK | RF_FIRST_PERSON | RF_MINLIGHT;
-
-	if(ci->handsModel) {
-		hand.hModel = ci->handsModel;
-	} else {
-		hand.hModel = trap_R_RegisterModel("models/players/kleiner/phands");
-	}
-
-	hand.skinNum = ci->modelSkin;
-	trap_R_AddRefEntityToScene(&hand);
 
 	CG_AddPlayerWeapon(&hand, ps, &cg.predictedPlayerEntity, ci);
 }

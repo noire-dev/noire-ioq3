@@ -30,7 +30,7 @@ from dataclasses import dataclass
 # ============================================================
 PATCH_FILE = "patch.txt"
 TARGET_DIR = "code/"
-FILE_EXTENSIONS = [".js", ".c", ".h", ".glsl"]
+FILE_EXTENSIONS = [".js", ".c", ".h", ".glsl", ".inc"]
 RECURSIVE = True
 DRY_RUN = False
 # ============================================================

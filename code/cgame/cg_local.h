@@ -333,7 +333,6 @@ typedef struct {
 	qhandle_t model;
 	qhandle_t modelSkin;
 	qhandle_t modelIcon;
-	qhandle_t handsModel;  // first-person viewmodel IQM (phands), shares animFile with model
 
 	// Indexed by animNumber_t; model/animation.cfg supplies IQM frame ranges.
 	animation_t animations[MAX_TOTALANIMATIONS];
@@ -892,7 +891,6 @@ typedef struct {
 	// Weapon visual model overrides (NULL = derive from item->model)
 	const char* flashModel;
 	const char* barrelModel;
-	const char* handsModel;
 
 	// Muzzle smoke (shotgun etc.)
 	const char* muzzleSmokeShader;
@@ -923,7 +921,6 @@ typedef struct {
 	qhandle_t missileSpriteHandle;
 	qhandle_t flashModelHandle;
 	qhandle_t barrelModelHandle;
-	qhandle_t handsModelHandle;
 	qhandle_t brassModelHandle;
 	sfxHandle_t readySoundHandle;
 	sfxHandle_t fireSoundHandle[4];
