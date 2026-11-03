@@ -665,7 +665,7 @@ Sets the z-component transformation part in the projection matrix
 void R_SetupProjectionZ(viewParms_t* dest) {
 	float zNear, zFar, depth;
 
-	zNear = 8.0f;
+	zNear = 1.0f;
 	zFar = dest->zFar;
 
 	depth = zFar - zNear;

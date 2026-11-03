@@ -337,6 +337,11 @@ typedef struct {
 	// Indexed by animNumber_t; model/animation.cfg supplies IQM frame ranges.
 	animation_t animations[MAX_TOTALANIMATIONS];
 
+	// "headSettings up fwd" from animation.cfg: per-model fine-tuning of
+	// the first-person camera, same semantics as cg_firstPerson_Up / _Fwd.
+	float headUp;
+	float headFwd;
+
 	char animFile[MAX_QPATH];
 } clientInfo_t;
 
@@ -943,11 +948,6 @@ extern itemInfo_t cg_items[MAX_ITEMS];
 extern markPoly_t cg_markPolys[MAX_MARK_POLYS];
 
 extern vmCvar_t cg_centertime;
-extern vmCvar_t cg_runpitch;
-extern vmCvar_t cg_runroll;
-extern vmCvar_t cg_bobup;
-extern vmCvar_t cg_bobpitch;
-extern vmCvar_t cg_bobroll;
 extern vmCvar_t cg_swingSpeed;
 extern vmCvar_t cg_gibs;
 extern vmCvar_t cg_drawTimer;
@@ -973,7 +973,6 @@ extern vmCvar_t cg_noPlayerAnims;
 extern vmCvar_t cg_showmiss;
 extern vmCvar_t cg_addMarks;
 extern vmCvar_t cg_brassTime;
-extern vmCvar_t cg_drawGun;
 extern vmCvar_t cg_viewsize;
 extern vmCvar_t cg_tracerChance;
 extern vmCvar_t cg_tracerWidth;
@@ -984,6 +983,8 @@ extern vmCvar_t cg_zoomFov;
 extern vmCvar_t cg_thirdPersonRange;
 extern vmCvar_t cg_thirdPersonAngle;
 extern vmCvar_t cg_thirdPerson;
+extern vmCvar_t cg_firstPerson_Fwd;
+extern vmCvar_t cg_firstPerson_Up;
 extern vmCvar_t cg_drawAttacker;
 extern vmCvar_t cg_synchronousClients;
 extern vmCvar_t cg_teamChatTime;
@@ -1002,7 +1003,6 @@ extern vmCvar_t cg_cameraOrbitDelay;
 extern vmCvar_t cg_timescaleFadeEnd;
 extern vmCvar_t cg_timescaleFadeSpeed;
 extern vmCvar_t cg_timescale;
-extern vmCvar_t cg_cameraMode;
 extern vmCvar_t cg_noProjectileTrail;
 extern vmCvar_t cg_oldRail;
 extern vmCvar_t cg_oldRocket;
@@ -1104,8 +1104,9 @@ void CG_Bullet(vec3_t origin, int sourceEntityNum, vec3_t normal, bool flesh, in
 
 void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon);
 void CG_MissileTrail(centity_t* ent);
-void CG_AddViewWeapon(playerState_t* ps);
-void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent, clientInfo_t* ci);
+void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci);
+
+bool CG_GetLocalPlayerHeadOrigin(vec3_t origin);
 
 //
 // cg_marks.c

@@ -67,6 +67,7 @@ typedef struct {
 	void (*AddPolyToScene)(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num);
 	int (*LightForPoint)(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir);
 	void (*AddLightToScene)(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
+	void (*SetBoneScale)(const char* jointName, const vec3_t scale);  // immediate: applies to the next AddRefEntityToScene
 	void (*RenderScene)(const refdef_t* fd);
 
 	void (*SetColor)(const float* rgba);                                                                                    // NULL = 1,1,1,1
@@ -83,7 +84,7 @@ typedef struct {
 
 	int (*MarkFragments)(int numPoints, const vec3_t* points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t* fragmentBuffer);
 
-	int (*LerpTag)(orientation_t* tag, qhandle_t model, int startFrame, int endFrame, float frac, const char* tagName);
+	bool (*LerpTag)(orientation_t* tag, qhandle_t model, int startFrame, int endFrame, float frac, const char* tagName);
 	void (*ModelBounds)(qhandle_t model, vec3_t mins, vec3_t maxs);
 
 #ifdef __USEA3D

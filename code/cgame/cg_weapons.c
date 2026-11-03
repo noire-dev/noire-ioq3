@@ -1086,47 +1086,6 @@ CG_MapTorsoToWeaponFrame
 */
 
 /*
-==============
-CG_CalculateWeaponPosition
-==============
-*/
-static void CG_CalculateWeaponPosition(vec3_t origin, vec3_t angles) {
-	float scale;
-	int delta;
-	float fracsin;
-
-	VectorCopy(cg.refdef.vieworg, origin);
-	VectorCopy(cg.refdefViewAngles, angles);
-
-	// on odd legs, invert some angles
-	if(cg.bobcycle & 1) {
-		scale = -cg.xyspeed;
-	} else {
-		scale = cg.xyspeed;
-	}
-
-	// gun angles from bobbing
-	angles[ROLL] += scale * cg.bobfracsin * 0.005;
-	angles[YAW] += scale * cg.bobfracsin * 0.01;
-	angles[PITCH] += cg.xyspeed * cg.bobfracsin * 0.005;
-
-	// drop the weapon when landing
-	delta = cg.time - cg.landTime;
-	if(delta < LAND_DEFLECT_TIME) {
-		origin[2] += cg.landChange * 0.25 * delta / LAND_DEFLECT_TIME;
-	} else if(delta < LAND_DEFLECT_TIME + LAND_RETURN_TIME) {
-		origin[2] += cg.landChange * 0.25 * (LAND_DEFLECT_TIME + LAND_RETURN_TIME - delta) / LAND_RETURN_TIME;
-	}
-
-	// idle drift
-	scale = cg.xyspeed + 40;
-	fracsin = sin(cg.time * 0.001);
-	angles[ROLL] += scale * fracsin * 0.01;
-	angles[YAW] += scale * fracsin * 0.01;
-	angles[PITCH] += scale * fracsin * 0.01;
-}
-
-/*
 ===============
 CG_LightningBolt
 
@@ -1240,12 +1199,11 @@ static float CG_MachinegunSpinAngle(centity_t* cent) {
 =============
 CG_AddPlayerWeapon
 
-Used for both the view weapon (ps is valid) and the world modelother character models (ps is NULL)
-The main player will have this called for BOTH cases, so effects like light and
-sound should only be done on the world model case.
+Adds the weapon on the body (full body awareness: the world model weapon
+is the only weapon entity). Effects like light and sound are emitted here.
 =============
 */
-void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent, clientInfo_t* ci) {
+void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) {
 	refEntity_t gun;
 	refEntity_t barrel;
 	refEntity_t flash;
@@ -1284,7 +1242,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 			return;
 		}
 
-		if(!ps) {
+		{
 			// add weapon ready/looping sound (fully data-driven)
 			sfxHandle_t firingSnd = fx->continuousFireSoundHandle;
 			sfxHandle_t readySnd = fx->readySoundHandle;
@@ -1399,13 +1357,6 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 			VectorMA(gun.origin, -weaponTag.origin[2], gun.axis[2], gun.origin);
 		}
 
-		// Make weapon appear left-handed for 2 and centered for 3.
-		if(ps && cg_drawGun.integer == 2) {
-			vec3_t tmp;
-			VectorScale(parent->axis[1], 2.0f, tmp);
-			VectorAdd(gun.origin, tmp, gun.origin);
-		}
-
 		gun.backlerp = parent->backlerp;
 
 		trap_R_AddRefEntityToScene(&gun);
@@ -1465,111 +1416,33 @@ void CG_AddPlayerWeapon(refEntity_t* parent, playerState_t* ps, centity_t* cent,
 
 	// Data-driven fire FX at tag_flash.
 	//
-	// In first-person we draw both the world model (for mirrors, but only
-	// rendered with RF_THIRD_PERSON) and the view weapon. The world model is
-	// emitted first by CG_AddPacketEntities, so without this guard it would
-	// steal the pending fire event and place FX on the body instead of on the
-	// view weapon. We therefore skip fire FX on the world model of the local
-	// player while in first person; the view weapon (ps != NULL) is responsible
-	// for it and runs later in CG_AddViewWeapon.
+	// Full body awareness: the world model (the weapon on the body) is the
+	// only weapon entity, so it always owns the pending fire event.
 	{
 		weaponFx_t* fx = &jsd_weaponFx[weaponNum];
-		bool isViewWeapon = (ps != NULL);
-		bool isLocalFirstPerson = (!isViewWeapon && cent->currentState.number == cg.snap->ps.clientNum && !cg.renderingThirdPerson);
-		bool shouldEmit = isViewWeapon || !isLocalFirstPerson;
 
-		if(shouldEmit) {
-			if(fx->continuousFire) {
-				// Hold-to-fire weapon: light is re-added every frame (no flicker);
-				// particles are throttled to avoid overspawning the pool.
-				if(nonPredictedCent->currentState.eFlags & EF_FIRING) {
-					if(fx->fireLightRadius > 0.0f) {
-						trap_R_AddLightToScene(flash.origin, fx->fireLightRadius, 1.00f, fx->fireLightColor[0], fx->fireLightColor[1], fx->fireLightColor[2], 0);
-					}
-					if(fx->fireParticleCount > 0 && (cg.time - cent->pe.lastFireFxTime) >= 30) {
-						CG_AddParticles(flash.origin, fx->fireParticleColor, fx->fireParticleCount, fx->fireParticleSpeed, fx->fireParticleFlags, fx->fireParticleGravity, fx->fireParticleShader ? fx->fireParticleShader : "", fx->fireParticleSize, fx->fireParticleLifetime);
-						cent->pe.lastFireFxTime = cg.time;
-					}
+		if(fx->continuousFire) {
+			// Hold-to-fire weapon: light is re-added every frame (no flicker);
+			// particles are throttled to avoid overspawning the pool.
+			if(nonPredictedCent->currentState.eFlags & EF_FIRING) {
+				if(fx->fireLightRadius > 0.0f) {
+					trap_R_AddLightToScene(flash.origin, fx->fireLightRadius, 1.00f, fx->fireLightColor[0], fx->fireLightColor[1], fx->fireLightColor[2], 0);
 				}
-				cent->pe.fireFxPending = false;
-			} else if(cent->pe.fireFxPending) {
-				// Per-shot weapon: one fading light + one particle burst per shot.
-				CG_EmitWeaponFireFx(weaponNum, flash.origin);
-				cent->pe.fireFxPending = false;
+				if(fx->fireParticleCount > 0 && (cg.time - cent->pe.lastFireFxTime) >= 30) {
+					CG_AddParticles(flash.origin, fx->fireParticleColor, fx->fireParticleCount, fx->fireParticleSpeed, fx->fireParticleFlags, fx->fireParticleGravity, fx->fireParticleShader ? fx->fireParticleShader : "", fx->fireParticleSize, fx->fireParticleLifetime);
+					cent->pe.lastFireFxTime = cg.time;
+				}
 			}
+			cent->pe.fireFxPending = false;
+		} else if(cent->pe.fireFxPending) {
+			// Per-shot weapon: one fading light + one particle burst per shot.
+			CG_EmitWeaponFireFx(weaponNum, flash.origin);
+			cent->pe.fireFxPending = false;
 		}
 	}
 
-	if(ps || cg.renderingThirdPerson || cent->currentState.number != cg.predictedPlayerState.clientNum) {
-		// add lightning bolt / rail trail for beam weapons
-		CG_LightningBolt(nonPredictedCent, flash.origin);
-	}
-}
-
-/*
-==============
-CG_AddViewWeapon
-
-Add the weapon, and flash for the player's view
-==============
-*/
-void CG_AddViewWeapon(playerState_t* ps) {
-	refEntity_t hand;
-	centity_t* cent;
-	clientInfo_t* ci;
-	float fovOffset;
-	vec3_t angles;
-	weaponInfo_t* weapon;
-
-	// no gun if in third person view or a camera is active
-	// if ( cg.renderingThirdPerson || cg.cameraMode) {
-	if(cg.renderingThirdPerson) {
-		return;
-	}
-
-	// allow the gun to be completely removed
-	if(!cg_drawGun.integer) {
-		vec3_t origin;
-
-		if(cg.predictedPlayerState.eFlags & EF_FIRING) {
-			// special hack for lightning gun...
-			VectorCopy(cg.refdef.vieworg, origin);
-			VectorMA(origin, -8, cg.refdef.viewaxis[2], origin);
-			CG_LightningBolt(&cg_entities[ps->clientNum], origin);
-		}
-		return;
-	}
-
-	// don't draw if testing a gun model
-	if(cg.testGun) {
-		return;
-	}
-
-	// drop gun lower at higher fov
-	if(cg_fov.integer > 90) {
-		fovOffset = -0.2 * (cg_fov.integer - 90);
-	} else {
-		fovOffset = 0;
-	}
-
-	cent = &cg.predictedPlayerEntity;  // &cg_entities[cg.snap->ps.clientNum];
-	CG_RegisterWeapon(ps->weapon);
-	weapon = &cg_weapons[ps->weapon];
-
-	memset(&hand, 0, sizeof(hand));
-
-	// set up gun position
-	CG_CalculateWeaponPosition(hand.origin, angles);
-
-	VectorMA(hand.origin, trap_Cvar_VariableValue("gunX"), cg.refdef.viewaxis[0], hand.origin);
-	VectorMA(hand.origin, trap_Cvar_VariableValue("gunY"), cg.refdef.viewaxis[1], hand.origin);
-	VectorMA(hand.origin, (trap_Cvar_VariableValue("gunZ") + fovOffset), cg.refdef.viewaxis[2], hand.origin);
-
-	AnglesToAxis(angles, hand.axis);
-
-	ci = &cgs.clientinfo[cent->currentState.clientNum];
-
-	CG_AddPlayerWeapon(&hand, ps, &cg.predictedPlayerEntity, ci);
+	// add lightning bolt / rail trail for beam weapons
+	CG_LightningBolt(nonPredictedCent, flash.origin);
 }
 
 /*

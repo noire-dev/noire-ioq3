@@ -97,6 +97,15 @@ typedef struct {
 	vec3_t directedLight;
 } trRefEntity_t;
 
+// per-entity per-joint scale override requested from cgame
+#define MAX_RENDER_BONESCALES 32
+
+typedef struct {
+	int entityNum;   // index within the current scene's entity array
+	int jointIndex;  // resolved IQM joint index, -1 = not found
+	vec3_t scale;
+} boneScaleEntry_t;
+
 typedef struct {
 	vec3_t origin;      // in world coordinates
 	vec3_t axis[3];     // orientation in world
@@ -1186,7 +1195,7 @@ typedef struct model_s {
 
 void R_ModelInit(void);
 model_t* R_GetModelByHandle(qhandle_t hModel);
-int R_LerpTag(orientation_t* tag, qhandle_t handle, int startFrame, int endFrame, float frac, const char* tagName);
+bool R_LerpTag(orientation_t* tag, qhandle_t handle, int startFrame, int endFrame, float frac, const char* tagName);
 void R_ModelBounds(qhandle_t handle, vec3_t mins, vec3_t maxs);
 
 void R_Modellist_f(void);
@@ -1526,6 +1535,11 @@ typedef struct {
 	GLuint sunFlareQuery[2];
 	int sunFlareQueryIndex;
 	bool sunFlareQueryActive[2];
+
+	// per-entity bone scale overrides, requested from cgame with
+	// RE_SetBoneScale and attached to the next added ref entity
+	int numBoneScaleEntries;
+	boneScaleEntry_t boneScaleEntries[MAX_RENDER_BONESCALES];
 
 	float sinTable[FUNCTABLE_SIZE];
 	float squareTable[FUNCTABLE_SIZE];
@@ -2026,6 +2040,8 @@ void RE_ClearScene(void);
 void RE_AddRefEntityToScene(const refEntity_t* ent);
 void RE_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num);
 void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
+void RE_SetBoneScale(const char* jointName, const vec3_t scale);
+int R_GetEntityBoneScales(int entityNum, int* joints, vec3_t* scales, int maxCount);
 void RE_BeginScene(const refdef_t* fd);
 void RE_RenderScene(const refdef_t* fd);
 void RE_EndScene(void);
@@ -2061,7 +2077,7 @@ bool R_LoadIQM(model_t* mod, void* buffer, int filesize, const char* name);
 void R_AddIQMSurfaces(trRefEntity_t* ent);
 void RB_IQMSurfaceAnim(surfaceType_t* surface);
 void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface);
-int R_IQMLerpTag(orientation_t* tag, iqmData_t* data, int startFrame, int endFrame, float frac, const char* tagName);
+bool R_IQMLerpTag(orientation_t* tag, iqmData_t* data, int startFrame, int endFrame, float frac, const char* tagName);
 
 /*
 =============================================================

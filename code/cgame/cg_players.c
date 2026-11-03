@@ -87,6 +87,8 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci, char* 
 
 	memset(ci->animations, 0, sizeof(ci->animations));
 	memset(defined, 0, sizeof(defined));
+	ci->headUp = 0.0f;
+	ci->headFwd = 0.0f;
 
 	len = trap_FS_FOpenFile(filename, &f, FS_READ);
 	if(len <= 0) {
@@ -115,6 +117,25 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci, char* 
 				return false;
 			}
 			Q_strncpyz(animFile, token, animFileSize);
+			continue;
+		}
+
+		if(!Q_stricmp(token, "headsettings")) {
+			// first-person camera fine-tuning for this model:
+			// headSettings up fwd (same semantics as cg_firstPerson_Up / _Fwd)
+			token = COM_Parse(&text_p);
+			if(!token[0]) {
+				CG_Printf("Missing up value for headSettings in %s\n", filename);
+				return false;
+			}
+			ci->headUp = atof(token);
+
+			token = COM_Parse(&text_p);
+			if(!token[0]) {
+				CG_Printf("Missing fwd value for headSettings in %s\n", filename);
+				return false;
+			}
+			ci->headFwd = atof(token);
 			continue;
 		}
 
@@ -902,6 +923,58 @@ int CG_LightVerts(vec3_t normal, int numVerts, polyVert_t* verts) {
 
 /*
 ===============
+CG_GetLocalPlayerHeadOrigin
+
+World space position of the local player's ValveBiped.Bip01_Head1 joint,
+computed exactly like CG_Player builds the body entity (same axis, frames
+and MINS_Z offset). Used to place the camera in full body awareness mode.
+Returns false if the tag is not available.
+===============
+*/
+bool CG_GetLocalPlayerHeadOrigin(vec3_t origin) {
+	centity_t* cent;
+	clientInfo_t* ci;
+	orientation_t tag;
+	vec3_t axis[3];
+	vec3_t angles;
+	int oldframe, frame;
+	float backlerp;
+
+	if(!cg.snap) {
+		return false;
+	}
+
+	cent = &cg.predictedPlayerEntity;
+	ci = &cgs.clientinfo[cg.snap->ps.clientNum];
+	if(!ci->infoValid || !ci->model) {
+		return false;
+	}
+
+	// the predicted player entity is rebuilt from the playerstate every
+	// frame, so the pose matches what CG_Player will use
+	angles[PITCH] = 0.0f;
+	angles[ROLL] = 0.0f;
+	angles[YAW] = cg.predictedPlayerState.viewangles[YAW];
+	AnglesToAxis(angles, axis);
+
+	CG_PlayerAnimation(cent, &oldframe, &frame, &backlerp);
+
+	memset(&tag, 0, sizeof(tag));
+	AxisClear(tag.axis);
+	if(!trap_CM_LerpTag(&tag, ci->model, oldframe, frame, 1.0f - backlerp, "ValveBiped.Bip01_Head1")) {
+		return false;
+	}
+
+	VectorCopy(cg.predictedPlayerState.origin, origin);
+	origin[2] += MINS_Z * 0.50f;
+	VectorMA(origin, tag.origin[0], axis[0], origin);
+	VectorMA(origin, tag.origin[1], axis[1], origin);
+	VectorMA(origin, tag.origin[2], axis[2], origin);
+	return true;
+}
+
+/*
+===============
 CG_Player
 ===============
 */
@@ -921,13 +994,6 @@ void CG_Player(centity_t* cent) {
 	}
 
 	renderfx = 0;
-	if(cent->currentState.number == cg.snap->ps.clientNum) {
-		if(!cg.renderingThirdPerson) {
-			renderfx = RF_THIRD_PERSON;
-		} else if(cg_cameraMode.integer) {
-			return;
-		}
-	}
 
 	memset(&player, 0, sizeof(player));
 	CG_PlayerAngles(cent, player.axis);
@@ -942,8 +1008,16 @@ void CG_Player(centity_t* cent) {
 	player.lightingOrigin[2] += MINS_Z;
 	player.oldorigin[2] += MINS_Z;
 	player.renderfx = renderfx | RF_LIGHTING_ORIGIN;
-	if(!player.hModel) {
+	if(!player.hModel) 
 		return;
+
+	// full body awareness: the body is always drawn in the main view;
+	// in first person the head joint is collapsed so it does not block
+	// the camera sitting in it
+	if(cent->currentState.number == cg.snap->ps.clientNum && !cg.renderingThirdPerson) {
+		vec3_t boneScale = {0.0f, 0.0f, 0.0f};
+		trap_R_SetBoneScale("ValveBiped.Bip01_Neck1", boneScale);
+		trap_R_SetBoneScale("ValveBiped.Bip01_Head1", boneScale);
 	}
 
 	trap_R_AddRefEntityToScene(&player);
@@ -952,7 +1026,7 @@ void CG_Player(centity_t* cent) {
 		CG_Add3DString(cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2] + 48, ci->name, FONTSTYLE_DROPSHADOW, color_white, 0.50, 512, 1536, true);
 	}
 
-	CG_AddPlayerWeapon(&player, NULL, cent, ci);
+	CG_AddPlayerWeapon(&player, cent, ci);
 }
 
 //=====================================================================

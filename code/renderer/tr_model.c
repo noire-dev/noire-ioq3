@@ -1057,7 +1057,7 @@ static mdvTag_t* R_GetTag(mdvModel_t* mod, int frame, const char* _tagName) {
 R_LerpTag
 ================
 */
-int R_LerpTag(orientation_t* tag, qhandle_t handle, int startFrame, int endFrame, float frac, const char* tagName) {
+bool R_LerpTag(orientation_t* tag, qhandle_t handle, int startFrame, int endFrame, float frac, const char* tagName) {
 	mdvTag_t *start, *end;
 	int i;
 	float frontLerp, backLerp;

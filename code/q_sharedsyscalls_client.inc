@@ -15,7 +15,7 @@ case TRAP_R_SETCOLOR: re.SetColor(VMA(1)); return 0;
 case TRAP_R_DRAWSTRETCHPIC: re.DrawStretchPic(VMF(1), VMF(2), VMF(3), VMF(4), VMF(5), VMF(6), VMF(7), VMF(8), args[9]); return 0;
 case TRAP_R_REMAP_SHADER: re.RemapShader(VMA(1), VMA(2), VMA(3)); return 0;
 case TRAP_R_MODELBOUNDS: re.ModelBounds(args[1], VMA(2), VMA(3)); return 0;
-case TRAP_CM_LERPTAG: re.LerpTag(VMA(1), args[2], args[3], args[4], VMF(5), VMA(6)); return 0;
+case TRAP_CM_LERPTAG: return re.LerpTag(VMA(1), args[2], args[3], args[4], VMF(5), VMA(6));
 case TRAP_CM_POINTCONTENTS: return CM_PointContents(VMA(1), args[2]);
 case TRAP_CM_TRANSFORMEDPOINTCONTENTS: return CM_TransformedPointContents(VMA(1), args[2], VMA(3), VMA(4));
 case TRAP_CM_BOXTRACE: CM_BoxTrace(VMA(1), VMA(2), VMA(3), VMA(4), VMA(5), args[6], args[7], /*int capsule*/ false); return 0;

@@ -15,7 +15,7 @@ void trap_R_SetColor(const float* rgba) { syscall(TRAP_R_SETCOLOR, rgba); }
 void trap_R_DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader) { syscall(TRAP_R_DRAWSTRETCHPIC, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(w), PASSFLOAT(h), PASSFLOAT(s1), PASSFLOAT(t1), PASSFLOAT(s2), PASSFLOAT(t2), hShader); }
 void trap_R_RemapShader(const char* oldShader, const char* newShader, const char* timeOffset) { syscall(TRAP_R_REMAP_SHADER, oldShader, newShader, timeOffset); }
 void trap_R_ModelBounds(clipHandle_t model, vec3_t mins, vec3_t maxs) { syscall(TRAP_R_MODELBOUNDS, model, mins, maxs); }
-int trap_CM_LerpTag(orientation_t* tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char* tagName) { return syscall(TRAP_CM_LERPTAG, tag, mod, startFrame, endFrame, PASSFLOAT(frac), tagName); }
+bool trap_CM_LerpTag(orientation_t* tag, clipHandle_t mod, int startFrame, int endFrame, float frac, const char* tagName) { return syscall(TRAP_CM_LERPTAG, tag, mod, startFrame, endFrame, PASSFLOAT(frac), tagName) != 0; }
 int trap_CM_PointContents(const vec3_t p, clipHandle_t model) { return syscall(TRAP_CM_POINTCONTENTS, p, model); }
 int trap_CM_TransformedPointContents(const vec3_t p, clipHandle_t model, const vec3_t origin, const vec3_t angles) { return syscall(TRAP_CM_TRANSFORMEDPOINTCONTENTS, p, model, origin, angles); }
 void trap_CM_BoxTrace(trace_t* results, const vec3_t start, const vec3_t end, const vec3_t mins, const vec3_t maxs, clipHandle_t model, int brushmask) { syscall(TRAP_CM_BOXTRACE, results, start, end, mins, maxs, model, brushmask); }
@@ -29,3 +29,4 @@ bool trap_Key_IsDown(int keynum) { return syscall(TRAP_KEY_ISDOWN, keynum); }
 int trap_Key_GetCatcher(void) { return syscall(TRAP_KEY_GETCATCHER); }
 int trap_Key_GetKey(const char* binding) { return syscall(TRAP_KEY_GETKEY, binding); }
 void trap_ImportOBJ(const char* filename) { syscall(TRAP_IMPORTOBJ, filename); }
+void trap_R_SetBoneScale(const char* jointName, const vec3_t scale) { syscall(TRAP_R_SETBONESCALE, jointName, scale); }

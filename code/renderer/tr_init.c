@@ -1134,6 +1134,7 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t* rimp) {
 	re.AddPolyToScene = RE_AddPolyToScene;
 	re.LightForPoint = R_LightForPoint;
 	re.AddLightToScene = RE_AddLightToScene;
+	re.SetBoneScale = RE_SetBoneScale;
 	re.RenderScene = RE_RenderScene;
 
 	re.SetColor = RE_SetColor;

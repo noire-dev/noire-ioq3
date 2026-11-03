@@ -1680,7 +1680,7 @@ rest rotations and differ only if the rest poses differ (finger curl,
 A-pose / T-pose).
 =================
 */
-static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float backlerp, float* poseMats) {
+static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float backlerp, float* poseMats, const int* scaleJoints, const vec3_t* scaleValues, int numScaleJoints) {
 	iqmTransform_t relativeJoints[IQM_MAX_JOINTS];
 	iqmTransform_t bindLocal[IQM_MAX_JOINTS];
 	iqmTransform_t* relativeJoint;
@@ -1799,6 +1799,18 @@ static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float back
 		}
 	}
 
+	// per-joint scale overrides requested from cgame (trap_R_SetBoneScale).
+	// Children inherit the scale through the pose matrix chain, so scaling
+	// e.g. the head to 0 collapses the whole head sub-tree.
+	for(i = 0; i < numScaleJoints; i++) {
+		int joint = scaleJoints[i];
+		if(joint >= 0 && joint < numJoints) {
+			relativeJoints[joint].scale[0] *= scaleValues[i][0];
+			relativeJoints[joint].scale[1] *= scaleValues[i][1];
+			relativeJoints[joint].scale[2] *= scaleValues[i][2];
+		}
+	}
+
 	// multiply by inverse of bind pose and parent 'pose mat' (bind pose transform matrix)
 	relativeJoint = relativeJoints;
 	jointParent = data->jointParents;
@@ -1828,7 +1840,7 @@ static void ComputeJointMats(iqmData_t* data, int frame, int oldframe, float bac
 		return;
 	}
 
-	ComputePoseMats(data, frame, oldframe, backlerp, mat);
+	ComputePoseMats(data, frame, oldframe, backlerp, mat, NULL, NULL, 0);
 
 	for(i = 0; i < data->num_joints; i++) {
 		float outmat[12];
@@ -1838,6 +1850,24 @@ static void ComputeJointMats(iqmData_t* data, int frame, int oldframe, float bac
 
 		Matrix34Multiply(outmat, data->bindJoints + 12 * i, mat1);
 	}
+}
+
+/*
+=================
+R_IQMGetBoneScales
+
+Collect the bone scale overrides recorded for the entity currently being
+skinned (tag lookups deliberately never apply them).
+=================
+*/
+static int R_IQMGetBoneScales(int* joints, vec3_t* scales, int maxCount) {
+	int entityNum = (int)(backEnd.currentEntity - backEnd.refdef.entities);
+
+	if(entityNum < 0 || entityNum >= MAX_REFENTITIES) {
+		return 0;
+	}
+
+	return R_GetEntityBoneScales(entityNum, joints, scales, maxCount);
 }
 
 /*
@@ -1854,6 +1884,10 @@ void RB_IQMSurfaceAnim(surfaceType_t* surface) {
 	float influenceVtxMat[SHADER_MAX_VERTEXES * 12];
 	float influenceNrmMat[SHADER_MAX_VERTEXES * 9];
 	int i;
+
+	int scaleJoints[MAX_RENDER_BONESCALES];
+	vec3_t scaleValues[MAX_RENDER_BONESCALES];
+	int numScaleJoints = R_IQMGetBoneScales(scaleJoints, scaleValues, MAX_RENDER_BONESCALES);
 
 	float* xyz;
 	float* normal;
@@ -1896,7 +1930,7 @@ void RB_IQMSurfaceAnim(surfaceType_t* surface) {
 
 	if((data->anim ? data->anim->num_poses : data->num_poses) > 0) {
 		// compute interpolated joint matrices
-		ComputePoseMats(data, frame, oldframe, backlerp, poseMats);
+		ComputePoseMats(data, frame, oldframe, backlerp, poseMats, scaleJoints, scaleValues, numScaleJoints);
 
 		// compute vertex blend influence matricies
 		for(i = 0; i < surf->num_influences; i++) {
@@ -2067,6 +2101,10 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 	int activePoses;
 	int i;
 
+	int scaleJoints[MAX_RENDER_BONESCALES];
+	vec3_t scaleValues[MAX_RENDER_BONESCALES];
+	int numScaleJoints;
+
 	if(ShaderRequiresCPUDeforms(tess.shader)) {
 		RB_IQMSurfaceAnim((surfaceType_t*)surface->iqmSurface);
 		return;
@@ -2088,6 +2126,8 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 	activePoses = data->anim ? data->anim->num_poses : data->num_poses;
 	glState.boneAnimation = 0;
 
+	numScaleJoints = R_IQMGetBoneScales(scaleJoints, scaleValues, MAX_RENDER_BONESCALES);
+
 	if(activePoses) {
 		float jointMats[IQM_MAX_JOINTS * 12];
 		int nframes = data->anim ? data->anim->num_frames : data->num_frames;
@@ -2095,7 +2135,7 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 		int oldframe = nframes ? backEnd.currentEntity->e.oldframe % nframes : 0;
 		float backlerp = backEnd.currentEntity->e.backlerp;
 
-		ComputePoseMats(surface->iqmData, frame, oldframe, backlerp, jointMats);
+		ComputePoseMats(surface->iqmData, frame, oldframe, backlerp, jointMats, scaleJoints, scaleValues, numScaleJoints);
 
 		for(i = 0; i < data->num_joints; i++) {
 			glState.boneMatrix[i][0] = jointMats[i * 12 + 0];
@@ -2127,7 +2167,7 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 	glState.boneAnimation = 0;
 }
 
-int R_IQMLerpTag(orientation_t* tag, iqmData_t* data, int startFrame, int endFrame, float frac, const char* tagName) {
+bool R_IQMLerpTag(orientation_t* tag, iqmData_t* data, int startFrame, int endFrame, float frac, const char* tagName) {
 	float jointMats[IQM_MAX_JOINTS * 12];
 	int joint;
 	const char* names;

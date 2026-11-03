@@ -106,20 +106,6 @@ static void CG_OffsetThirdPersonView(void) {
 	// trace a ray from the origin to the viewpoint to make sure the view isn't
 	// in a solid block.  Use an 8 by 8 block to prevent the view from near clipping anything
 
-	if(!cg_cameraMode.integer) {
-		CG_Trace(&trace, cg.refdef.vieworg, mins, maxs, view, cg.predictedPlayerState.clientNum, MASK_SOLID);
-
-		if(trace.fraction != 1.0) {
-			VectorCopy(trace.endpos, view);
-			view[2] += (1.0 - trace.fraction) * 32;
-			// try another trace to this position, because a tunnel may have the ceiling
-			// close enough that this is poking out
-
-			CG_Trace(&trace, cg.refdef.vieworg, mins, maxs, view, cg.predictedPlayerState.clientNum, MASK_SOLID);
-			VectorCopy(trace.endpos, view);
-		}
-	}
-
 	VectorCopy(view, cg.refdef.vieworg);
 
 	// select pitch to look at focus point from vieword
@@ -132,116 +118,38 @@ static void CG_OffsetThirdPersonView(void) {
 	cg.refdefViewAngles[YAW] -= cg_thirdPersonAngle.value;
 }
 
-// this causes a compiler bug on mac MrC compiler
-static void CG_StepOffset(void) {
-	int timeDelta;
-
-	// smooth out stair climbing
-	timeDelta = cg.time - cg.stepTime;
-	if(timeDelta < STEP_TIME) {
-		cg.refdef.vieworg[2] -= cg.stepChange * (STEP_TIME - timeDelta) / STEP_TIME;
-	}
-}
-
 /*
 ===============
-CG_OffsetFirstPersonView
+CG_OffsetBodyView
 
+Full body awareness: the camera sits in the local player's
+ValveBiped.Bip01_Head1 joint (the joint itself is collapsed by
+CG_Player so it never blocks the view). Falls back to the classic
+eye position when the head joint is not available.
 ===============
 */
-static void CG_OffsetFirstPersonView(void) {
-	float* origin;
-	float* angles;
-	float bob;
-	float ratio;
-	float delta;
-	float speed;
-	float f;
-	vec3_t predictedVelocity;
-	int timeDelta;
+static void CG_OffsetBodyView(void) {
+	vec3_t headOrigin;
+	vec3_t fwd;
+	vec3_t angles;
+	clientInfo_t* ci;
 
-	origin = cg.refdef.vieworg;
-	angles = cg.refdefViewAngles;
+	if(CG_GetLocalPlayerHeadOrigin(headOrigin)) {
+		VectorCopy(headOrigin, cg.refdef.vieworg);
 
-	// if dead, fix the angle and don't add any kick
-	if(cg.snap->ps.stats[STAT_HEALTH] <= 0) {
-		angles[ROLL] = 40;
-		angles[PITCH] = -15;
-		angles[YAW] = cg.snap->ps.stats[STAT_DEAD_YAW];
-		origin[2] += cg.predictedPlayerState.viewheight;
-		return;
+		// fine-tuning: per-model headSettings (up fwd) from animation.cfg
+		// plus the player cvars. Fwd pushes the camera along the horizontal
+		// facing direction, up moves it up/down in world space
+		ci = &cgs.clientinfo[cg.snap->ps.clientNum];
+		angles[PITCH] = 0.0f;
+		angles[ROLL] = 0.0f;
+		angles[YAW] = cg.predictedPlayerState.viewangles[YAW];
+		AngleVectors(angles, fwd, NULL, NULL);
+		VectorMA(cg.refdef.vieworg, cg_firstPerson_Fwd.value + ci->headFwd, fwd, cg.refdef.vieworg);
+		cg.refdef.vieworg[2] += cg_firstPerson_Up.value + ci->headUp;
+	} else {
+		cg.refdef.vieworg[2] += cg.predictedPlayerState.viewheight;
 	}
-
-	// add angles based on damage kick
-	if(cg.damageTime) {
-		ratio = cg.time - cg.damageTime;
-		if(ratio < DAMAGE_DEFLECT_TIME) {
-			ratio /= DAMAGE_DEFLECT_TIME;
-			angles[PITCH] += ratio * cg.v_dmg_pitch;
-			angles[ROLL] += ratio * cg.v_dmg_roll;
-		} else {
-			ratio = 1.0 - (ratio - DAMAGE_DEFLECT_TIME) / DAMAGE_RETURN_TIME;
-			if(ratio > 0) {
-				angles[PITCH] += ratio * cg.v_dmg_pitch;
-				angles[ROLL] += ratio * cg.v_dmg_roll;
-			}
-		}
-	}
-
-	// add angles based on velocity
-	VectorCopy(cg.predictedPlayerState.velocity, predictedVelocity);
-
-	delta = DotProduct(predictedVelocity, cg.refdef.viewaxis[0]);
-	angles[PITCH] += delta * cg_runpitch.value;
-
-	delta = DotProduct(predictedVelocity, cg.refdef.viewaxis[1]);
-	angles[ROLL] -= delta * cg_runroll.value;
-
-	// add angles based on bob
-
-	// make sure the bob is visible even at low speeds
-	speed = cg.xyspeed > 200 ? cg.xyspeed : 200;
-
-	delta = cg.bobfracsin * cg_bobpitch.value * speed;
-	if(cg.predictedPlayerState.pm_flags & PMF_DUCKED) delta *= 3;  // crouching
-	angles[PITCH] += delta;
-	delta = cg.bobfracsin * cg_bobroll.value * speed;
-	if(cg.predictedPlayerState.pm_flags & PMF_DUCKED) delta *= 3;  // crouching accentuates roll
-	if(cg.bobcycle & 1) delta = -delta;
-	angles[ROLL] += delta;
-
-	//===================================
-
-	// add view height
-	origin[2] += cg.predictedPlayerState.viewheight;
-
-	// smooth out duck height changes
-	timeDelta = cg.time - cg.duckTime;
-	if(timeDelta < DUCK_TIME) {
-		cg.refdef.vieworg[2] -= cg.duckChange * (DUCK_TIME - timeDelta) / DUCK_TIME;
-	}
-
-	// add bob height
-	bob = cg.bobfracsin * cg.xyspeed * cg_bobup.value;
-	if(bob > 6) {
-		bob = 6;
-	}
-
-	origin[2] += bob;
-
-	// add fall height
-	delta = cg.time - cg.landTime;
-	if(delta < LAND_DEFLECT_TIME) {
-		f = delta / LAND_DEFLECT_TIME;
-		cg.refdef.vieworg[2] += cg.landChange * f;
-	} else if(delta < LAND_DEFLECT_TIME + LAND_RETURN_TIME) {
-		delta -= LAND_DEFLECT_TIME;
-		f = 1.0 - (delta / LAND_RETURN_TIME);
-		cg.refdef.vieworg[2] += cg.landChange * f;
-	}
-
-	// add step offset
-	CG_StepOffset();
 }
 
 //======================================================================
@@ -350,48 +258,6 @@ static int CG_CalcFov(void) {
 
 /*
 ===============
-CG_DamageBlendBlob
-
-===============
-*/
-static void CG_DamageBlendBlob(void) {
-	int t;
-	int maxTime;
-	refEntity_t ent;
-
-	if(!cg_blood.integer) {
-		return;
-	}
-
-	if(!cg.damageValue) {
-		return;
-	}
-
-	maxTime = DAMAGE_TIME;
-	t = cg.time - cg.damageTime;
-	if(t <= 0 || t >= maxTime) {
-		return;
-	}
-
-	memset(&ent, 0, sizeof(ent));
-	ent.reType = RT_SPRITE;
-	ent.renderfx = RF_FIRST_PERSON;
-
-	VectorMA(cg.refdef.vieworg, 8, cg.refdef.viewaxis[0], ent.origin);
-	VectorMA(ent.origin, cg.damageX * -8, cg.refdef.viewaxis[1], ent.origin);
-	VectorMA(ent.origin, cg.damageY * 8, cg.refdef.viewaxis[2], ent.origin);
-
-	ent.radius = cg.damageValue * 3;
-	ent.customShader = cgs.media.viewBloodShader;
-	ent.shaderRGBA[0] = 255;
-	ent.shaderRGBA[1] = 255;
-	ent.shaderRGBA[2] = 255;
-	ent.shaderRGBA[3] = 200 * (1.0 - ((float)t / maxTime));
-	trap_R_AddRefEntityToScene(&ent);
-}
-
-/*
-===============
 CG_CalcViewValues
 
 Sets cg.refdef view values
@@ -438,8 +304,8 @@ static int CG_CalcViewValues(void) {
 		// back away from character
 		CG_OffsetThirdPersonView();
 	} else {
-		// offset for local bobbing and kicks
-		CG_OffsetFirstPersonView();
+		// full body awareness: camera in the head joint
+		CG_OffsetBodyView();
 	}
 
 	// position eye relative to origin
@@ -540,11 +406,6 @@ void CG_DrawActiveFrame(int serverTime, bool demoPlayback) {
 	// build cg.refdef
 	inwater = CG_CalcViewValues();
 
-	// first person blend blobs, done after AnglesToAxis
-	if(!cg.renderingThirdPerson) {
-		CG_DamageBlendBlob();
-	}
-
 	// build the render lists
 	if(!cg.hyperspace) {
 		CG_AddPacketEntities();  // adter calcViewValues, so predicted player state is correct
@@ -552,7 +413,6 @@ void CG_DrawActiveFrame(int serverTime, bool demoPlayback) {
 		CG_RenderParticles();
 		CG_AddLocalEntities();
 	}
-	CG_AddViewWeapon(&cg.predictedPlayerState);
 
 	// add buffered sounds
 	CG_PlayBufferedSounds();

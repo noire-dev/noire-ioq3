@@ -63,11 +63,6 @@ itemInfo_t cg_items[MAX_ITEMS];
 
 vmCvar_t cg_railTrailTime;
 vmCvar_t cg_centertime;
-vmCvar_t cg_runpitch;
-vmCvar_t cg_runroll;
-vmCvar_t cg_bobup;
-vmCvar_t cg_bobpitch;
-vmCvar_t cg_bobroll;
 vmCvar_t cg_swingSpeed;
 vmCvar_t cg_gibs;
 vmCvar_t cg_drawTimer;
@@ -91,7 +86,6 @@ vmCvar_t cg_showmiss;
 vmCvar_t cg_addMarks;
 vmCvar_t cg_brassTime;
 vmCvar_t cg_viewsize;
-vmCvar_t cg_drawGun;
 vmCvar_t cg_tracerChance;
 vmCvar_t cg_tracerWidth;
 vmCvar_t cg_tracerLength;
@@ -101,6 +95,8 @@ vmCvar_t cg_zoomFov;
 vmCvar_t cg_thirdPerson;
 vmCvar_t cg_thirdPersonRange;
 vmCvar_t cg_thirdPersonAngle;
+vmCvar_t cg_firstPerson_Fwd;
+vmCvar_t cg_firstPerson_Up;
 vmCvar_t cg_drawAttacker;
 vmCvar_t cg_synchronousClients;
 vmCvar_t cg_teamChatTime;
@@ -117,7 +113,6 @@ vmCvar_t cg_drawFriend;
 vmCvar_t cg_teamChatsOnly;
 vmCvar_t cg_hudFiles;
 vmCvar_t cg_scorePlum;
-vmCvar_t cg_cameraMode;
 vmCvar_t cg_cameraOrbit;
 vmCvar_t cg_cameraOrbitDelay;
 vmCvar_t cg_timescaleFadeEnd;
@@ -138,7 +133,6 @@ typedef struct {
 
 static cvarTable_t cvarTable[] = {
     {&cg_ignore, "cg_ignore", "0", 0},  // used for debugging
-    {&cg_drawGun, "cg_drawGun", "1", CVAR_ARCHIVE},
     {&cg_zoomFov, "cg_zoomfov", "22.5", CVAR_ARCHIVE},
     {&cg_fov, "cg_fov", "90", CVAR_ARCHIVE},
     {&cg_viewsize, "cg_viewsize", "100", CVAR_ARCHIVE},
@@ -158,11 +152,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE},
     {&cg_railTrailTime, "cg_railTrailTime", "400", CVAR_ARCHIVE},
     {&cg_centertime, "cg_centertime", "3", CVAR_CHEAT},
-    {&cg_runpitch, "cg_runpitch", "0.002", CVAR_ARCHIVE},
-    {&cg_runroll, "cg_runroll", "0.005", CVAR_ARCHIVE},
-    {&cg_bobup, "cg_bobup", "0.005", CVAR_CHEAT},
-    {&cg_bobpitch, "cg_bobpitch", "0.002", CVAR_ARCHIVE},
-    {&cg_bobroll, "cg_bobroll", "0.002", CVAR_ARCHIVE},
     {&cg_swingSpeed, "cg_swingSpeed", "0.3", CVAR_CHEAT},
     {&cg_animSpeed, "cg_animspeed", "1", CVAR_CHEAT},
     {&cg_debugAnim, "cg_debuganim", "0", CVAR_CHEAT},
@@ -178,6 +167,8 @@ static cvarTable_t cvarTable[] = {
     {&cg_thirdPersonRange, "cg_thirdPersonRange", "40", CVAR_CHEAT},
     {&cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", CVAR_CHEAT},
     {&cg_thirdPerson, "cg_thirdPerson", "0", 0},
+    {&cg_firstPerson_Fwd, "cg_firstPerson_Fwd", "0", CVAR_CHEAT},
+    {&cg_firstPerson_Up, "cg_firstPerson_Up", "0", CVAR_CHEAT},
     {&cg_teamChatTime, "cg_teamChatTime", "3000", CVAR_ARCHIVE},
     {&cg_teamChatHeight, "cg_teamChatHeight", "0", CVAR_ARCHIVE},
     {&cg_forceModel, "cg_forceModel", "0", CVAR_ARCHIVE},
@@ -200,7 +191,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_timescaleFadeSpeed, "cg_timescaleFadeSpeed", "0", 0},
     {&cg_timescale, "timescale", "1", 0},
     {&cg_scorePlum, "cg_scorePlums", "1", CVAR_USERINFO | CVAR_ARCHIVE},
-    {&cg_cameraMode, "com_cameraMode", "0", CVAR_CHEAT},
     {&cg_noProjectileTrail, "cg_noProjectileTrail", "0", CVAR_ARCHIVE},
     {&cg_oldRail, "cg_oldRail", "1", CVAR_ARCHIVE},
     {&cg_oldRocket, "cg_oldRocket", "1", CVAR_ARCHIVE},

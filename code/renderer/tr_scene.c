@@ -35,6 +35,78 @@ int r_firstScenePoly;
 
 int r_numpolyverts;
 
+// pending bone scale overrides set by trap_R_SetBoneScale since the last
+// RE_AddRefEntityToScene (immediate mode: consumed by the next added entity)
+#define MAX_PENDING_BONESCALES MAX_RENDER_BONESCALES
+
+typedef struct {
+	char name[MAX_QPATH];
+	vec3_t scale;
+} pendingBoneScale_t;
+
+static pendingBoneScale_t r_pendingBoneScales[MAX_PENDING_BONESCALES];
+static int r_numPendingBoneScales;
+
+// resolve an IQM joint by name: exact match, then case-insensitive
+static bool R_FindIQMJoint(const iqmData_t* data, const char* name, int* jointIndex) {
+	const char* names;
+	int i;
+
+	if(!data || !data->jointNames || data->num_joints <= 0 || !name || !name[0]) {
+		return false;
+	}
+
+	names = data->jointNames;
+	for(i = 0; i < data->num_joints; i++) {
+		if(!strcmp(name, names)) {
+			*jointIndex = i;
+			return true;
+		}
+		names += strlen(names) + 1;
+	}
+
+	names = data->jointNames;
+	for(i = 0; i < data->num_joints; i++) {
+		if(!Q_stricmp(name, names)) {
+			*jointIndex = i;
+			return true;
+		}
+		names += strlen(names) + 1;
+	}
+
+	return false;
+}
+
+// attach all pending bone scales to the entity being added
+static void R_ApplyPendingBoneScales(const refEntity_t* ent, int entityNum) {
+	const model_t* mod;
+	const iqmData_t* data;
+	int i, joint;
+
+	if(r_numPendingBoneScales <= 0) {
+		return;
+	}
+
+	mod = R_GetModelByHandle(ent->hModel);
+	data = (mod && mod->type == MOD_IQM) ? mod->modelData : NULL;
+
+	for(i = 0; i < r_numPendingBoneScales; i++) {
+		pendingBoneScale_t* pending = &r_pendingBoneScales[i];
+
+		joint = -1;
+		R_FindIQMJoint(data, pending->name, &joint);
+
+		if(tr.numBoneScaleEntries < MAX_RENDER_BONESCALES && joint >= 0) {
+			boneScaleEntry_t* entry = &tr.boneScaleEntries[tr.numBoneScaleEntries++];
+			entry->entityNum = entityNum;
+			entry->jointIndex = joint;
+			VectorCopy(pending->scale, entry->scale);
+		}
+	}
+
+	r_numPendingBoneScales = 0;
+}
+
 /*
 ====================
 R_InitNextFrame
@@ -68,6 +140,9 @@ void RE_ClearScene(void) {
 	r_firstSceneDlight = r_numdlights;
 	r_firstSceneEntity = r_numentities;
 	r_firstScenePoly = r_numpolys;
+
+	tr.numBoneScaleEntries = 0;
+	r_numPendingBoneScales = 0;
 }
 
 /*
@@ -213,7 +288,65 @@ void RE_AddRefEntityToScene(const refEntity_t* ent) {
 	CrossProduct(ent->axis[0], ent->axis[1], cross);
 	backEndData->entities[r_numentities].mirrored = (DotProduct(ent->axis[2], cross) < 0.f);
 
+	R_ApplyPendingBoneScales(ent, r_numentities - r_firstSceneEntity);
+
 	r_numentities++;
+}
+
+/*
+=====================
+RE_SetBoneScale
+
+Immediate mode: queue a per-joint scale override that is attached to the
+next ref entity added to the scene (and only to it). scale is multiplied
+with the joint's animated scale, children of the joint inherit it.
+=====================
+*/
+void RE_SetBoneScale(const char* jointName, const vec3_t scale) {
+	pendingBoneScale_t* pending;
+
+	if(!tr.registered) {
+		return;
+	}
+
+	if(r_numPendingBoneScales >= MAX_PENDING_BONESCALES) {
+		static bool warned = false;
+		if(!warned) {
+			ri.Printf(PRINT_WARNING, "RE_SetBoneScale: too many pending bone scales (max %d)\n", MAX_PENDING_BONESCALES);
+			warned = true;
+		}
+		return;
+	}
+
+	pending = &r_pendingBoneScales[r_numPendingBoneScales++];
+	Q_strncpyz(pending->name, jointName ? jointName : "", sizeof(pending->name));
+	VectorCopy(scale, pending->scale);
+}
+
+/*
+=====================
+R_GetEntityBoneScales
+
+Backend helper: collect the bone scale overrides recorded for the given
+scene entity. Returns the number of entries written to joints/scales.
+=====================
+*/
+int R_GetEntityBoneScales(int entityNum, int* joints, vec3_t* scales, int maxCount) {
+	int i, n = 0;
+
+	if(maxCount <= 0) {
+		return 0;
+	}
+
+	for(i = 0; i < tr.numBoneScaleEntries && n < maxCount; i++) {
+		if(tr.boneScaleEntries[i].entityNum == entityNum && tr.boneScaleEntries[i].jointIndex >= 0) {
+			joints[n] = tr.boneScaleEntries[i].jointIndex;
+			VectorCopy(tr.boneScaleEntries[i].scale, scales[n]);
+			n++;
+		}
+	}
+
+	return n;
 }
 
 /*

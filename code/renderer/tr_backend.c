@@ -775,7 +775,7 @@ const void* RB_DrawSurfs(const void* data) {
 		FBO_t* oldFbo = glState.currentFBO;
 		vec4_t viewInfo;
 
-		VectorSet4(viewInfo, backEnd.viewParms.zFar / 8.0f, backEnd.viewParms.zFar, 0.0, 0.0);
+		VectorSet4(viewInfo, backEnd.viewParms.zFar / 1.0f, backEnd.viewParms.zFar, 0.0, 0.0);
 
 		backEnd.depthFill = true;
 		qglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);

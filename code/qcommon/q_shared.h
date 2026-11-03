@@ -208,7 +208,8 @@ typedef enum {
 	TRAP_KEY_ISDOWN,
 	TRAP_KEY_GETCATCHER,
 	TRAP_KEY_GETKEY,
-	TRAP_IMPORTOBJ
+	TRAP_IMPORTOBJ,
+	TRAP_R_SETBONESCALE
 } sharedTraps_t;
 
 #include <assert.h>
