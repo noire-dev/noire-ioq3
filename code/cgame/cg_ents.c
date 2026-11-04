@@ -188,7 +188,7 @@ static void CG_General(centity_t* cent) {
  * Physics orientations arrive as Euler angles in snapshots. Interpolating
  * pitch/yaw/roll independently is not equivalent to interpolating a 3D
  * orientation and can visibly jump when the Euler representation changes
- * branch (most noticeable while a barrel is rolling through a steep angle).
+ * branch.
  * Convert the rendered endpoint axes to quaternions, slerp, then rebuild the
  * render axis. This affects presentation only; Bullet's simulation is untouched.
  */
@@ -450,29 +450,6 @@ static void CG_Item(centity_t* cent) {
 
 	// add to refresh list
 	trap_R_AddRefEntityToScene(&ent);
-
-	if(item->giType == IT_WEAPON && wi && jsd_weaponFx[item->giTag].barrelModelHandle) {
-		refEntity_t barrel;
-		vec3_t angles;
-
-		memset(&barrel, 0, sizeof(barrel));
-
-		barrel.hModel = jsd_weaponFx[item->giTag].barrelModelHandle;
-
-		VectorCopy(ent.lightingOrigin, barrel.lightingOrigin);
-		barrel.renderfx = ent.renderfx;
-
-		angles[YAW] = 0;
-		angles[PITCH] = 0;
-		angles[ROLL] = 0;
-		AnglesToAxis(angles, barrel.axis);
-
-		CG_PositionRotatedEntityOnTag(&barrel, &ent, wi->weaponModel, "tag_barrel");
-
-		barrel.nonNormalizedAxes = ent.nonNormalizedAxes;
-
-		trap_R_AddRefEntityToScene(&barrel);
-	}
 }
 
 //============================================================================

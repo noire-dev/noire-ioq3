@@ -62,7 +62,7 @@ CG_AddParticles
   gravity  — вектор ускорения, применяется только при PF_GRAVITY
 ===============
 */
-void CG_AddParticlesEx(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader, float lifetime, float size) {
+void CG_AddParticlesEx(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, qhandle_t shader, float lifetime, float size) {
 	int i;
 
 	if(!particlesReady) CG_ClearParticles();
@@ -105,14 +105,11 @@ void CG_AddParticlesEx(const vec3_t origin, const vec4_t color, int count, float
 		}
 		p->size = (size > 0.0f) ? size : PARTICLE_SIZE;
 		p->flags = flags;
-		if(shader && shader[0])
-			p->shader = trap_R_RegisterShader(shader);
-		else
-			p->shader = PARTICLE_SHADER;
+		p->shader = shader ? shader : PARTICLE_SHADER;
 	}
 }
 
-void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader, float size, float lifetime) { CG_AddParticlesEx(origin, color, count, speed, flags, gravity, shader, lifetime, size); }
+void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, qhandle_t shader, float size, float lifetime) { CG_AddParticlesEx(origin, color, count, speed, flags, gravity, shader, lifetime, size); }
 
 /*
 ===============

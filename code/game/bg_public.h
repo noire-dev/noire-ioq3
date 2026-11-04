@@ -294,6 +294,7 @@ typedef struct weaponPropeties_s {
 	bool gravity;
 	bool bounce;
 	float bounceModifier;
+	float zOffset;
 } weaponProperties_t;
 
 extern weaponProperties_t jsd_weapon[];
@@ -359,7 +360,7 @@ typedef enum {
 	EV_PLAYER_TELEPORT_IN,
 	EV_PLAYER_TELEPORT_OUT,
 
-	EV_GRENADE_BOUNCE,  // eventParm will be the soundindex
+	EV_MISSILE_BOUNCE,  // bouncing missile; s.weapon selects the weaponFx entry with the bounce sound
 
 	EV_GENERAL_SOUND,
 	EV_GLOBAL_SOUND,  // no attenuation
@@ -371,7 +372,7 @@ typedef enum {
 	EV_MISSILE_HIT,
 	EV_MISSILE_MISS,
 	EV_MISSILE_MISS_METAL,
-	EV_RAILTRAIL,
+	EV_BEAM_TRAIL,
 	EV_SHOTGUN,
 	EV_BULLET,  // otherEntity is the shooter
 

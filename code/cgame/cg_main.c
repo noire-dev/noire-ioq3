@@ -86,9 +86,6 @@ vmCvar_t cg_showmiss;
 vmCvar_t cg_addMarks;
 vmCvar_t cg_brassTime;
 vmCvar_t cg_viewsize;
-vmCvar_t cg_tracerChance;
-vmCvar_t cg_tracerWidth;
-vmCvar_t cg_tracerLength;
 vmCvar_t cg_ignore;
 vmCvar_t cg_fov;
 vmCvar_t cg_zoomFov;
@@ -161,9 +158,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_nopredict, "cg_nopredict", "0", 0},
     {&cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT},
     {&cg_showmiss, "cg_showmiss", "0", 0},
-    {&cg_tracerChance, "cg_tracerchance", "0.4", CVAR_CHEAT},
-    {&cg_tracerWidth, "cg_tracerwidth", "1", CVAR_CHEAT},
-    {&cg_tracerLength, "cg_tracerlength", "100", CVAR_CHEAT},
     {&cg_thirdPersonRange, "cg_thirdPersonRange", "40", CVAR_CHEAT},
     {&cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", CVAR_CHEAT},
     {&cg_thirdPerson, "cg_thirdPerson", "0", 0},

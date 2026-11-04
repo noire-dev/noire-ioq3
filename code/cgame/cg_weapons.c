@@ -75,7 +75,6 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
                 .tracerChance = 0.4f,
                 .tracerLength = 300.0f,
-                .tracerWidth = 1.0f,
                 .tracerParticleShader = "",
                 .tracerParticleColor = {1.0f, 1.0f, 0.7f, 1.0f},
                 .tracerParticleCount = 10,
@@ -94,9 +93,6 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .brassBounceFactor = 0.4f,
                 .brassLifetimeMult = 1,
                 .brassSpinDelta = {2.0f, 1.0f, 0.0f},
-                .barrelSpins = true,
-                .barrelSpinSpeed = 0.9f,
-                .barrelCoastTime = 1000,
             },
         [WP_SHOTGUN] =
             {
@@ -122,7 +118,6 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
                 .tracerChance = 0.4f,
                 .tracerLength = 300.0f,
-                .tracerWidth = 1.0f,
                 .tracerParticleShader = "",
                 .tracerParticleColor = {1.0f, 1.0f, 0.7f, 1.0f},
                 .tracerParticleCount = 10,
@@ -174,6 +169,8 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .missileLightColor = {1.0f, 0.7f, 0.0f},
                 .missileLightRadius = 150.0f,
                 .missileModel = "models/ammo/grenade1.md3",
+                .missileBounceSound = "sound/weapons/grenade/hgrenb1a.wav",
+                .missileExplodeSound = "sound/weapons/grenade/hgrenb2a.wav",
                 .fireSound = {"sound/weapons/grenade/grenlf1a.wav"},
             },
         [WP_ROCKET_LAUNCHER] =
@@ -209,6 +206,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .missileLightRadius = 200.0f,
                 .missileModel = "models/ammo/rocket/rocket.md3",
                 .missileFlySound = "sound/weapons/rocket/rockfly.wav",
+                .missileExplodeSound = "sound/weapons/rocket/rocklx1a.wav",
                 .fireSound = {"sound/weapons/rocket/rocklf1a.wav"},
             },
         [WP_LIGHTNING] =
@@ -306,6 +304,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .missileSprite = "sprites/plasma1",
                 .fireSound = {"sound/weapons/plasma/hyprbf1a.wav"},
                 .missileFlySound = "sound/weapons/plasma/lasfly.wav",
+                .missileExplodeSound = "sound/weapons/plasma/plasmx1a.wav",
             },
         [WP_BFG] =
             {
@@ -339,6 +338,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .missileLightRadius = 300.0f,
                 .missileModel = "models/weaphits/bfg.md3",
                 .missileFlySound = "sound/weapons/rocket/rockfly.wav",
+                .missileExplodeSound = "sound/weapons/bfg/bfg_explode.wav",
                 .readySound = "sound/weapons/bfg/bfg_hum.wav",
                 .fireSound = {"sound/weapons/bfg/bfg_fire.wav"},
             },
@@ -370,6 +370,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .beamShader = "gfx/beams/core",
                 .beamColorizeByClient = true,
                 .fireSound = {"sound/misc/silence.wav"},
+                .muzzleBone = "ValveBiped.Core",
             },
         [WP_GRAVITYGUN] =
             {
@@ -400,6 +401,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .beamShader = "gfx/beams/core",
                 .beamColor = {120.0f / 255.0f, 60.0f / 255.0f, 0.0f, 1.0f},
                 .fireSound = {"sound/misc/silence.wav"},
+                .muzzleBone = "ValveBiped.Core",
             },
         [WP_TOOLGUN] =
             {
@@ -456,7 +458,7 @@ static void CG_EmitWeaponHitFx(int weapon, vec3_t origin, vec3_t dir) {
 	fx = &jsd_weaponFx[weapon];
 	if(fx->hitParticleCount > 0) {
 		VectorMA(origin, 24, dir, sprOrg);
-		CG_AddParticles(sprOrg, fx->hitParticleColor, fx->hitParticleCount, fx->hitParticleSpeed, fx->hitParticleFlags, fx->hitParticleGravity, fx->hitParticleShader ? fx->hitParticleShader : "", fx->hitParticleSize, fx->hitParticleLifetime);
+		CG_AddParticles(sprOrg, fx->hitParticleColor, fx->hitParticleCount, fx->hitParticleSpeed, fx->hitParticleFlags, fx->hitParticleGravity, fx->hitParticleHandle, fx->hitParticleSize, fx->hitParticleLifetime);
 	}
 	if(fx->hitLightRadius > 0.0f) {
 		CG_SpawnWeaponLight(origin, fx->hitLightRadius, fx->hitLightTime, fx->hitLightColor);
@@ -469,7 +471,7 @@ static void CG_EmitWeaponFireFx(int weapon, vec3_t origin) {
 	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
 	fx = &jsd_weaponFx[weapon];
 	if(fx->fireParticleCount > 0) {
-		CG_AddParticles(origin, fx->fireParticleColor, fx->fireParticleCount, fx->fireParticleSpeed, fx->fireParticleFlags, fx->fireParticleGravity, fx->fireParticleShader ? fx->fireParticleShader : "", fx->fireParticleSize, fx->fireParticleLifetime);
+		CG_AddParticles(origin, fx->fireParticleColor, fx->fireParticleCount, fx->fireParticleSpeed, fx->fireParticleFlags, fx->fireParticleGravity, fx->fireParticleHandle, fx->fireParticleSize, fx->fireParticleLifetime);
 	}
 	if(fx->fireLightRadius > 0.0f) {
 		CG_SpawnWeaponLight(origin, fx->fireLightRadius, fx->fireLightTime, fx->fireLightColor);
@@ -958,7 +960,7 @@ void CG_MissileTrail(centity_t* ent) {
 
 	if(contents & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA)) return;
 
-	CG_AddParticles(origin, fx->trailColor, fx->trailCount, fx->trailSpeed, fx->trailFlags, fx->trailGravity, fx->trailShader ? fx->trailShader : "", fx->trailSize, fx->trailLifetime);
+	CG_AddParticles(origin, fx->trailColor, fx->trailCount, fx->trailSpeed, fx->trailFlags, fx->trailGravity, fx->trailHandle, fx->trailSize, fx->trailLifetime);
 }
 
 void CG_RegisterWeapon(int weaponNum) {
@@ -1001,7 +1003,6 @@ void CG_RegisterWeapon(int weaponNum) {
 	if(fx->missileModel && fx->missileModel[0]) fx->missileModelHandle = trap_R_RegisterModel(fx->missileModel);
 	if(fx->missileSprite && fx->missileSprite[0]) fx->missileSpriteHandle = trap_R_RegisterShader(fx->missileSprite);
 	if(fx->brassModel && fx->brassModel[0]) fx->brassModelHandle = trap_R_RegisterModel(fx->brassModel);
-	if(fx->barrelModel && fx->barrelModel[0]) fx->barrelModelHandle = trap_R_RegisterModel(fx->barrelModel);
 	if(fx->flashModel && fx->flashModel[0]) fx->flashModelHandle = trap_R_RegisterModel(fx->flashModel);
 
 	// Find the corresponding item.
@@ -1024,18 +1025,16 @@ void CG_RegisterWeapon(int weaponNum) {
 	trap_R_ModelBounds(weaponInfo->weaponModel, mins, maxs);
 	for(i = 0; i < 3; i++) weaponInfo->weaponMidpoint[i] = mins[i] + 0.5 * (maxs[i] - mins[i]);
 
-	// Derive flash/barrel/hands models from the weapon model path if the
+	// Derive flash/hands models from the weapon model path if the
 	// table didn't specify explicit paths.
 	if(!fx->flashModelHandle) {
 		COM_StripExtension(weaponItem->model, path, sizeof(path));
 		Q_strcat(path, sizeof(path), "_flash.md3");
 		fx->flashModelHandle = trap_R_RegisterModel(path);
 	}
-	if(!fx->barrelModelHandle) {
-		COM_StripExtension(weaponItem->model, path, sizeof(path));
-		Q_strcat(path, sizeof(path), "_barrel.md3");
-		fx->barrelModelHandle = trap_R_RegisterModel(path);
-	}
+
+	// Default muzzle tag when the table didn't specify one.
+	if(!fx->muzzleBone || !fx->muzzleBone[0]) fx->muzzleBone = "ValveBiped.Muzzle";
 }
 
 /*
@@ -1110,7 +1109,7 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 	if(!fx->isBeam) return;
 
 	// Beams flagged skipLightningBolt are already drawn by another event
-	// (e.g. EV_RAILTRAIL for the railgun); rendering here would duplicate them.
+	// (e.g. EV_BEAM_TRAIL for the railgun); rendering here would duplicate them.
 	if(fx->skipLightningBolt) return;
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
@@ -1162,40 +1161,6 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 }
 
 /*
-======================
-CG_MachinegunSpinAngle
-======================
-*/
-static float CG_MachinegunSpinAngle(centity_t* cent) {
-	weaponFx_t* fx = &jsd_weaponFx[cent->currentState.weapon];
-	int delta;
-	float angle;
-	float speed;
-	float spinSpeed = fx->barrelSpinSpeed > 0.0f ? fx->barrelSpinSpeed : 0.9f;
-	int coastTime = fx->barrelCoastTime > 0 ? fx->barrelCoastTime : 1000;
-
-	delta = cg.time - cent->pe.barrelTime;
-	if(cent->pe.barrelSpinning) {
-		angle = cent->pe.barrelAngle + delta * spinSpeed;
-	} else {
-		if(delta > coastTime) {
-			delta = coastTime;
-		}
-
-		speed = 0.5 * (spinSpeed + (float)(coastTime - delta) / coastTime);
-		angle = cent->pe.barrelAngle + delta * speed;
-	}
-
-	if(cent->pe.barrelSpinning == !(cent->currentState.eFlags & EF_FIRING)) {
-		cent->pe.barrelTime = cg.time;
-		cent->pe.barrelAngle = AngleMod(angle);
-		cent->pe.barrelSpinning = !!(cent->currentState.eFlags & EF_FIRING);
-	}
-
-	return angle;
-}
-
-/*
 =============
 CG_AddPlayerWeapon
 
@@ -1205,7 +1170,6 @@ is the only weapon entity). Effects like light and sound are emitted here.
 */
 void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) {
 	refEntity_t gun;
-	refEntity_t barrel;
 	refEntity_t flash;
 	vec3_t angles;
 	weapon_t weaponNum;
@@ -1353,9 +1317,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 			// so on smaller models they must shrink around the hand anchor.
 			// Scaling the axis rows scales the rendered model; the position
 			// block below subtracts weaponTag.origin along those same scaled
-			// rows, so the tag point still lands exactly on the hand. The
-			// barrel and muzzle flash are attached to the gun's tags through
-			// gun.axis and therefore inherit the scale automatically.
+			// rows, so the tag point still lands exactly on the hand.
 			if(ci->weaponScale > 0.0f && ci->weaponScale != 1.0f) {
 				VectorScale(gun.axis[0], ci->weaponScale, gun.axis[0]);
 				VectorScale(gun.axis[1], ci->weaponScale, gun.axis[1]);
@@ -1375,26 +1337,6 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 		gun.backlerp = parent->backlerp;
 
 		trap_R_AddRefEntityToScene(&gun);
-
-		// add the spinning barrel
-		if(fx->barrelModelHandle) {
-			memset(&barrel, 0, sizeof(barrel));
-			VectorCopy(parent->lightingOrigin, barrel.lightingOrigin);
-			barrel.renderfx = parent->renderfx;
-
-			barrel.hModel = fx->barrelModelHandle;
-			angles[YAW] = 0;
-			angles[PITCH] = 0;
-			angles[ROLL] = CG_MachinegunSpinAngle(cent);
-			AnglesToAxis(angles, barrel.axis);
-
-			CG_PositionRotatedEntityOnTag(&barrel, &gun, weapon->weaponModel, "tag_barrel");
-
-			// the tag basis includes the per-model weapon scale
-			barrel.nonNormalizedAxes = gun.nonNormalizedAxes;
-
-			trap_R_AddRefEntityToScene(&barrel);
-		}
 
 		// make sure we aren't looking at cg.predictedPlayerEntity for LG
 		nonPredictedCent = &cg_entities[cent->currentState.number];
@@ -1426,7 +1368,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 		angles[ROLL] = crandom() * 10;
 		AnglesToAxis(angles, flash.axis);
 
-		CG_PositionRotatedEntityOnTag(&flash, &gun, weapon->weaponModel, "ValveBiped.Muzzle");
+		CG_PositionRotatedEntityOnTag(&flash, &gun, weapon->weaponModel, fx->muzzleBone);
 		// the tag basis includes the per-model weapon scale
 		flash.nonNormalizedAxes = gun.nonNormalizedAxes;
 		if(flash.hModel) {
@@ -1434,7 +1376,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 		}
 	}
 
-	// Data-driven fire FX at tag_flash.
+	// Data-driven fire FX at the weapon's muzzleBone tag.
 	//
 	// Full body awareness: the world model (the weapon on the body) is the
 	// only weapon entity, so it always owns the pending fire event.
@@ -1449,7 +1391,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 					trap_R_AddLightToScene(flash.origin, fx->fireLightRadius, 1.00f, fx->fireLightColor[0], fx->fireLightColor[1], fx->fireLightColor[2], 0);
 				}
 				if(fx->fireParticleCount > 0 && (cg.time - cent->pe.lastFireFxTime) >= 30) {
-					CG_AddParticles(flash.origin, fx->fireParticleColor, fx->fireParticleCount, fx->fireParticleSpeed, fx->fireParticleFlags, fx->fireParticleGravity, fx->fireParticleShader ? fx->fireParticleShader : "", fx->fireParticleSize, fx->fireParticleLifetime);
+					CG_AddParticles(flash.origin, fx->fireParticleColor, fx->fireParticleCount, fx->fireParticleSpeed, fx->fireParticleFlags, fx->fireParticleGravity, fx->fireParticleHandle, fx->fireParticleSize, fx->fireParticleLifetime);
 					cent->pe.lastFireFxTime = cg.time;
 				}
 			}
@@ -1630,7 +1572,12 @@ CG_MissileHitWall
 Caused by an EV_MISSILE_MISS event, or directly by local bullet tracing
 =================
 */
-void CG_MissileHitWall(int weapon, int clientNum, vec3_t origin, vec3_t dir, impactSound_t soundType) { CG_EmitWeaponHitFx(weapon, origin, dir); }
+void CG_MissileHitWall(int weapon, int clientNum, vec3_t origin, vec3_t dir, impactSound_t soundType) {
+	if(weapon > WP_NONE && weapon < WEAPONS_NUM && jsd_weaponFx[weapon].missileExplodeSoundHandle) {
+		trap_S_StartSound(origin, ENTITYNUM_WORLD, CHAN_AUTO, jsd_weaponFx[weapon].missileExplodeSoundHandle);
+	}
+	CG_EmitWeaponHitFx(weapon, origin, dir);
+}
 
 /*
 =================
@@ -1642,7 +1589,7 @@ void CG_MissileHitPlayer(int weapon, vec3_t origin, vec3_t dir, int entityNum) {
 		vec4_t bloodColor = {0.75f, 0.0f, 0.0f, 1.0f};
 		vec3_t bloodGravity = {0.0f, 0.0f, -600.0f};
 
-		CG_AddParticles(origin, bloodColor, 32, 300.0f, PF_SMOOTH_FADE | PF_GRAVITY, bloodGravity, "", 5.0f, 0.7f);
+		CG_AddParticles(origin, bloodColor, 32, 300.0f, PF_SMOOTH_FADE | PF_GRAVITY, bloodGravity, 0, 5.0f, 0.7f);
 		CG_MissileHitWall(weapon, 0, origin, dir, IMPACTSOUND_FLESH);
 	}
 }
@@ -1798,7 +1745,7 @@ void CG_Tracer(vec3_t source, vec3_t dest, int weapon) {
 		pos[1] += crandom() * 1.5f;
 		pos[2] += crandom() * 1.5f;
 
-		CG_AddParticlesEx(pos, fx->tracerParticleColor, 1, fx->tracerParticleSpeed, fx->tracerParticleFlags, fx->tracerParticleGravity, fx->tracerParticleShader ? fx->tracerParticleShader : "", (fx->tracerParticleLifetime > 0.0f ? fx->tracerParticleLifetime : 0.25f) + crandom() * 0.10f, fx->tracerParticleSize);
+		CG_AddParticlesEx(pos, fx->tracerParticleColor, 1, fx->tracerParticleSpeed, fx->tracerParticleFlags, fx->tracerParticleGravity, fx->tracerHandle, (fx->tracerParticleLifetime > 0.0f ? fx->tracerParticleLifetime : 0.25f) + crandom() * 0.10f, fx->tracerParticleSize);
 	}
 
 	if(fx->tracerSoundHandle) {

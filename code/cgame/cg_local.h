@@ -182,11 +182,6 @@ typedef struct {
 
 	int railFireTime;
 
-	// machinegun spinning
-	float barrelAngle;
-	int barrelTime;
-	bool barrelSpinning;
-
 	// Data-driven fire FX state
 	bool fireFxPending;  // set by CG_FireWeapon, consumed in CG_AddPlayerWeapon (burst weapons)
 	int lastFireFxTime;  // throttle for continuous fire FX
@@ -879,7 +874,6 @@ typedef struct {
 	// Hitscan tracer (particle based)
 	float tracerChance;
 	float tracerLength;
-	float tracerWidth;
 	const char* tracerParticleShader;
 	float tracerParticleColor[4];
 	int tracerParticleCount;
@@ -915,7 +909,7 @@ typedef struct {
 	int modelColorSource;
 	float modelColor[3];
 
-	// Skip CG_LightningBolt for this weapon (beam drawn by another event, e.g. EV_RAILTRAIL)
+	// Skip CG_LightningBolt for this weapon (beam drawn by another event, e.g. EV_BEAM_TRAIL)
 	bool skipLightningBolt;
 
 	// Emit red blood particles on flesh impact (grenade/rocket style)
@@ -923,7 +917,9 @@ typedef struct {
 
 	// Weapon visual model overrides (NULL = derive from item->model)
 	const char* flashModel;
-	const char* barrelModel;
+
+	// Tag on the weapon model where the muzzle flash and fire FX originate
+	const char* muzzleBone;
 
 	// Muzzle smoke (shotgun etc.)
 	const char* muzzleSmokeShader;
@@ -938,11 +934,6 @@ typedef struct {
 	int brassLifetimeMult;
 	float brassSpinDelta[3];
 
-	// Barrel spin (minigun)
-	bool barrelSpins;
-	float barrelSpinSpeed;
-	int barrelCoastTime;
-
 	// Runtime-registered handles (populated by CG_RegisterWeapon)
 	qhandle_t hitParticleHandle;
 	qhandle_t fireParticleHandle;
@@ -953,7 +944,6 @@ typedef struct {
 	qhandle_t missileModelHandle;
 	qhandle_t missileSpriteHandle;
 	qhandle_t flashModelHandle;
-	qhandle_t barrelModelHandle;
 	qhandle_t brassModelHandle;
 	sfxHandle_t readySoundHandle;
 	sfxHandle_t fireSoundHandle[4];
@@ -1002,9 +992,6 @@ extern vmCvar_t cg_showmiss;
 extern vmCvar_t cg_addMarks;
 extern vmCvar_t cg_brassTime;
 extern vmCvar_t cg_viewsize;
-extern vmCvar_t cg_tracerChance;
-extern vmCvar_t cg_tracerWidth;
-extern vmCvar_t cg_tracerLength;
 extern vmCvar_t cg_ignore;
 extern vmCvar_t cg_fov;
 extern vmCvar_t cg_zoomFov;
@@ -1148,8 +1135,8 @@ void CG_ImpactMark(qhandle_t markShader, const vec3_t origin, const vec3_t dir, 
 #define PF_GRAVITY 0x02      // ГРАВИТАЦИЯ: применять вектор ускорения
 
 void CG_ClearParticles(void);
-void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader, float size, float lifetime);
-void CG_AddParticlesEx(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, const char* shader, float lifetime, float size);
+void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, qhandle_t shader, float size, float lifetime);
+void CG_AddParticlesEx(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, qhandle_t shader, float lifetime, float size);
 void CG_RenderParticles(void);
 
 //

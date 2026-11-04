@@ -91,11 +91,11 @@ static void Melee_Fire(gentity_t* ent, int weapon) {
 		tent->s.weapon = ent->s.weapon;
 	}
 
-	if(!traceEnt->takedamage) return false;
+	if(!traceEnt->takedamage) return;
 
 	G_Damage(traceEnt, ent, ent, forward, tr.endpos, jsd_weapon[weapon].damage, 0, weapon);
 
-	return true;
+	return;
 }
 
 // Bullet type
@@ -183,9 +183,9 @@ static void Shotgun_Fire(gentity_t* ent, int weapon) {
 	ShotgunPattern(tent->s.pos.trBase, tent->s.origin2, tent->s.eventParm, ent, weapon);
 }
 
-// Railgun type
+// Beam type (railgun, lightning, physgun, toolgun — any WT_BEAM weapon)
 #define MAX_RAIL_HITS 4
-static void Railgun_Fire(gentity_t* ent, int weapon) {
+static void Beam_Fire(gentity_t* ent, int weapon) {
 	vec3_t end, impactpoint, bouncedir;
 	trace_t trace;
 	gentity_t *tent, *traceEnt, *unlinkedEntities[MAX_RAIL_HITS];
@@ -210,8 +210,8 @@ static void Railgun_Fire(gentity_t* ent, int weapon) {
 
 	for(i = 0; i < unlinked; i++) trap_LinkEntity(unlinkedEntities[i]);
 
-	tent = G_TempEntity(trace.endpos, EV_RAILTRAIL);
-	tent->s.clientNum = ent->s.clientNum;
+	tent = G_TempEntity(trace.endpos, EV_BEAM_TRAIL);
+	tent->s.weapon = weapon;
 
 	VectorCopy(muzzle, tent->s.origin2);
 
@@ -260,9 +260,7 @@ static void G_MissileImpact(gentity_t* ent, trace_t* trace) {
 	// check for bounce
 	if(!other->takedamage && (ent->s.eFlags & (EF_BOUNCE))) {
 		G_BounceMissile(ent, trace);
-		if(ent->s.weapon == WP_GRENADE_LAUNCHER) {
-			G_AddEvent(ent, EV_GRENADE_BOUNCE, 0);
-		}
+		G_AddEvent(ent, EV_MISSILE_BOUNCE, 0);
 		return;
 	}
 
@@ -399,10 +397,8 @@ static void Missile_Fire(gentity_t* ent, int weapon) {
 	gentity_t* m;
 	int count;
 
-	if(weapon == WP_GRENADE_LAUNCHER) {  // extra vertical velocity
-		forward[2] += 0.2f;
-		VectorNormalize(forward);
-	}
+	forward[2] += jsd_weapon[weapon].zOffset;
+	VectorNormalize(forward);
 	for(count = 0; count < jsd_weapon[weapon].count; count++) m = fire_missile(ent, muzzle, forward, right, up, weapon);
 }
 
@@ -417,7 +413,7 @@ void FireWeapon(gentity_t* ent) {
 		case WT_MELEE: Melee_Fire(ent, ent->s.weapon); break;
 		case WT_BULLET: Bullet_Fire(ent, ent->s.weapon); break;
 		case WT_SHOTGUN: Shotgun_Fire(ent, ent->s.weapon); break;
-		case WT_BEAM: Railgun_Fire(ent, ent->s.weapon); break;
+		case WT_BEAM: Beam_Fire(ent, ent->s.weapon); break;
 		case WT_TOOLGUN: break;
 		case WT_MISSILE: Missile_Fire(ent, ent->s.weapon); break;
 		case WT_EMPTY: break;

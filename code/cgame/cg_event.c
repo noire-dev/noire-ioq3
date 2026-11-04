@@ -382,9 +382,13 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.respawnSound);
 			break;
 
-		case EV_GRENADE_BOUNCE:
-			DEBUGNAME("EV_GRENADE_BOUNCE");
-			if(rand() & 1) {
+		case EV_MISSILE_BOUNCE:
+			DEBUGNAME("EV_MISSILE_BOUNCE");
+			// bounce sound comes from the weapon's weaponFx entry;
+			// fall back to the classic grenade thud when none is set
+			if(es->weapon > WP_NONE && es->weapon < WEAPONS_NUM && jsd_weaponFx[es->weapon].missileBounceSoundHandle) {
+				trap_S_StartSound(NULL, es->number, CHAN_AUTO, jsd_weaponFx[es->weapon].missileBounceSoundHandle);
+			} else if(rand() & 1) {
 				trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.hgrenb1aSound);
 			} else {
 				trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.hgrenb2aSound);
@@ -412,11 +416,9 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 			CG_MissileHitWall(es->weapon, 0, position, dir, IMPACTSOUND_METAL);
 			break;
 
-		case EV_RAILTRAIL:
-			DEBUGNAME("EV_RAILTRAIL");
-			cent->currentState.weapon = WP_RAILGUN;
-
-			CG_RailTrail(ci, es->origin2, es->pos.trBase, WP_RAILGUN);
+		case EV_BEAM_TRAIL:
+			DEBUGNAME("EV_BEAM_TRAIL");
+			CG_RailTrail(ci, es->origin2, es->pos.trBase, es->weapon);
 
 			// if the end was on a nomark surface, don't make an explosion
 			if(es->eventParm != 255) {
