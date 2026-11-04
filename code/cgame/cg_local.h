@@ -315,16 +315,11 @@ typedef struct {
 
 	char name[MAX_NETNAME];
 
-	vec3_t color1;
-	vec3_t color2;
-
-	byte c1RGBA[4];
-	byte c2RGBA[4];
-
 	int score;  // updated by score servercmds
 	int physR;
 	int physG;
 	int physB;
+	int grabbedEntityNum;
 	int location;  // location index for team mode
 	int health;    // you only get this info about your teammates
 	int armor;
@@ -509,9 +504,6 @@ typedef struct {
 	// crosshair client ID
 	int crosshairClientNum;
 	int crosshairClientTime;
-
-	// Noire's Mod: physgun grabbed entity (server-authoritative, client can't trace it)
-	int grabbedEntityNum;
 
 	// attacking player
 	int attackerTime;
@@ -980,8 +972,6 @@ extern vmCvar_t cg_draw2D;
 extern vmCvar_t cg_animSpeed;
 extern vmCvar_t cg_debugAnim;
 extern vmCvar_t cg_debugPosition;
-extern vmCvar_t cg_debugEvents;
-extern vmCvar_t cg_railTrailTime;
 extern vmCvar_t cg_errorDecay;
 extern vmCvar_t cg_nopredict;
 extern vmCvar_t cg_noPlayerAnims;
@@ -1084,7 +1074,6 @@ void CG_LoadDeferredPlayers(void);
 void CG_CheckEvents(centity_t* cent);
 const char* CG_PlaceString(int rank);
 void CG_EntityEvent(centity_t* cent, vec3_t position);
-void CG_PainEvent(centity_t* cent, int health);
 
 //
 // cg_ents.c

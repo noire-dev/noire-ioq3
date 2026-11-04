@@ -661,7 +661,7 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 		e[i] += fx->beamEndOffset[i];
 	}
 
-	physgunActive = (fx->continuousFire && jsd_weapon[weapon].wType == WT_PHYSGUN && cg.grabbedEntityNum > 0 && cg.grabbedEntityNum < MAX_GENTITIES);
+	physgunActive = (fx->continuousFire && jsd_weapon[weapon].wType == WT_PHYSGUN && ci && ci->grabbedEntityNum > 0 && ci->grabbedEntityNum < MAX_GENTITIES);
 
 	// No active grab -> no tension. Wipe spring state so the next grab starts
 	// perfectly straight instead of inheriting stale bend.
@@ -680,7 +680,7 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 	// Noire's Mod: physgun beam bends (32 sectors) toward the grabbed entity,
 	// because the grabbed prop is server-authoritative and client traces miss it.
 	if(physgunActive) {
-		centity_t* grabCent = &cg_entities[cg.grabbedEntityNum];
+		centity_t* grabCent = &cg_entities[ci->grabbedEntityNum];
 		vec3_t grabOrigin;
 		vec3_t viewRight, viewUp, dummyForward;
 		vec4_t beamColor;

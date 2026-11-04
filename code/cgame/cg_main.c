@@ -61,7 +61,6 @@ centity_t cg_entities[MAX_GENTITIES];
 weaponInfo_t cg_weapons[MAX_WEAPONS];
 itemInfo_t cg_items[MAX_ITEMS];
 
-vmCvar_t cg_railTrailTime;
 vmCvar_t cg_centertime;
 vmCvar_t cg_swingSpeed;
 vmCvar_t cg_gibs;
@@ -78,7 +77,6 @@ vmCvar_t cg_drawStatus;
 vmCvar_t cg_animSpeed;
 vmCvar_t cg_debugAnim;
 vmCvar_t cg_debugPosition;
-vmCvar_t cg_debugEvents;
 vmCvar_t cg_errorDecay;
 vmCvar_t cg_nopredict;
 vmCvar_t cg_noPlayerAnims;
@@ -147,13 +145,11 @@ static cvarTable_t cvarTable[] = {
     {&cg_crosshairScale, "cg_crosshairScale", "24", CVAR_ARCHIVE},
     {&cg_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE},
     {&cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE},
-    {&cg_railTrailTime, "cg_railTrailTime", "400", CVAR_ARCHIVE},
     {&cg_centertime, "cg_centertime", "3", CVAR_CHEAT},
     {&cg_swingSpeed, "cg_swingSpeed", "0.3", CVAR_CHEAT},
     {&cg_animSpeed, "cg_animspeed", "1", CVAR_CHEAT},
     {&cg_debugAnim, "cg_debuganim", "0", CVAR_CHEAT},
     {&cg_debugPosition, "cg_debugposition", "0", CVAR_CHEAT},
-    {&cg_debugEvents, "cg_debugevents", "0", CVAR_CHEAT},
     {&cg_errorDecay, "cg_errordecay", "100", 0},
     {&cg_nopredict, "cg_nopredict", "0", 0},
     {&cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT},
@@ -751,9 +747,6 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 	CG_InitConsoleCommands();
 
 	cg.weaponSelect = 0;
-
-	// Noire's Mod: no physgun grab yet
-	cg.grabbedEntityNum = -1;
 
 	cgs.redflag = cgs.blueflag = -1;  // For compatibily, default to unset for
 	cgs.flagStatus = -1;

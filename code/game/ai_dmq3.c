@@ -2748,9 +2748,6 @@ void BotCheckEvents(bot_state_t* bs, entityState_t* state) {
 			}
 			break;
 		}
-		case EV_GLOBAL_TEAM_SOUND: {
-			break;
-		}
 		case EV_PLAYER_TELEPORT_IN: {
 			VectorCopy(state->origin, lastteleport_origin);
 			lastteleport_time = FloatTime();
@@ -2789,14 +2786,9 @@ void BotCheckEvents(bot_state_t* bs, entityState_t* state) {
 		case EV_STEP_8:
 		case EV_STEP_12:
 		case EV_STEP_16:
-		case EV_JUMP_PAD:
-		case EV_JUMP:
 		case EV_GRAVITY_LAUNCH:
 		case EV_WATER_SPLASH:
-		case EV_WATER_CLEAR:
 		case EV_ITEM_PICKUP:
-		case EV_GLOBAL_ITEM_PICKUP:
-		case EV_NOAMMO:
 		case EV_FIRE_WEAPON:
 			// FIXME: either add to sound queue or mark player as someone making noise
 			break;

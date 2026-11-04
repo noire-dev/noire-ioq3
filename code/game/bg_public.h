@@ -346,17 +346,11 @@ typedef enum {
 	EV_FALL_MEDIUM,
 	EV_FALL_FAR,
 
-	EV_JUMP_PAD,  // boing sound at origin, jump sound on player
-
-	EV_JUMP,
 	EV_GRAVITY_LAUNCH,
 	EV_WATER_SPLASH,  // foot touches
-	EV_WATER_CLEAR,   // head leaves
 
-	EV_ITEM_PICKUP,         // normal item pickups are predictable
-	EV_GLOBAL_ITEM_PICKUP,  // powerup / team sounds are broadcast to everyone
+	EV_ITEM_PICKUP,  // normal item pickups are predictable
 
-	EV_NOAMMO,
 	EV_FIRE_WEAPON,
 
 	EV_ITEM_RESPAWN,
@@ -368,7 +362,6 @@ typedef enum {
 
 	EV_GENERAL_SOUND,
 	EV_GLOBAL_SOUND,  // no attenuation
-	EV_GLOBAL_TEAM_SOUND,
 
 	EV_BULLET_HIT_ENTITY,
 	EV_BULLET_HIT_WORLD,
@@ -378,22 +371,11 @@ typedef enum {
 	EV_MISSILE_MISS_METAL,
 	EV_BEAM_TRAIL,
 	EV_SHOTGUN,
-	EV_BULLET,  // otherEntity is the shooter
 
 	EV_PAIN,
-	EV_DEATH1,
-	EV_DEATH2,
-	EV_DEATH3,
 	EV_OBITUARY,
 
-	EV_POWERUP_QUAD,
-	EV_POWERUP_BATTLESUIT,
-	EV_POWERUP_REGEN,
-
 	EV_GIB_PLAYER,  // gib a previously living player
-	EV_SCOREPLUM,   // score plum
-
-	EV_STOPLOOPINGSOUND,
 } entity_event_t;
 
 typedef enum { GTS_RED_CAPTURE, GTS_BLUE_CAPTURE, GTS_RED_RETURN, GTS_BLUE_RETURN, GTS_RED_TAKEN, GTS_BLUE_TAKEN, GTS_REDOBELISK_ATTACKED, GTS_BLUEOBELISK_ATTACKED, GTS_REDTEAM_SCORED, GTS_BLUETEAM_SCORED, GTS_REDTEAM_TOOK_LEAD, GTS_BLUETEAM_TOOK_LEAD, GTS_TEAMS_ARE_TIED, GTS_KAMIKAZE } global_team_sound_t;
@@ -564,7 +546,6 @@ typedef enum {
 	ET_MOVER,
 	ET_PORTAL,
 	ET_SPEAKER,
-	ET_PUSH_TRIGGER,
 	ET_TELEPORT_TRIGGER,
 	ET_INVISIBLE,
 
@@ -577,8 +558,6 @@ void BG_EvaluateTrajectory(const trajectory_t* tr, int atTime, vec3_t result);
 void BG_EvaluateTrajectoryDelta(const trajectory_t* tr, int atTime, vec3_t result);
 
 void BG_AddPredictableEventToPlayerstate(int newEvent, int eventParm, playerState_t* ps);
-
-void BG_TouchJumpPad(playerState_t* ps, entityState_t* jumppad);
 
 void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, bool snap);
 void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s, int time, bool snap);

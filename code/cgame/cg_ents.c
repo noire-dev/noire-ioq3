@@ -331,21 +331,31 @@ static void CG_Physics(centity_t* cent) {
 	// add to refresh list
 	trap_R_AddRefEntityToScene(&ent);
 
-	if((int)s1->number == cg.grabbedEntityNum && cg.grabbedEntityNum > 0) {
-		refEntity_t outline;
-		clientInfo_t* ci = &cgs.clientinfo[cg.snap->ps.clientNum];
+	{
+		int grabbingClient = -1;
+		int k;
+		for(k = 0; k < cgs.maxclients; k++) {
+			if(cgs.clientinfo[k].infoValid && cgs.clientinfo[k].grabbedEntityNum == (int)s1->number && cgs.clientinfo[k].grabbedEntityNum > 0) {
+				grabbingClient = k;
+				break;
+			}
+		}
+		if(grabbingClient >= 0) {
+			refEntity_t outline;
+			clientInfo_t* gci = &cgs.clientinfo[grabbingClient];
 
-		outline = ent;
-		outline.customShader = trap_R_RegisterShader("outline");
-		outline.shaderRGBA[0] = ci->physR;
-		outline.shaderRGBA[1] = ci->physG;
-		outline.shaderRGBA[2] = ci->physB;
-		outline.shaderRGBA[3] = 128;
-		VectorScale(outline.axis[0], 1.032f, outline.axis[0]);
-		VectorScale(outline.axis[1], 1.032f, outline.axis[1]);
-		VectorScale(outline.axis[2], 1.032f, outline.axis[2]);
-		outline.nonNormalizedAxes = true;
-		trap_R_AddRefEntityToScene(&outline);
+			outline = ent;
+			outline.customShader = trap_R_RegisterShader("outline");
+			outline.shaderRGBA[0] = gci->physR;
+			outline.shaderRGBA[1] = gci->physG;
+			outline.shaderRGBA[2] = gci->physB;
+			outline.shaderRGBA[3] = 128;
+			VectorScale(outline.axis[0], 1.032f, outline.axis[0]);
+			VectorScale(outline.axis[1], 1.032f, outline.axis[1]);
+			VectorScale(outline.axis[2], 1.032f, outline.axis[2]);
+			outline.nonNormalizedAxes = true;
+			trap_R_AddRefEntityToScene(&outline);
+		}
 	}
 }
 
@@ -767,7 +777,6 @@ static void CG_AddCEntity(centity_t* cent) {
 	switch(cent->currentState.eType) {
 		default: CG_Error("Bad entity type: %i", cent->currentState.eType); break;
 		case ET_INVISIBLE:
-		case ET_PUSH_TRIGGER:
 		case ET_TELEPORT_TRIGGER: break;
 		case ET_GENERAL: CG_General(cent); break;
 		case ET_PHYSICS: CG_Physics(cent); break;

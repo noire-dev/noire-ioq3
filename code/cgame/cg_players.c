@@ -377,6 +377,9 @@ static void CG_CopyClientInfoModel(clientInfo_t* from, clientInfo_t* to) {
 	to->model = from->model;
 	to->modelSkin = from->modelSkin;
 	to->modelIcon = from->modelIcon;
+	to->headUp = from->headUp;
+	to->headFwd = from->headFwd;
+	to->weaponScale = from->weaponScale;
 	Q_strncpyz(to->animFile, from->animFile, sizeof(to->animFile));
 	memcpy(to->animations, from->animations, sizeof(to->animations));
 }
@@ -482,27 +485,19 @@ void CG_NewClientInfo(int clientNum) {
 	// the old value
 	memset(&newInfo, 0, sizeof(newInfo));
 
+	// Safe defaults for animation.cfg-driven fields, so that any code
+	// path that copies this struct before CG_ParseAnimationFile runs
+	// (deferred load, existing-info copy) still behaves as "no per-model
+	// tweak" instead of "weapon collapsed / camera at joint origin".
+	// weaponScale 1.0 = full size (matches CG_ParseAnimationFile default),
+	// head offsets 0 = no extra camera shift (matches per-model default).
+	newInfo.weaponScale = 1.0f;
+
 	// isolate the player's name
 	v = Info_ValueForKey(configstring, "n");
 	Q_strncpyz(newInfo.name, v, sizeof(newInfo.name));
 
 	// colors
-	v = Info_ValueForKey(configstring, "c1");
-	CG_ColorFromString(v, newInfo.color1);
-
-	newInfo.c1RGBA[0] = 255 * newInfo.color1[0];
-	newInfo.c1RGBA[1] = 255 * newInfo.color1[1];
-	newInfo.c1RGBA[2] = 255 * newInfo.color1[2];
-	newInfo.c1RGBA[3] = 255;
-
-	v = Info_ValueForKey(configstring, "c2");
-	CG_ColorFromString(v, newInfo.color2);
-
-	newInfo.c2RGBA[0] = 255 * newInfo.color2[0];
-	newInfo.c2RGBA[1] = 255 * newInfo.color2[1];
-	newInfo.c2RGBA[2] = 255 * newInfo.color2[2];
-	newInfo.c2RGBA[3] = 255;
-
 	v = Info_ValueForKey(configstring, "pr");
 	newInfo.physR = atoi(v);
 
@@ -511,6 +506,9 @@ void CG_NewClientInfo(int clientNum) {
 
 	v = Info_ValueForKey(configstring, "pb");
 	newInfo.physB = atoi(v);
+
+	v = Info_ValueForKey(configstring, "ge");
+	newInfo.grabbedEntityNum = atoi(v);
 
 	// model
 	v = Info_ValueForKey(configstring, "model");

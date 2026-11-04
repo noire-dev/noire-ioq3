@@ -530,17 +530,54 @@ void ClientUserinfoChanged(int clientNum) {
 	Q_strncpyz(model, Info_ValueForKey(userinfo, "model"), sizeof(model));
 
 	// colors
-	Q_strncpyz(c1, Info_ValueForKey(userinfo, "color1"), sizeof(c1));
-	Q_strncpyz(c2, Info_ValueForKey(userinfo, "color2"), sizeof(c2));
-
 	strcpy(physR, Info_ValueForKey(userinfo, "physR"));
 	strcpy(physG, Info_ValueForKey(userinfo, "physG"));
 	strcpy(physB, Info_ValueForKey(userinfo, "physB"));
 
 	// send over a subset of the userinfo keys so other clients can
 	// print scoreboards, display models, and play custom sounds
-	s = va("n\\%s\\model\\%s\\c1\\%s\\c2\\%s\\pr\\%s\\pg\\%s\\pb\\%s", client->pers.netname, model, c1, c2, physR, physG, physB);
+	s = va("n\\%s\\model\\%s\\pr\\%s\\pg\\%s\\pb\\%s\\ge\\%d", client->pers.netname, model, physR, physG, physB, ent->grabbedEntity ? ent->grabbedEntity->s.number : 0);
 
+	trap_SetConfigstring(CS_PLAYERS + clientNum, s);
+}
+
+/*
+===========
+ClientUpdateGrabbedConfigstring
+
+Rebuilds the CS_PLAYERS configstring for the given client so that the
+grabbed entity number is broadcast to every connected client, mirroring
+how physR/physG/physB are networked. Called whenever the physgun or
+gravity gun grab state changes on the server.
+===========
+*/
+void ClientUpdateGrabbedConfigstring(gentity_t* ent) {
+	int clientNum;
+	gclient_t* client;
+	char* s;
+	char model[MAX_QPATH];
+	char c1[MAX_INFO_STRING];
+	char c2[MAX_INFO_STRING];
+	char userinfo[MAX_INFO_STRING];
+	char physR[16], physG[16], physB[16];
+	int grabbedEntityNum;
+
+	if(!ent || !ent->client) return;
+	if(ent->client->pers.connected != CON_CONNECTED) return;
+
+	clientNum = ent - g_entities;
+	client = ent->client;
+
+	trap_GetUserinfo(clientNum, userinfo, sizeof(userinfo));
+
+	Q_strncpyz(model, Info_ValueForKey(userinfo, "model"), sizeof(model));
+	Q_strncpyz(physR, Info_ValueForKey(userinfo, "physR"), sizeof(physR));
+	Q_strncpyz(physG, Info_ValueForKey(userinfo, "physG"), sizeof(physG));
+	Q_strncpyz(physB, Info_ValueForKey(userinfo, "physB"), sizeof(physB));
+
+	grabbedEntityNum = ent->grabbedEntity ? ent->grabbedEntity->s.number : 0;
+
+	s = va("n\\%s\\model\\%s\\c1\\%s\\c2\\%s\\pr\\%s\\pg\\%s\\pb\\%s\\ge\\%d", client->pers.netname, model, c1, c2, physR, physG, physB, grabbedEntityNum);
 	trap_SetConfigstring(CS_PLAYERS + clientNum, s);
 }
 

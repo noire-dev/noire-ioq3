@@ -135,9 +135,6 @@ void CG_Respawn(void) {
 	// no error decay on player movement
 	cg.thisFrameTeleport = true;
 
-	// Noire's Mod: clear physgun grab state on respawn
-	cg.grabbedEntityNum = -1;
-
 	for(i = 1; i < WEAPONS_NUM; i++) cg.swep_listcl[i] = cg.swep_spawncl[i];  // Noire's Mod weapon predict
 
 	// display weapons available
@@ -146,8 +143,6 @@ void CG_Respawn(void) {
 	// select the weapon the server says we are using
 	cg.weaponSelect = cg.snap->ps.weapon;
 }
-
-extern char* eventnames[];
 
 /*
 ==============
@@ -235,13 +230,6 @@ void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
 		trap_S_StartLocalSound(cgs.media.hitSound, CHAN_LOCAL_SOUND);
 	} else if(ps->persistant[PERS_HITS] < ops->persistant[PERS_HITS]) {
 		trap_S_StartLocalSound(cgs.media.hitTeamSound, CHAN_LOCAL_SOUND);
-	}
-
-	// health changes of more than -1 should make pain sounds
-	if(ps->stats[STAT_HEALTH] < ops->stats[STAT_HEALTH] - 1) {
-		if(ps->stats[STAT_HEALTH] > 0) {
-			CG_PainEvent(&cg.predictedPlayerEntity, ps->stats[STAT_HEALTH]);
-		}
 	}
 
 	// timelimit warnings

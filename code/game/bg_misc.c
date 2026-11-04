@@ -190,80 +190,6 @@ void BG_EvaluateTrajectoryDelta(const trajectory_t* tr, int atTime, vec3_t resul
 	}
 }
 
-char* eventnames[] = {
-    "EV_NONE",
-
-    "EV_FOOTSTEP_CHAINLINK",
-    "EV_FOOTSTEP_CONCRETE",
-    "EV_FOOTSTEP_DIRT",
-    "EV_FOOTSTEP_DUCT",
-    "EV_FOOTSTEP_GRASS",
-    "EV_FOOTSTEP_GRAVEL",
-    "EV_FOOTSTEP_LADDER",
-    "EV_FOOTSTEP_METAL",
-    "EV_FOOTSTEP_METALGRATE",
-    "EV_FOOTSTEP_MUD",
-    "EV_FOOTSTEP_SAND",
-    "EV_FOOTSTEP_SLOSH",
-    "EV_FOOTSTEP_TILE",
-    "EV_FOOTSTEP_WOOD",
-    "EV_FOOTSTEP_WOODPANEL",
-
-    "EV_STEP_4",
-    "EV_STEP_8",
-    "EV_STEP_12",
-    "EV_STEP_16",
-
-    "EV_FALL_MEDIUM",
-    "EV_FALL_FAR",
-
-    "EV_JUMP_PAD",  // boing sound at origin", jump sound on player
-
-    "EV_JUMP",
-    "EV_GRAVITY_LAUNCH",
-    "EV_WATER_SPLASH",  // foot touches
-    "EV_WATER_CLEAR",   // head leaves
-
-    "EV_ITEM_PICKUP",         // normal item pickups are predictable
-    "EV_GLOBAL_ITEM_PICKUP",  // powerup / team sounds are broadcast to everyone
-
-    "EV_NOAMMO",
-    "EV_FIRE_WEAPON",
-
-    "EV_ITEM_RESPAWN",
-    "EV_ITEM_POP",
-    "EV_PLAYER_TELEPORT_IN",
-    "EV_PLAYER_TELEPORT_OUT",
-
-    "EV_MISSILE_BOUNCE",  // bouncing missile; s.weapon selects the weaponFx entry
-
-    "EV_GENERAL_SOUND",
-    "EV_GLOBAL_SOUND",  // no attenuation
-    "EV_GLOBAL_TEAM_SOUND",
-
-    "EV_BULLET_HIT_ENTITY",
-    "EV_BULLET_HIT_WORLD",
-
-    "EV_MISSILE_HIT",
-    "EV_MISSILE_MISS",
-    "EV_MISSILE_MISS_METAL",
-    "EV_SHOTGUN",
-    "EV_BULLET",  // otherEntity is the shooter
-
-    "EV_PAIN",
-    "EV_DEATH1",
-    "EV_DEATH2",
-    "EV_DEATH3",
-    "EV_OBITUARY",
-
-    "EV_POWERUP_QUAD",
-    "EV_POWERUP_BATTLESUIT",
-    "EV_POWERUP_REGEN",
-
-    "EV_GIB_PLAYER",  // gib a previously living player
-    "EV_SCOREPLUM",   // score plum
-};
-
 /*
 ===============
 BG_AddPredictableEventToPlayerstate
@@ -275,53 +201,9 @@ Handles the sequence numbers
 void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize);
 
 void BG_AddPredictableEventToPlayerstate(int newEvent, int eventParm, playerState_t* ps) {
-#ifdef _DEBUG
-	{
-		char buf[256];
-		trap_Cvar_VariableStringBuffer("showevents", buf, sizeof(buf));
-		if(atof(buf) != 0) {
-#ifdef GAME
-			Com_Printf(" game event svt %5d -> %5d: num = %20s parm %d\n", ps->pmove_framecount /*ps->commandTime*/, ps->eventSequence, eventnames[newEvent], eventParm);
-#else
-			Com_Printf("Cgame event svt %5d -> %5d: num = %20s parm %d\n", ps->pmove_framecount /*ps->commandTime*/, ps->eventSequence, eventnames[newEvent], eventParm);
-#endif
-		}
-	}
-#endif
 	ps->events[ps->eventSequence & (MAX_PS_EVENTS - 1)] = newEvent;
 	ps->eventParms[ps->eventSequence & (MAX_PS_EVENTS - 1)] = eventParm;
 	ps->eventSequence++;
-}
-
-/*
-========================
-BG_TouchJumpPad
-========================
-*/
-void BG_TouchJumpPad(playerState_t* ps, entityState_t* jumppad) {
-	vec3_t angles;
-	float p;
-	int effectNum;
-
-	if(ps->pm_type != PM_NORMAL) return;
-
-	// if we didn't hit this same jumppad the previous frame
-	// then don't play the event sound again if we are in a fat trigger
-	if(ps->jumppad_ent != jumppad->number) {
-		vectoangles(jumppad->origin2, angles);
-		p = fabs(AngleNormalize180(angles[PITCH]));
-		if(p < 45) {
-			effectNum = 0;
-		} else {
-			effectNum = 1;
-		}
-		BG_AddPredictableEventToPlayerstate(EV_JUMP_PAD, effectNum, ps);
-	}
-	// remember hitting this jumppad this frame
-	ps->jumppad_ent = jumppad->number;
-	ps->jumppad_frame = ps->pmove_framecount;
-	// give the player the velocity from the jumppad
-	VectorCopy(jumppad->origin2, ps->velocity);
 }
 
 /*

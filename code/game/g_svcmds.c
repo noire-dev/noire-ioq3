@@ -48,7 +48,6 @@ void Svcmd_EntityList_f(void) {
 			case ET_MOVER: G_Printf("ET_MOVER            "); break;
 			case ET_PORTAL: G_Printf("ET_PORTAL           "); break;
 			case ET_SPEAKER: G_Printf("ET_SPEAKER          "); break;
-			case ET_PUSH_TRIGGER: G_Printf("ET_PUSH_TRIGGER     "); break;
 			case ET_TELEPORT_TRIGGER: G_Printf("ET_TELEPORT_TRIGGER "); break;
 			case ET_INVISIBLE: G_Printf("ET_INVISIBLE        "); break;
 			default: G_Printf("%3i                 ", check->s.eType); break;

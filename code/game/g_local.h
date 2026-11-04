@@ -403,6 +403,7 @@ void QDECL G_Error(const char* fmt, ...) Q_NO_RETURN Q_PRINTF_FUNC(1, 2);
 //
 char* ClientConnect(int clientNum, bool firstTime, bool isBot);
 void ClientUserinfoChanged(int clientNum);
+void ClientUpdateGrabbedConfigstring(gentity_t* ent);
 void ClientDisconnect(int clientNum);
 void ClientBegin(int clientNum);
 void ClientCommand(int clientNum);

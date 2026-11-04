@@ -25,23 +25,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "g_local.h"
 
 /*
-============
-ScorePlum
-============
-*/
-void ScorePlum(gentity_t* ent, vec3_t origin, int score) {
-	gentity_t* plum;
-
-	plum = G_TempEntity(origin, EV_SCOREPLUM);
-	// only send this temp entity to a single client
-	plum->r.svFlags |= SVF_SINGLECLIENT;
-	plum->r.singleClient = ent->s.number;
-	//
-	plum->s.otherEntityNum = ent->s.number;
-	plum->s.time = score;
-}
-
-/*
 =================
 TossClientItems
 
@@ -197,8 +180,6 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 
 			self->client->ps.legsAnim = ((self->client->ps.legsAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
 			self->client->ps.torsoAnim = ((self->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
-
-			G_AddEvent(self, EV_DEATH1 + (lastDeath % 3), killer);
 
 			// the body can still be gibbed
 			self->die = body_die;

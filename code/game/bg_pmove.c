@@ -359,7 +359,6 @@ static bool PM_CheckJump(void) {
 
 	pm->ps->groundEntityNum = ENTITYNUM_NONE;
 	pm->ps->velocity[2] = JUMP_VELOCITY;
-	PM_AddEvent(EV_JUMP);
 
 	if(pm->cmd.forwardmove >= 0) {
 		PM_ForceLegsAnim(AM_JUMP);
@@ -1248,10 +1247,6 @@ static void PM_WaterEvents(void) {
 	if(!pml.previous_waterlevel && pm->waterlevel) {
 		PM_AddEvent(EV_WATER_SPLASH);
 	}
-
-	if(pml.previous_waterlevel == 3 && pm->waterlevel != 3) {
-		PM_AddEvent(EV_WATER_CLEAR);
-	}
 }
 
 static void PM_BeginWeaponChange(int weapon) {
@@ -1363,13 +1358,11 @@ static void PM_Weapon(void) {
 
 #ifdef GAME
 	if(!G_CheckWeaponAmmo(pm->ps->clientNum, pm->ps->weapon)) {
-		PM_AddEvent(EV_NOAMMO);
 		pm->ps->weaponTime += 500;
 		return;
 	}
 #else
 	if(!pm->ps->stats[STAT_AMMO]) {
-		PM_AddEvent(EV_NOAMMO);
 		pm->ps->weaponTime += 500;
 		return;
 	}
