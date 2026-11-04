@@ -107,6 +107,65 @@ static void R_ApplyPendingBoneScales(const refEntity_t* ent, int entityNum) {
 	r_numPendingBoneScales = 0;
 }
 
+// pending jiggle bones set by trap_R_SetJiggleScale since the last
+// RE_AddRefEntityToScene (immediate mode: consumed by the next added entity)
+typedef struct {
+	char name[MAX_QPATH];
+	float scale;
+} pendingJiggle_t;
+
+static pendingJiggle_t r_pendingJiggles[MAX_ENTITY_JIGGLES];
+static int r_numPendingJiggles;
+
+// attach all pending jiggle bones to the entity being added.
+// entityNum is the absolute index into backEndData->entities.
+static void R_ApplyPendingJiggles(const refEntity_t* ent, int entityNum) {
+	const model_t* mod;
+	const iqmData_t* data;
+	int i, j, joint;
+
+	if(r_numPendingJiggles <= 0) {
+		return;
+	}
+
+	mod = R_GetModelByHandle(ent->hModel);
+	data = (mod && mod->type == MOD_IQM) ? mod->modelData : NULL;
+
+	for(i = 0; i < r_numPendingJiggles; i++) {
+		const pendingJiggle_t* pending = &r_pendingJiggles[i];
+		jiggleEntry_t* entry;
+
+		joint = -1;
+		if(!R_FindIQMJoint(data, pending->name, &joint) || joint < 0) {
+			continue;
+		}
+
+		// the same joint twice for one entity: the last call wins
+		entry = NULL;
+		for(j = tr.numJiggleEntries - 1; j >= 0 && tr.jiggleEntries[j].entityNum == entityNum; j--) {
+			if(tr.jiggleEntries[j].jointIndex == joint) {
+				entry = &tr.jiggleEntries[j];
+				break;
+			}
+		}
+
+		if(!entry) {
+			if(tr.numJiggleEntries >= MAX_RENDER_JIGGLES) {
+				break;
+			}
+			entry = &tr.jiggleEntries[tr.numJiggleEntries++];
+			entry->entityNum = entityNum;
+			entry->jointIndex = joint;
+		}
+
+		entry->scale = pending->scale;
+		entry->delta[0] = entry->delta[1] = entry->delta[2] = 0.0f;
+		entry->delta[3] = 1.0f;
+	}
+
+	r_numPendingJiggles = 0;
+}
+
 /*
 ====================
 R_InitNextFrame
@@ -128,6 +187,8 @@ void R_InitNextFrame(void) {
 	r_firstScenePoly = 0;
 
 	r_numpolyverts = 0;
+
+	tr.numJiggleEntries = 0;
 }
 
 /*
@@ -143,6 +204,7 @@ void RE_ClearScene(void) {
 
 	tr.numBoneScaleEntries = 0;
 	r_numPendingBoneScales = 0;
+	r_numPendingJiggles = 0;
 }
 
 /*
@@ -289,6 +351,7 @@ void RE_AddRefEntityToScene(const refEntity_t* ent) {
 	backEndData->entities[r_numentities].mirrored = (DotProduct(ent->axis[2], cross) < 0.f);
 
 	R_ApplyPendingBoneScales(ent, r_numentities - r_firstSceneEntity);
+	R_ApplyPendingJiggles(ent, r_numentities);
 
 	r_numentities++;
 }
@@ -347,6 +410,191 @@ int R_GetEntityBoneScales(int entityNum, int* joints, vec3_t* scales, int maxCou
 	}
 
 	return n;
+}
+
+/*
+=====================
+RE_SetJiggleScale
+
+Immediate mode, like RE_SetBoneScale: mark a joint as a jiggle bone (hair,
+cloth) of the next ref entity added to the scene (and only of it).
+scale is the looseness of the joint: 0 = rigid, 1 = default softness,
+larger = floppier. The renderer simulates the joint, cgame only has to say
+which joints are loose and by how much.
+=====================
+*/
+void RE_SetJiggleScale(const char* jointName, float scale) {
+	pendingJiggle_t* pending;
+	int i;
+
+	if(!tr.registered || !jointName || !jointName[0]) {
+		return;
+	}
+
+	if(Q_isnan(scale) || scale < 0.0f) {
+		scale = 0.0f;
+	}
+
+	// the same joint again before the entity is added: the last call wins
+	for(i = 0; i < r_numPendingJiggles; i++) {
+		if(!Q_stricmp(r_pendingJiggles[i].name, jointName)) {
+			r_pendingJiggles[i].scale = scale;
+			return;
+		}
+	}
+
+	if(r_numPendingJiggles >= MAX_ENTITY_JIGGLES) {
+		static bool warned = false;
+		if(!warned) {
+			ri.Printf(PRINT_WARNING, "RE_SetJiggleScale: too many pending jiggle bones (max %d)\n", MAX_ENTITY_JIGGLES);
+			warned = true;
+		}
+		return;
+	}
+
+	pending = &r_pendingJiggles[r_numPendingJiggles++];
+	Q_strncpyz(pending->name, jointName, sizeof(pending->name));
+	pending->scale = scale;
+}
+
+/*
+=====================
+R_GetEntityJiggles
+
+Backend helper: collect the simulated jiggle rotations of the given entity
+(absolute index into backEndData->entities). Returns the number of entries
+written to joints/deltas.
+=====================
+*/
+int R_GetEntityJiggles(int entityNum, int* joints, quat_t* deltas, int maxCount) {
+	int i, n = 0;
+
+	for(i = 0; i < tr.numJiggleEntries && n < maxCount; i++) {
+		const jiggleEntry_t* entry = &tr.jiggleEntries[i];
+
+		if(entry->entityNum == entityNum && entry->jointIndex >= 0 && entry->scale > 0.0f) {
+			joints[n] = entry->jointIndex;
+			QuatCopy(entry->delta, deltas[n]);
+			n++;
+		}
+	}
+
+	return n;
+}
+
+// A simulation is matched to an entity by model and position: ref entities
+// have no persistent id. Entities of the same model closer than this to the
+// position a simulation had last frame are taken for the same entity.
+#define JIGGLE_MATCH_DIST 128.0f
+
+static jiggleState_t r_jiggleStates[MAX_JIGGLE_STATES];
+
+/*
+=====================
+R_JiggleAcquireState
+
+Find the simulation of the entity from the last frames or start a new one.
+The same entity added twice in one frame (e.g. first person body + mirror
+copy) gets the same simulation.
+=====================
+*/
+static jiggleState_t* R_JiggleAcquireState(const refEntity_t* re) {
+	jiggleState_t *st, *best = NULL, *freeSlot = NULL, *oldest = NULL;
+	float bestDist = JIGGLE_MATCH_DIST * JIGGLE_MATCH_DIST;
+	int i;
+
+	for(i = 0, st = r_jiggleStates; i < MAX_JIGGLE_STATES; i++, st++) {
+		int age = tr.frameCount - st->lastFrame;
+		bool alive = st->inUse && age >= 0 && age <= 2;
+
+		if(alive) {
+			if(st->hModel == re->hModel) {
+				float dist = DistanceSquared(st->origin, re->origin);
+
+				// a simulation already claimed by another entity in this frame
+				// is only shared with an entity at (almost) the same place
+				if(dist < bestDist && !(st->claimFrame == tr.frameCount && dist > 0.25f)) {
+					best = st;
+					bestDist = dist;
+				}
+			}
+			if(!oldest || st->lastFrame < oldest->lastFrame) {
+				oldest = st;
+			}
+		} else if(!freeSlot) {
+			freeSlot = st;
+		}
+	}
+
+	if(best) {
+		return best;
+	}
+
+	st = freeSlot ? freeSlot : oldest;
+	Com_Memset(st, 0, sizeof(*st));
+	st->inUse = true;
+	st->hModel = re->hModel;
+	VectorCopy(re->origin, st->origin);
+	st->lastTime = tr.refdef.time;
+	st->lastFrame = tr.frameCount;
+	st->claimFrame = tr.frameCount;
+
+	return st;
+}
+
+/*
+=====================
+R_JiggleUpdateScene
+
+Frontend, once per RE_RenderScene: step the jiggle simulation of every entity
+of this scene that has jiggle bones. The result (a rotation per joint) is
+stored in tr.jiggleEntries and applied by the backend while skinning, so all
+passes (main view, mirrors, shadows, cubemaps) see the same pose.
+=====================
+*/
+void R_JiggleUpdateScene(void) {
+	int n = 0;
+
+	if(!r_jiggle->integer || tr.numJiggleEntries <= 0) {
+		return;
+	}
+
+	while(n < tr.numJiggleEntries) {
+		int entityNum = tr.jiggleEntries[n].entityNum;
+		int end = n + 1;
+
+		while(end < tr.numJiggleEntries && tr.jiggleEntries[end].entityNum == entityNum) {
+			end++;
+		}
+
+		// entities of earlier scenes of this frame already have their result
+		if(entityNum >= r_firstSceneEntity && entityNum < r_numentities) {
+			const refEntity_t* re = &backEndData->entities[entityNum].e;
+			jiggleState_t* st = R_JiggleAcquireState(re);
+			int dtMs = tr.refdef.time - st->lastTime;
+			float dt = 0.0f;
+			int stepped;
+
+			if(dtMs < 0) {
+				// time went backwards (demo seek, map restart): start over
+				Com_Memset(st->valid, 0, sizeof(st->valid));
+				st->lastTime = tr.refdef.time;
+			} else {
+				dt = Com_Clamp(0.0f, 0.1f, dtMs * 0.001f);
+			}
+
+			stepped = R_IQMJiggleEntity(re, entityNum - r_firstSceneEntity, &tr.jiggleEntries[n], end - n, st, dt);
+
+			VectorCopy(re->origin, st->origin);
+			st->lastFrame = tr.frameCount;
+			st->claimFrame = tr.frameCount;
+			if(stepped > 0) {
+				st->lastTime = tr.refdef.time;
+			}
+		}
+
+		n = end;
+	}
 }
 
 /*
@@ -523,6 +771,9 @@ void RE_RenderScene(const refdef_t* fd) {
 	}
 
 	RE_BeginScene(fd);
+
+	// hair / cloth: step the jiggle simulation of this scene's entities
+	R_JiggleUpdateScene();
 
 	// SmileTheory: playing with shadow mapping
 	if(!(fd->rdflags & RDF_NOWORLDMODEL) && tr.refdef.num_dlights && r_dynamiclight->integer >= 2) {

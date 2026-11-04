@@ -1657,36 +1657,19 @@ static void IQM_BlendPose(const iqmTransform_t* all_poses, int nposes, int frame
 
 /*
 =================
-ComputePoseMats
+IQM_BuildRelativeJoints
 
-Builds the skinning matrices of all joints for the (interpolated) frame.
-
-Models that use their own embedded animation behave exactly like stock ioq3.
-
-With an external animation (RE_RegisterModelEx) only ROTATIONS are taken from
-the animation. Bone offsets (translation) and scale always come from the
-model's own bind pose, so the proportions of the model can never change no
-matter which skeleton the animation was made for. The one exception is the
-motion carrier (root / pelvis): its movement relative to the animation's
-bind pose is added to the model's bind position, scaled by the ratio of the
-two skeleton heights, so the feet stay at the right height on every model.
-
-copy the local rotation of the animation (Source engine behaviour)
-Modes 1 and 2 give identical results when both skeletons have the same
-rest rotations and differ only if the rest poses differ (finger curl,
-A-pose / T-pose).
+Local (parent relative) pose of every joint for the interpolated frame,
+including the per-joint scale overrides from trap_R_SetBoneScale. Returns
+the number of joints. Shared by ComputePoseMats (backend) and the jiggle
+simulation (frontend) so that both see exactly the same animated pose.
 =================
 */
-static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float backlerp, float* poseMats, const int* scaleJoints, const vec3_t* scaleValues, int numScaleJoints) {
-	iqmTransform_t relativeJoints[IQM_MAX_JOINTS];
+static int IQM_BuildRelativeJoints(iqmData_t* data, int frame, int oldframe, float backlerp, iqmTransform_t* relativeJoints, const int* scaleJoints, const vec3_t* scaleValues, int numScaleJoints) {
 	iqmTransform_t bindLocal[IQM_MAX_JOINTS];
-	iqmTransform_t* relativeJoint;
 	const iqmTransform_t* all_poses;
 	const iqmAnimation_t* anim = data->anim;
-	const int* jointParent;
 	const int* poseMap;
-	const float* invBindMat;
-	float* poseMat;
 	int i, nposes, nframes, numJoints;
 
 	all_poses = anim ? anim->poses : data->poses;
@@ -1793,6 +1776,77 @@ static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float back
 		}
 	}
 
+
+	return numJoints;
+}
+
+/*
+=================
+IQM_QuatMul
+
+out = a * b (x, y, z, w order), out may alias a or b
+=================
+*/
+static void IQM_QuatMul(const quat_t a, const quat_t b, quat_t out) {
+	quat_t r;
+
+	r[0] = a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1];
+	r[1] = a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0];
+	r[2] = a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3];
+	r[3] = a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2];
+
+	out[0] = r[0];
+	out[1] = r[1];
+	out[2] = r[2];
+	out[3] = r[3];
+}
+
+/*
+=================
+ComputePoseMats
+
+Builds the skinning matrices of all joints for the (interpolated) frame.
+
+Models that use their own embedded animation behave exactly like stock ioq3.
+
+With an external animation (RE_RegisterModelEx) only ROTATIONS are taken from
+the animation. Bone offsets (translation) and scale always come from the
+model's own bind pose, so the proportions of the model can never change no
+matter which skeleton the animation was made for. The one exception is the
+motion carrier (root / pelvis): its movement relative to the animation's
+bind pose is added to the model's bind position, scaled by the ratio of the
+two skeleton heights, so the feet stay at the right height on every model.
+
+copy the local rotation of the animation (Source engine behaviour)
+Modes 1 and 2 give identical results when both skeletons have the same
+rest rotations and differ only if the rest poses differ (finger curl,
+A-pose / T-pose).
+
+jiggleJoints / jiggleDeltas: rotations (in the parent space of the joint)
+produced by the jiggle simulation, they are multiplied onto the animated
+rotation of the joint (hair / cloth), children follow through the chain.
+=================
+*/
+static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float backlerp, float* poseMats, const int* scaleJoints, const vec3_t* scaleValues, int numScaleJoints, const int* jiggleJoints, const quat_t* jiggleDeltas, int numJiggle) {
+	iqmTransform_t relativeJoints[IQM_MAX_JOINTS];
+	iqmTransform_t* relativeJoint;
+	const int* jointParent;
+	const float* invBindMat;
+	float* poseMat;
+	int i, numJoints;
+
+	numJoints = IQM_BuildRelativeJoints(data, frame, oldframe, backlerp, relativeJoints, scaleJoints, scaleValues, numScaleJoints);
+
+	// jiggle bones: rotate the animated joint by the simulated delta
+	for(i = 0; i < numJiggle; i++) {
+		int joint = jiggleJoints[i];
+		if(joint >= 0 && joint < numJoints) {
+			quat_t q;
+			IQM_QuatMul(jiggleDeltas[i], relativeJoints[joint].rotate, q);
+			QuatNormalize2(q, relativeJoints[joint].rotate);
+		}
+	}
+
 	// multiply by inverse of bind pose and parent 'pose mat' (bind pose transform matrix)
 	relativeJoint = relativeJoints;
 	jointParent = data->jointParents;
@@ -1822,7 +1876,7 @@ static void ComputeJointMats(iqmData_t* data, int frame, int oldframe, float bac
 		return;
 	}
 
-	ComputePoseMats(data, frame, oldframe, backlerp, mat, NULL, NULL, 0);
+	ComputePoseMats(data, frame, oldframe, backlerp, mat, NULL, NULL, 0, NULL, NULL, 0);
 
 	for(i = 0; i < data->num_joints; i++) {
 		float outmat[12];
@@ -1833,6 +1887,310 @@ static void ComputeJointMats(iqmData_t* data, int frame, int oldframe, float bac
 		Matrix34Multiply(outmat, data->bindJoints + 12 * i, mat1);
 	}
 }
+
+/*
+===========================================================================
+
+JIGGLE BONES (hair / cloth)
+
+cgame only says "this joint is loose by <scale>" (trap_R_SetJiggleScale), the
+renderer does the rest. Once per scene (R_JiggleUpdateScene, frontend) every
+jiggled joint gets a point mass at its tip:
+
+ - the tip is pulled back to where the animation wants it by a spring,
+ - the renderer's own gravity (r_jiggleGravity, -800 on Z) pulls it down,
+ - the bone is a rigid rod: the tip stays at the animated bone length from
+   the joint, so the joint's movement and the entity's movement drag it along,
+ - the joint is then rotated so that it points at the simulated tip.
+
+The result is stored as one rotation per joint, expressed in the parent space
+of the joint. The backend multiplies it onto the animated rotation inside
+ComputePoseMats, so every surface / shadow / mirror pass of the entity sees
+exactly the same pose and the simulation is stepped only once per scene.
+
+scale is the looseness: 0 = rigid, 1 = default softness, 2 = twice as floppy.
+Internally the spring gets stiffer for small scales (k = r_jiggleStiffness /
+scale) and the damping keeps the same damping ratio (c = r_jiggleDamping /
+sqrt(scale)), so scale 0.5 sags half as much under gravity as scale 1.
+
+Joints are processed parents first and the chain is rebuilt on the way, so
+jiggled joints can be nested (hair1 -> hair2 -> hair3), a child simulates
+relative to its already jiggled parent.
+
+===========================================================================
+*/
+// JIGGLE-BEGIN
+#define JIGGLE_SUBSTEP 0.0125f      // simulation step (80 Hz)
+#define JIGGLE_MAX_SUBSTEPS 8       // per scene, dt is clamped to 0.1 s anyway
+#define JIGGLE_MIN_SCALE 0.1f       // below this the spring would get too stiff for explicit integration
+#define JIGGLE_MAX_SCALE 4.0f
+#define JIGGLE_MAX_ANGLE 1.3963f    // 80 degrees, a joint never bends further than this
+
+static void Jiggle_TransformPoint(const float* m, const vec3_t p, vec3_t out) {
+	out[0] = m[0] * p[0] + m[1] * p[1] + m[2] * p[2] + m[3];
+	out[1] = m[4] * p[0] + m[5] * p[1] + m[6] * p[2] + m[7];
+	out[2] = m[8] * p[0] + m[9] * p[1] + m[10] * p[2] + m[11];
+}
+
+static void Jiggle_TransformDir(const float* m, const vec3_t p, vec3_t out) {
+	out[0] = m[0] * p[0] + m[1] * p[1] + m[2] * p[2];
+	out[1] = m[4] * p[0] + m[5] * p[1] + m[6] * p[2];
+	out[2] = m[8] * p[0] + m[9] * p[1] + m[10] * p[2];
+}
+
+/*
+=================
+Jiggle_QuatFromTo
+
+Shortest rotation from unit vector a to unit vector b, limited to maxAngle.
+=================
+*/
+static void Jiggle_QuatFromTo(const vec3_t a, const vec3_t b, float maxAngle, quat_t out) {
+	vec3_t axis;
+	float sinA, angle, s;
+
+	CrossProduct(a, b, axis);
+	sinA = VectorLength(axis);
+	angle = atan2f(sinA, DotProduct(a, b));
+
+	if(angle < 1e-5f) {
+		out[0] = out[1] = out[2] = 0.0f;
+		out[3] = 1.0f;
+		return;
+	}
+
+	if(sinA > 1e-5f) {
+		VectorScale(axis, 1.0f / sinA, axis);
+	} else {
+		// opposite vectors: any axis perpendicular to a will do
+		vec3_t t = {1.0f, 0.0f, 0.0f};
+		if(fabsf(a[0]) > 0.9f) {
+			t[0] = 0.0f;
+			t[1] = 1.0f;
+		}
+		CrossProduct(a, t, axis);
+		VectorNormalize(axis);
+	}
+
+	if(angle > maxAngle) angle = maxAngle;
+
+	s = sinf(angle * 0.5f);
+	out[0] = axis[0] * s;
+	out[1] = axis[1] * s;
+	out[2] = axis[2] * s;
+	out[3] = cosf(angle * 0.5f);
+}
+
+/*
+=================
+IQM_JiggleTip
+
+Model space bind pose position of the tip of a joint: the first child, or
+for a leaf joint the continuation of the parent -> joint offset.
+=================
+*/
+static bool IQM_JiggleTip(const iqmData_t* data, int joint, vec3_t tip) {
+	const float* b = &data->bindJoints[joint * 12];
+	vec3_t pos, d;
+	int i, parent;
+
+	VectorSet(pos, b[3], b[7], b[11]);
+
+	for(i = joint + 1; i < data->num_joints; i++) {
+		if(data->jointParents[i] == joint) {
+			const float* c = &data->bindJoints[i * 12];
+
+			VectorSet(tip, c[3], c[7], c[11]);
+			VectorSubtract(tip, pos, d);
+			if(DotProduct(d, d) > 1e-4f) {
+				return true;
+			}
+		}
+	}
+
+	parent = data->jointParents[joint];
+	if(parent >= 0) {
+		const float* pb = &data->bindJoints[parent * 12];
+
+		d[0] = pos[0] - pb[3];
+		d[1] = pos[1] - pb[7];
+		d[2] = pos[2] - pb[11];
+		if(DotProduct(d, d) > 1e-4f) {
+			VectorAdd(pos, d, tip);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*
+=================
+R_IQMJiggleEntity
+
+Steps the jiggle simulation of one entity by dt seconds and stores the
+resulting rotation of every jiggled joint in entries[].delta.
+
+sceneEntityNum is the index of the entity inside the current scene (the key
+used by the bone scale entries). Returns the number of joints that were
+stepped; joints that are collapsed by a bone scale (first person head) are
+left alone so that a second copy of the same entity can still simulate them.
+=================
+*/
+int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* entries, int numEntries, jiggleState_t* st, float dt) {
+	const model_t* mod = R_GetModelByHandle(re->hModel);
+	iqmData_t* data;
+	iqmTransform_t rel[IQM_MAX_JOINTS];
+	float M[IQM_MAX_JOINTS * 12];  // model space matrix of every joint (jiggled chain)
+	int entryOf[IQM_MAX_JOINTS];
+	int scaleJoints[MAX_RENDER_BONESCALES];
+	vec3_t scaleValues[MAX_RENDER_BONESCALES];
+	float W[12];  // model space -> world
+	int numScaleJoints, numJoints, nframes, frame, oldframe, i, k, stepped = 0;
+	const float gravity = r_jiggleGravity->value;
+
+	if(!mod || mod->type != MOD_IQM) return 0;
+	data = (iqmData_t*)mod->modelData;
+	if(!data || (data->anim ? data->anim->num_poses : data->num_poses) <= 0) return 0;
+
+	for(i = 0; i < IQM_MAX_JOINTS; i++) entryOf[i] = -1;
+	for(i = 0; i < numEntries; i++) {
+		entries[i].delta[0] = entries[i].delta[1] = entries[i].delta[2] = 0.0f;
+		entries[i].delta[3] = 1.0f;
+		if(entries[i].jointIndex >= 0 && entries[i].jointIndex < IQM_MAX_JOINTS) {
+			entryOf[entries[i].jointIndex] = i;
+		}
+	}
+
+	// the same animated pose the backend is going to skin with
+	numScaleJoints = R_GetEntityBoneScales(sceneEntityNum, scaleJoints, scaleValues, MAX_RENDER_BONESCALES);
+	nframes = data->anim ? data->anim->num_frames : data->num_frames;
+	frame = nframes ? re->frame % nframes : 0;
+	oldframe = nframes ? re->oldframe % nframes : 0;
+	numJoints = IQM_BuildRelativeJoints(data, frame, oldframe, re->backlerp, rel, scaleJoints, scaleValues, numScaleJoints);
+
+	for(i = 0; i < 3; i++) {
+		W[i * 4 + 0] = re->axis[0][i];
+		W[i * 4 + 1] = re->axis[1][i];
+		W[i * 4 + 2] = re->axis[2][i];
+		W[i * 4 + 3] = re->origin[i];
+	}
+
+	for(i = 0; i < numJoints; i++) {
+		const int parent = data->jointParents[i];
+		const bool haveParent = (parent >= 0 && parent < i);
+		float* Mi = &M[i * 12];
+		float local[12];
+
+		JointToMatrix(rel[i].rotate, rel[i].scale, rel[i].translate, local);
+		if(haveParent) {
+			Matrix34Multiply(&M[parent * 12], local, Mi);
+		} else {
+			Com_Memcpy(Mi, local, sizeof(local));
+		}
+
+		if(entryOf[i] >= 0 && haveParent && entries[entryOf[i]].scale > 0.0f) {
+			jiggleEntry_t* je = &entries[entryOf[i]];
+			float MW[12], PW[12], PWinv[12];
+			vec3_t tipBind, tipLocal, jointW, tipW0, d0, d, a, b;
+			float s, L, len, ks, c;
+			quat_t q;
+
+			if(!IQM_JiggleTip(data, i, tipBind)) continue;
+			Jiggle_TransformPoint(&data->invBindJoints[i * 12], tipBind, tipLocal);
+
+			// where the animation wants the tip, in world space
+			Matrix34Multiply(W, Mi, MW);
+			VectorSet(jointW, MW[3], MW[7], MW[11]);
+			Jiggle_TransformPoint(MW, tipLocal, tipW0);
+			VectorSubtract(tipW0, jointW, d0);
+			L = VectorLength(d0);
+			if(L < 0.05f) continue;  // collapsed (bone scale 0), nothing to simulate
+
+			s = je->scale;
+			if(s < JIGGLE_MIN_SCALE) s = JIGGLE_MIN_SCALE;
+			if(s > JIGGLE_MAX_SCALE) s = JIGGLE_MAX_SCALE;
+			ks = r_jiggleStiffness->value / s;
+			c = r_jiggleDamping->value / sqrtf(s);
+
+			if(!st->valid[i]) {
+				VectorCopy(tipW0, st->pos[i]);
+				VectorClear(st->vel[i]);
+				st->valid[i] = 1;
+			}
+
+			if(dt > 0.0f) {
+				int steps = (int)ceilf(dt / JIGGLE_SUBSTEP);
+				float h, damp;
+
+				if(steps < 1) steps = 1;
+				if(steps > JIGGLE_MAX_SUBSTEPS) steps = JIGGLE_MAX_SUBSTEPS;
+				h = dt / steps;
+				damp = expf(-c * h);
+
+				for(k = 0; k < steps; k++) {
+					vec3_t acc, before;
+
+					// spring towards the animated tip + gravity
+					VectorSubtract(tipW0, st->pos[i], acc);
+					VectorScale(acc, ks, acc);
+					acc[2] += gravity;
+
+					VectorMA(st->vel[i], h, acc, st->vel[i]);
+					VectorScale(st->vel[i], damp, st->vel[i]);
+
+					VectorCopy(st->pos[i], before);
+					VectorMA(st->pos[i], h, st->vel[i], st->pos[i]);
+
+					// rigid rod: keep the tip at the bone length from the joint
+					VectorSubtract(st->pos[i], jointW, d);
+					len = VectorLength(d);
+					if(len > 1e-4f) {
+						VectorMA(jointW, L / len, d, st->pos[i]);
+					} else {
+						VectorCopy(tipW0, st->pos[i]);
+					}
+
+					// velocity follows the position that was really reached
+					VectorSubtract(st->pos[i], before, st->vel[i]);
+					VectorScale(st->vel[i], 1.0f / h, st->vel[i]);
+				}
+				stepped++;
+			} else {
+				// no time passed (second copy of the entity, second scene of
+				// the frame): only keep the rod length for the current joint
+				VectorSubtract(st->pos[i], jointW, d);
+				len = VectorLength(d);
+				if(len > 1e-4f) VectorMA(jointW, L / len, d, st->pos[i]);
+			}
+
+			if(Q_isnan(st->pos[i][0]) || Q_isnan(st->pos[i][1]) || Q_isnan(st->pos[i][2]) || Q_isnan(st->vel[i][0]) || Q_isnan(st->vel[i][1]) || Q_isnan(st->vel[i][2])) {
+				VectorCopy(tipW0, st->pos[i]);
+				VectorClear(st->vel[i]);
+			}
+
+			// aim the joint at the simulated tip. The rotation is expressed in
+			// the parent space because that is where the local rotation lives
+			VectorSubtract(st->pos[i], jointW, d);
+			Matrix34Multiply(W, &M[parent * 12], PW);
+			Matrix34Invert(PW, PWinv);
+			Jiggle_TransformDir(PWinv, d0, a);
+			Jiggle_TransformDir(PWinv, d, b);
+			if(VectorNormalize(a) < 1e-6f || VectorNormalize(b) < 1e-6f) continue;
+
+			Jiggle_QuatFromTo(a, b, JIGGLE_MAX_ANGLE, je->delta);
+
+			// rebuild this joint with the jiggled rotation, its children use it
+			IQM_QuatMul(je->delta, rel[i].rotate, q);
+			QuatNormalize2(q, rel[i].rotate);
+			JointToMatrix(rel[i].rotate, rel[i].scale, rel[i].translate, local);
+			Matrix34Multiply(&M[parent * 12], local, Mi);
+		}
+	}
+
+	return stepped;
+}
+// JIGGLE-END
 
 /*
 =================
@@ -1854,6 +2212,24 @@ static int R_IQMGetBoneScales(int* joints, vec3_t* scales, int maxCount) {
 
 /*
 =================
+R_IQMGetJiggles
+
+Collect the jiggle rotations the frontend simulated for the entity currently
+being skinned (tag lookups never apply them).
+=================
+*/
+static int R_IQMGetJiggles(int* joints, quat_t* deltas, int maxCount) {
+	int entityNum = (int)(backEnd.currentEntity - backEndData->entities);
+
+	if(entityNum < 0 || entityNum >= MAX_REFENTITIES) {
+		return 0;
+	}
+
+	return R_GetEntityJiggles(entityNum, joints, deltas, maxCount);
+}
+
+/*
+=================
 RB_AddIQMSurfaces
 
 Compute vertices for this model surface
@@ -1870,6 +2246,10 @@ void RB_IQMSurfaceAnim(surfaceType_t* surface) {
 	int scaleJoints[MAX_RENDER_BONESCALES];
 	vec3_t scaleValues[MAX_RENDER_BONESCALES];
 	int numScaleJoints = R_IQMGetBoneScales(scaleJoints, scaleValues, MAX_RENDER_BONESCALES);
+
+	int jiggleJoints[MAX_ENTITY_JIGGLES];
+	quat_t jiggleDeltas[MAX_ENTITY_JIGGLES];
+	int numJiggle = R_IQMGetJiggles(jiggleJoints, jiggleDeltas, MAX_ENTITY_JIGGLES);
 
 	float* xyz;
 	float* normal;
@@ -1912,7 +2292,7 @@ void RB_IQMSurfaceAnim(surfaceType_t* surface) {
 
 	if((data->anim ? data->anim->num_poses : data->num_poses) > 0) {
 		// compute interpolated joint matrices
-		ComputePoseMats(data, frame, oldframe, backlerp, poseMats, scaleJoints, scaleValues, numScaleJoints);
+		ComputePoseMats(data, frame, oldframe, backlerp, poseMats, scaleJoints, scaleValues, numScaleJoints, jiggleJoints, jiggleDeltas, numJiggle);
 
 		// compute vertex blend influence matricies
 		for(i = 0; i < surf->num_influences; i++) {
@@ -2087,6 +2467,10 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 	vec3_t scaleValues[MAX_RENDER_BONESCALES];
 	int numScaleJoints;
 
+	int jiggleJoints[MAX_ENTITY_JIGGLES];
+	quat_t jiggleDeltas[MAX_ENTITY_JIGGLES];
+	int numJiggle;
+
 	if(ShaderRequiresCPUDeforms(tess.shader)) {
 		RB_IQMSurfaceAnim((surfaceType_t*)surface->iqmSurface);
 		return;
@@ -2109,6 +2493,7 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 	glState.boneAnimation = 0;
 
 	numScaleJoints = R_IQMGetBoneScales(scaleJoints, scaleValues, MAX_RENDER_BONESCALES);
+	numJiggle = R_IQMGetJiggles(jiggleJoints, jiggleDeltas, MAX_ENTITY_JIGGLES);
 
 	if(activePoses) {
 		float jointMats[IQM_MAX_JOINTS * 12];
@@ -2117,7 +2502,7 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 		int oldframe = nframes ? backEnd.currentEntity->e.oldframe % nframes : 0;
 		float backlerp = backEnd.currentEntity->e.backlerp;
 
-		ComputePoseMats(surface->iqmData, frame, oldframe, backlerp, jointMats, scaleJoints, scaleValues, numScaleJoints);
+		ComputePoseMats(surface->iqmData, frame, oldframe, backlerp, jointMats, scaleJoints, scaleValues, numScaleJoints, jiggleJoints, jiggleDeltas, numJiggle);
 
 		for(i = 0; i < data->num_joints; i++) {
 			glState.boneMatrix[i][0] = jointMats[i * 12 + 0];

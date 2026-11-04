@@ -244,6 +244,14 @@ typedef struct {
 	int ping;
 } score_t;
 
+// a loose bone (hair, cloth) from "jiggle <bone> <scale>" in animation.cfg
+#define MAX_PLAYER_JIGGLES 64
+
+typedef struct {
+	char bone[MAX_QPATH];
+	float scale;  // 0 = rigid, 1 = default softness, larger = floppier
+} cgJiggle_t;
+
 // each client has an associated clientInfo_t
 // that contains media references necessary to present the
 // client model and other color coded effects
@@ -283,6 +291,11 @@ typedef struct {
 	// in the hand. Weapon models are authored for the full-size valveBiped
 	// hand, so models smaller than that need e.g. "weaponScale 0.7".
 	float weaponScale;
+
+	// "jiggle <bone> <scale>" lines from animation.cfg: bones the renderer
+	// simulates (hair, cloth), see trap_R_SetJiggleScale
+	int numJiggles;
+	cgJiggle_t jiggles[MAX_PLAYER_JIGGLES];
 
 	char animFile[MAX_QPATH];
 } clientInfo_t;
@@ -867,6 +880,9 @@ void trap_S_StartBackgroundTrack(const char* intro, const char* loop);  // empty
 void trap_R_LoadWorldMap(const char* mapname);
 void trap_R_AddPolysToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int numPolys);
 int trap_R_LightForPoint(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir);
+// marks a joint of the NEXT added ref entity as a jiggle bone (hair, cloth);
+// scale = looseness, 0 = rigid, 1 = default softness. The renderer simulates it.
+void trap_R_SetJiggleScale(const char* boneName, float scale);
 void trap_GetGameState(gameState_t* gamestate);
 void trap_GetCurrentSnapshotNumber(int* snapshotNumber, int* serverTime);
 bool trap_GetSnapshot(int snapshotNumber, snapshot_t* snapshot);

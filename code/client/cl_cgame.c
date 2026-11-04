@@ -420,8 +420,6 @@ intptr_t CL_CgameSystemCalls(intptr_t* args) {
 		case CG_GET_ENTITY_TOKEN: return re.GetEntityToken(VMA(1), args[2]);
 		case CG_R_INPVS: return re.inPVS(VMA(1), VMA(2));
 
-		case TRAP_R_SETBONESCALE: re.SetBoneScale(VMA(1), VMA(2)); return 0;
-
 #include "../q_sharedsyscalls.inc"
 #include "../q_sharedsyscalls_client.inc"
 

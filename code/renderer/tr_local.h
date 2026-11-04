@@ -106,6 +106,22 @@ typedef struct {
 	vec3_t scale;
 } boneScaleEntry_t;
 
+// per-entity per-joint jiggle (hair / cloth) requested from cgame with
+// RE_SetJiggleScale. scale is the "looseness" of the joint: 0 = rigid,
+// 1 = default softness, larger = floppier. delta is the result of the
+// simulation (rotation in the joint's parent space), filled in by
+// R_JiggleUpdateScene once per scene and applied by the backend.
+#define MAX_RENDER_JIGGLES 512  // per frame
+#define MAX_ENTITY_JIGGLES 64   // per ref entity
+#define MAX_JIGGLE_STATES 64    // simultaneously simulated entities
+
+typedef struct {
+	int entityNum;  // absolute index into backEndData->entities
+	int jointIndex;
+	float scale;
+	quat_t delta;
+} jiggleEntry_t;
+
 typedef struct {
 	vec3_t origin;      // in world coordinates
 	vec3_t axis[3];     // orientation in world
@@ -947,6 +963,21 @@ typedef struct {
 	struct iqmAnimation_s* anim;
 } iqmData_t;
 
+// persistent jiggle simulation of one entity (survives from frame to frame)
+typedef struct {
+	bool inUse;
+	qhandle_t hModel;
+	vec3_t origin;   // entity origin at the last update, used to recognise the entity again
+	int lastTime;    // refdef time of the last simulation step
+	int lastFrame;   // tr.frameCount of the last use
+	int claimFrame;  // tr.frameCount in which an entity last claimed this state
+
+	// world space position / velocity of the tip of every simulated joint
+	byte valid[IQM_MAX_JOINTS];
+	vec3_t pos[IQM_MAX_JOINTS];
+	vec3_t vel[IQM_MAX_JOINTS];
+} jiggleState_t;
+
 // inter-quake-model surface
 typedef struct srfIQModel_s {
 	surfaceType_t surfaceType;
@@ -1541,6 +1572,11 @@ typedef struct {
 	int numBoneScaleEntries;
 	boneScaleEntry_t boneScaleEntries[MAX_RENDER_BONESCALES];
 
+	// per-entity jiggle bones, requested from cgame with RE_SetJiggleScale
+	// and attached to the next added ref entity (reset once per frame)
+	int numJiggleEntries;
+	jiggleEntry_t jiggleEntries[MAX_RENDER_JIGGLES];
+
 	float sinTable[FUNCTABLE_SIZE];
 	float squareTable[FUNCTABLE_SIZE];
 	float triangleTable[FUNCTABLE_SIZE];
@@ -1600,6 +1636,11 @@ extern cvar_t* r_reflectionsResolution;
 extern cvar_t* r_reflectionsGrid;
 extern cvar_t* r_reflectionsMaterials;
 extern cvar_t* r_reflectionsEntities;
+
+extern cvar_t* r_jiggle;           // enable jiggle bones (hair / cloth)
+extern cvar_t* r_jiggleGravity;    // gravity of the jiggle simulation (z, units/s^2)
+extern cvar_t* r_jiggleStiffness;  // spring stiffness pulling the tip back to the animated pose
+extern cvar_t* r_jiggleDamping;    // velocity damping
 extern cvar_t* r_reflectionsSkybox;
 extern cvar_t* r_deluxeSpecular;
 extern cvar_t* r_shadows;
@@ -2041,6 +2082,10 @@ void RE_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts,
 void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
 void RE_SetBoneScale(const char* jointName, const vec3_t scale);
 int R_GetEntityBoneScales(int entityNum, int* joints, vec3_t* scales, int maxCount);
+void RE_SetJiggleScale(const char* jointName, float scale);
+int R_GetEntityJiggles(int entityNum, int* joints, quat_t* deltas, int maxCount);
+void R_JiggleUpdateScene(void);
+int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* entries, int numEntries, jiggleState_t* st, float dt);
 void RE_BeginScene(const refdef_t* fd);
 void RE_RenderScene(const refdef_t* fd);
 void RE_EndScene(void);

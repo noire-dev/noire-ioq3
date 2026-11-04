@@ -90,6 +90,7 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci, char* 
 	ci->headUp = 0.0f;
 	ci->headFwd = 0.0f;
 	ci->weaponScale = 1.0f;
+	ci->numJiggles = 0;
 
 	len = trap_FS_FOpenFile(filename, &f, FS_READ);
 	if(len <= 0) {
@@ -153,6 +154,42 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci, char* 
 				CG_Printf("Invalid weaponScale %s in %s, using 1\n", token, filename);
 				ci->weaponScale = 1.0f;
 			}
+			continue;
+		}
+
+		if(!Q_stricmp(token, "jiggle")) {
+			// jiggle <bonename> <scale>
+			// loose bone for hair / cloth, simulated by the renderer.
+			// scale: 0 = rigid, 1 = default softness, larger = floppier
+			char boneName[MAX_QPATH];
+			float jiggleScale;
+
+			token = COM_Parse(&text_p);
+			if(!token[0]) {
+				CG_Printf("Missing bone name for jiggle in %s\n", filename);
+				return false;
+			}
+			Q_strncpyz(boneName, token, sizeof(boneName));
+
+			token = COM_Parse(&text_p);
+			if(!token[0]) {
+				CG_Printf("Missing scale for jiggle %s in %s\n", boneName, filename);
+				return false;
+			}
+			jiggleScale = (float)atof(token);
+			if(jiggleScale < 0.0f) {
+				CG_Printf("Invalid jiggle scale %s for %s in %s, using 0\n", token, boneName, filename);
+				jiggleScale = 0.0f;
+			}
+
+			if(ci->numJiggles >= MAX_PLAYER_JIGGLES) {
+				CG_Printf("Too many jiggle bones in %s (max %d)\n", filename, MAX_PLAYER_JIGGLES);
+				continue;
+			}
+
+			Q_strncpyz(ci->jiggles[ci->numJiggles].bone, boneName, sizeof(ci->jiggles[ci->numJiggles].bone));
+			ci->jiggles[ci->numJiggles].scale = jiggleScale;
+			ci->numJiggles++;
 			continue;
 		}
 
@@ -916,6 +953,23 @@ bool CG_GetLocalPlayerHeadOrigin(vec3_t origin) {
 
 /*
 ===============
+CG_SetPlayerJiggles
+
+Tell the renderer which bones of the player are loose (hair, cloth). The
+renderer takes them for the NEXT added ref entity only, so this has to be
+called right before every trap_R_AddRefEntityToScene of the player.
+===============
+*/
+static void CG_SetPlayerJiggles(const clientInfo_t* ci) {
+	int i;
+
+	for(i = 0; i < ci->numJiggles; i++) {
+		trap_R_SetJiggleScale(ci->jiggles[i].bone, ci->jiggles[i].scale);
+	}
+}
+
+/*
+===============
 CG_Player
 ===============
 */
@@ -966,6 +1020,7 @@ void CG_Player(centity_t* cent) {
 		trap_R_SetBoneScale("ValveBiped.Bip01_Neck1", hideScale);
 		trap_R_SetBoneScale("ValveBiped.Bip01_Head1", hideScale);
 		player.renderfx |= RF_FIRST_PERSON;
+		CG_SetPlayerJiggles(ci);
 		trap_R_AddRefEntityToScene(&player);
 
 		// mirrors and portals: full skeleton, visible only in reflection passes
@@ -973,12 +1028,14 @@ void CG_Player(centity_t* cent) {
 		trap_R_SetBoneScale("ValveBiped.Bip01_Head1", normalScale);
 		player.renderfx &= ~RF_FIRST_PERSON;
 		player.renderfx |= RF_THIRD_PERSON;
+		CG_SetPlayerJiggles(ci);
 		trap_R_AddRefEntityToScene(&player);
 
 		// the weapon rides on the hand, which is identical in both bodies;
 		// drop the pass flags so it draws in the main view and in mirrors
 		player.renderfx &= ~RF_THIRD_PERSON;
 	} else {
+		CG_SetPlayerJiggles(ci);
 		trap_R_AddRefEntityToScene(&player);
 	}
 

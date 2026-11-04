@@ -67,7 +67,8 @@ typedef struct {
 	void (*AddPolyToScene)(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num);
 	int (*LightForPoint)(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir);
 	void (*AddLightToScene)(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
-	void (*SetBoneScale)(const char* jointName, const vec3_t scale);  // immediate: applies to the next AddRefEntityToScene
+	void (*SetBoneScale)(const char* jointName, const vec3_t scale);
+	void (*SetJiggleScale)(const char* jointName, float scale);
 	void (*RenderScene)(const refdef_t* fd);
 
 	void (*SetColor)(const float* rgba);                                                                                    // NULL = 1,1,1,1
