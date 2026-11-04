@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  *****************************************************************************/
 
+#include "bg_public.h"
 #include "g_local.h"
 #include "../botlib/botlib.h"
 #include "../botlib/be_aas.h"
@@ -602,13 +603,6 @@ BotAggression
 ==================
 */
 float BotAggression(bot_state_t* bs) {
-	// if the bot has quad
-	if(bs->inventory[INVENTORY_QUAD]) {
-		// if the bot is not holding the gauntlet or the enemy is really nearby
-		if(bs->weaponnum != WP_GAUNTLET || bs->inventory[ENEMY_HORIZONTAL_DIST] < 80) {
-			return 70;
-		}
-	}
 	// if the enemy is located way higher than the bot
 	if(bs->inventory[ENEMY_HEIGHT] > 200) return 0;
 	// if the bot is very low on health
@@ -642,14 +636,8 @@ BotFeelingBad
 ==================
 */
 float BotFeelingBad(bot_state_t* bs) {
-	if(bs->weaponnum == WP_GAUNTLET) {
-		return 100;
-	}
 	if(bs->inventory[INVENTORY_HEALTH] < 40) {
 		return 100;
-	}
-	if(bs->weaponnum == WP_MACHINEGUN) {
-		return 90;
 	}
 	if(bs->inventory[INVENTORY_HEALTH] < 60) {
 		return 80;
@@ -994,7 +982,7 @@ bot_moveresult_t BotAttackMove(bot_state_t* bs, int tfl) {
 			bs->attackjump_time = FloatTime() + 1;
 		}
 	}
-	if(bs->cur_ps.weapon == WP_GAUNTLET) {
+	if(jsd_weapon[bs->cur_ps.weapon].wType == WT_MELEE) {
 		attack_dist = 0;
 		attack_range = 0;
 	} else {
@@ -1466,27 +1454,8 @@ void BotAimAtEnemy(bot_state_t* bs) {
 	// get the weapon information
 	trap_BotGetWeaponInfo(bs->ws, bs->weaponnum, &wi);
 	// get the weapon specific aim accuracy and or aim skill
-	if(wi.number == WP_MACHINEGUN) {
-		aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_MACHINEGUN, 0, 1);
-	} else if(wi.number == WP_SHOTGUN) {
-		aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_SHOTGUN, 0, 1);
-	} else if(wi.number == WP_GRENADE_LAUNCHER) {
-		aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_GRENADELAUNCHER, 0, 1);
-		aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_GRENADELAUNCHER, 0, 1);
-	} else if(wi.number == WP_ROCKET_LAUNCHER) {
-		aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_ROCKETLAUNCHER, 0, 1);
-		aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_ROCKETLAUNCHER, 0, 1);
-	} else if(wi.number == WP_LIGHTNING) {
-		aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_LIGHTNING, 0, 1);
-	} else if(wi.number == WP_RAILGUN) {
-		aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_RAILGUN, 0, 1);
-	} else if(wi.number == WP_PLASMAGUN) {
-		aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_PLASMAGUN, 0, 1);
-		aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_PLASMAGUN, 0, 1);
-	} else if(wi.number == WP_BFG) {
-		aim_accuracy = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_ACCURACY_BFG10K, 0, 1);
-		aim_skill = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_AIM_SKILL_BFG10K, 0, 1);
-	}
+	aim_accuracy = 1;
+	aim_skill = 1;
 	//
 	if(aim_accuracy <= 0) aim_accuracy = 0.0001f;
 	// get the enemy entity information
@@ -1629,7 +1598,7 @@ void BotAimAtEnemy(bot_state_t* bs) {
 		// if the bot is skilled enough
 		if(aim_skill > 0.5) {
 			// do prediction shots around corners
-			if(wi.number == WP_BFG || wi.number == WP_ROCKET_LAUNCHER || wi.number == WP_GRENADE_LAUNCHER) {
+			if(jsd_weapon[wi.number].wType == WT_MISSILE) {
 				// create the chase goal
 				goal.entitynum = bs->client;
 				goal.areanum = bs->areanum;
@@ -1658,7 +1627,7 @@ void BotAimAtEnemy(bot_state_t* bs) {
 	// get aim direction
 	VectorSubtract(bestorigin, bs->eye, dir);
 	//
-	if(wi.number == WP_MACHINEGUN || wi.number == WP_SHOTGUN || wi.number == WP_LIGHTNING || wi.number == WP_RAILGUN) {
+	if(jsd_weapon[wi.number].wType == WT_BULLET || jsd_weapon[wi.number].wType == WT_SHOTGUN || jsd_weapon[wi.number].wType == WT_BEAM) {
 		// distance towards the enemy
 		dist = VectorLength(dir);
 		if(dist > 150) dist = 150;
@@ -1728,7 +1697,7 @@ void BotCheckAttack(bot_state_t* bs) {
 	//
 	VectorSubtract(bs->aimtarget, bs->eye, dir);
 	//
-	if(bs->weaponnum == WP_GAUNTLET) {
+	if(jsd_weapon[bs->weaponnum].wType == WT_MELEE) {
 		if(VectorLengthSquared(dir) > Square(60)) {
 			return;
 		}
@@ -2708,8 +2677,7 @@ BotCheckEvents
 ==================
 */
 void BotCheckForGrenades(bot_state_t* bs, entityState_t* state) {
-	// if this is not a grenade
-	if(state->eType != ET_MISSILE || state->weapon != WP_GRENADE_LAUNCHER) return;
+	if(state->eType != ET_MISSILE) return;
 	// try to avoid the grenade
 	trap_BotAddAvoidSpot(bs->ms, state->pos.trBase, 160, AVOID_ALWAYS);
 }

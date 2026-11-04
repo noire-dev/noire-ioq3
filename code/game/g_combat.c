@@ -56,7 +56,7 @@ void TossClientItems(gentity_t* self) {
 	for(int i = 1; i < WEAPONS_NUM; i++) {
 		if(self->swep_list[i] >= WS_HAVE) {
 			item = BG_FindItemForWeapon(i);
-			if(!item || i == WP_GAUNTLET) continue;
+			if(!item) continue;
 			drop = Drop_Item(self, item);
 			drop->count = (self->swep_ammo[i]);
 			if(drop->count < 1) drop->count = 1;

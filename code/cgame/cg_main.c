@@ -756,7 +756,7 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 
 	CG_InitConsoleCommands();
 
-	cg.weaponSelect = WP_MACHINEGUN;
+	cg.weaponSelect = 0;
 
 	// Noire's Mod: no physgun grab yet
 	cg.grabbedEntityNum = -1;

@@ -772,7 +772,7 @@ void ClientSpawn(gentity_t* ent) {
 
 	G_KillBox(ent);
 	// force the base weapon up
-	client->ps.weapon = WP_MACHINEGUN;
+	client->ps.weapon = 0;
 	client->ps.weaponstate = WEAPON_READY;
 	for(i = 1; i < WEAPONS_NUM; i++) {
 		ent->swep_list[i] = WS_NONE;

@@ -1660,7 +1660,7 @@ SHOTGUN TRACING
 CG_ShotgunPellet
 ================
 */
-static void CG_ShotgunPellet(vec3_t start, vec3_t end, int skipNum) {
+static void CG_ShotgunPellet(vec3_t start, vec3_t end, int skipNum, int weapon) {
 	trace_t tr;
 	int sourceContentType, destContentType;
 
@@ -1687,12 +1687,12 @@ static void CG_ShotgunPellet(vec3_t start, vec3_t end, int skipNum) {
 	}
 
 	if(cg_entities[tr.entityNum].currentState.eType == ET_PLAYER) {
-		CG_MissileHitPlayer(WP_SHOTGUN, tr.endpos, tr.plane.normal, tr.entityNum);
+		CG_MissileHitPlayer(weapon, tr.endpos, tr.plane.normal, tr.entityNum);
 	} else {
 		if(tr.surfaceFlags & SURF_METAL) {
-			CG_MissileHitWall(WP_SHOTGUN, 0, tr.endpos, tr.plane.normal, IMPACTSOUND_METAL);
+			CG_MissileHitWall(weapon, 0, tr.endpos, tr.plane.normal, IMPACTSOUND_METAL);
 		} else {
-			CG_MissileHitWall(WP_SHOTGUN, 0, tr.endpos, tr.plane.normal, IMPACTSOUND_DEFAULT);
+			CG_MissileHitWall(weapon, 0, tr.endpos, tr.plane.normal, IMPACTSOUND_DEFAULT);
 		}
 	}
 }
@@ -1725,7 +1725,7 @@ static void CG_ShotgunPattern(vec3_t origin, vec3_t origin2, int seed, int other
 		VectorMA(end, r, right, end);
 		VectorMA(end, u, up, end);
 
-		CG_ShotgunPellet(origin, end, otherEntNum);
+		CG_ShotgunPellet(origin, end, otherEntNum, weapon);
 	}
 }
 
@@ -1861,7 +1861,7 @@ void CG_Bullet(vec3_t end, int sourceEntityNum, vec3_t normal, bool flesh, int f
 	vec3_t start;
 	weaponFx_t* fx;
 
-	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) weapon = WP_MACHINEGUN;
+	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
 	fx = &jsd_weaponFx[weapon];
 
 	// if the shooter is currently valid, calc a source point and possibly

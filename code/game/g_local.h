@@ -47,8 +47,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define FL_TEAMMEMBER 0x00000400  // not the first on the team
 #define FL_NO_KNOCKBACK 0x00000800
 #define FL_DROPPED_ITEM 0x00001000
-#define FL_NO_BOTS 0x00002000        // spawn point not for bot use
-#define FL_NO_HUMANS 0x00004000      // spawn point just for bots
+#define FL_NO_BOTS 0x00002000    // spawn point not for bot use
+#define FL_NO_HUMANS 0x00004000  // spawn point just for bots
 
 // movers are things like doors, plats, buttons, etc
 typedef enum { MOVER_POS1, MOVER_POS2, MOVER_1TO2, MOVER_2TO1 } moverState_t;
@@ -149,18 +149,18 @@ struct gentity_s {
 	gentity_t* owner;
 
 	// Physgun and Gravitygun
-	gentity_t* grabbedEntity;  // physgun object for player
-	bool isGrabbed;            // object is grabbed by player for prop
-	float grabDist;            // physgun distance for player
-	vec3_t grabOffset;         // physgun offset for player
-	vec3_t grabOrigin;         // local grab point on the prop (where crosshair hit)
-	vec3_t grabOldOrigin;      // physgun old origin for prop
-	float grabLastPlayerYaw;   // last player yaw for rotation tracking
-	float grabLastPlayerPitch; // last player pitch for rotation tracking (gesture mode)
-	float grabAccumPitch;      // accumulated true pitch (unbounded, gimbal-safe display)
-	float grabAccumYaw;        // accumulated true yaw (unbounded)
-	float grabAccumRoll;       // accumulated true roll (unbounded, preserved from grab)
-	int grabNewPhys;           // for freeze prop for prop
+	gentity_t* grabbedEntity;   // physgun object for player
+	bool isGrabbed;             // object is grabbed by player for prop
+	float grabDist;             // physgun distance for player
+	vec3_t grabOffset;          // physgun offset for player
+	vec3_t grabOrigin;          // local grab point on the prop (where crosshair hit)
+	vec3_t grabOldOrigin;       // physgun old origin for prop
+	float grabLastPlayerYaw;    // last player yaw for rotation tracking
+	float grabLastPlayerPitch;  // last player pitch for rotation tracking (gesture mode)
+	float grabAccumPitch;       // accumulated true pitch (unbounded, gimbal-safe display)
+	float grabAccumYaw;         // accumulated true yaw (unbounded)
+	float grabAccumRoll;        // accumulated true roll (unbounded, preserved from grab)
+	int grabNewPhys;            // for freeze prop for prop
 
 	// Props
 	gentity_t* lastPlayer;  // for damage and killfeed
@@ -355,7 +355,6 @@ void TeleportPlayer(gentity_t* player, vec3_t origin, vec3_t angles);
 // g_weapon.c
 void CalcMuzzlePoint(gentity_t* ent, vec3_t forward, vec3_t right, vec3_t up, vec3_t muzzlePoint);
 void G_ExplodeMissile(gentity_t* ent);
-bool Melee_Fire(gentity_t* ent, int weapon);
 void Weapon_HookFree(gentity_t* ent);
 void ProximityMine_Trigger(gentity_t* trigger, gentity_t* other, trace_t* trace);
 void G_RunMissile(gentity_t* ent);

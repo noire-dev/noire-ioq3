@@ -514,10 +514,6 @@ void CG_PredictPlayerState(void) {
 			}
 		}
 
-		// don't predict gauntlet firing, which is only supposed to happen
-		// when it actually inflicts damage
-		cg_pmove.gauntletHit = false;
-
 		Pmove(&cg_pmove);
 
 		moved = true;

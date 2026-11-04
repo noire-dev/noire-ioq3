@@ -155,9 +155,8 @@ typedef struct {
 
 	// command (in)
 	usercmd_t cmd;
-	int tracemask;     // collide against these types of surfaces
-	int debugLevel;    // if set, diagnostic output will be printed
-	bool gauntletHit;  // true if a gauntlet attack would actually hit something
+	int tracemask;   // collide against these types of surfaces
+	int debugLevel;  // if set, diagnostic output will be printed
 
 	int framecount;
 
@@ -262,18 +261,25 @@ typedef enum {
 	WT_MELEE,
 	WT_BULLET,
 	WT_SHOTGUN,
-	WT_LIGHTNING,
-	WT_RAILGUN,
-	WT_EMPTY,
+	WT_BEAM,
 	WT_TOOLGUN,
 	WT_MISSILE,
+	WT_EMPTY,
 
 	WEAPONTYPES_NUM
 } weaponType_t;
 
+typedef enum {
+	WAT_NONE,
+	WAT_MELEE,
+	WAT_GRENADE,
+
+	WEAPONANIMTYPES_NUM
+} weaponAnimType_t;
+
 typedef struct weaponPropeties_s {
 	weaponType_t wType;
-	weapon_t mEffect;
+	weaponAnimType_t wAnimType;
 	char* classname;
 	int delay;
 	int count;

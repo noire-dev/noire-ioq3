@@ -1351,19 +1351,12 @@ static void PM_Weapon(void) {
 		return;
 	}
 
-	// start the animation even if out of ammo
-	if(pm->ps->weapon == WP_GAUNTLET) {
-		// the guantlet only "fires" when it actually hits something
-		if(!pm->gauntletHit) {
-			pm->ps->weaponTime = 0;
-			pm->ps->weaponstate = WEAPON_READY;
-			return;
-		}
+	if(jsd_weapon[pm->ps->weapon].wAnimType == WAT_MELEE) {
 		PM_StartTorsoAnim(AM_MELEEATTACK);
-		pm->ps->torsoTimer = 350;
-	} else if(pm->ps->weapon == WP_GRENADE_LAUNCHER) {
+		pm->ps->torsoTimer = 1200;
+	} else if(jsd_weapon[pm->ps->weapon].wAnimType == WAT_GRENADE) {
 		PM_StartTorsoAnim(AM_THROW);
-		pm->ps->torsoTimer = 450;
+		pm->ps->torsoTimer = 1200;
 	}
 
 	pm->ps->weaponstate = WEAPON_FIRING;

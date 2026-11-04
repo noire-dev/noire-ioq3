@@ -1,6 +1,7 @@
 // Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
 
 #include "../qcommon/vm_javascript.h"
+#include "bg_public.h"
 
 static vec3_t forward, right, up;
 static vec3_t muzzle;
@@ -67,7 +68,7 @@ void G_ExplodeMissile(gentity_t* ent) {
 }
 
 // Melee type
-bool Melee_Fire(gentity_t* ent, int weapon) {
+static void Melee_Fire(gentity_t* ent, int weapon) {
 	trace_t tr;
 	vec3_t end;
 	gentity_t* tent;
@@ -92,7 +93,7 @@ bool Melee_Fire(gentity_t* ent, int weapon) {
 
 	if(!traceEnt->takedamage) return false;
 
-	G_Damage(traceEnt, ent, ent, forward, tr.endpos, jsd_weapon[weapon].damage, 0, WP_GAUNTLET);
+	G_Damage(traceEnt, ent, ent, forward, tr.endpos, jsd_weapon[weapon].damage, 0, weapon);
 
 	return true;
 }
@@ -349,7 +350,7 @@ gentity_t* fire_missile(gentity_t* self, vec3_t start, vec3_t forward, vec3_t ri
 
 	bolt->s.eType = ET_MISSILE;
 	bolt->r.svFlags = SVF_USE_CURRENT_ORIGIN;
-	bolt->s.weapon = jsd_weapon[weapon].mEffect;
+	bolt->s.weapon = weapon;
 	bolt->r.ownerNum = self->s.number;
 	bolt->parent = self;
 	bolt->clipmask = MASK_SHOT;
@@ -413,13 +414,13 @@ void FireWeapon(gentity_t* ent) {
 	CalcMuzzlePointOrigin(ent, ent->client->oldOrigin, forward, right, up, muzzle);
 
 	switch(jsd_weapon[ent->s.weapon].wType) {
+		case WT_MELEE: Melee_Fire(ent, ent->s.weapon); break;
 		case WT_BULLET: Bullet_Fire(ent, ent->s.weapon); break;
 		case WT_SHOTGUN: Shotgun_Fire(ent, ent->s.weapon); break;
-		case WT_LIGHTNING: Lightning_Fire(ent, ent->s.weapon); break;
-		case WT_RAILGUN: Railgun_Fire(ent, ent->s.weapon); break;
-		case WT_EMPTY: break;
+		case WT_BEAM: Railgun_Fire(ent, ent->s.weapon); break;
 		case WT_TOOLGUN: break;
 		case WT_MISSILE: Missile_Fire(ent, ent->s.weapon); break;
+		case WT_EMPTY: break;
 		default: break;
 	}
 }

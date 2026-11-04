@@ -522,10 +522,6 @@ void ClientThink_real(gentity_t* ent) {
 
 	memset(&pm, 0, sizeof(pm));
 
-	// check for the hit-scan gauntlet, don't let the action
-	// go through as an attack unless it actually hits something
-	if(jsd_weapon[client->ps.weapon].wType == WT_MELEE && !(ucmd->buttons & BUTTON_TALK) && (ucmd->buttons & BUTTON_ATTACK) && client->ps.weaponTime <= 0) pm.gauntletHit = Melee_Fire(ent, ent->s.weapon);
-
 	pm.ps = &client->ps;
 	pm.cmd = *ucmd;
 	if(pm.ps->pm_type == PM_DEAD) {

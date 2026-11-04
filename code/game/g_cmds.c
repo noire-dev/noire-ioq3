@@ -605,7 +605,7 @@ static void Cmd_Gesture_f(gentity_t* ent) {
 	}
 
 	ent->client->ps.torsoAnim = ((ent->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | animation;
-	ent->client->ps.torsoTimer = 1600;
+	ent->client->ps.torsoTimer = 3000;
 	ent->client->ps.legsTimer = 0;
 }
 
