@@ -63,20 +63,6 @@ int trap_GetCurrentCmdNumber(void) { return syscall(CG_GETCURRENTCMDNUMBER); }
 bool trap_GetUserCmd(int cmdNumber, usercmd_t* ucmd) { return syscall(CG_GETUSERCMD, cmdNumber, ucmd); }
 void trap_SetUserCmdValue(int stateValue, float sensitivityScale) { syscall(CG_SETUSERCMDVALUE, stateValue, PASSFLOAT(sensitivityScale)); }
 int trap_MemoryRemaining(void) { return syscall(CG_MEMORY_REMAINING); }
-void trap_Key_SetCatcher(int catcher) { syscall(CG_KEY_SETCATCHER, catcher); }
-int trap_PC_AddGlobalDefine(char* define) { return syscall(CG_PC_ADD_GLOBAL_DEFINE, define); }
-int trap_PC_LoadSource(const char* filename) { return syscall(CG_PC_LOAD_SOURCE, filename); }
-int trap_PC_FreeSource(int handle) { return syscall(CG_PC_FREE_SOURCE, handle); }
-int trap_PC_ReadToken(int handle, pc_token_t* pc_token) { return syscall(CG_PC_READ_TOKEN, handle, pc_token); }
-int trap_PC_SourceFileAndLine(int handle, char* filename, int* line) { return syscall(CG_PC_SOURCE_FILE_AND_LINE, handle, filename, line); }
-void trap_S_StopBackgroundTrack(void) { syscall(CG_S_STOPBACKGROUNDTRACK); }
-int trap_CIN_PlayCinematic(const char* arg0, int xpos, int ypos, int width, int height, int bits) { return syscall(CG_CIN_PLAYCINEMATIC, arg0, xpos, ypos, width, height, bits); }
-e_status trap_CIN_StopCinematic(int handle) { return syscall(CG_CIN_STOPCINEMATIC, handle); }
-e_status trap_CIN_RunCinematic(int handle) { return syscall(CG_CIN_RUNCINEMATIC, handle); }
-void trap_CIN_DrawCinematic(int handle) { syscall(CG_CIN_DRAWCINEMATIC, handle); }
-void trap_CIN_SetExtents(int handle, int x, int y, int w, int h) { syscall(CG_CIN_SETEXTENTS, handle, x, y, w, h); }
-bool trap_GetEntityToken(char* buffer, int bufferSize) { return syscall(CG_GET_ENTITY_TOKEN, buffer, bufferSize); }
-bool trap_R_inPVS(const vec3_t p1, const vec3_t p2) { return syscall(CG_R_INPVS, p1, p2); }
 
 #include "../qcommon/vm_sharedsyscalls.inc"
 #include "../qcommon/vm_sharedsyscalls_client.inc"

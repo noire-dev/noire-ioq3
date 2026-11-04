@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "cg_local.h"
 
-#define MAX_LOCAL_ENTITIES 512
+#define MAX_LOCAL_ENTITIES 1024
 localEntity_t cg_localEntities[MAX_LOCAL_ENTITIES];
 localEntity_t cg_activeLocalEntities;  // double linked list
 localEntity_t* cg_freeLocalEntities;   // single linked list
@@ -55,7 +55,7 @@ void CG_InitLocalEntities(void) {
 CG_FreeLocalEntity
 ==================
 */
-void CG_FreeLocalEntity(localEntity_t* le) {
+static void CG_FreeLocalEntity(localEntity_t* le) {
 	if(!le->prev) {
 		CG_Error("CG_FreeLocalEntity: not active");
 	}
@@ -111,50 +111,10 @@ or generates more localentities along a trail.
 
 /*
 ================
-CG_BloodTrail
-
-Leave expanding blood puffs behind gibs
-================
-*/
-void CG_BloodTrail(localEntity_t* le) {
-	int t;
-	int t2;
-	int step;
-	vec3_t newOrigin;
-	localEntity_t* blood;
-
-	step = 150;
-	t = step * ((cg.time - cg.frametime + step) / step);
-	t2 = step * (cg.time / step);
-
-	for(; t <= t2; t += step) {
-		BG_EvaluateTrajectory(&le->pos, t, newOrigin);
-
-		blood = CG_SmokePuff(newOrigin,
-		                     vec3_origin,
-		                     20,  // radius
-		                     1,
-		                     1,
-		                     1,
-		                     1,     // color
-		                     2000,  // trailTime
-		                     t,     // startTime
-		                     0,     // fadeInTime
-		                     0,     // flags
-		                     cgs.media.bloodTrailShader);
-		// use the optimized version
-		blood->leType = LE_FALL_SCALE_FADE;
-		// drop a total of 40 units over its lifetime
-		blood->pos.trDelta[2] = 40;
-	}
-}
-
-/*
-================
 CG_FragmentBounceMark
 ================
 */
-void CG_FragmentBounceMark(localEntity_t* le, trace_t* trace) {
+static void CG_FragmentBounceMark(localEntity_t* le, trace_t* trace) {
 	int radius;
 
 	if(le->leMarkType == LEMT_BLOOD) {
@@ -172,39 +132,10 @@ void CG_FragmentBounceMark(localEntity_t* le, trace_t* trace) {
 
 /*
 ================
-CG_FragmentBounceSound
-================
-*/
-void CG_FragmentBounceSound(localEntity_t* le, trace_t* trace) {
-	if(le->leBounceSoundType == LEBS_BLOOD) {
-		// half the gibs will make splat sounds
-		if(rand() & 1) {
-			int r = rand() & 3;
-			sfxHandle_t s;
-
-			if(r == 0) {
-				s = cgs.media.gibBounce1Sound;
-			} else if(r == 1) {
-				s = cgs.media.gibBounce2Sound;
-			} else {
-				s = cgs.media.gibBounce3Sound;
-			}
-			trap_S_StartSound(trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s);
-		}
-	} else if(le->leBounceSoundType == LEBS_BRASS) {
-	}
-
-	// don't allow a fragment to make multiple bounce sounds,
-	// or it gets too noisy as they settle
-	le->leBounceSoundType = LEBS_NONE;
-}
-
-/*
-================
 CG_ReflectVelocity
 ================
 */
-void CG_ReflectVelocity(localEntity_t* le, trace_t* trace) {
+static void CG_ReflectVelocity(localEntity_t* le, trace_t* trace) {
 	vec3_t velocity;
 	float dot;
 	int hitTime;
@@ -223,7 +154,6 @@ void CG_ReflectVelocity(localEntity_t* le, trace_t* trace) {
 	// check for stop, making sure that even on low FPS systems it doesn't bobble
 	if(trace->allsolid || (trace->plane.normal[2] > 0 && (le->pos.trDelta[2] < 40 || le->pos.trDelta[2] < -cg.frametime * le->pos.trDelta[2]))) {
 		le->pos.trType = TR_STATIONARY;
-	} else {
 	}
 }
 
@@ -232,7 +162,7 @@ void CG_ReflectVelocity(localEntity_t* le, trace_t* trace) {
 CG_AddFragment
 ================
 */
-void CG_AddFragment(localEntity_t* le) {
+static void CG_AddFragment(localEntity_t* le) {
 	vec3_t newOrigin;
 	trace_t trace;
 
@@ -277,11 +207,6 @@ void CG_AddFragment(localEntity_t* le) {
 
 		trap_R_AddRefEntityToScene(&le->refEntity);
 
-		// add a blood trail
-		if(le->leBounceSoundType == LEBS_BLOOD) {
-			CG_BloodTrail(le);
-		}
-
 		return;
 	}
 
@@ -295,9 +220,6 @@ void CG_AddFragment(localEntity_t* le) {
 
 	// leave a mark
 	CG_FragmentBounceMark(le, &trace);
-
-	// do a bouncy sound
-	CG_FragmentBounceSound(le, &trace);
 
 	// reflect the velocity on the trace plane
 	CG_ReflectVelocity(le, &trace);
@@ -319,7 +241,7 @@ These only do simple scaling or modulation before passing to the renderer
 CG_AddFadeRGB
 ====================
 */
-void CG_AddFadeRGB(localEntity_t* le) {
+static void CG_AddFadeRGB(localEntity_t* le) {
 	refEntity_t* re;
 	float c;
 
@@ -516,8 +438,6 @@ void CG_AddLocalEntities(void) {
 		}
 		switch(le->leType) {
 			default: CG_Error("Bad leType: %i", le->leType); break;
-
-			case LE_MARK: break;
 
 			case LE_EXPLOSION: CG_AddExplosion(le); break;
 

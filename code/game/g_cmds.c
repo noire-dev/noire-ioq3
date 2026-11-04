@@ -277,9 +277,7 @@ void Cmd_Give_f(gentity_t* ent) {
 	// spawn a specific item right on the player
 	if(!give_all) {
 		it = BG_FindItem(name);
-		if(!it) {
-			return;
-		}
+		if(!it) return;
 
 		it_ent = G_Spawn();
 		VectorCopy(ent->r.currentOrigin, it_ent->s.origin);

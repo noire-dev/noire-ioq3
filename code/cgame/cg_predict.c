@@ -251,8 +251,6 @@ CG_TouchItem
 ===================
 */
 static void CG_TouchItem(centity_t* cent) {
-	item_t* item;
-
 	if(!BG_PlayerTouchesItem(&cg.predictedPlayerState, &cent->currentState, cg.time)) {
 		return;
 	}
@@ -266,10 +264,9 @@ static void CG_TouchItem(centity_t* cent) {
 		return;  // can't hold it
 	}
 
-	item = &jsd_item[cent->currentState.modelindex];
-
 	// grab it
 	BG_AddPredictableEventToPlayerstate(EV_ITEM_PICKUP, cent->currentState.modelindex, &cg.predictedPlayerState);
+
 
 	// remove it from the frame so it won't be drawn
 	cent->currentState.eFlags |= EF_NODRAW;
@@ -520,7 +517,6 @@ void CG_PredictPlayerState(void) {
 		CG_TouchTriggerPrediction();
 
 		// check for predictable events that changed from previous predictions
-		// CG_CheckChangedPredictableEvents(&cg.predictedPlayerState);
 	}
 
 	if(cg_showmiss.integer > 1) {

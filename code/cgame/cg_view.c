@@ -63,12 +63,9 @@ CG_OffsetThirdPersonView
 */
 #define FOCUS_DISTANCE 512
 static void CG_OffsetThirdPersonView(void) {
-	vec3_t forward, right, up;
+	vec3_t forward, right;
 	vec3_t view;
 	vec3_t focusAngles;
-	trace_t trace;
-	static vec3_t mins = {-4, -4, -4};
-	static vec3_t maxs = {4, 4, 4};
 	vec3_t focusPoint;
 	float focusDist;
 	float forwardScale, sideScale;
@@ -96,7 +93,7 @@ static void CG_OffsetThirdPersonView(void) {
 
 	cg.refdefViewAngles[PITCH] *= 0.5;
 
-	AngleVectors(cg.refdefViewAngles, forward, right, up);
+	AngleVectors(cg.refdefViewAngles, forward, right, NULL);
 
 	forwardScale = cos(cg_thirdPersonAngle.value / 180 * M_PI);
 	sideScale = sin(cg_thirdPersonAngle.value / 180 * M_PI);
@@ -273,10 +270,6 @@ static int CG_CalcViewValues(void) {
 
 	ps = &cg.predictedPlayerState;
 
-	cg.bobcycle = (ps->bobCycle & 128) >> 7;
-	cg.bobfracsin = fabs(sin((ps->bobCycle & 127) / 127.0 * M_PI));
-	cg.xyspeed = sqrt(ps->velocity[0] * ps->velocity[0] + ps->velocity[1] * ps->velocity[1]);
-
 	VectorCopy(ps->origin, cg.refdef.vieworg);
 	VectorCopy(ps->viewangles, cg.refdefViewAngles);
 
@@ -317,36 +310,6 @@ static int CG_CalcViewValues(void) {
 
 	// field of view
 	return CG_CalcFov();
-}
-
-/*
-=====================
-CG_AddBufferedSound
-=====================
-*/
-void CG_AddBufferedSound(sfxHandle_t sfx) {
-	if(!sfx) return;
-	cg.soundBuffer[cg.soundBufferIn] = sfx;
-	cg.soundBufferIn = (cg.soundBufferIn + 1) % MAX_SOUNDBUFFER;
-	if(cg.soundBufferIn == cg.soundBufferOut) {
-		cg.soundBufferOut++;
-	}
-}
-
-/*
-=====================
-CG_PlayBufferedSounds
-=====================
-*/
-static void CG_PlayBufferedSounds(void) {
-	if(cg.soundTime < cg.time) {
-		if(cg.soundBufferOut != cg.soundBufferIn && cg.soundBuffer[cg.soundBufferOut]) {
-			trap_S_StartLocalSound(cg.soundBuffer[cg.soundBufferOut], CHAN_ANNOUNCER);
-			cg.soundBuffer[cg.soundBufferOut] = 0;
-			cg.soundBufferOut = (cg.soundBufferOut + 1) % MAX_SOUNDBUFFER;
-			cg.soundTime = cg.time + 750;
-		}
-	}
 }
 
 //=========================================================================
@@ -413,9 +376,6 @@ void CG_DrawActiveFrame(int serverTime, bool demoPlayback) {
 		CG_RenderParticles();
 		CG_AddLocalEntities();
 	}
-
-	// add buffered sounds
-	CG_PlayBufferedSounds();
 
 	cg.refdef.time = cg.time;
 	memcpy(cg.refdef.areamask, cg.snap->areamask, sizeof(cg.refdef.areamask));

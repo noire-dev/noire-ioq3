@@ -35,13 +35,8 @@ void TeleportPlayer(gentity_t* player, vec3_t origin, vec3_t angles) {
 	bool noAngles;
 
 	noAngles = (angles[0] > 999999.0);
-	// use temp events at source and destination to prevent the effect
-	// from getting dropped by a second player event
-	tent = G_TempEntity(player->client->ps.origin, EV_PLAYER_TELEPORT_OUT);
-	tent->s.clientNum = player->s.clientNum;
-
-	tent = G_TempEntity(origin, EV_PLAYER_TELEPORT_IN);
-	tent->s.clientNum = player->s.clientNum;
+	tent = G_TempEntity(player->client->ps.origin, EV_PARTICLE, PP_TELEPORT_OUT);
+	tent = G_TempEntity(origin, EV_PARTICLE, PP_TELEPORT_IN);
 
 	// unlink to make sure it can't possibly interfere with G_KillBox
 	trap_UnlinkEntity(player);

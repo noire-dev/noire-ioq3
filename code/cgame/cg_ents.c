@@ -27,32 +27,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 /*
 ======================
-CG_PositionEntityOnTag
-
-Modifies the entities position and axis by the given
-tag location
-======================
-*/
-void CG_PositionEntityOnTag(refEntity_t* entity, const refEntity_t* parent, qhandle_t parentModel, char* tagName) {
-	int i;
-	orientation_t lerped;
-
-	// lerp the tag
-	trap_CM_LerpTag(&lerped, parentModel, parent->oldframe, parent->frame, 1.0 - parent->backlerp, tagName);
-
-	// FIXME: allow origin offsets along tag?
-	VectorCopy(parent->origin, entity->origin);
-	for(i = 0; i < 3; i++) {
-		VectorMA(entity->origin, lerped.origin[i], parent->axis[i], entity->origin);
-	}
-
-	// had to cast away the const to avoid compiler problems...
-	MatrixMultiply(lerped.axis, ((refEntity_t*)parent)->axis, entity->axis);
-	entity->backlerp = parent->backlerp;
-}
-
-/*
-======================
 CG_PositionRotatedEntityOnTag
 
 Modifies the entities position and axis by the given
@@ -392,7 +366,6 @@ static void CG_Item(centity_t* cent) {
 	entityState_t* es;
 	item_t* item;
 	int msec;
-	float frac;
 	float scale;
 	weaponInfo_t* wi;
 
@@ -431,7 +404,7 @@ static void CG_Item(centity_t* cent) {
 		cent->lerpOrigin[2] += 8;  // an extra height boost
 	}
 
-	ent.hModel = cg_items[es->modelindex].models[0];
+	ent.hModel = cg_items[es->modelindex].models;
 
 	VectorCopy(cent->lerpOrigin, ent.origin);
 	VectorCopy(cent->lerpOrigin, ent.oldorigin);
@@ -441,13 +414,11 @@ static void CG_Item(centity_t* cent) {
 	// if just respawned, slowly scale up
 	msec = cg.time - cent->miscTime;
 	if(msec >= 0 && msec < ITEM_SCALEUP_TIME) {
-		frac = (float)msec / ITEM_SCALEUP_TIME;
+		float frac = (float)msec / ITEM_SCALEUP_TIME;
 		VectorScale(ent.axis[0], frac, ent.axis[0]);
 		VectorScale(ent.axis[1], frac, ent.axis[1]);
 		VectorScale(ent.axis[2], frac, ent.axis[2]);
 		ent.nonNormalizedAxes = true;
-	} else {
-		frac = 1.0;
 	}
 
 	// increase the size of the weapons when they are presented as items
@@ -527,9 +498,7 @@ static void CG_Missile(centity_t* cent) {
 	if(s1->pos.trType != TR_STATIONARY) {
 		RotateAroundDirection(ent.axis, cg.time / 4);
 	} else {
-		{
-			RotateAroundDirection(ent.axis, s1->time);
-		}
+		RotateAroundDirection(ent.axis, s1->time);
 	}
 
 	trap_R_AddRefEntityToScene(&ent);
@@ -610,7 +579,7 @@ static void CG_Portal(centity_t* cent) {
 CG_CreateRotationMatrix
 ================
 */
-void CG_CreateRotationMatrix(vec3_t angles, vec3_t matrix[3]) {
+static void CG_CreateRotationMatrix(vec3_t angles, vec3_t matrix[3]) {
 	AngleVectors(angles, matrix[0], matrix[1], matrix[2]);
 	VectorInverse(matrix[1]);
 }
@@ -620,7 +589,7 @@ void CG_CreateRotationMatrix(vec3_t angles, vec3_t matrix[3]) {
 CG_TransposeMatrix
 ================
 */
-void CG_TransposeMatrix(vec3_t matrix[3], vec3_t transpose[3]) {
+static void CG_TransposeMatrix(vec3_t matrix[3], vec3_t transpose[3]) {
 	int i, j;
 	for(i = 0; i < 3; i++) {
 		for(j = 0; j < 3; j++) {
@@ -634,7 +603,7 @@ void CG_TransposeMatrix(vec3_t matrix[3], vec3_t transpose[3]) {
 CG_RotatePoint
 ================
 */
-void CG_RotatePoint(vec3_t point, vec3_t matrix[3]) {
+static void CG_RotatePoint(vec3_t point, vec3_t matrix[3]) {
 	vec3_t tvec;
 
 	VectorCopy(point, tvec);

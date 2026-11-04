@@ -31,26 +31,6 @@ void Con_MessageMode_f(void) {
 	Key_SetCatcher(Key_GetCatcher() ^ KEYCATCH_MESSAGE);
 }
 
-void Con_MessageMode2_f(void) {
-	chat_playerNum = -1;
-	chat_team = true;
-	Field_Clear(&chatField);
-	chatField.widthInChars = 32;
-	Key_SetCatcher(Key_GetCatcher() ^ KEYCATCH_MESSAGE);
-}
-
-void Con_MessageMode3_f(void) {
-	chat_playerNum = VM_Call(cgvm, CG_CROSSHAIR_PLAYER);
-	if(chat_playerNum < 0 || chat_playerNum >= MAX_CLIENTS) {
-		chat_playerNum = -1;
-		return;
-	}
-	chat_team = false;
-	Field_Clear(&chatField);
-	chatField.widthInChars = 32;
-	Key_SetCatcher(Key_GetCatcher() ^ KEYCATCH_MESSAGE);
-}
-
 void Con_Init(void) {
 	int i;
 
@@ -66,8 +46,6 @@ void Con_Init(void) {
 
 	Cmd_AddCommand("toggleconsole", Con_ToggleConsole_f);
 	Cmd_AddCommand("messagemode", Con_MessageMode_f);
-	Cmd_AddCommand("messagemode2", Con_MessageMode2_f);
-	Cmd_AddCommand("messagemode3", Con_MessageMode3_f);
 }
 
 void Con_Shutdown(void) {

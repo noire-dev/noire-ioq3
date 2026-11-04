@@ -85,9 +85,8 @@ static void Melee_Fire(gentity_t* ent, int weapon) {
 
 	// send blood impact
 	if(traceEnt->takedamage && traceEnt->client) {
-		tent = G_TempEntity(tr.endpos, EV_MISSILE_MISS);
+		tent = G_TempEntity(tr.endpos, EV_MISSILE_MISS, DirToByte(tr.plane.normal));
 		tent->s.otherEntityNum = traceEnt->s.number;
-		tent->s.eventParm = DirToByte(tr.plane.normal);
 		tent->s.weapon = ent->s.weapon;
 	}
 
@@ -121,13 +120,11 @@ static void Bullet_Fire(gentity_t* ent, int weapon) {
 
 	// send bullet impact
 	if(traceEnt->takedamage && traceEnt->client) {
-		tent = G_TempEntity(tr.endpos, EV_BULLET_HIT_ENTITY);
-		tent->s.eventParm = traceEnt->s.number;
+		tent = G_TempEntity(tr.endpos, EV_BULLET_HIT_ENTITY, traceEnt->s.number);
 		tent->s.clientNum = ent->s.clientNum;
 		tent->s.weapon = ent->s.weapon;
 	} else {
-		tent = G_TempEntity(tr.endpos, EV_BULLET_HIT_WORLD);
-		tent->s.eventParm = DirToByte(tr.plane.normal);
+		tent = G_TempEntity(tr.endpos, EV_BULLET_HIT_WORLD, DirToByte(tr.plane.normal));
 		tent->s.clientNum = ent->s.clientNum;
 		tent->s.weapon = ent->s.weapon;
 	}
@@ -175,11 +172,10 @@ static void ShotgunPattern(vec3_t origin, vec3_t origin2, int seed, gentity_t* e
 static void Shotgun_Fire(gentity_t* ent, int weapon) {
 	gentity_t* tent;
 
-	tent = G_TempEntity(muzzle, EV_SHOTGUN);
+	tent = G_TempEntity(muzzle, EV_SHOTGUN, rand() % 255);
 	tent->s.weapon = weapon;
 	VectorScale(forward, jsd_weapon[weapon].range, tent->s.origin2);
 	SnapVector(tent->s.origin2);
-	tent->s.eventParm = rand() % 255;
 	tent->s.otherEntityNum = ent->s.number;
 
 	ShotgunPattern(tent->s.pos.trBase, tent->s.origin2, tent->s.eventParm, ent, weapon);
@@ -212,15 +208,13 @@ static void Beam_Fire(gentity_t* ent, int weapon) {
 
 	for(i = 0; i < unlinked; i++) trap_LinkEntity(unlinkedEntities[i]);
 
-	tent = G_TempEntity(trace.endpos, EV_BEAM_TRAIL);
+	tent = G_TempEntity(trace.endpos, EV_BEAM_TRAIL, DirToByte(trace.plane.normal));
 	tent->s.weapon = weapon;
 
 	VectorCopy(muzzle, tent->s.origin2);
 
 	VectorMA(tent->s.origin2, 4, right, tent->s.origin2);
 	VectorMA(tent->s.origin2, -1, up, tent->s.origin2);
-
-	tent->s.eventParm = DirToByte(trace.plane.normal);
 
 	tent->s.clientNum = ent->s.clientNum;
 }
@@ -241,13 +235,11 @@ static void Lightning_Fire(gentity_t* ent, int weapon) {
 	if(traceEnt->takedamage) G_Damage(traceEnt, ent, ent, forward, tr.endpos, jsd_weapon[weapon].damage, 0, weapon);
 
 	if(traceEnt->takedamage && traceEnt->client) {
-		tent = G_TempEntity(tr.endpos, EV_MISSILE_MISS);
+		tent = G_TempEntity(tr.endpos, EV_MISSILE_MISS, DirToByte(tr.plane.normal));
 		tent->s.otherEntityNum = traceEnt->s.number;
-		tent->s.eventParm = DirToByte(tr.plane.normal);
 		tent->s.weapon = ent->s.weapon;
 	} else {
-		tent = G_TempEntity(tr.endpos, EV_MISSILE_MISS);
-		tent->s.eventParm = DirToByte(tr.plane.normal);
+		tent = G_TempEntity(tr.endpos, EV_MISSILE_MISS, DirToByte(tr.plane.normal));
 	}
 }
 
@@ -286,8 +278,6 @@ static void G_MissileImpact(gentity_t* ent, trace_t* trace) {
 	if(other->takedamage && other->client) {
 		G_AddEvent(ent, EV_MISSILE_HIT, DirToByte(trace->plane.normal));
 		ent->s.otherEntityNum = other->s.number;
-	} else if(trace->surfaceFlags & SURF_METAL) {
-		G_AddEvent(ent, EV_MISSILE_MISS_METAL, DirToByte(trace->plane.normal));
 	} else {
 		G_AddEvent(ent, EV_MISSILE_MISS, DirToByte(trace->plane.normal));
 	}

@@ -326,19 +326,8 @@ void CL_VoipParseTargets(void) {
 				target += 7;
 				continue;
 			} else {
-				if(!Q_stricmpn(target, "attacker", 8)) {
-					val = VM_Call(cgvm, CG_LAST_ATTACKER);
-					target += 8;
-				} else if(!Q_stricmpn(target, "crosshair", 9)) {
-					val = VM_Call(cgvm, CG_CROSSHAIR_PLAYER);
-					target += 9;
-				} else {
-					while(*target && *target != ',' && *target != ' ') target++;
-
-					continue;
-				}
-
-				if(val < 0) continue;
+				while(*target && *target != ',' && *target != ' ') target++;
+				continue;
 			}
 		}
 

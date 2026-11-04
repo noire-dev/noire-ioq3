@@ -35,7 +35,6 @@ MARK POLYS
 markPoly_t cg_activeMarkPolys;  // double linked list
 markPoly_t* cg_freeMarkPolys;   // single linked list
 markPoly_t cg_markPolys[MAX_MARK_POLYS];
-static int markTotal;
 
 /*
 ===================
@@ -62,7 +61,7 @@ void CG_InitMarkPolys(void) {
 CG_FreeMarkPoly
 ==================
 */
-void CG_FreeMarkPoly(markPoly_t* le) {
+static void CG_FreeMarkPoly(markPoly_t* le) {
 	if(!le->prevMark || !le->nextMark) {
 		CG_Error("CG_FreeLocalEntity: not active");
 	}
@@ -83,7 +82,7 @@ CG_AllocMark
 Will allways succeed, even if it requires freeing an old active mark
 ===================
 */
-markPoly_t* CG_AllocMark(void) {
+static markPoly_t* CG_AllocMark(void) {
 	markPoly_t* le;
 	int time;
 
@@ -141,10 +140,6 @@ void CG_ImpactMark(qhandle_t markShader, const vec3_t origin, const vec3_t dir, 
 	if(radius <= 0) {
 		CG_Error("CG_ImpactMark called with <= 0 radius");
 	}
-
-	// if ( markTotal >= MAX_MARK_POLYS ) {
-	//	return;
-	// }
 
 	// create the texture axis
 	VectorNormalize2(dir, axis[0]);
@@ -209,7 +204,6 @@ void CG_ImpactMark(qhandle_t markShader, const vec3_t origin, const vec3_t dir, 
 		mark->color[2] = blue;
 		mark->color[3] = alpha;
 		memcpy(mark->verts, verts, mf->numPoints * sizeof(verts[0]));
-		markTotal++;
 	}
 }
 
@@ -241,23 +235,6 @@ void CG_AddMarks(void) {
 		if(cg.time > mp->time + MARK_TOTAL_TIME) {
 			CG_FreeMarkPoly(mp);
 			continue;
-		}
-
-		// fade out the energy bursts
-		if(mp->markShader == cgs.media.energyMarkShader) {
-			fade = 450 - 450 * ((cg.time - mp->time) / 3000.0);
-			if(fade < 255) {
-				if(fade < 0) {
-					fade = 0;
-				}
-				if(mp->verts[0].modulate[0] != 0) {
-					for(j = 0; j < mp->poly.numVerts; j++) {
-						mp->verts[j].modulate[0] = mp->color[0] * fade;
-						mp->verts[j].modulate[1] = mp->color[1] * fade;
-						mp->verts[j].modulate[2] = mp->color[2] * fade;
-					}
-				}
-			}
 		}
 
 		// fade all marks out with time

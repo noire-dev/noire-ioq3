@@ -54,8 +54,6 @@ void RespawnItem(gentity_t* ent) {
 	ent->r.svFlags &= ~SVF_NOCLIENT;
 	trap_LinkEntity(ent);
 
-	G_AddEvent(ent, EV_ITEM_RESPAWN, 0);
-
 	ent->nextthink = 0;
 }
 

@@ -24,50 +24,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "cg_local.h"
 
-/*
-===================
-CG_PlaceString
-
-Also called by scoreboard drawing
-===================
-*/
-const char* CG_PlaceString(int rank) {
-	static char str[64];
-	char *s, *t;
-
-	if(rank & RANK_TIED_FLAG) {
-		rank &= ~RANK_TIED_FLAG;
-		t = "Tied for ";
-	} else {
-		t = "";
-	}
-
-	if(rank == 1) {
-		s = S_COLOR_BLUE "1st" S_COLOR_WHITE;  // draw in blue
-	} else if(rank == 2) {
-		s = S_COLOR_RED "2nd" S_COLOR_WHITE;  // draw in red
-	} else if(rank == 3) {
-		s = S_COLOR_YELLOW "3rd" S_COLOR_WHITE;  // draw in yellow
-	} else if(rank == 11) {
-		s = "11th";
-	} else if(rank == 12) {
-		s = "12th";
-	} else if(rank == 13) {
-		s = "13th";
-	} else if(rank % 10 == 1) {
-		s = va("%ist", rank);
-	} else if(rank % 10 == 2) {
-		s = va("%ind", rank);
-	} else if(rank % 10 == 3) {
-		s = va("%ird", rank);
-	} else {
-		s = va("%ith", rank);
-	}
-
-	Com_sprintf(str, sizeof(str), "%s%s", t, s);
-	return str;
-}
-
 static void CG_Obituary(entityState_t* ent) {
 	int mod, target, attacker;
 	const char *targetInfo, *attackerInfo;
@@ -97,63 +53,12 @@ static void CG_Obituary(entityState_t* ent) {
 	if(attackerInfo)
 		CG_AddNotify(va("%s -> %s", attackerName, targetName), NOTIFY_KILL, mod, "");
 	else
-		CG_AddNotify(va("%s", targetName), NOTIFY_KILL, mod, "");
+		CG_AddNotify(targetName, NOTIFY_KILL, mod, "");
 }
 
 static void CG_ItemPickup(int itemNum) {
 	CG_AddNotify(jsd_item[itemNum].pickup_name, NOTIFY_ITEM, itemNum, "");
 	if(jsd_item[itemNum].giType == IT_WEAPON) cg.swep_listcl[jsd_item[itemNum].giTag] = WS_HAVE;
-}
-
-/*
-================
-CG_WaterLevel
-
-Returns waterlevel for entity origin
-================
-*/
-int CG_WaterLevel(centity_t* cent) {
-	vec3_t point;
-	int contents, sample1, sample2, anim, waterlevel;
-	int viewheight;
-
-	anim = cent->currentState.legsAnim & ~ANIM_TOGGLEBIT;
-
-	if(anim == AM_CRONCHIDLE || (anim >= AM_CRONCH_E && anim <= AM_CRONCH_W)) {
-		viewheight = CROUCH_VIEWHEIGHT;
-	} else {
-		viewheight = DEFAULT_VIEWHEIGHT;
-	}
-
-	//
-	// get waterlevel, accounting for ducking
-	//
-	waterlevel = 0;
-
-	point[0] = cent->lerpOrigin[0];
-	point[1] = cent->lerpOrigin[1];
-	point[2] = cent->lerpOrigin[2] + MINS_Z + 1;
-	contents = CG_PointContents(point, -1);
-
-	if(contents & MASK_WATER) {
-		sample2 = viewheight - MINS_Z;
-		sample1 = sample2 / 2;
-		waterlevel = 1;
-		point[2] = cent->lerpOrigin[2] + MINS_Z + sample1;
-		contents = CG_PointContents(point, -1);
-
-		if(contents & MASK_WATER) {
-			waterlevel = 2;
-			point[2] = cent->lerpOrigin[2] + MINS_Z + sample2;
-			contents = CG_PointContents(point, -1);
-
-			if(contents & MASK_WATER) {
-				waterlevel = 3;
-			}
-		}
-	}
-
-	return waterlevel;
 }
 
 /*
@@ -168,7 +73,6 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 	entityState_t* es;
 	int event;
 	vec3_t dir;
-	const char* s;
 	int clientNum;
 	clientInfo_t* ci;
 
@@ -178,15 +82,10 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 	if(!event) return;
 
 	clientNum = es->clientNum;
-	if(clientNum < 0 || clientNum >= MAX_CLIENTS) {
-		clientNum = 0;
-	}
+	if(clientNum < 0 || clientNum >= MAX_CLIENTS) clientNum = 0;
 	ci = &cgs.clientinfo[clientNum];
 
 	switch(event) {
-		//
-		// movement generated events
-		//
 		case EV_FOOTSTEP_CHAINLINK:
 		case EV_FOOTSTEP_CONCRETE:
 		case EV_FOOTSTEP_DIRT:
@@ -202,107 +101,20 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		case EV_FOOTSTEP_TILE:
 		case EV_FOOTSTEP_WOOD:
 		case EV_FOOTSTEP_WOODPANEL: trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.footsteps[event - EV_FOOTSTEP_CHAINLINK][rand() & 3]); break;
-
-		case EV_FALL_MEDIUM:
-			// use normal pain sound
-			trap_S_StartSound(NULL, es->number, CHAN_VOICE, cgs.media.landSound);
-			if(clientNum == cg.predictedPlayerState.clientNum) {
-				// smooth landing z changes
-				cg.landChange = -16;
-				cg.landTime = cg.time;
-			}
-			break;
-		case EV_FALL_FAR:
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.fallSound);
-			cent->pe.painTime = cg.time;  // don't play a pain sound right after this
-			if(clientNum == cg.predictedPlayerState.clientNum) {
-				// smooth landing z changes
-				cg.landChange = -24;
-				cg.landTime = cg.time;
-			}
-			break;
-
-		case EV_STEP_4:
-		case EV_STEP_8:
-		case EV_STEP_12:
-		case EV_STEP_16:  // smooth out step up transitions
-		{
-			float oldStep;
-			int delta;
-			int step;
-
-			if(clientNum != cg.predictedPlayerState.clientNum) {
-				break;
-			}
-			// if we are interpolating, we don't need to smooth steps
-			if(cg.demoPlayback || (cg.snap->ps.pm_flags & PMF_FOLLOW) || cg_nopredict.integer || cg_synchronousClients.integer) {
-				break;
-			}
-			// check for stepping up before a previous step is completed
-			delta = cg.time - cg.stepTime;
-			if(delta < STEP_TIME) {
-				oldStep = cg.stepChange * (STEP_TIME - delta) / STEP_TIME;
-			} else {
-				oldStep = 0;
-			}
-
-			// add this amount
-			step = 4 * (event - EV_STEP_4 + 1);
-			cg.stepChange = oldStep + step;
-			if(cg.stepChange > MAX_STEP_CHANGE) {
-				cg.stepChange = MAX_STEP_CHANGE;
-			}
-			cg.stepTime = cg.time;
-			break;
-		}
-
+		case EV_FALL: trap_S_StartSound(NULL, es->number, CHAN_VOICE, cgs.media.landSound); break;
 		case EV_GRAVITY_LAUNCH: trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.gravityLaunch[rand() & 3]); break;
 		case EV_WATER_SPLASH: trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.waterSplash[rand() & 2]); break;
-
 		case EV_ITEM_PICKUP: {
 			item_t* item;
 			int index;
-
 			index = es->eventParm;
-
 			if(index < 1 || index >= jsd_itemCount) break;
 			item = &jsd_item[index];
-
 			trap_S_StartSound(NULL, es->number, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, false));
-
-			// show icon and name on status bar
 			if(es->number == cg.snap->ps.clientNum) CG_ItemPickup(index);
 		} break;
-
-		//
-		// weapon events
-		//
 		case EV_FIRE_WEAPON: CG_FireWeapon(cent); break;
-
-		//=================================================================
-
-		//
-		// other events
-		//
-		case EV_PLAYER_TELEPORT_IN:
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.teleInSound);
-			CG_SpawnEffect(position);
-			break;
-
-		case EV_PLAYER_TELEPORT_OUT:
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.teleOutSound);
-			CG_SpawnEffect(position);
-			break;
-
-		case EV_ITEM_POP: trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.respawnSound); break;
-		case EV_ITEM_RESPAWN:
-			cent->miscTime = cg.time;  // scale up from this
-			trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.respawnSound);
-			break;
-
 		case EV_MISSILE_BOUNCE:
-			// bounce sound comes from the weapon's weaponFx entry;
-			// fall back to the classic grenade thud when none is set
 			if(es->weapon > WP_NONE && es->weapon < jsd_weaponCount && jsd_weaponFx[es->weapon].missileBounceSoundHandle) {
 				trap_S_StartSound(NULL, es->number, CHAN_AUTO, jsd_weaponFx[es->weapon].missileBounceSoundHandle);
 			} else if(rand() & 1) {
@@ -311,60 +123,35 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 				trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.hgrenb2aSound);
 			}
 			break;
-
-		//
-		// missile impacts
-		//
 		case EV_MISSILE_HIT:
 			ByteToDir(es->eventParm, dir);
-			CG_MissileHitPlayer(es->weapon, position, dir, es->otherEntityNum);
+			CG_MissileHitPlayer(es->weapon, position, dir);
 			break;
-
 		case EV_MISSILE_MISS:
 			ByteToDir(es->eventParm, dir);
-			CG_MissileHitWall(es->weapon, 0, position, dir, IMPACTSOUND_DEFAULT);
+			CG_MissileHitWall(es->weapon, position, dir);
 			break;
-
-		case EV_MISSILE_MISS_METAL:
-			ByteToDir(es->eventParm, dir);
-			CG_MissileHitWall(es->weapon, 0, position, dir, IMPACTSOUND_METAL);
-			break;
-
 		case EV_BEAM_TRAIL:
 			CG_RailTrail(ci, es->origin2, es->pos.trBase, es->weapon);
-
-			// if the end was on a nomark surface, don't make an explosion
 			if(es->eventParm != 255) {
 				ByteToDir(es->eventParm, dir);
-				CG_MissileHitWall(es->weapon, es->clientNum, position, dir, IMPACTSOUND_DEFAULT);
+				CG_MissileHitWall(es->weapon, position, dir);
 			}
 			break;
-
 		case EV_BULLET_HIT_WORLD:
 			ByteToDir(es->eventParm, dir);
-			CG_Bullet(es->pos.trBase, es->otherEntityNum, dir, false, ENTITYNUM_WORLD, es->weapon);
+			CG_Bullet(es->pos.trBase, es->otherEntityNum, dir, false, es->weapon);
 			break;
-
-		case EV_BULLET_HIT_ENTITY: CG_Bullet(es->pos.trBase, es->otherEntityNum, dir, true, es->eventParm, es->weapon); break;
-
-		case EV_SHOTGUN: CG_ShotgunFire(es, es->weapon); break;
-
+		case EV_BULLET_HIT_ENTITY:
+			VectorClear(dir);
+			CG_Bullet(es->pos.trBase, es->otherEntityNum, dir, true, es->weapon);
+			break;
+		case EV_SHOTGUN: CG_ShotgunPattern(es->pos.trBase, es->origin2, es->eventParm, es->otherEntityNum, es->weapon); break;
 		case EV_GENERAL_SOUND: trap_S_StartSound(NULL, es->number, CHAN_VOICE, cgs.gameSounds[es->eventParm]); break;
-
-		case EV_GLOBAL_SOUND:  // play from the player's head so it never diminishes
-			trap_S_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.gameSounds[es->eventParm]);
-			break;
-
+		case EV_GLOBAL_SOUND: trap_S_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.gameSounds[es->eventParm]); break;
 		case EV_OBITUARY: CG_Obituary(es); break;
-
-		case EV_GIB_PLAYER:
-			trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.gibSound);
-			CG_GibPlayer(cent->lerpOrigin);
-			break;
-
-		default:
-			// CG_Error("Unknown event: %i", event);
-			break;
+		case EV_PARTICLE: CG_SpawnParticlePreset(es->eventParm, position); break;
+		default:  // CG_Error("Unknown event: %i", event); break;
 	}
 }
 
@@ -404,4 +191,22 @@ void CG_CheckEvents(centity_t* cent) {
 	CG_SetEntitySoundPosition(cent);
 
 	CG_EntityEvent(cent, cent->lerpOrigin);
+}
+
+void CG_SpawnParticlePreset(int presetIdx, const vec3_t origin) {
+	const particlePreset_t* p;
+	vec4_t color;
+	vec3_t gravity;
+	qhandle_t shader;
+
+	if(presetIdx < 0 || presetIdx >= PP_COUNT) return;
+	p = &particlePresets[presetIdx];
+
+	Vector4Copy(p->color, color);
+	VectorCopy(p->gravity, gravity);
+	shader = p->shader[0] ? trap_R_RegisterShader(p->shader) : 0;
+
+	CG_AddParticles(origin, color, p->count, p->speed, p->flags, gravity, shader, p->size, p->lifetime);
+
+	if(p->sound[0]) trap_S_StartSound(NULL, 0, CHAN_AUTO, trap_S_RegisterSound(p->sound, false));
 }

@@ -99,9 +99,7 @@ void CG_ParseServerinfo(void) {
 
 	info = CG_ConfigString(CS_SERVERINFO);
 	cgs.dmflags = atoi(Info_ValueForKey(info, "dmflags"));
-	cgs.teamflags = atoi(Info_ValueForKey(info, "teamflags"));
 	cgs.fraglimit = atoi(Info_ValueForKey(info, "fraglimit"));
-	cgs.capturelimit = atoi(Info_ValueForKey(info, "capturelimit"));
 	cgs.timelimit = atoi(Info_ValueForKey(info, "timelimit"));
 	cgs.maxclients = atoi(Info_ValueForKey(info, "sv_maxclients"));
 	mapname = Info_ValueForKey(info, "mapname");
@@ -120,8 +118,6 @@ Called on load to set the initial values from configure strings
 ================
 */
 void CG_SetConfigValues(void) {
-	const char* s;
-
 	cgs.scores1 = atoi(CG_ConfigString(CS_SCORES1));
 	cgs.scores2 = atoi(CG_ConfigString(CS_SCORES2));
 	cgs.levelStartTime = atoi(CG_ConfigString(CS_LEVEL_START_TIME));
@@ -145,7 +141,7 @@ void CG_ShaderStateChanged(void) {
 		n = strstr(o, "=");
 		if(n && *n) {
 			length = n - o + 1;
-			if(length > sizeof(originalShader)) {
+			if(length > (int)sizeof(originalShader)) {
 				length = sizeof(originalShader);
 			}
 			Q_strncpyz(originalShader, o, length);
@@ -153,7 +149,7 @@ void CG_ShaderStateChanged(void) {
 			t = strstr(n, ":");
 			if(t && *t) {
 				length = t - n + 1;
-				if(length > sizeof(newShader)) {
+				if(length > (int)sizeof(newShader)) {
 					length = sizeof(newShader);
 				}
 				Q_strncpyz(newShader, n, length);
@@ -164,7 +160,7 @@ void CG_ShaderStateChanged(void) {
 			o = strstr(t, "@");
 			if(o) {
 				length = o - t + 1;
-				if(length > sizeof(timeOffset)) {
+				if(length > (int)sizeof(timeOffset)) {
 					length = sizeof(timeOffset);
 				}
 				Q_strncpyz(timeOffset, t, length);
@@ -207,28 +203,6 @@ static void CG_ConfigStringModified(void) {
 		cgs.scores2 = atoi(str);
 	} else if(num == CS_LEVEL_START_TIME) {
 		cgs.levelStartTime = atoi(str);
-	} else if(num == CS_VOTE_TIME) {
-		cgs.voteTime = atoi(str);
-		cgs.voteModified = true;
-	} else if(num == CS_VOTE_YES) {
-		cgs.voteYes = atoi(str);
-		cgs.voteModified = true;
-	} else if(num == CS_VOTE_NO) {
-		cgs.voteNo = atoi(str);
-		cgs.voteModified = true;
-	} else if(num == CS_VOTE_STRING) {
-		Q_strncpyz(cgs.voteString, str, sizeof(cgs.voteString));
-	} else if(num >= CS_TEAMVOTE_TIME && num <= CS_TEAMVOTE_TIME + 1) {
-		cgs.teamVoteTime[num - CS_TEAMVOTE_TIME] = atoi(str);
-		cgs.teamVoteModified[num - CS_TEAMVOTE_TIME] = true;
-	} else if(num >= CS_TEAMVOTE_YES && num <= CS_TEAMVOTE_YES + 1) {
-		cgs.teamVoteYes[num - CS_TEAMVOTE_YES] = atoi(str);
-		cgs.teamVoteModified[num - CS_TEAMVOTE_YES] = true;
-	} else if(num >= CS_TEAMVOTE_NO && num <= CS_TEAMVOTE_NO + 1) {
-		cgs.teamVoteNo[num - CS_TEAMVOTE_NO] = atoi(str);
-		cgs.teamVoteModified[num - CS_TEAMVOTE_NO] = true;
-	} else if(num >= CS_TEAMVOTE_STRING && num <= CS_TEAMVOTE_STRING + 1) {
-		Q_strncpyz(cgs.teamVoteString[num - CS_TEAMVOTE_STRING], str, sizeof(cgs.teamVoteString[0]));
 	} else if(num >= CS_MODELS && num < CS_MODELS + MAX_MODELS) {
 		cgs.gameModels[num - CS_MODELS] = trap_R_RegisterModel(str);
 	} else if(num >= CS_SOUNDS && num < CS_SOUNDS + MAX_SOUNDS) {
@@ -237,76 +211,9 @@ static void CG_ConfigStringModified(void) {
 		}
 	} else if(num >= CS_PLAYERS && num < CS_PLAYERS + MAX_CLIENTS) {
 		CG_NewClientInfo(num - CS_PLAYERS);
-	} else if(num == CS_FLAGSTATUS) {
 	} else if(num == CS_SHADERSTATE) {
 		CG_ShaderStateChanged();
 	}
-}
-
-/*
-=======================
-CG_AddToTeamChat
-
-=======================
-*/
-static void CG_AddToTeamChat(const char* str) {
-	int len;
-	char *p, *ls;
-	int lastcolor;
-	int chatHeight;
-
-	if(cg_teamChatHeight.integer < TEAMCHAT_HEIGHT) {
-		chatHeight = cg_teamChatHeight.integer;
-	} else {
-		chatHeight = TEAMCHAT_HEIGHT;
-	}
-
-	if(chatHeight <= 0 || cg_teamChatTime.integer <= 0) {
-		// team chat disabled, dump into normal chat
-		cgs.teamChatPos = cgs.teamLastChatPos = 0;
-		return;
-	}
-
-	len = 0;
-
-	p = cgs.teamChatMsgs[cgs.teamChatPos % chatHeight];
-	*p = 0;
-
-	lastcolor = '7';
-
-	ls = NULL;
-	while(*str) {
-		if(len > TEAMCHAT_WIDTH - 1) {
-			if(ls) {
-				str -= (p - ls);
-				str++;
-				p -= (p - ls);
-			}
-			*p = 0;
-
-			cgs.teamChatMsgTimes[cgs.teamChatPos % chatHeight] = cg.time;
-
-			cgs.teamChatPos++;
-			p = cgs.teamChatMsgs[cgs.teamChatPos % chatHeight];
-			*p = 0;
-			*p++ = Q_COLOR_ESCAPE;
-			*p++ = lastcolor;
-			len = 0;
-			ls = NULL;
-		}
-
-		if(*str == ' ') {
-			ls = p;
-		}
-		*p++ = *str++;
-		len++;
-	}
-	*p = 0;
-
-	cgs.teamChatMsgTimes[cgs.teamChatPos % chatHeight] = cg.time;
-	cgs.teamChatPos++;
-
-	if(cgs.teamChatPos - cgs.teamLastChatPos > chatHeight) cgs.teamLastChatPos = cgs.teamChatPos - chatHeight;
 }
 
 /*
@@ -333,8 +240,6 @@ static void CG_MapRestart(void) {
 	cg.fraglimitWarnings = 0;
 
 	cg.timelimitWarnings = 0;
-
-	cgs.voteTime = 0;
 
 	cg.mapRestart = true;
 
@@ -382,7 +287,7 @@ static void CG_ServerCommand(void) {
 	}
 
 	if(!strcmp(cmd, "cp")) {
-		// CG_CenterPrint(CG_Argv(1), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
+		// server claimed the command
 		return;
 	}
 

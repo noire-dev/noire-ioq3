@@ -12,7 +12,6 @@ set(CGAME_SOURCES
     ${SOURCE_DIR}/cgame/cg_consolecmds.c
     ${SOURCE_DIR}/cgame/cg_draw.c
     ${SOURCE_DIR}/cgame/cg_drawtools.c
-    ${SOURCE_DIR}/cgame/cg_effects.c
     ${SOURCE_DIR}/cgame/cg_ents.c
     ${SOURCE_DIR}/cgame/cg_event.c
     ${SOURCE_DIR}/cgame/cg_info.c

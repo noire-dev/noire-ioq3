@@ -133,10 +133,6 @@ static void CG_TransitionSnapshot(void) {
 	// execute any server string commands before transitioning entities
 	CG_ExecuteNewServerCommands(cg.nextSnap->serverCommandSequence);
 
-	// if we had a map_restart, set everything with initial
-	if(cg.mapRestart) {
-	}
-
 	// clear the currentValid flag for all entities in the existing snapshot
 	for(i = 0; i < cg.snap->numEntities; i++) {
 		cent = &cg_entities[cg.snap->entities[i].number];
@@ -264,11 +260,6 @@ static snapshot_t* CG_ReadNextSnapshot(void) {
 		// try to read the snapshot from the client system
 		cgs.processedSnapshotNum++;
 		r = trap_GetSnapshot(cgs.processedSnapshotNum, dest);
-
-		// FIXME: why would trap_GetSnapshot return a snapshot with the same server time
-		if(cg.snap && r && dest->serverTime == cg.snap->serverTime) {
-			// continue;
-		}
 
 		// if it succeeded, return
 		if(r) return dest;

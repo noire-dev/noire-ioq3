@@ -28,101 +28,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "cg_local.h"
 
 /*
-==============
-CG_DamageFeedback
-==============
-*/
-void CG_DamageFeedback(int yawByte, int pitchByte, int damage) {
-	float left, front, up;
-	float kick;
-	int health;
-	float scale;
-	vec3_t dir;
-	vec3_t angles;
-	float dist;
-	float yaw, pitch;
-
-	// show the attacking player's head and name in corner
-	cg.attackerTime = cg.time;
-
-	// the lower on health you are, the greater the view kick will be
-	health = cg.snap->ps.stats[STAT_HEALTH];
-	if(health < 40) {
-		scale = 1;
-	} else {
-		scale = 40.0 / health;
-	}
-	kick = damage * scale;
-
-	if(kick < 5) kick = 5;
-	if(kick > 10) kick = 10;
-
-	// if yaw and pitch are both 255, make the damage always centered (falling, etc)
-	if(yawByte == 255 && pitchByte == 255) {
-		cg.damageX = 0;
-		cg.damageY = 0;
-		cg.v_dmg_roll = 0;
-		cg.v_dmg_pitch = -kick;
-	} else {
-		// positional
-		pitch = pitchByte / 255.0 * 360;
-		yaw = yawByte / 255.0 * 360;
-
-		angles[PITCH] = pitch;
-		angles[YAW] = yaw;
-		angles[ROLL] = 0;
-
-		AngleVectors(angles, dir, NULL, NULL);
-		VectorSubtract(vec3_origin, dir, dir);
-
-		front = DotProduct(dir, cg.refdef.viewaxis[0]);
-		left = DotProduct(dir, cg.refdef.viewaxis[1]);
-		up = DotProduct(dir, cg.refdef.viewaxis[2]);
-
-		dir[0] = front;
-		dir[1] = left;
-		dir[2] = 0;
-		dist = VectorLength(dir);
-		if(dist < 0.1) {
-			dist = 0.1f;
-		}
-
-		cg.v_dmg_roll = kick * left;
-
-		cg.v_dmg_pitch = -kick * front;
-
-		if(front <= 0.1) {
-			front = 0.1f;
-		}
-		cg.damageX = -left / front;
-		cg.damageY = up / dist;
-	}
-
-	// clamp the position
-	if(cg.damageX > 1.0) {
-		cg.damageX = 1.0;
-	}
-	if(cg.damageX < -1.0) {
-		cg.damageX = -1.0;
-	}
-
-	if(cg.damageY > 1.0) {
-		cg.damageY = 1.0;
-	}
-	if(cg.damageY < -1.0) {
-		cg.damageY = -1.0;
-	}
-
-	// don't let the screen flashes vary as much
-	if(kick > 10) {
-		kick = 10;
-	}
-	cg.damageValue = kick;
-	cg.v_dmg_time = cg.time + DAMAGE_TIME;
-	cg.damageTime = cg.snap->serverTime;
-}
-
-/*
 ================
 CG_Respawn
 
@@ -149,7 +54,7 @@ void CG_Respawn(void) {
 CG_CheckPlayerstateEvents
 ==============
 */
-void CG_CheckPlayerstateEvents(playerState_t* ps, playerState_t* ops) {
+static void CG_CheckPlayerstateEvents(playerState_t* ps, playerState_t* ops) {
 	int i;
 	int event;
 	centity_t* cent;
@@ -183,86 +88,15 @@ void CG_CheckPlayerstateEvents(playerState_t* ps, playerState_t* ops) {
 
 /*
 ==================
-CG_CheckChangedPredictableEvents
-==================
-*/
-void CG_CheckChangedPredictableEvents(playerState_t* ps) {
-	int i;
-	int event;
-	centity_t* cent;
-
-	cent = &cg.predictedPlayerEntity;
-	for(i = ps->eventSequence - MAX_PS_EVENTS; i < ps->eventSequence; i++) {
-		//
-		if(i >= cg.eventSequence) {
-			continue;
-		}
-		// if this event is not further back in than the maximum predictable events we remember
-		if(i > cg.eventSequence - MAX_PREDICTED_EVENTS) {
-			// if the new playerstate event is different from a previously predicted one
-			if(ps->events[i & (MAX_PS_EVENTS - 1)] != cg.predictableEvents[i & (MAX_PREDICTED_EVENTS - 1)]) {
-				event = ps->events[i & (MAX_PS_EVENTS - 1)];
-				cent->currentState.event = event;
-				cent->currentState.eventParm = ps->eventParms[i & (MAX_PS_EVENTS - 1)];
-				CG_EntityEvent(cent, cent->lerpOrigin);
-
-				cg.predictableEvents[i & (MAX_PREDICTED_EVENTS - 1)] = event;
-
-				if(cg_showmiss.integer) {
-					CG_Printf("WARNING: changed predicted event\n");
-				}
-			}
-		}
-	}
-}
-
-/*
-==================
 CG_CheckLocalSounds
 ==================
 */
-void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
+static void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
 	int highScore;
-	sfxHandle_t sfx;
 
 	// hit changes
 	if(ps->persistant[PERS_HITS] > ops->persistant[PERS_HITS]) {
 		trap_S_StartLocalSound(cgs.media.hitSound, CHAN_LOCAL_SOUND);
-	} else if(ps->persistant[PERS_HITS] < ops->persistant[PERS_HITS]) {
-		trap_S_StartLocalSound(cgs.media.hitTeamSound, CHAN_LOCAL_SOUND);
-	}
-
-	// timelimit warnings
-	if(cgs.timelimit > 0) {
-		int msec;
-
-		msec = cg.time - cgs.levelStartTime;
-		if(!(cg.timelimitWarnings & 4) && msec > (cgs.timelimit * 60 + 2) * 1000) {
-			cg.timelimitWarnings |= 1 | 2 | 4;
-			trap_S_StartLocalSound(cgs.media.suddenDeathSound, CHAN_ANNOUNCER);
-		} else if(!(cg.timelimitWarnings & 2) && msec > (cgs.timelimit - 1) * 60 * 1000) {
-			cg.timelimitWarnings |= 1 | 2;
-			trap_S_StartLocalSound(cgs.media.oneMinuteSound, CHAN_ANNOUNCER);
-		} else if(cgs.timelimit > 5 && !(cg.timelimitWarnings & 1) && msec > (cgs.timelimit - 5) * 60 * 1000) {
-			cg.timelimitWarnings |= 1;
-			trap_S_StartLocalSound(cgs.media.fiveMinuteSound, CHAN_ANNOUNCER);
-		}
-	}
-
-	// fraglimit warnings
-	if(cgs.fraglimit > 0) {
-		highScore = cgs.scores1;
-
-		if(!(cg.fraglimitWarnings & 4) && highScore == (cgs.fraglimit - 1)) {
-			cg.fraglimitWarnings |= 1 | 2 | 4;
-			CG_AddBufferedSound(cgs.media.oneFragSound);
-		} else if(cgs.fraglimit > 2 && !(cg.fraglimitWarnings & 2) && highScore == (cgs.fraglimit - 2)) {
-			cg.fraglimitWarnings |= 1 | 2;
-			CG_AddBufferedSound(cgs.media.twoFragSound);
-		} else if(cgs.fraglimit > 3 && !(cg.fraglimitWarnings & 1) && highScore == (cgs.fraglimit - 3)) {
-			cg.fraglimitWarnings |= 1;
-			CG_AddBufferedSound(cgs.media.threeFragSound);
-		}
 	}
 }
 
@@ -280,11 +114,6 @@ void CG_TransitionPlayerState(playerState_t* ps, playerState_t* ops) {
 		*ops = *ps;
 	}
 
-	// damage events (player is getting wounded)
-	if(ps->damageEvent != ops->damageEvent && ps->damageCount) {
-		CG_DamageFeedback(ps->damageYaw, ps->damagePitch, ps->damageCount);
-	}
-
 	// respawning
 	if(ps->persistant[PERS_SPAWN_COUNT] != ops->persistant[PERS_SPAWN_COUNT]) {
 		CG_Respawn();
@@ -299,10 +128,4 @@ void CG_TransitionPlayerState(playerState_t* ps, playerState_t* ops) {
 
 	// run events
 	CG_CheckPlayerstateEvents(ps, ops);
-
-	// smooth the ducking viewheight change
-	if(ps->viewheight != ops->viewheight) {
-		cg.duckChange = ps->viewheight - ops->viewheight;
-		cg.duckTime = cg.time;
-	}
 }

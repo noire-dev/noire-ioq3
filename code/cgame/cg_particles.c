@@ -5,7 +5,7 @@ cg_particles.c -- simplified particle system
 */
 #include "cg_local.h"
 
-#define MAX_PARTICLES 262144
+#define MAX_PARTICLES 65536
 #define MAX_PARTICLE_SHADERS 256
 #define PARTICLE_LIFETIME_BASE 1.5f
 #define PARTICLE_LIFETIME_VARIANCE 0.5f

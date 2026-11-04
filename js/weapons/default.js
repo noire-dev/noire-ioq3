@@ -121,7 +121,6 @@ weapon.fxv(weapon.shotgun, "tracerParticleGravity", 0.0, 0.0, 0.0);
 weapon.fx(weapon.shotgun, "tracerParticleSize", 4.0);
 weapon.fx(weapon.shotgun, "tracerParticleLifetime", 0.25);
 weapon.fx(weapon.shotgun, "fireSound", "sound/weapons/shotgun/sshotf1b.wav", 0);
-weapon.fx(weapon.shotgun, "muzzleSmokeShader", "shotgunSmokePuff");
 weapon.fx(weapon.shotgun, "brassModel", "models/weapons2/shells/s_shell.md3");
 weapon.fx(weapon.shotgun, "brassCount", 2);
 weapon.fxv(weapon.shotgun, "brassOffset", 8.0, 0.0, 24.0);

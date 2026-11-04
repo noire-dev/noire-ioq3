@@ -837,24 +837,6 @@ void BotDontAvoid(bot_state_t* bs, char* itemname) {
 
 /*
 ==================
-BotGoForPowerups
-==================
-*/
-void BotGoForPowerups(bot_state_t* bs) {
-	// don't avoid any of the powerups anymore
-	BotDontAvoid(bs, "Quad Damage");
-	BotDontAvoid(bs, "Regeneration");
-	BotDontAvoid(bs, "Battle Suit");
-	BotDontAvoid(bs, "Speed");
-	BotDontAvoid(bs, "Invisibility");
-	// BotDontAvoid(bs, "Flight");
-	// reset the long term goal time so the bot will go for the powerup
-	// NOTE: the long term goal type doesn't change
-	bs->ltg_time = 0;
-}
-
-/*
-==================
 BotRoamGoal
 ==================
 */
@@ -2741,16 +2723,6 @@ void BotCheckEvents(bot_state_t* bs, entityState_t* state) {
 				break;
 			}
 			trap_GetConfigstring(CS_SOUNDS + state->eventParm, buf, sizeof(buf));
-
-			if(!strcmp(buf, "sound/items/poweruprespawn.wav")) {
-				// powerup respawned... go get it
-				BotGoForPowerups(bs);
-			}
-			break;
-		}
-		case EV_PLAYER_TELEPORT_IN: {
-			VectorCopy(state->origin, lastteleport_origin);
-			lastteleport_time = FloatTime();
 			break;
 		}
 		case EV_GENERAL_SOUND: {
@@ -2780,12 +2752,7 @@ void BotCheckEvents(bot_state_t* bs, entityState_t* state) {
 		case EV_FOOTSTEP_TILE:
 		case EV_FOOTSTEP_WOOD:
 		case EV_FOOTSTEP_WOODPANEL:
-		case EV_FALL_MEDIUM:
-		case EV_FALL_FAR:
-		case EV_STEP_4:
-		case EV_STEP_8:
-		case EV_STEP_12:
-		case EV_STEP_16:
+		case EV_FALL:
 		case EV_GRAVITY_LAUNCH:
 		case EV_WATER_SPLASH:
 		case EV_ITEM_PICKUP:

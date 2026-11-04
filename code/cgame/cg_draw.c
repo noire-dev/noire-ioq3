@@ -5,9 +5,10 @@
 static queued3DString_t queued3DStrings[MAX_3D_STRING_QUEUE];
 static int queued3DStringCount = 0;
 void CG_Add3DString(float x, float y, float z, const char* str, int style, const vec4_t color, float fontSize, float min, float max, bool useTrace) {
-	queued3DString_t* q = &queued3DStrings[queued3DStringCount++];
+	queued3DString_t* q;
 
 	if(queued3DStringCount >= MAX_3D_STRING_QUEUE) return;
+	q = &queued3DStrings[queued3DStringCount++];
 	q->x = x;
 	q->y = y;
 	q->z = z;
@@ -42,7 +43,6 @@ void CG_DrawHead(float x, float y, float w, float h, int clientNum) {
 #define WEAPON_SELECTOR_HEADER_ACTIVE_H 48.0f
 #define WEAPON_SELECTOR_HEADER_IDLE 77.0f
 #define WEAPON_SELECTOR_GAP 19.0f
-#define WEAPON_SELECTOR_LIST_Y 106.0f
 #define WEAPON_SELECTOR_ROW_H 48.0f
 #define WEAPON_SELECTOR_ROW_SELECTED_H 192.0f
 #define WEAPON_SELECTOR_TIME 1800
@@ -81,7 +81,6 @@ static void CG_DrawWeaponSelectorIcon(int weapon, float x, float y, float w, flo
 	qhandle_t icon;
 
 	if(weapon <= WP_NONE || weapon >= jsd_weaponCount) return;
-	CG_RegisterWeapon(weapon);
 	fx = &jsd_weaponFx[weapon];
 	icon = cg_weapons[weapon].weaponIcon;
 	if(!icon) return;
@@ -168,11 +167,9 @@ static void CG_DrawWeaponSelect(void) {
 		if(section == activeSection && count > 0) {
 			const char* name;
 			weapon = sectionWeapons[0];
-			CG_RegisterWeapon(weapon);
-			name = (cg_weapons[weapon].item && cg_weapons[weapon].item->pickup_name) ? cg_weapons[weapon].item->pickup_name : "WEAPON";
+			name = cg_weapons[weapon].item->pickup_name;
 			if(weapon == cg.weaponSelect) {
-				/* The first weapon is represented by the active section header.
-				 * Expand that header vertically too, just like selected rows below. */
+				CG_RegisterWeapon(weapon);
 				CG_DrawWeaponSelectorIcon(weapon, x + 35.0f, y + 39.0f, 200.0f, 100.0f, alpha);
 				weaponNameColor[3] = alpha;
 				CG_DrawWeaponSelectorText(x + (width * 0.5f), y + height - 20.0f, name, FONTSTYLE_BOLD | FONTSTYLE_CENTER, weaponNameColor, 0.65f);
@@ -198,8 +195,7 @@ static void CG_DrawWeaponSelect(void) {
 		bool selected = (weapon == cg.weaponSelect);
 		const char* name;
 
-		CG_RegisterWeapon(weapon);
-		name = (cg_weapons[weapon].item && cg_weapons[weapon].item->pickup_name) ? cg_weapons[weapon].item->pickup_name : "WEAPON";
+		name = cg_weapons[weapon].item->pickup_name;
 		height = selected ? WEAPON_SELECTOR_ROW_SELECTED_H : WEAPON_SELECTOR_ROW_H;
 
 		if(selected) {
@@ -237,13 +233,13 @@ static void CG_UpdateWeaponStatus(void) {
 		cg.swep_listcl[ps->weapon] = WS_HAVE;
 }
 
-bool n_tip1 = false;
-bool n_tip2 = false;
+static bool n_tip1 = false;
+static bool n_tip2 = false;
 
 #define FPS_FRAMES 4
 static void CG_DrawCounters(void) {
 	int y;
-	int value;
+	int value = 0;
 	int t, frameTime;
 	static int previousTimes[FPS_FRAMES];
 	static int index;
@@ -302,10 +298,8 @@ static void CG_ConsoleUpdateIdx(console_t* console, int chatHeight) {
 
 static void CG_DrawGenericConsole(console_t* console, int maxlines, int time, int x, int y, float size) {
 	int i, j;
-	vec4_t hcolor;
 
 	CG_ConsoleUpdateIdx(console, maxlines);
-	hcolor[0] = hcolor[1] = hcolor[2] = hcolor[3] = 1.0f;
 
 	j = 0;
 	for(i = console->displayIdx; i < console->insertIdx; ++i) {
@@ -316,57 +310,18 @@ static void CG_DrawGenericConsole(console_t* console, int maxlines, int time, in
 }
 
 void CG_AddToGenericConsole(const char* str, console_t* console) {
-	int len;
-	char *p, *ls;
-
-	len = 0;
+	char* p;
 
 	p = console->msgs[console->insertIdx % CONSOLE_MAXHEIGHT];
 	*p = 0;
 
-	ls = NULL;
 	while(*str) {
-		if(*str == ' ') ls = p;
 		*p++ = *str++;
-		len++;
 	}
 	*p = 0;
 
 	console->msgTimes[console->insertIdx % CONSOLE_MAXHEIGHT] = cg.time;
 	console->insertIdx++;
-}
-
-static void CG_ScanForCrosshairEntity(void) {
-	trace_t trace;
-	vec3_t start, end;
-	int content;
-
-	VectorCopy(cg.refdef.vieworg, start);
-	VectorMA(start, 131072, cg.refdef.viewaxis[0], end);
-
-	CG_Trace(&trace, start, vec3_origin, vec3_origin, end, cg.snap->ps.clientNum, CONTENTS_SOLID | CONTENTS_BODY);
-	if(trace.entityNum >= MAX_CLIENTS) return;
-
-	content = trap_CM_PointContents(trace.endpos, 0);
-	if(content & CONTENTS_FOG) return;
-
-	cg.crosshairClientNum = trace.entityNum;
-}
-
-static void CG_DrawCrosshair(void) {
-	float cSize;
-	qhandle_t hShader;
-
-	if(!cg_drawCrosshair.integer || cg.renderingThirdPerson) return;
-
-	trap_R_SetColor(color_white);
-	cSize = cg_crosshairScale.value;
-	if(cg_drawCrosshair.integer > 0) {
-		hShader = cgs.media.crosshairShader[cg_drawCrosshair.integer % NUM_CROSSHAIRS];
-		if(!hShader) hShader = cgs.media.crosshairShader[0];
-		drawhShaderAdjusted(320 - (cSize * 0.5), 240 - (cSize * 0.5), cSize, cSize, hShader);
-	}
-	trap_R_SetColor(NULL);
 }
 
 static void CG_Draw3DCrosshair(float x, float y, float z) {
@@ -431,7 +386,6 @@ static qhandle_t CG_FindModImage(int mod) {
 	if(mod == MOD_FALLING) return trap_R_RegisterShaderNoMip("icons/d_fall");
 	if(mod == MOD_SUICIDE) return trap_R_RegisterShaderNoMip("icons/d_death");
 	if(mod == MOD_TRIGGER_HURT) return trap_R_RegisterShaderNoMip("icons/d_death");
-	// if(mod == MOD_PROP) return trap_R_RegisterShaderNoMip("icons/iconw_propgun");
 	return trap_R_RegisterShaderNoMip("icons/d_death");
 }
 
@@ -463,8 +417,6 @@ static void CG_NSErrors(void) {
 
 	if(trap_Cvar_VariableIntegerValue("js.error") == 2)
 		text = "Low performance, physics may be unstable";
-	else if(trap_Cvar_VariableIntegerValue("js.error") == 3)
-		text = "Network unstable, switching to chunk mode";
 	else
 		text = va("Something is creating script errors - %s", trap_Cvar_VariableString("js.error"));
 
@@ -489,7 +441,6 @@ static void CG_NSErrors(void) {
 
 void CG_AddNotify(const char* text, int type, int number, const char* picPath) {
 	int i;
-	int id = -1;
 
 	for(i = MAX_NOTIFICATIONS - 1; i > 0; i--) cg.notifications[i] = cg.notifications[i - 1];
 
@@ -561,11 +512,10 @@ static void CG_Draw2D(void) {
 
 	CG_DrawGenericConsole(&cgs.chat, 5, 10000, 0 - cgui.wideoffset, 350, 0.50);
 
-	CG_DrawCrosshair();
+	CG_DrawCrosshair3D();
 	CG_DrawCounters();
 
 	if(!(catcher & KEYCATCH_UI)) {
-		CG_ScanForCrosshairEntity();
 		CG_Notify();
 		CG_NSErrors();
 	}

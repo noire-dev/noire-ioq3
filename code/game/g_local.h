@@ -287,7 +287,7 @@ void G_SetMovedir(vec3_t angles, vec3_t movedir);
 
 void G_InitGentity(gentity_t* e);
 gentity_t* G_Spawn(void);
-gentity_t* G_TempEntity(vec3_t origin, int event);
+gentity_t* G_TempEntity(vec3_t origin, int event, int eventParm);
 void G_Sound(gentity_t* ent, int channel, int soundIndex);
 void G_FreeEntity(gentity_t* e);
 bool G_EntitiesFree(void);

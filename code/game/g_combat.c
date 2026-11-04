@@ -69,35 +69,10 @@ void LookAtKiller(gentity_t* self, gentity_t* inflictor, gentity_t* attacker) {
 
 /*
 ==================
-GibEntity
-==================
-*/
-void GibEntity(gentity_t* self, int killer) {
-	gentity_t* ent;
-	int i;
-
-	G_AddEvent(self, EV_GIB_PLAYER, killer);
-	self->takedamage = false;
-	self->s.eType = ET_INVISIBLE;
-	self->r.contents = 0;
-}
-
-/*
-==================
 body_die
 ==================
 */
-void body_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int meansOfDeath) {
-	if(self->health > GIB_HEALTH) {
-		return;
-	}
-	if(!g_blood.integer) {
-		self->health = GIB_HEALTH + 1;
-		return;
-	}
-
-	GibEntity(self, 0);
-}
+void body_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int meansOfDeath) {}
 
 /*
 ==================
@@ -121,8 +96,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 		killer = ENTITYNUM_WORLD;
 
 	// broadcast the death event to everyone
-	ent = G_TempEntity(self->r.currentOrigin, EV_OBITUARY);
-	ent->s.eventParm = meansOfDeath;
+	ent = G_TempEntity(self->r.currentOrigin, EV_OBITUARY, meansOfDeath);
 	ent->s.otherEntityNum = killer;
 	ent->s.otherEntityNum2 = self->s.number;
 	ent->r.svFlags = SVF_BROADCAST;  // send to everyone
@@ -140,7 +114,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 		client = &level.clients[i];
 		if(client->pers.connected != CON_CONNECTED) continue;
 
-		self->takedamage = true;  // can still be gibbed
+		self->takedamage = true;
 
 		self->s.weapon = WP_NONE;
 		self->s.powerups = 0;
@@ -161,32 +135,21 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 		// remove powerups
 		memset(self->client->ps.powerups, 0, sizeof(self->client->ps.powerups));
 
-		// never gib in a nodrop
 		contents = trap_PointContents(self->r.currentOrigin, -1);
 
-		if((self->health <= GIB_HEALTH && !(contents & CONTENTS_NODROP) && g_blood.integer) || meansOfDeath == MOD_SUICIDE) {
-			// gib death
-			GibEntity(self, killer);
-		} else {
-			// normal death
-			static int lastDeath;
+		// normal death
+		static int lastDeath;
 
-			if(lastDeath < 0 || lastDeath >= 4) lastDeath = 0;
-			anim = AM_DEATH1 + lastDeath;
+		if(lastDeath < 0 || lastDeath >= 4) lastDeath = 0;
+		anim = AM_DEATH1 + lastDeath;
 
-			// for the no-blood option, we need to prevent the health
-			// from going to gib level
-			if(self->health <= GIB_HEALTH) self->health = GIB_HEALTH + 1;
+		self->client->ps.legsAnim = ((self->client->ps.legsAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
+		self->client->ps.torsoAnim = ((self->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
 
-			self->client->ps.legsAnim = ((self->client->ps.legsAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
-			self->client->ps.torsoAnim = ((self->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
+		self->die = body_die;
 
-			// the body can still be gibbed
-			self->die = body_die;
-
-			// globally cycle through the different death animations
-			lastDeath = (lastDeath + 1) % 4;
-		}
+		// globally cycle through the different death animations
+		lastDeath = (lastDeath + 1) % 4;
 
 		trap_LinkEntity(self);
 	}

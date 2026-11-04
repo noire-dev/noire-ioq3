@@ -410,21 +410,13 @@ void G_FreeEntity(gentity_t* ed) {
 	ed->inuse = false;
 }
 
-/*
-=================
-G_TempEntity
-
-Spawns an event entity that will be auto-removed
-The origin will be snapped to save net bandwidth, so care
-must be taken if the origin is right on a surface (snap towards start vector first)
-=================
-*/
-gentity_t* G_TempEntity(vec3_t origin, int event) {
+gentity_t* G_TempEntity(vec3_t origin, int event, int eventParm) {
 	gentity_t* e;
 	vec3_t snapped;
 
 	e = G_Spawn();
 	e->s.eType = ET_EVENTS + event;
+	e->s.eventParm = eventParm;
 
 	e->classname = "tempEntity";
 	e->eventTime = level.time;
@@ -534,8 +526,7 @@ G_Sound
 void G_Sound(gentity_t* ent, int channel, int soundIndex) {
 	gentity_t* te;
 
-	te = G_TempEntity(ent->r.currentOrigin, EV_GENERAL_SOUND);
-	te->s.eventParm = soundIndex;
+	te = G_TempEntity(ent->r.currentOrigin, EV_GENERAL_SOUND, soundIndex);
 }
 
 //==============================================================================

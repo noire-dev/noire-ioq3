@@ -54,7 +54,6 @@ void CG_DrawInformation(void) {
 	qhandle_t logo;
 	qhandle_t loading;
 	char buf[64];
-	vec4_t color_white = {1.00f, 1.00f, 1.00f, 1.00f};
 	vec4_t color_whiteblack = {0.90f, 0.90f, 0.90f, 1.00f};
 	vec4_t color_grey = {0.30f, 0.30f, 0.30f, 1.00f};
 	vec4_t color_lightgrey = {0.50f, 0.50f, 0.50f, 1.00f};

@@ -337,7 +337,6 @@ static void API_WeaponFX(int weaponID, int fieldID, int i1, int i2, int i3, int 
 
 	API_FIELD(JSE_String(fx->flashModel, MAX_QPATH))
 	API_FIELD(JSE_String(fx->muzzleBone, MAX_QPATH))
-	API_FIELD(JSE_String(fx->muzzleSmokeShader, MAX_QPATH))
 
 	API_FIELD(JSE_String(fx->brassModel, MAX_QPATH))
 	API_FIELD(JSE_Int(&fx->brassCount))

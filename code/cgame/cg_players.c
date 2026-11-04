@@ -45,7 +45,7 @@ static int CG_AnimationIndexFromName(const char* name) {
 	int i, j;
 	char suffixed[MAX_QPATH];
 
-	for(i = 0; i < ARRAY_LEN(generalNames); i++) {
+	for(i = 0; i < (int)ARRAY_LEN(generalNames); i++) {
 		if(!Q_stricmp(name, generalNames[i])) {
 			return i;
 		}
@@ -95,7 +95,7 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci, char* 
 	if(len <= 0) {
 		return false;
 	}
-	if(len >= sizeof(text) - 1) {
+	if(len >= (int)sizeof(text) - 1) {
 		CG_Printf("Animation file %s is too large\n", filename);
 		trap_FS_FCloseFile(f);
 		return false;
@@ -312,34 +312,6 @@ static bool CG_RegisterClientModelname(clientInfo_t* ci, const char* modelName, 
 }
 
 /*
-====================
-CG_ColorFromString
-====================
-*/
-static void CG_ColorFromString(const char* v, vec3_t color) {
-	int val;
-
-	VectorClear(color);
-
-	val = atoi(v);
-
-	if(val < 1 || val > 7) {
-		VectorSet(color, 1, 1, 1);
-		return;
-	}
-
-	if(val & 1) {
-		color[2] = 1.0f;
-	}
-	if(val & 2) {
-		color[1] = 1.0f;
-	}
-	if(val & 4) {
-		color[0] = 1.0f;
-	}
-}
-
-/*
 ===================
 CG_LoadClientInfo
 
@@ -373,7 +345,6 @@ CG_CopyClientInfoModel
 ======================
 */
 static void CG_CopyClientInfoModel(clientInfo_t* from, clientInfo_t* to) {
-	to->gender = from->gender;
 	to->model = from->model;
 	to->modelSkin = from->modelSkin;
 	to->modelIcon = from->modelIcon;
@@ -401,7 +372,7 @@ static bool CG_ScanForExistingClientInfo(clientInfo_t* ci) {
 		if(match->deferred) {
 			continue;
 		}
-		if(!Q_stricmp(ci->modelName, match->modelName) && !Q_stricmp(ci->skinName, match->skinName) && !Q_stricmp(ci->blueTeam, match->blueTeam) && !Q_stricmp(ci->redTeam, match->redTeam)) {
+		if(!Q_stricmp(ci->modelName, match->modelName) && !Q_stricmp(ci->skinName, match->skinName)) {
 			// this clientinfo is identical, so use its handles
 
 			ci->deferred = false;
@@ -892,115 +863,7 @@ static void CG_PlayerAngles(centity_t* cent, vec3_t axis[3]) {
 //==========================================================================
 
 /*
-===============
-CG_TrailItem
-===============
-*/
-static void CG_TrailItem(centity_t* cent, qhandle_t hModel) {
-	refEntity_t ent;
-	vec3_t angles;
-	vec3_t axis[3];
-
-	VectorCopy(cent->lerpAngles, angles);
-	angles[PITCH] = 0;
-	angles[ROLL] = 0;
-	AnglesToAxis(angles, axis);
-
-	memset(&ent, 0, sizeof(ent));
-	VectorMA(cent->lerpOrigin, -16, axis[0], ent.origin);
-	ent.origin[2] += 16;
-	angles[YAW] += 90;
-	AnglesToAxis(angles, ent.axis);
-
-	ent.hModel = hModel;
-	trap_R_AddRefEntityToScene(&ent);
-}
-
-/*
-===============
-CG_PlayerFlag
-===============
-*/
-
-/*
-===============
-CG_PlayerFloatSprite
-
-Float a sprite over the player's head
-===============
-*/
-static void CG_PlayerFloatSprite(centity_t* cent, qhandle_t shader) {
-	int rf;
-	refEntity_t ent;
-
-	if(cent->currentState.number == cg.snap->ps.clientNum && !cg.renderingThirdPerson) {
-		rf = RF_THIRD_PERSON;  // only show in mirrors
-	} else {
-		rf = 0;
-	}
-
-	memset(&ent, 0, sizeof(ent));
-	VectorCopy(cent->lerpOrigin, ent.origin);
-	ent.origin[2] += 48;
-	ent.reType = RT_SPRITE;
-	ent.customShader = shader;
-	ent.radius = 10;
-	ent.renderfx = rf;
-	ent.shaderRGBA[0] = 255;
-	ent.shaderRGBA[1] = 255;
-	ent.shaderRGBA[2] = 255;
-	ent.shaderRGBA[3] = 255;
-	trap_R_AddRefEntityToScene(&ent);
-}
-
-/*
 =================
-CG_LightVerts
-=================
-*/
-int CG_LightVerts(vec3_t normal, int numVerts, polyVert_t* verts) {
-	int i, j;
-	float incoming;
-	vec3_t ambientLight;
-	vec3_t lightDir;
-	vec3_t directedLight;
-
-	trap_R_LightForPoint(verts[0].xyz, ambientLight, directedLight, lightDir);
-
-	for(i = 0; i < numVerts; i++) {
-		incoming = DotProduct(normal, lightDir);
-		if(incoming <= 0) {
-			verts[i].modulate[0] = ambientLight[0];
-			verts[i].modulate[1] = ambientLight[1];
-			verts[i].modulate[2] = ambientLight[2];
-			verts[i].modulate[3] = 255;
-			continue;
-		}
-		j = (ambientLight[0] + incoming * directedLight[0]);
-		if(j > 255) {
-			j = 255;
-		}
-		verts[i].modulate[0] = j;
-
-		j = (ambientLight[1] + incoming * directedLight[1]);
-		if(j > 255) {
-			j = 255;
-		}
-		verts[i].modulate[1] = j;
-
-		j = (ambientLight[2] + incoming * directedLight[2]);
-		if(j > 255) {
-			j = 255;
-		}
-		verts[i].modulate[2] = j;
-
-		verts[i].modulate[3] = 255;
-	}
-	return true;
-}
-
-/*
-===============
 CG_GetLocalPlayerHeadOrigin
 
 World space position of the local player's ValveBiped.Bip01_Head1 joint,
@@ -1136,16 +999,10 @@ A player just came into view or teleported, so reset all animation info
 ===============
 */
 void CG_ResetPlayerEntity(centity_t* cent) {
-	cent->errorTime = -99999;  // guarantee no error decay added
-	cent->extrapolated = false;
-
 	CG_ClearLerpFrame(&cgs.clientinfo[cent->currentState.clientNum], &cent->pe.legs, AM_IDLE);
 
 	BG_EvaluateTrajectory(&cent->currentState.pos, cg.time, cent->lerpOrigin);
 	BG_EvaluateTrajectory(&cent->currentState.apos, cg.time, cent->lerpAngles);
-
-	VectorCopy(cent->lerpOrigin, cent->rawOrigin);
-	VectorCopy(cent->lerpAngles, cent->rawAngles);
 
 	// CG_ClearLerpFrame above reset the one full-body IQM animation state.
 }

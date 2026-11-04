@@ -403,13 +403,7 @@ void CopyToBodyQue(gentity_t* ent) {
 	body->think = BodySink;
 
 	body->die = body_die;
-
-	// don't take more damage if already gibbed
-	if(ent->health <= GIB_HEALTH) {
-		body->takedamage = false;
-	} else {
-		body->takedamage = true;
-	}
+	body->takedamage = true;
 
 	VectorCopy(body->s.pos.trBase, body->r.currentOrigin);
 	trap_LinkEntity(body);
@@ -821,8 +815,7 @@ void ClientSpawn(gentity_t* ent) {
 	// positively link the client, even if the command times are weird
 	VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);
 
-	tent = G_TempEntity(ent->client->ps.origin, EV_PLAYER_TELEPORT_IN);
-	tent->s.clientNum = ent->s.clientNum;
+	tent = G_TempEntity(ent->client->ps.origin, EV_PARTICLE, PP_TELEPORT_IN);
 
 	trap_LinkEntity(ent);
 
@@ -865,11 +858,7 @@ void ClientDisconnect(int clientNum) {
 
 	// send effect if they were completely connected
 	if(ent->client->pers.connected == CON_CONNECTED) {
-		tent = G_TempEntity(ent->client->ps.origin, EV_PLAYER_TELEPORT_OUT);
-		tent->s.clientNum = ent->s.clientNum;
-
-		// They don't get to take powerups with them!
-		// Especially important for stuff like CTF flags
+		tent = G_TempEntity(ent->client->ps.origin, EV_PARTICLE, PP_TELEPORT_OUT);
 		TossClientItems(ent);
 	}
 

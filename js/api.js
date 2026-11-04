@@ -124,7 +124,6 @@ apiFields.weaponFx = {
 
     "flashModel": apiField += 1,
     "muzzleBone": apiField += 1,
-    "muzzleSmokeShader": apiField += 1,
 
     "brassModel": apiField += 1,
     "brassCount": apiField += 1,

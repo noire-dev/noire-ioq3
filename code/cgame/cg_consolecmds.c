@@ -42,7 +42,7 @@ bool CG_ConsoleCommand(void) {
 
 	cmd = CG_Argv(0);
 
-	for(i = 0; i < ARRAY_LEN(commands); i++) {
+	for(i = 0; i < (int)ARRAY_LEN(commands); i++) {
 		if(!Q_stricmp(cmd, commands[i].cmd)) {
 			commands[i].function();
 			return true;
@@ -55,7 +55,7 @@ bool CG_ConsoleCommand(void) {
 void CG_InitConsoleCommands(void) {
 	int i;
 
-	for(i = 0; i < ARRAY_LEN(commands); i++) {
+	for(i = 0; i < (int)ARRAY_LEN(commands); i++) {
 		trap_AddCommand(commands[i].cmd);
 	}
 

@@ -145,7 +145,6 @@ static void CG_EjectBrass(centity_t* cent) {
 		le->angles.trDelta[2] = fx->brassSpinDelta[2];
 
 		le->leFlags = LEF_TUMBLE;
-		le->leBounceSoundType = LEBS_BRASS;
 		le->leMarkType = LEMT_NONE;
 	}
 }
@@ -281,7 +280,7 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 		byte modulate[4];
 		float bendRight, bendUp;
 		float frameDt;
-		int seg, i;
+		int seg;
 #define PHY_BEAM_SEGMENTS 32
 #define PHY_BEAM_BEND_SCALE 0.16f
 #define PHY_BEAM_BEND_MAXVEL 600.0f
@@ -561,7 +560,6 @@ void CG_RegisterWeapon(int weaponNum) {
 	weaponFx_t* fx;
 	item_t* weaponItem = NULL;
 	char path[MAX_QPATH];
-	char fallback[MAX_QPATH];
 	vec3_t mins, maxs;
 	int i;
 	int itemIdx = -1;
@@ -583,7 +581,6 @@ void CG_RegisterWeapon(int weaponNum) {
 	if(fx->trailShader[0]) fx->trailHandle = trap_R_RegisterShader(fx->trailShader);
 	if(fx->tracerParticleShader[0]) fx->tracerHandle = trap_R_RegisterShader(fx->tracerParticleShader);
 	if(fx->beamShader[0]) fx->beamHandle = trap_R_RegisterShader(fx->beamShader);
-	if(fx->muzzleSmokeShader[0]) fx->muzzleSmokeHandle = trap_R_RegisterShader(fx->muzzleSmokeShader);
 	if(fx->readySound[0]) fx->readySoundHandle = trap_S_RegisterSound(fx->readySound, false);
 	for(i = 0; i < 4; i++) {
 		if(fx->fireSound[i][0]) fx->fireSoundHandle[i] = trap_S_RegisterSound(fx->fireSound[i], false);
@@ -655,7 +652,7 @@ void CG_RegisterItemVisuals(int itemNum) {
 	memset(itemInfo, 0, sizeof(*itemInfo));
 	itemInfo->registered = true;
 
-	itemInfo->models[0] = trap_R_RegisterModel(item->model);
+	itemInfo->models = trap_R_RegisterModel(item->model);
 
 	itemInfo->icon = trap_R_RegisterShader(item->icon);
 
@@ -793,9 +790,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 		}
 
 		gun.hModel = weapon->weaponModel;
-		if(!gun.hModel) {
-			return;
-		}
+		if(!gun.hModel) return;
 
 		{
 			// add weapon ready/looping sound (fully data-driven)
@@ -810,26 +805,6 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 			}
 		}
 
-		// Align the weapon's own "ValveBiped.Bip01_R_Hand" tag with the
-		// hand model's "ValveBiped.Bip01_R_Hand" tag, 1:1.
-		//
-		// Quake 3 stores bases as ROWS and rotates vectors with
-		// world = local * axis (VectorRotate). Composing frames therefore
-		// follows the same order as the engine's CG_PositionRotatedEntityOnTag:
-		// a tag's world basis is tag.axis * parent->axis (tag applied first,
-		// then the parent). Multiplying the other way around (parent * tag)
-		// yields the transposed rotation, which is exactly the "gun anchored
-		// at the hand but rotated wrong" artifact.
-		//
-		// So, with H = hand tag basis in world space (rows) and W = weapon
-		// tag basis in weapon-local space (rows), the weapon entity axis must
-		// be W^-1 * H (W orthonormal => W^-1 == W^T), NOT H * W^T. The weapon
-		// tag origin is then subtracted along the rows of the final basis.
-		//
-		// If the weapon tag basis is left-handed (mirrored, common for
-		// imported HL2/Source models), it is first normalized to right-handed
-		// so that its inverse is a pure rotation; the dropped reflection is
-		// restored afterwards by flipping one axis of gun.axis.
 		{
 			orientation_t handTag;
 			orientation_t weaponTag;
@@ -862,27 +837,14 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 			VectorCopy(weaponTag.axis[1], weaponTagAxis[1]);
 			VectorCopy(weaponTag.axis[2], weaponTagAxis[2]);
 
-			// If the weapon tag basis is left-handed (mirrored, common for
-			// imported HL2/Source models), negate one column so its inverse
-			// is a pure rotation, not a rotation + reflection. The missing
-			// reflection is compensated by flipping the model on that axis
-			// via negative scale in gun.axis (the axis stays a valid basis,
-			// the model just appears mirrored on one side, which for a
-			// weapon held in hand is what "ValveBiped" tags usually imply).
 			detW = weaponTagAxis[0][0] * (weaponTagAxis[1][1] * weaponTagAxis[2][2] - weaponTagAxis[1][2] * weaponTagAxis[2][1]) - weaponTagAxis[1][0] * (weaponTagAxis[0][1] * weaponTagAxis[2][2] - weaponTagAxis[0][2] * weaponTagAxis[2][1]) + weaponTagAxis[2][0] * (weaponTagAxis[0][1] * weaponTagAxis[1][2] - weaponTagAxis[0][2] * weaponTagAxis[1][1]);
 
 			detH = handTagAxis[0][0] * (handTagAxis[1][1] * handTagAxis[2][2] - handTagAxis[1][2] * handTagAxis[2][1]) - handTagAxis[1][0] * (handTagAxis[0][1] * handTagAxis[2][2] - handTagAxis[0][2] * handTagAxis[2][1]) + handTagAxis[2][0] * (handTagAxis[0][1] * handTagAxis[1][2] - handTagAxis[0][2] * handTagAxis[1][1]);
 
 			// Make both bases right-handed.
-			if(detW < 0.0f) {
-				VectorNegate(weaponTagAxis[1], weaponTagAxis[1]);
-			}
-			if(detH < 0.0f) {
-				VectorNegate(handTagAxis[1], handTagAxis[1]);
-			}
+			if(detW < 0.0f) VectorNegate(weaponTagAxis[1], weaponTagAxis[1]);
+			if(detH < 0.0f) VectorNegate(handTagAxis[1], handTagAxis[1]);
 
-			// --- Orientation: gun.axis = inverse(weaponTagAxis) * handTagAxis ---
-			// weaponTagAxis is orthonormal right-handed; inverse == transpose.
 			weaponTagInvAxis[0][0] = weaponTagAxis[0][0];
 			weaponTagInvAxis[0][1] = weaponTagAxis[1][0];
 			weaponTagInvAxis[0][2] = weaponTagAxis[2][0];
@@ -895,20 +857,8 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 
 			MatrixMultiply(weaponTagInvAxis, handTagAxis, gun.axis);
 
-			// If the original weapon basis was left-handed, restore the
-			// mirror by flipping the same local axis (row 1 of gun.axis,
-			// i.e. the "left" axis) in the final orientation. This makes
-			// the model appear as authored, not mirror-twisted.
-			if(detW < 0.0f) {
-				VectorNegate(gun.axis[1], gun.axis[1]);
-			}
+			if(detW < 0.0f) VectorNegate(gun.axis[1], gun.axis[1]);
 
-			// --- Per-model weapon scale ("weaponScale" from animation.cfg) ---
-			// Weapon models are authored for the full-size valveBiped hand,
-			// so on smaller models they must shrink around the hand anchor.
-			// Scaling the axis rows scales the rendered model; the position
-			// block below subtracts weaponTag.origin along those same scaled
-			// rows, so the tag point still lands exactly on the hand.
 			if(ci->weaponScale > 0.0f && ci->weaponScale != 1.0f) {
 				VectorScale(gun.axis[0], ci->weaponScale, gun.axis[0]);
 				VectorScale(gun.axis[1], ci->weaponScale, gun.axis[1]);
@@ -916,9 +866,6 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 				gun.nonNormalizedAxes = true;
 			}
 
-			// --- Position: gun.origin = handTagOrigin - gun.axis * weaponTag.origin ---
-			// Use the ORIGINAL (pre-normalization) weaponTag.origin so the
-			// weapon tag still lands exactly on the hand tag.
 			VectorCopy(handTagOrigin, gun.origin);
 			VectorMA(gun.origin, -weaponTag.origin[0], gun.axis[0], gun.origin);
 			VectorMA(gun.origin, -weaponTag.origin[1], gun.axis[1], gun.origin);
@@ -932,21 +879,14 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 		// make sure we aren't looking at cg.predictedPlayerEntity for LG
 		nonPredictedCent = &cg_entities[cent->currentState.number];
 
-		// if the index of the nonPredictedCent is not the same as the clientNum
-		// then this is a fake player (like on the single player podiums), so
-		// go ahead and use the cent
-		if((nonPredictedCent - cg_entities) != cent->currentState.clientNum) {
-			nonPredictedCent = cent;
-		}
+		if((nonPredictedCent - cg_entities) != cent->currentState.clientNum) nonPredictedCent = cent;
 
 		// add the flash
 		if(fx->continuousFire && (nonPredictedCent->currentState.eFlags & EF_FIRING)) {
 			// continuous flash
 		} else {
 			// impulse flash
-			if(cg.time - cent->muzzleFlashTime > MUZZLE_FLASH_TIME) {
-				return;
-			}
+			if(cg.time - cent->muzzleFlashTime > MUZZLE_FLASH_TIME) return;
 		}
 
 		memset(&flash, 0, sizeof(flash));
@@ -962,9 +902,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 		CG_PositionRotatedEntityOnTag(&flash, &gun, weapon->weaponModel, fx->muzzleBone);
 		// the tag basis includes the per-model weapon scale
 		flash.nonNormalizedAxes = gun.nonNormalizedAxes;
-		if(flash.hModel) {
-			trap_R_AddRefEntityToScene(&flash);
-		}
+		if(flash.hModel) trap_R_AddRefEntityToScene(&flash);
 	}
 
 	// Data-driven fire FX at the weapon's muzzleBone tag.
@@ -998,11 +936,6 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 	CG_LightningBolt(nonPredictedCent, flash.origin);
 }
 
-/*
- * Build a stable, data-driven list of weapons in selector order.
- * Weapons are grouped by weaponFX.weaponSection and ordered by
- * weaponFX.sectionOrder (weapon index is the tie breaker).
- */
 static int CG_BuildWeaponSelectorOrder(int* weapons, int maxWeapons) {
 	int count = 0;
 	int section, order, weapon;
@@ -1083,7 +1016,7 @@ void CG_PrevWeapon_f(void) {
 void CG_Weapon_f(void) {
 	int num;
 
-	if(!cg.snap || cg.snap->ps.pm_flags & PMF_FOLLOW) return;
+	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
 
 	num = atoi(CG_Argv(1));
 
@@ -1111,7 +1044,6 @@ Caused by an EV_FIRE_WEAPON event
 void CG_FireWeapon(centity_t* cent) {
 	entityState_t* ent;
 	int c;
-	weaponInfo_t* weap;
 
 	ent = &cent->currentState;
 	if(ent->weapon == WP_NONE) {
@@ -1121,7 +1053,6 @@ void CG_FireWeapon(centity_t* cent) {
 		CG_Error("CG_FireWeapon: ent->weapon >= jsd_weaponCount");
 		return;
 	}
-	weap = &cg_weapons[ent->weapon];
 
 	{
 		weaponFx_t* fx = &jsd_weaponFx[ent->weapon];
@@ -1156,32 +1087,20 @@ void CG_FireWeapon(centity_t* cent) {
 	}
 }
 
-/*
-=================
-CG_MissileHitWall
-
-Caused by an EV_MISSILE_MISS event, or directly by local bullet tracing
-=================
-*/
-void CG_MissileHitWall(int weapon, int clientNum, vec3_t origin, vec3_t dir, impactSound_t soundType) {
+void CG_MissileHitWall(int weapon, vec3_t origin, vec3_t dir) {
 	if(weapon > WP_NONE && weapon < jsd_weaponCount && jsd_weaponFx[weapon].missileExplodeSoundHandle) {
 		trap_S_StartSound(origin, ENTITYNUM_WORLD, CHAN_AUTO, jsd_weaponFx[weapon].missileExplodeSoundHandle);
 	}
 	CG_EmitWeaponHitFx(weapon, origin, dir);
 }
 
-/*
-=================
-CG_MissileHitPlayer
-=================
-*/
-void CG_MissileHitPlayer(int weapon, vec3_t origin, vec3_t dir, int entityNum) {
+void CG_MissileHitPlayer(int weapon, vec3_t origin, vec3_t dir) {
 	if(weapon > WP_NONE && weapon < jsd_weaponCount && jsd_weaponFx[weapon].explodeOnFleshHit) {
 		vec4_t bloodColor = {0.75f, 0.0f, 0.0f, 1.0f};
 		vec3_t bloodGravity = {0.0f, 0.0f, -600.0f};
 
 		CG_AddParticles(origin, bloodColor, 32, 300.0f, PF_SMOOTH_FADE | PF_GRAVITY, bloodGravity, 0, 5.0f, 0.7f);
-		CG_MissileHitWall(weapon, 0, origin, dir, IMPACTSOUND_FLESH);
+		CG_MissileHitWall(weapon, origin, dir);
 	}
 }
 
@@ -1200,38 +1119,13 @@ CG_ShotgunPellet
 */
 static void CG_ShotgunPellet(vec3_t start, vec3_t end, int skipNum, int weapon) {
 	trace_t tr;
-	int sourceContentType, destContentType;
 
 	CG_Trace(&tr, start, NULL, NULL, end, skipNum, MASK_SHOT);
 
-	sourceContentType = CG_PointContents(start, 0);
-	destContentType = CG_PointContents(tr.endpos, 0);
-
-	// FIXME: should probably move this cruft into CG_BubbleTrail
-	if(sourceContentType == destContentType) {
-		if(sourceContentType & CONTENTS_WATER) {
-			CG_BubbleTrail(start, tr.endpos, 32);
-		}
-	} else if(sourceContentType & CONTENTS_WATER) {
-		trace_t trace;
-
-		trap_CM_BoxTrace(&trace, end, start, NULL, NULL, 0, CONTENTS_WATER);
-		CG_BubbleTrail(start, trace.endpos, 32);
-	} else if(destContentType & CONTENTS_WATER) {
-		trace_t trace;
-
-		trap_CM_BoxTrace(&trace, start, end, NULL, NULL, 0, CONTENTS_WATER);
-		CG_BubbleTrail(tr.endpos, trace.endpos, 32);
-	}
-
 	if(cg_entities[tr.entityNum].currentState.eType == ET_PLAYER) {
-		CG_MissileHitPlayer(weapon, tr.endpos, tr.plane.normal, tr.entityNum);
+		CG_MissileHitPlayer(weapon, tr.endpos, tr.plane.normal);
 	} else {
-		if(tr.surfaceFlags & SURF_METAL) {
-			CG_MissileHitWall(weapon, 0, tr.endpos, tr.plane.normal, IMPACTSOUND_METAL);
-		} else {
-			CG_MissileHitWall(weapon, 0, tr.endpos, tr.plane.normal, IMPACTSOUND_DEFAULT);
-		}
+		CG_MissileHitWall(weapon, tr.endpos, tr.plane.normal);
 	}
 }
 
@@ -1243,7 +1137,7 @@ Perform the same traces the server did to locate the
 hit splashes
 ================
 */
-static void CG_ShotgunPattern(vec3_t origin, vec3_t origin2, int seed, int otherEntNum, int weapon) {
+void CG_ShotgunPattern(vec3_t origin, vec3_t origin2, int seed, int otherEntNum, int weapon) {
 	int i;
 	float r, u;
 	vec3_t end;
@@ -1268,33 +1162,6 @@ static void CG_ShotgunPattern(vec3_t origin, vec3_t origin2, int seed, int other
 }
 
 /*
-==============
-CG_ShotgunFire
-==============
-*/
-void CG_ShotgunFire(entityState_t* es, int weapon) {
-	vec3_t v;
-	int contents;
-
-	VectorSubtract(es->origin2, es->pos.trBase, v);
-	VectorNormalize(v);
-	VectorScale(v, 32, v);
-	VectorAdd(es->pos.trBase, v, v);
-	// ragepro can't alpha fade, so don't even bother with smoke
-	vec3_t up;
-
-	{
-		weaponFx_t* fx = &jsd_weaponFx[weapon];
-		contents = CG_PointContents(es->pos.trBase, 0);
-		if(!(contents & CONTENTS_WATER) && fx->muzzleSmokeHandle) {
-			VectorSet(up, 0, 0, 8);
-			CG_SmokePuff(v, up, 32, 1, 1, 1, 0.33f, 900, cg.time, 0, LEF_PUFF_DONT_SCALE, fx->muzzleSmokeHandle);
-		}
-	}
-	CG_ShotgunPattern(es->pos.trBase, es->origin2, es->eventParm, es->otherEntityNum, weapon);
-}
-
-/*
 ============================================================================
 
 BULLETS
@@ -1307,7 +1174,7 @@ BULLETS
 CG_Tracer
 ===============
 */
-void CG_Tracer(vec3_t source, vec3_t dest, int weapon) {
+static void CG_Tracer(vec3_t source, vec3_t dest, int weapon) {
 	weaponFx_t* fx;
 	vec3_t dir, pos;
 	float len, begin, end, f;
@@ -1393,9 +1260,8 @@ CG_Bullet
 Renders bullet effects.
 ======================
 */
-void CG_Bullet(vec3_t end, int sourceEntityNum, vec3_t normal, bool flesh, int fleshEntityNum, int weapon) {
+void CG_Bullet(vec3_t end, int sourceEntityNum, vec3_t normal, bool flesh, int weapon) {
 	trace_t trace;
-	int sourceContentType, destContentType;
 	vec3_t start;
 	weaponFx_t* fx;
 
@@ -1406,19 +1272,6 @@ void CG_Bullet(vec3_t end, int sourceEntityNum, vec3_t normal, bool flesh, int f
 	// do trail effects
 	if(sourceEntityNum >= 0 && fx->tracerChance > 0.0f) {
 		if(CG_CalcMuzzlePoint(sourceEntityNum, start)) {
-			sourceContentType = CG_PointContents(start, 0);
-			destContentType = CG_PointContents(end, 0);
-
-			if((sourceContentType == destContentType) && (sourceContentType & CONTENTS_WATER)) {
-				CG_BubbleTrail(start, end, 32);
-			} else if(sourceContentType & CONTENTS_WATER) {
-				trap_CM_BoxTrace(&trace, end, start, NULL, NULL, 0, CONTENTS_WATER);
-				CG_BubbleTrail(start, trace.endpos, 32);
-			} else if(destContentType & CONTENTS_WATER) {
-				trap_CM_BoxTrace(&trace, start, end, NULL, NULL, 0, CONTENTS_WATER);
-				CG_BubbleTrail(trace.endpos, end, 32);
-			}
-
 			if(random() < fx->tracerChance) {
 				CG_Tracer(start, end, weapon);
 			}
@@ -1427,7 +1280,7 @@ void CG_Bullet(vec3_t end, int sourceEntityNum, vec3_t normal, bool flesh, int f
 
 	// impact splash
 	if(flesh)
-		CG_MissileHitPlayer(weapon, end, normal, fleshEntityNum);
+		CG_MissileHitPlayer(weapon, end, normal);
 	else
-		CG_MissileHitWall(weapon, 0, end, normal, IMPACTSOUND_DEFAULT);
+		CG_MissileHitWall(weapon, end, normal);
 }

@@ -51,8 +51,6 @@ typedef struct {
 	int serverCommandSequence;  // snapshot becomes current
 } snapshot_t;
 
-enum { CGAME_EVENT_NONE, CGAME_EVENT_TEAMMENU, CGAME_EVENT_SCOREBOARD, CGAME_EVENT_EDITHUD };
-
 /*
 ==================================================================
 
@@ -144,20 +142,6 @@ typedef enum {
 	//	void (*CG_DrawActiveFrame)( int serverTime, bool demoPlayback );
 	// Generates and draws a game scene and status information at the given time.
 	// If demoPlayback is set, local movement prediction will not be enabled
-
-	CG_CROSSHAIR_PLAYER,
-	//	int (*CG_CrosshairPlayer)( void );
-
-	CG_LAST_ATTACKER,
-	//	int (*CG_LastAttacker)( void );
-
-	CG_KEY_EVENT,
-	//	void	(*CG_KeyEvent)( int key, bool down );
-
-	CG_MOUSE_EVENT,
-	//	void	(*CG_MouseEvent)( int dx, int dy );
-	CG_EVENT_HANDLING
-	//	void (*CG_EventHandling)(int type);
 } cgameExport_t;
 
 //----------------------------------------------

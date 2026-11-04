@@ -1102,12 +1102,7 @@ void CL_KeyDownEvent(int key, unsigned time) {
 			return;
 		}
 
-		// escape always gets out of CGAME stuff
-		if(Key_GetCatcher() & KEYCATCH_CGAME) {
-			Key_SetCatcher(Key_GetCatcher() & ~KEYCATCH_CGAME);
-			VM_Call(cgvm, CG_EVENT_HANDLING, CGAME_EVENT_NONE);
-			return;
-		}
+		if(Key_GetCatcher() & KEYCATCH_CGAME) return;
 
 		if(!(Key_GetCatcher() & KEYCATCH_UI)) {
 			if(clc.state == CA_ACTIVE && !clc.demoplaying) {
@@ -1133,10 +1128,6 @@ void CL_KeyDownEvent(int key, unsigned time) {
 	} else if(Key_GetCatcher() & KEYCATCH_UI) {
 		if(uivm) {
 			VM_Call(uivm, UI_KEY_EVENT, key, true, false);
-		}
-	} else if(Key_GetCatcher() & KEYCATCH_CGAME) {
-		if(cgvm) {
-			VM_Call(cgvm, CG_KEY_EVENT, key, true);
 		}
 	} else if(Key_GetCatcher() & KEYCATCH_MESSAGE) {
 		Message_Key(key);
@@ -1174,8 +1165,6 @@ void CL_KeyUpEvent(int key, unsigned time) {
 
 	if(Key_GetCatcher() & KEYCATCH_UI && uivm) {
 		VM_Call(uivm, UI_KEY_EVENT, key, false, false);
-	} else if(Key_GetCatcher() & KEYCATCH_CGAME && cgvm) {
-		VM_Call(cgvm, CG_KEY_EVENT, key, false);
 	}
 }
 

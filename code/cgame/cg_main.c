@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_main.c -- initialization and primary entry point for cgame
 #include "../qcommon/vm_javascript.h"
 
-int forceModelModificationCount = -1;
+static int forceModelModificationCount = -1;
 
 void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum);
 void CG_Shutdown(void);
@@ -42,11 +42,6 @@ Q_EXPORT intptr_t vmMain(int command, int arg0, int arg1, int arg2, int arg3, in
 		case CG_SHUTDOWN: CG_Shutdown(); return 0;
 		case CG_CONSOLE_COMMAND: return CG_ConsoleCommand();
 		case CG_DRAW_ACTIVE_FRAME: CG_DrawActiveFrame(arg0, arg1); return 0;
-		case CG_CROSSHAIR_PLAYER: return CG_CrosshairPlayer();
-		case CG_LAST_ATTACKER: return CG_LastAttacker();
-		case CG_KEY_EVENT: CG_KeyEvent(arg0, arg1); return 0;
-		case CG_MOUSE_EVENT: CG_MouseEvent(arg0, arg1); return 0;
-		case CG_EVENT_HANDLING: CG_EventHandling(arg0); return 0;
 
 		case GETVMCONTEXT: VMContext(&vmargs, &vmresult); return 0;
 		case VMCALL: VMCall(arg0); return 0;
@@ -61,22 +56,12 @@ centity_t cg_entities[MAX_GENTITIES];
 weaponInfo_t cg_weapons[MAX_WEAPONS];
 itemInfo_t cg_items[MAX_ITEMS];
 
-vmCvar_t cg_centertime;
-vmCvar_t cg_swingSpeed;
-vmCvar_t cg_gibs;
-vmCvar_t cg_drawTimer;
 vmCvar_t cg_drawFPS;
-vmCvar_t cg_drawSnapshot;
-vmCvar_t cg_draw3dIcons;
-vmCvar_t cg_drawIcons;
-vmCvar_t cg_drawAmmoWarning;
 vmCvar_t cg_drawCrosshair;
 vmCvar_t cg_crosshairScale;
 vmCvar_t cg_draw2D;
-vmCvar_t cg_drawStatus;
 vmCvar_t cg_animSpeed;
 vmCvar_t cg_debugAnim;
-vmCvar_t cg_debugPosition;
 vmCvar_t cg_errorDecay;
 vmCvar_t cg_nopredict;
 vmCvar_t cg_noPlayerAnims;
@@ -84,7 +69,6 @@ vmCvar_t cg_showmiss;
 vmCvar_t cg_addMarks;
 vmCvar_t cg_brassTime;
 vmCvar_t cg_viewsize;
-vmCvar_t cg_ignore;
 vmCvar_t cg_fov;
 vmCvar_t cg_zoomFov;
 vmCvar_t cg_thirdPerson;
@@ -92,31 +76,20 @@ vmCvar_t cg_thirdPersonRange;
 vmCvar_t cg_thirdPersonAngle;
 vmCvar_t cg_firstPerson_Fwd;
 vmCvar_t cg_firstPerson_Up;
-vmCvar_t cg_drawAttacker;
 vmCvar_t cg_synchronousClients;
-vmCvar_t cg_teamChatTime;
-vmCvar_t cg_teamChatHeight;
+vmCvar_t cg_teamOverlayUserinfo;
 vmCvar_t cg_stats;
 vmCvar_t cg_buildScript;
 vmCvar_t cg_forceModel;
 vmCvar_t cg_paused;
 vmCvar_t cg_blood;
 vmCvar_t cg_deferPlayers;
-vmCvar_t cg_drawTeamOverlay;
-vmCvar_t cg_teamOverlayUserinfo;
-vmCvar_t cg_drawFriend;
-vmCvar_t cg_teamChatsOnly;
-vmCvar_t cg_hudFiles;
-vmCvar_t cg_scorePlum;
 vmCvar_t cg_cameraOrbit;
 vmCvar_t cg_cameraOrbitDelay;
 vmCvar_t cg_timescaleFadeEnd;
 vmCvar_t cg_timescaleFadeSpeed;
 vmCvar_t cg_timescale;
 vmCvar_t cg_noProjectileTrail;
-vmCvar_t cg_oldRail;
-vmCvar_t cg_oldRocket;
-vmCvar_t cg_oldPlasma;
 vmCvar_t cg_trueLightning;
 
 typedef struct {
@@ -127,29 +100,17 @@ typedef struct {
 } cvarTable_t;
 
 static cvarTable_t cvarTable[] = {
-    {&cg_ignore, "cg_ignore", "0", 0},  // used for debugging
     {&cg_zoomFov, "cg_zoomfov", "22.5", CVAR_ARCHIVE},
     {&cg_fov, "cg_fov", "90", CVAR_ARCHIVE},
     {&cg_viewsize, "cg_viewsize", "100", CVAR_ARCHIVE},
-    {&cg_gibs, "cg_gibs", "1", CVAR_ARCHIVE},
     {&cg_draw2D, "cg_draw2D", "1", CVAR_ARCHIVE},
-    {&cg_drawStatus, "cg_drawStatus", "1", CVAR_ARCHIVE},
-    {&cg_drawTimer, "cg_drawTimer", "0", CVAR_ARCHIVE},
     {&cg_drawFPS, "cg_drawFPS", "0", CVAR_ARCHIVE},
-    {&cg_drawSnapshot, "cg_drawSnapshot", "0", CVAR_ARCHIVE},
-    {&cg_draw3dIcons, "cg_draw3dIcons", "1", CVAR_ARCHIVE},
-    {&cg_drawIcons, "cg_drawIcons", "1", CVAR_ARCHIVE},
-    {&cg_drawAmmoWarning, "cg_drawAmmoWarning", "1", CVAR_ARCHIVE},
-    {&cg_drawAttacker, "cg_drawAttacker", "1", CVAR_ARCHIVE},
     {&cg_drawCrosshair, "cg_drawCrosshair", "4", CVAR_ARCHIVE},
     {&cg_crosshairScale, "cg_crosshairScale", "24", CVAR_ARCHIVE},
     {&cg_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE},
     {&cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE},
-    {&cg_centertime, "cg_centertime", "3", CVAR_CHEAT},
-    {&cg_swingSpeed, "cg_swingSpeed", "0.3", CVAR_CHEAT},
     {&cg_animSpeed, "cg_animspeed", "1", CVAR_CHEAT},
     {&cg_debugAnim, "cg_debuganim", "0", CVAR_CHEAT},
-    {&cg_debugPosition, "cg_debugposition", "0", CVAR_CHEAT},
     {&cg_errorDecay, "cg_errordecay", "100", 0},
     {&cg_nopredict, "cg_nopredict", "0", 0},
     {&cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT},
@@ -159,16 +120,12 @@ static cvarTable_t cvarTable[] = {
     {&cg_thirdPerson, "cg_thirdPerson", "0", 0},
     {&cg_firstPerson_Fwd, "cg_firstPerson_Fwd", "0", CVAR_CHEAT},
     {&cg_firstPerson_Up, "cg_firstPerson_Up", "0", CVAR_CHEAT},
-    {&cg_teamChatTime, "cg_teamChatTime", "3000", CVAR_ARCHIVE},
-    {&cg_teamChatHeight, "cg_teamChatHeight", "0", CVAR_ARCHIVE},
     {&cg_forceModel, "cg_forceModel", "0", CVAR_ARCHIVE},
     {&cg_deferPlayers, "cg_deferPlayers", "0", CVAR_ARCHIVE},
 
-    {&cg_drawTeamOverlay, "cg_drawTeamOverlay", "0", CVAR_ARCHIVE},
-    {&cg_teamOverlayUserinfo, "teamoverlay", "0", CVAR_ROM | CVAR_USERINFO},
+    {&cg_teamOverlayUserinfo, "teamoverlay", "0", CVAR_ROM | CVAR_USERINFO},  // userinfo, читается сервером
+
     {&cg_stats, "cg_stats", "0", 0},
-    {&cg_drawFriend, "cg_drawFriend", "1", CVAR_ARCHIVE},
-    {&cg_teamChatsOnly, "cg_teamChatsOnly", "0", CVAR_ARCHIVE},
     // the following variables are created in other parts of the system,
     // but we also reference them here
     {&cg_buildScript, "com_buildScript", "0", 0},  // force loading of all possible data amd error on failures
@@ -180,11 +137,7 @@ static cvarTable_t cvarTable[] = {
     {&cg_timescaleFadeEnd, "cg_timescaleFadeEnd", "1", 0},
     {&cg_timescaleFadeSpeed, "cg_timescaleFadeSpeed", "0", 0},
     {&cg_timescale, "timescale", "1", 0},
-    {&cg_scorePlum, "cg_scorePlums", "1", CVAR_USERINFO | CVAR_ARCHIVE},
     {&cg_noProjectileTrail, "cg_noProjectileTrail", "0", CVAR_ARCHIVE},
-    {&cg_oldRail, "cg_oldRail", "1", CVAR_ARCHIVE},
-    {&cg_oldRocket, "cg_oldRocket", "1", CVAR_ARCHIVE},
-    {&cg_oldPlasma, "cg_oldPlasma", "1", CVAR_ARCHIVE},
     {&cg_trueLightning, "cg_trueLightning", "0.0", CVAR_ARCHIVE},
 };
 
@@ -198,15 +151,10 @@ CG_RegisterCvars
 void CG_RegisterCvars(void) {
 	int i;
 	cvarTable_t* cv;
-	char var[MAX_TOKEN_CHARS];
 
 	for(i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++) {
 		trap_Cvar_Register(cv->vmCvar, cv->cvarName, cv->defaultString, cv->cvarFlags);
 	}
-
-	// see if we are also running the server on this machine
-	trap_Cvar_VariableStringBuffer("sv_running", var, sizeof(var));
-	cgs.localServer = atoi(var);
 
 	forceModelModificationCount = cg_forceModel.modificationCount;
 
@@ -256,20 +204,6 @@ void CG_UpdateCvars(void) {
 	}
 }
 
-int CG_CrosshairPlayer(void) {
-	if(cg.time > (cg.crosshairClientTime + 1000)) {
-		return -1;
-	}
-	return cg.crosshairClientNum;
-}
-
-int CG_LastAttacker(void) {
-	if(!cg.attackerTime) {
-		return -1;
-	}
-	return cg.snap->ps.persistant[PERS_ATTACKER];
-}
-
 void QDECL CG_Printf(const char* msg, ...) {
 	va_list argptr;
 	char text[1024];
@@ -298,6 +232,7 @@ void QDECL Com_Error(int level, const char* error, ...) {
 	va_list argptr;
 	char text[1024];
 
+	(void)level;
 	va_start(argptr, error);
 	Q_vsnprintf(text, sizeof(text), error, argptr);
 	va_end(argptr);
@@ -386,7 +321,6 @@ called during a precache command
 */
 static void CG_RegisterSounds(void) {
 	int i;
-	char items[MAX_ITEMS + 1];
 	char name[MAX_QPATH];
 	const char* soundName;
 
@@ -396,25 +330,8 @@ static void CG_RegisterSounds(void) {
 	cgs.media.oneFragSound = trap_S_RegisterSound("sound/feedback/1_frag.wav", true);
 	cgs.media.twoFragSound = trap_S_RegisterSound("sound/feedback/2_frags.wav", true);
 	cgs.media.threeFragSound = trap_S_RegisterSound("sound/feedback/3_frags.wav", true);
-	cgs.media.count3Sound = trap_S_RegisterSound("sound/feedback/three.wav", true);
-	cgs.media.count2Sound = trap_S_RegisterSound("sound/feedback/two.wav", true);
-	cgs.media.count1Sound = trap_S_RegisterSound("sound/feedback/one.wav", true);
-	cgs.media.countFightSound = trap_S_RegisterSound("sound/feedback/fight.wav", true);
-	cgs.media.countPrepareSound = trap_S_RegisterSound("sound/feedback/prepare.wav", true);
 
 	cgs.media.selectSound = trap_S_RegisterSound("sound/weapons/wpn_moveselect", false);
-	cgs.media.wearOffSound = trap_S_RegisterSound("sound/items/wearoff.wav", false);
-	cgs.media.useNothingSound = trap_S_RegisterSound("sound/items/use_nothing.wav", false);
-	cgs.media.gibSound = trap_S_RegisterSound("sound/player/gibsplt1.wav", false);
-	cgs.media.gibBounce1Sound = trap_S_RegisterSound("sound/player/gibimp1.wav", false);
-	cgs.media.gibBounce2Sound = trap_S_RegisterSound("sound/player/gibimp2.wav", false);
-	cgs.media.gibBounce3Sound = trap_S_RegisterSound("sound/player/gibimp3.wav", false);
-
-	cgs.media.teleInSound = trap_S_RegisterSound("sound/world/telein.wav", false);
-	cgs.media.teleOutSound = trap_S_RegisterSound("sound/world/teleout.wav", false);
-	cgs.media.respawnSound = trap_S_RegisterSound("sound/items/respawn1.wav", false);
-
-	cgs.media.noAmmoSound = trap_S_RegisterSound("sound/weapons/noammo.wav", false);
 
 	cgs.media.talkSound = trap_S_RegisterSound("sound/player/talk.wav", false);
 	cgs.media.landSound = trap_S_RegisterSound("sound/player/land1.wav", false);
@@ -430,8 +347,6 @@ static void CG_RegisterSounds(void) {
 		Com_sprintf(name, sizeof(name), "sound/ambient/water/water_splash%i.wav", i + 1);
 		cgs.media.waterSplash[i] = trap_S_RegisterSound(name, false);
 	}
-
-	cgs.media.jumpPadSound = trap_S_RegisterSound("sound/world/jumppad.wav", false);
 
 	for(i = 0; i < 4; i++) {
 		Com_sprintf(name, sizeof(name), "sound/player/footsteps/chainlink%i.wav", i + 1);
@@ -479,8 +394,6 @@ static void CG_RegisterSounds(void) {
 		cgs.gameSounds[i] = trap_S_RegisterSound(soundName, false);
 	}
 
-	cgs.media.protectSound = trap_S_RegisterSound("sound/items/protect3.wav", false);
-	cgs.media.n_healthSound = trap_S_RegisterSound("sound/items/n_health.wav", false);
 	cgs.media.hgrenb1aSound = trap_S_RegisterSound("sound/weapons/grenade/hgrenb1a.wav", false);
 	cgs.media.hgrenb2aSound = trap_S_RegisterSound("sound/weapons/grenade/hgrenb2a.wav", false);
 }
@@ -496,20 +409,6 @@ This function may execute for a couple of minutes with a slow disk.
 */
 static void CG_RegisterGraphics(void) {
 	int i;
-	char items[MAX_ITEMS + 1];
-	static char* sb_nums[11] = {
-	    "gfx/2d/numbers/zero_32b",
-	    "gfx/2d/numbers/one_32b",
-	    "gfx/2d/numbers/two_32b",
-	    "gfx/2d/numbers/three_32b",
-	    "gfx/2d/numbers/four_32b",
-	    "gfx/2d/numbers/five_32b",
-	    "gfx/2d/numbers/six_32b",
-	    "gfx/2d/numbers/seven_32b",
-	    "gfx/2d/numbers/eight_32b",
-	    "gfx/2d/numbers/nine_32b",
-	    "gfx/2d/numbers/minus_32b",
-	};
 
 	// clear any references to old media
 	memset(&cg.refdef, 0, sizeof(cg.refdef));
@@ -519,62 +418,17 @@ static void CG_RegisterGraphics(void) {
 
 	trap_R_LoadWorldMap(cgs.mapname);
 
-	// precache status bar pics
 	CG_LoadingString("game media", 0.50);
-
-	for(i = 0; i < 11; i++) {
-		cgs.media.numberShaders[i] = trap_R_RegisterShader(sb_nums[i]);
-	}
-
-	cgs.media.botSkillShaders[0] = trap_R_RegisterShader("menu/art/skill1.tga");
-	cgs.media.botSkillShaders[1] = trap_R_RegisterShader("menu/art/skill2.tga");
-	cgs.media.botSkillShaders[2] = trap_R_RegisterShader("menu/art/skill3.tga");
-	cgs.media.botSkillShaders[3] = trap_R_RegisterShader("menu/art/skill4.tga");
-	cgs.media.botSkillShaders[4] = trap_R_RegisterShader("menu/art/skill5.tga");
-
-	cgs.media.viewBloodShader = trap_R_RegisterShader("viewBloodBlend");
 
 	cgs.media.deferShader = trap_R_RegisterShaderNoMip("gfx/2d/defer.tga");
 
 	cgs.media.smokePuffShader = trap_R_RegisterShader("spark");
-	cgs.media.smokePuffRageProShader = trap_R_RegisterShader("smokePuffRagePro");
-	cgs.media.bloodTrailShader = trap_R_RegisterShader("bloodTrail");
-	cgs.media.connectionShader = trap_R_RegisterShader("disconnected");
-
-	cgs.media.waterBubbleShader = trap_R_RegisterShader("waterBubble");
-
-	cgs.media.tracerShader = trap_R_RegisterShader("gfx/misc/tracer");
-	cgs.media.selectShader = trap_R_RegisterShader("gfx/2d/select");
 
 	for(i = 0; i < NUM_CROSSHAIRS; i++) {
 		cgs.media.crosshairShader[i] = trap_R_RegisterShader(va("gfx/2d/crosshair%c", 'a' + i));
 	}
 
-	cgs.media.backTileShader = trap_R_RegisterShader("gfx/2d/backtile");
 	cgs.media.noammoShader = trap_R_RegisterShader("icons/noammo");
-
-	cgs.media.armorModel = trap_R_RegisterModel("models/powerups/armor/armor_yel.md3");
-	cgs.media.armorIcon = trap_R_RegisterShaderNoMip("icons/iconr_yellow");
-
-	cgs.media.gibAbdomen = trap_R_RegisterModel("models/gibs/abdomen.md3");
-	cgs.media.gibArm = trap_R_RegisterModel("models/gibs/arm.md3");
-	cgs.media.gibChest = trap_R_RegisterModel("models/gibs/chest.md3");
-	cgs.media.gibFist = trap_R_RegisterModel("models/gibs/fist.md3");
-	cgs.media.gibFoot = trap_R_RegisterModel("models/gibs/foot.md3");
-	cgs.media.gibForearm = trap_R_RegisterModel("models/gibs/forearm.md3");
-	cgs.media.gibIntestine = trap_R_RegisterModel("models/gibs/intestine.md3");
-	cgs.media.gibLeg = trap_R_RegisterModel("models/gibs/leg.md3");
-	cgs.media.gibSkull = trap_R_RegisterModel("models/gibs/skull.md3");
-	cgs.media.gibBrain = trap_R_RegisterModel("models/gibs/brain.md3");
-
-	cgs.media.smoke2 = trap_R_RegisterModel("models/weapons2/shells/s_shell.md3");
-
-	cgs.media.balloonShader = trap_R_RegisterShader("sprites/balloon3");
-
-	cgs.media.bloodExplosionShader = trap_R_RegisterShader("bloodExplosion");
-
-	cgs.media.teleportEffectModel = trap_R_RegisterModel("models/misc/telep.md3");
-	cgs.media.teleportEffectShader = trap_R_RegisterShader("teleportEffect");
 
 	// Assets Noire's Mod
 	cgs.media.errIcon = trap_R_RegisterShaderNoMip("menu/erricon");
@@ -597,11 +451,7 @@ static void CG_RegisterGraphics(void) {
 	}
 
 	// wall marks
-	cgs.media.bulletMarkShader = trap_R_RegisterShader("gfx/damage/bullet_mrk");
 	cgs.media.burnMarkShader = trap_R_RegisterShader("gfx/damage/burn_med_mrk");
-	cgs.media.holeMarkShader = trap_R_RegisterShader("gfx/damage/hole_lg_mrk");
-	cgs.media.energyMarkShader = trap_R_RegisterShader("gfx/damage/plasma_mrk");
-	cgs.media.wakeMarkShader = trap_R_RegisterShader("wake");
 	cgs.media.bloodMarkShader = trap_R_RegisterShader("bloodMark");
 
 	// register the inline models
@@ -731,11 +581,7 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 	cgs.serverCommandSequence = serverCommandSequence;
 
 	// load a few needed things before we do any screen updates
-	cgs.media.charsetShader = trap_R_RegisterShader("gfx/2d/bigchars");
 	cgs.media.whiteShader = trap_R_RegisterShader("white");
-	cgs.media.charsetProp = trap_R_RegisterShaderNoMip("menu/art/font1_prop.tga");
-	cgs.media.charsetPropGlow = trap_R_RegisterShaderNoMip("menu/art/font1_prop_glo.tga");
-	cgs.media.charsetPropB = trap_R_RegisterShaderNoMip("menu/art/font2_prop.tga");
 
 	CG_RegisterCvars();
 
@@ -748,14 +594,8 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 
 	cg.weaponSelect = 0;
 
-	cgs.redflag = cgs.blueflag = -1;  // For compatibily, default to unset for
-	cgs.flagStatus = -1;
-	// old servers
-
 	// get the rendering configuration from the client system
 	trap_GetGlconfig(&cgs.glconfig);
-	cgs.screenXScale = cgs.glconfig.vidWidth / 640.0;
-	cgs.screenYScale = cgs.glconfig.vidHeight / 480.0;
 
 	// get the gamestate from the client system
 	trap_GetGameState(&cgs.gameState);
@@ -826,9 +666,3 @@ void CG_Shutdown(void) {
 	// some mods may need to do cleanup work here,
 	// like closing files or archiving session data
 }
-
-void CG_EventHandling(int type) {}
-
-void CG_KeyEvent(int key, bool down) {}
-
-void CG_MouseEvent(int x, int y) {}

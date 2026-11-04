@@ -31,7 +31,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define GAME_VERSION BASEGAME "-1"
 
 #define DEFAULT_GRAVITY 800
-#define GIB_HEALTH -40
 #define ARMOR_PROTECTION 0.66
 
 #define MAX_ITEMS 256
@@ -285,6 +284,40 @@ typedef struct weaponPropeties_s {
 extern weaponProperties_t jsd_weapon[];
 extern int jsd_weaponCount;
 
+typedef struct {
+	const char* shader;
+	const char* sound;
+	float color[4];
+	int count;
+	float speed;
+	int flags;
+	float gravity[3];
+	float size;
+	float lifetime;
+} particlePreset_t;
+
+enum {
+	PP_SMOKE = 0,
+	PP_TELEPORT_IN,
+	PP_TELEPORT_OUT,
+	PP_BLOOD,
+	PP_SPARK,
+	PP_EXPLOSION,
+	PP_COUNT,
+};
+
+#define PF_SMOOTH_FADE 0x01  // ПЛАВНОЕ_ЗАТУХАНИЕ: линейное затухание альфы
+#define PF_GRAVITY 0x02      // ГРАВИТАЦИЯ: применять вектор ускорения
+
+static const particlePreset_t particlePresets[PP_COUNT] = {
+    /* PP_SMOKE        */ {"", "", {1, 1, 1, 1}, 8, 80.0f, PF_SMOOTH_FADE | PF_GRAVITY, {0, 0, -100}, 3.0f, 1.2f},
+    /* PP_TELEPORT_IN  */ {"spark", "", {0.35f, 0.65f, 1, 1}, 64, 180.0f, PF_SMOOTH_FADE | PF_GRAVITY, {0, 0, 80}, 4.0f, 0.9f},
+    /* PP_TELEPORT_OUT */ {"spark", "", {1, 1, 1, 1}, 64, 250.0f, PF_SMOOTH_FADE, {0, 0, 0}, 5.0f, 0.5f},
+    /* PP_BLOOD        */ {"bloodTrail", "", {0.75f, 0, 0, 1}, 24, 200.0f, PF_SMOOTH_FADE | PF_GRAVITY, {0, 0, -400}, 4.0f, 0.8f},
+    /* PP_SPARK        */ {"spark", "", {1, 0.85f, 0.3f, 1}, 16, 300.0f, PF_SMOOTH_FADE | PF_GRAVITY, {0, 0, -300}, 2.0f, 0.4f},
+    /* PP_EXPLOSION    */ {"spark", "", {1, 0.5f, 0.1f, 1}, 48, 350.0f, PF_SMOOTH_FADE, {0, 0, -50}, 6.0f, 0.7f},
+};
+
 // entityState_t->event values
 // entity events are for effects that take place relative
 // to an existing entities origin.  Very network efficient.
@@ -319,44 +352,23 @@ typedef enum {
 	EV_FOOTSTEP_WOOD,
 	EV_FOOTSTEP_WOODPANEL,
 
-	EV_STEP_4,
-	EV_STEP_8,
-	EV_STEP_12,
-	EV_STEP_16,
-
-	EV_FALL_MEDIUM,
-	EV_FALL_FAR,
-
+	EV_FALL,
 	EV_GRAVITY_LAUNCH,
-	EV_WATER_SPLASH,  // foot touches
-
-	EV_ITEM_PICKUP,  // normal item pickups are predictable
-
+	EV_WATER_SPLASH,
+	EV_ITEM_PICKUP,
 	EV_FIRE_WEAPON,
-
-	EV_ITEM_RESPAWN,
-	EV_ITEM_POP,
-	EV_PLAYER_TELEPORT_IN,
-	EV_PLAYER_TELEPORT_OUT,
-
-	EV_MISSILE_BOUNCE,  // bouncing missile; s.weapon selects the weaponFx entry with the bounce sound
-
+	EV_MISSILE_BOUNCE,
 	EV_GENERAL_SOUND,
-	EV_GLOBAL_SOUND,  // no attenuation
-
+	EV_GLOBAL_SOUND,
 	EV_BULLET_HIT_ENTITY,
 	EV_BULLET_HIT_WORLD,
-
 	EV_MISSILE_HIT,
 	EV_MISSILE_MISS,
-	EV_MISSILE_MISS_METAL,
 	EV_BEAM_TRAIL,
 	EV_SHOTGUN,
-
 	EV_PAIN,
 	EV_OBITUARY,
-
-	EV_GIB_PLAYER,  // gib a previously living player
+	EV_PARTICLE,
 } entity_event_t;
 
 typedef enum { GTS_RED_CAPTURE, GTS_BLUE_CAPTURE, GTS_RED_RETURN, GTS_BLUE_RETURN, GTS_RED_TAKEN, GTS_BLUE_TAKEN, GTS_REDOBELISK_ATTACKED, GTS_BLUEOBELISK_ATTACKED, GTS_REDTEAM_SCORED, GTS_BLUETEAM_SCORED, GTS_REDTEAM_TOOK_LEAD, GTS_BLUETEAM_TOOK_LEAD, GTS_TEAMS_ARE_TIED, GTS_KAMIKAZE } global_team_sound_t;
@@ -476,8 +488,6 @@ typedef enum {
 	IT_BAD,
 	IT_WEAPON,  // EFX: rotate + upscale + minlight
 } itemType_t;
-
-#define MAX_ITEM_MODELS 4
 
 typedef struct item_s {
 	char classname[MAX_JS_STRINGSIZE];
