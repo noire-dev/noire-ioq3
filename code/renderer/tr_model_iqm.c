@@ -1671,10 +1671,7 @@ motion carrier (root / pelvis): its movement relative to the animation's
 bind pose is added to the model's bind position, scaled by the ratio of the
 two skeleton heights, so the feet stay at the right height on every model.
 
-r_iqmRetargetMode selects how rotations are transferred:
-  0  copy the local rotation of the animation (Source engine behaviour)
-  1  rotate in parent space:  anim * inv(animBind) * modelBind   (default)
-  2  rotate in bone space:    modelBind * inv(animBind) * anim
+copy the local rotation of the animation (Source engine behaviour)
 Modes 1 and 2 give identical results when both skeletons have the same
 rest rotations and differ only if the rest poses differ (finger curl,
 A-pose / T-pose).
@@ -1728,7 +1725,6 @@ static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float back
 		}
 	} else {
 		const bool haveAnimBind = anim->hasBindPose && anim->jointBindLocal && anim->num_poses == anim->num_joints;
-		const int mode = r_iqmRetargetMode ? r_iqmRetargetMode->integer : 1;
 
 		// every joint starts in the model's own bind pose; joints the
 		// animation doesn't drive simply stay there
@@ -1752,21 +1748,7 @@ static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float back
 			tgt = &bindLocal[dst];
 			out = &relativeJoints[dst];
 
-			// --- rotation ---
-			if(ab && mode != 0) {
-				quat_t inv, tmp;
-
-				IQM_QuatConjugate(ab->rotate, inv);
-				if(mode == 2) {
-					IQM_QuatMultiply(tgt->rotate, inv, tmp);
-					IQM_QuatMultiply(tmp, a.rotate, out->rotate);
-				} else {
-					IQM_QuatMultiply(a.rotate, inv, tmp);
-					IQM_QuatMultiply(tmp, tgt->rotate, out->rotate);
-				}
-			} else {
-				QuatCopy(a.rotate, out->rotate);
-			}
+			QuatCopy(a.rotate, out->rotate);
 			QuatNormalize2(out->rotate, out->rotate);
 
 			// --- translation: bone length always comes from the model ---

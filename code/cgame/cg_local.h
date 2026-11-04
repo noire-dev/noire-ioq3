@@ -135,8 +135,24 @@ typedef enum { IMPACTSOUND_DEFAULT, IMPACTSOUND_METAL, IMPACTSOUND_FLESH } impac
 // because corpses after respawn are outside the normal
 // client numbering range
 
+// ============================================================
+// Animation state smoothing (crossfade between different
+// animation states: idle <-> run <-> jump <-> death, ...)
+//
+// ANIM_SMOOTHING      1 = blend the pose over ANIM_SMOOTHING_TIME
+//                         milliseconds when the animation changes,
+//                     0 = instant frame switch (vanilla behavior,
+//                         the blend fields are compiled out)
+// ANIM_SMOOTHING_TIME crossfade duration in milliseconds;
+//                     0 also effectively disables the blend
+// ============================================================
+#define ANIM_SMOOTHING 1
+#define ANIM_SMOOTHING_TIME 180
+
 // when changing animation, set animationTime to frameTime + lerping time
 // The current lerp will finish out, then it will lerp to the new animation
+// With ANIM_SMOOTHING the switch additionally crossfades from the frozen
+// pose of the previous animation instead of snapping to the new first frame
 typedef struct {
 	int oldFrame;
 	int oldFrameTime;  // time when ->oldFrame was exactly on
@@ -149,6 +165,13 @@ typedef struct {
 	int animationNumber;  // may include ANIM_TOGGLEBIT
 	animation_t* animation;
 	int animationTime;  // time when the first frame of the animation will be exact
+
+#if ANIM_SMOOTHING
+	// crossfade state: the pose we are fading out from
+	animation_t* blendFromAnimation;  // animation that was playing before the switch
+	int blendFromFrame;               // frame of that animation frozen at the switch
+	int blendStartTime;               // cg.time when the switch happened
+#endif
 } lerpFrame_t;
 
 typedef struct {
@@ -341,6 +364,11 @@ typedef struct {
 	// the first-person camera, same semantics as cg_firstPerson_Up / _Fwd.
 	float headUp;
 	float headFwd;
+
+	// "weaponScale s" from animation.cfg: per-model size of the weapon held
+	// in the hand. Weapon models are authored for the full-size valveBiped
+	// hand, so models smaller than that need e.g. "weaponScale 0.7".
+	float weaponScale;
 
 	char animFile[MAX_QPATH];
 } clientInfo_t;

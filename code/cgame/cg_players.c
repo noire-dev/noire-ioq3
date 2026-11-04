@@ -89,6 +89,7 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci, char* 
 	memset(defined, 0, sizeof(defined));
 	ci->headUp = 0.0f;
 	ci->headFwd = 0.0f;
+	ci->weaponScale = 1.0f;
 
 	len = trap_FS_FOpenFile(filename, &f, FS_READ);
 	if(len <= 0) {
@@ -136,6 +137,22 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci, char* 
 				return false;
 			}
 			ci->headFwd = atof(token);
+			continue;
+		}
+
+		if(!Q_stricmp(token, "weaponScale")) {
+			// per-model size of the weapon held in the hand (1 = full size,
+			// as authored for the standard valveBiped hand)
+			token = COM_Parse(&text_p);
+			if(!token[0]) {
+				CG_Printf("Missing value for weaponScale in %s\n", filename);
+				return false;
+			}
+			ci->weaponScale = atof(token);
+			if(ci->weaponScale <= 0.0f) {
+				CG_Printf("Invalid weaponScale %s in %s, using 1\n", token, filename);
+				ci->weaponScale = 1.0f;
+			}
 			continue;
 		}
 
@@ -599,6 +616,26 @@ may include ANIM_TOGGLEBIT
 static void CG_SetLerpFrameAnimation(clientInfo_t* ci, lerpFrame_t* lf, int newAnimation) {
 	animation_t* anim;
 
+#if ANIM_SMOOTHING
+	if(lf->animation) {
+		// start a crossfade from the pose currently on screen. The blend
+		// source must be a single frame, so pick whichever endpoint of the
+		// active frame lerp is closest to the displayed pose (backlerp is
+		// the weight still on oldFrame). If a blend is already running and
+		// still mostly showing its source, keep that source so a rapid
+		// state change does not pop.
+		if(lf->blendFromAnimation && lf->backlerp > 0.5f) {
+			// keep current blend source
+		} else if(lf->backlerp > 0.5f) {
+			lf->blendFromFrame = lf->oldFrame;
+		} else {
+			lf->blendFromFrame = lf->frame;
+		}
+		lf->blendFromAnimation = lf->animation;
+		lf->blendStartTime = cg.time;
+	}
+#endif
+
 	lf->animationNumber = newAnimation;
 	newAnimation &= ~ANIM_TOGGLEBIT;
 
@@ -610,6 +647,14 @@ static void CG_SetLerpFrameAnimation(clientInfo_t* ci, lerpFrame_t* lf, int newA
 
 	lf->animation = anim;
 	lf->animationTime = lf->frameTime + anim->initialLerp;
+
+#if ANIM_SMOOTHING
+	if(lf->blendFromAnimation) {
+		// the crossfade morphs into the new animation's first frame, which
+		// is held until the blend completes (CG_RunLerpFrame pins frameTime)
+		lf->frame = anim->firstFrame;
+	}
+#endif
 
 	if(cg_debugAnim.integer) {
 		CG_Printf("Anim: %i\n", newAnimation);
@@ -702,6 +747,35 @@ static void CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, int newAnimation,
 	} else {
 		lf->backlerp = 1.0 - (float)(cg.time - lf->oldFrameTime) / (lf->frameTime - lf->oldFrameTime);
 	}
+
+#if ANIM_SMOOTHING
+	// while a crossfade is running, render the pose of the previous
+	// animation frozen at the switch morphing into the new animation's
+	// current frame: the frozen pose goes to the oldframe slot and the
+	// blend weight rides on backlerp, exactly the lerp the renderer
+	// computes between oldframe and frame. frameTime is pinned to the
+	// blend end, which holds the new clip's first frame until the morph
+	// finishes (same mechanism as the vanilla initialLerp hold) and
+	// keeps the frame stepping state above coherent.
+	if(lf->blendFromAnimation) {
+		float blendT;
+
+		blendT = (cg.time - lf->blendStartTime) / (float)ANIM_SMOOTHING_TIME;
+		if(blendT >= 1.0f) {
+			lf->blendFromAnimation = NULL;  // blend finished, normal output resumes
+			// restart the new clip's frame clock cleanly at the blend end
+			lf->animationTime = lf->frameTime;
+		} else {
+			if(blendT < 0.0f) {
+				blendT = 0.0f;  // time jumped backwards, hold the source pose
+			}
+			lf->oldFrame = lf->blendFromFrame;
+			lf->oldFrameTime = lf->blendStartTime;
+			lf->frameTime = lf->blendStartTime + ANIM_SMOOTHING_TIME;
+			lf->backlerp = 1.0f - blendT;
+		}
+	}
+#endif
 }
 
 /*
@@ -710,6 +784,12 @@ CG_ClearLerpFrame
 ===============
 */
 static void CG_ClearLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, int animationNumber) {
+#if ANIM_SMOOTHING
+	// resets (spawn, respawn, teleport, coming into view) snap straight
+	// to the first frame: no crossfade out of a stale pose
+	lf->blendFromAnimation = NULL;
+	lf->animation = NULL;
+#endif
 	lf->frameTime = lf->oldFrameTime = cg.time;
 	CG_SetLerpFrameAnimation(ci, lf, animationNumber);
 	lf->oldFrame = lf->frame = lf->animation->firstFrame;
@@ -1008,19 +1088,38 @@ void CG_Player(centity_t* cent) {
 	player.lightingOrigin[2] += MINS_Z;
 	player.oldorigin[2] += MINS_Z;
 	player.renderfx = renderfx | RF_LIGHTING_ORIGIN;
-	if(!player.hModel) 
-		return;
+	if(!player.hModel) return;
 
 	// full body awareness: the body is always drawn in the main view;
 	// in first person the head joint is collapsed so it does not block
-	// the camera sitting in it
+	// the camera sitting in it. The renderer walks the same refEntity
+	// list for the main pass and for every mirror/portal pass, so the
+	// local body is added TWICE with opposite pass flags: a collapsed
+	// copy that only the main view sees (RF_FIRST_PERSON) and a full
+	// copy that only mirror/portal passes see (RF_THIRD_PERSON).
 	if(cent->currentState.number == cg.snap->ps.clientNum && !cg.renderingThirdPerson) {
-		vec3_t boneScale = {0.0f, 0.0f, 0.0f};
-		trap_R_SetBoneScale("ValveBiped.Bip01_Neck1", boneScale);
-		trap_R_SetBoneScale("ValveBiped.Bip01_Head1", boneScale);
-	}
+		vec3_t hideScale = {0.0f, 0.0f, 0.0f};
+		vec3_t normalScale = {1.0f, 1.0f, 1.0f};
 
-	trap_R_AddRefEntityToScene(&player);
+		// main view: neck+head collapsed, visible only through the eyes
+		trap_R_SetBoneScale("ValveBiped.Bip01_Neck1", hideScale);
+		trap_R_SetBoneScale("ValveBiped.Bip01_Head1", hideScale);
+		player.renderfx |= RF_FIRST_PERSON;
+		trap_R_AddRefEntityToScene(&player);
+
+		// mirrors and portals: full skeleton, visible only in reflection passes
+		trap_R_SetBoneScale("ValveBiped.Bip01_Neck1", normalScale);
+		trap_R_SetBoneScale("ValveBiped.Bip01_Head1", normalScale);
+		player.renderfx &= ~RF_FIRST_PERSON;
+		player.renderfx |= RF_THIRD_PERSON;
+		trap_R_AddRefEntityToScene(&player);
+
+		// the weapon rides on the hand, which is identical in both bodies;
+		// drop the pass flags so it draws in the main view and in mirrors
+		player.renderfx &= ~RF_THIRD_PERSON;
+	} else {
+		trap_R_AddRefEntityToScene(&player);
+	}
 
 	if(cent->currentState.number != cg.snap->ps.clientNum) {
 		CG_Add3DString(cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2] + 48, ci->name, FONTSTYLE_DROPSHADOW, color_white, 0.50, 512, 1536, true);

@@ -1600,7 +1600,6 @@ extern cvar_t* r_reflectionsResolution;
 extern cvar_t* r_reflectionsGrid;
 extern cvar_t* r_reflectionsMaterials;
 extern cvar_t* r_reflectionsEntities;
-extern cvar_t* r_iqmRetargetMode;
 extern cvar_t* r_reflectionsSkybox;
 extern cvar_t* r_deluxeSpecular;
 extern cvar_t* r_shadows;

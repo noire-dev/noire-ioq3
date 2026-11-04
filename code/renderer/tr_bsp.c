@@ -153,11 +153,7 @@ static void R_LoadLightmaps(lump_t* l, lump_t* surfs) {
 
 		lightmapnum /= numLightmapsPerPage;
 
-		// if (tr.worldLightmapping)
 		{
-			char filename[MAX_QEXTENDEDPATH];
-			int size = 0;
-
 			int imgOffset = tr.worldDeluxeMapping ? i * 2 : i;
 			buf_p = buf + imgOffset * tr.lightmapSize * tr.lightmapSize * 3;
 

@@ -1,5 +1,5 @@
 item.register(null, null, null, null, 0, 0, 0);
-item.register("weapon_gauntlet", "models/weapons2/gauntlet/gauntlet.md3", "icons/iconw_crowbar", "Crowbar", 0, 1, 1);
+item.register("weapon_crowbar", "models/weapons/crowbar/wmodel", "icons/iconw_crowbar", "Crowbar", 0, 1, 1);
 item.register("weapon_machinegun", "models/weapons2/machinegun/machinegun.md3", "icons/iconw_machinegun", "Machinegun", 40, 1, 2);
 item.register("weapon_shotgun", "models/weapons2/shotgun/shotgun.md3", "icons/iconw_shotgun", "Shotgun", 10, 1, 3);
 item.register("weapon_grenadelauncher", "models/weapons2/grenadel/grenadel.md3", "icons/iconw_grenade", "Grenade Launcher", 10, 1, 4);
@@ -9,5 +9,5 @@ item.register("weapon_railgun", "models/weapons2/railgun/railgun.md3", "icons/ic
 item.register("weapon_plasmagun", "models/weapons2/plasma/plasma.md3", "icons/iconw_plasma", "Plasma Gun", 50, 1, 8);
 item.register("weapon_bfg", "models/weapons2/bfg/bfg.md3", "icons/iconw_bfg", "BFG10K", 20, 1, 9);
 item.register("weapon_physgun", "models/weapons/physgun/wmodel", "icons/iconw_physgun", "Physgun", 0, 1, 10);
-item.register("weapon_gravitygun", "models/weapons/gravity/wmodel", "icons/iconw_gravitygun", "Gravitygun", 0, 1, 11);
+item.register("weapon_gravitygun", "models/weapons/gravitygun/wmodel", "icons/iconw_gravitygun", "Gravitygun", 0, 1, 11);
 item.register("weapon_toolgun", "models/weapons/toolgun/wmodel", "icons/iconw_toolgun", "Toolgun", 0, 1, 12);

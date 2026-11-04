@@ -1348,6 +1348,21 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 				VectorNegate(gun.axis[1], gun.axis[1]);
 			}
 
+			// --- Per-model weapon scale ("weaponScale" from animation.cfg) ---
+			// Weapon models are authored for the full-size valveBiped hand,
+			// so on smaller models they must shrink around the hand anchor.
+			// Scaling the axis rows scales the rendered model; the position
+			// block below subtracts weaponTag.origin along those same scaled
+			// rows, so the tag point still lands exactly on the hand. The
+			// barrel and muzzle flash are attached to the gun's tags through
+			// gun.axis and therefore inherit the scale automatically.
+			if(ci->weaponScale > 0.0f && ci->weaponScale != 1.0f) {
+				VectorScale(gun.axis[0], ci->weaponScale, gun.axis[0]);
+				VectorScale(gun.axis[1], ci->weaponScale, gun.axis[1]);
+				VectorScale(gun.axis[2], ci->weaponScale, gun.axis[2]);
+				gun.nonNormalizedAxes = true;
+			}
+
 			// --- Position: gun.origin = handTagOrigin - gun.axis * weaponTag.origin ---
 			// Use the ORIGINAL (pre-normalization) weaponTag.origin so the
 			// weapon tag still lands exactly on the hand tag.
@@ -1374,6 +1389,9 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 			AnglesToAxis(angles, barrel.axis);
 
 			CG_PositionRotatedEntityOnTag(&barrel, &gun, weapon->weaponModel, "tag_barrel");
+
+			// the tag basis includes the per-model weapon scale
+			barrel.nonNormalizedAxes = gun.nonNormalizedAxes;
 
 			trap_R_AddRefEntityToScene(&barrel);
 		}
@@ -1409,6 +1427,8 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 		AnglesToAxis(angles, flash.axis);
 
 		CG_PositionRotatedEntityOnTag(&flash, &gun, weapon->weaponModel, "ValveBiped.Muzzle");
+		// the tag basis includes the per-model weapon scale
+		flash.nonNormalizedAxes = gun.nonNormalizedAxes;
 		if(flash.hModel) {
 			trap_R_AddRefEntityToScene(&flash);
 		}

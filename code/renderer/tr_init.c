@@ -76,7 +76,6 @@ cvar_t* r_reflectionsResolution;
 cvar_t* r_reflectionsGrid;
 cvar_t* r_reflectionsMaterials;
 cvar_t* r_reflectionsEntities;
-cvar_t* r_iqmRetargetMode;
 cvar_t* r_reflectionsSkybox;
 cvar_t* r_deluxeSpecular;
 cvar_t* r_shadows;
@@ -851,9 +850,6 @@ void R_Register(void) {
 	r_reflectionsGrid = ri.Cvar_Get("r_reflectionsGrid", "64", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsMaterials = ri.Cvar_Get("r_reflectionsMaterials", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsEntities = ri.Cvar_Get("r_reflectionsEntities", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	// how rotations of external IQM animations are transferred to a model:
-	// 0 = copy local rotation, 1 = parent-space delta, 2 = bone-space delta
-	r_iqmRetargetMode = ri.Cvar_Get("r_iqmRetargetMode", "1", CVAR_ARCHIVE);
 	r_reflectionsSkybox = ri.Cvar_Get("r_reflectionsSkybox", "0", CVAR_ARCHIVE);
 
 	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.25", CVAR_ARCHIVE | CVAR_LATCH);
