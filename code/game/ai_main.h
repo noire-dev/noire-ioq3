@@ -264,8 +264,8 @@ typedef struct bot_state_s {
 	bot_waypoint_t* curpatrolpoint;  // current patrol point the bot is going for
 	int patrolflags;                 // patrol flags
 
-	int swep_list[WEAPONS_NUM];  // Noire's Mod weapon system
-	int swep_ammo[WEAPONS_NUM];  // Noire's Mod ammo system
+	int swep_list[MAX_WEAPONS];  // Noire's Mod weapon system
+	int swep_ammo[MAX_WEAPONS];  // Noire's Mod ammo system
 } bot_state_t;
 
 // resets the whole bot state

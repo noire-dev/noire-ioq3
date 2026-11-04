@@ -779,16 +779,7 @@ void ClientSpawn(gentity_t* ent) {
 		ent->swep_ammo[i] = 0;
 	}
 
-	ent->swep_list[WP_PHYSGUN] = WS_HAVE;
-	ent->swep_ammo[WP_PHYSGUN] = 9999;
-	ent->swep_list[WP_GRAVITYGUN] = WS_HAVE;
-	ent->swep_ammo[WP_GRAVITYGUN] = 9999;
-	ent->swep_list[WP_TOOLGUN] = WS_HAVE;
-	ent->swep_ammo[WP_TOOLGUN] = 9999;
-
 	G_UseTargets(spawnPoint, ent);
-
-	client->ps.weapon = WP_PHYSGUN;
 
 	// positively link the client, even if the command times are weird
 	VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);

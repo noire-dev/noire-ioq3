@@ -139,8 +139,8 @@ struct gentity_s {
 
 	item_t* item;
 
-	int swep_list[WEAPONS_NUM];
-	int swep_ammo[WEAPONS_NUM];
+	int swep_list[MAX_WEAPONS];
+	int swep_ammo[MAX_WEAPONS];
 
 	// flashlight
 	bool flashlight;

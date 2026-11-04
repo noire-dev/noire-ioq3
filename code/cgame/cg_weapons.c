@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_weapons.c -- events and effects dealing with weapons
 #include "cg_local.h"
 
-weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
+weaponFx_t jsd_weaponFx[MAX_WEAPONS] =
     {
         [WP_GAUNTLET] =
             {
@@ -235,7 +235,7 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .fireParticleSpeed = 80.0f,
                 .fireParticleFlags = PF_SMOOTH_FADE,
                 .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .beamShader = "lightningBoltNew",
+                .beamShader = "railCore",
                 .readySound = "sound/weapons/melee/fsthum.wav",
                 .fireSound = {"sound/weapons/lightning/lg_fire.wav"},
                 .continuousFireSound = "sound/weapons/lightning/lg_hum.wav",
@@ -246,7 +246,6 @@ weaponFx_t jsd_weaponFx[WEAPONS_NUM] =
                 .sectionOrder = 2,
                 .colorizeItemIcon = false,
                 .animType = AMTYPE_CROSSBOW,
-                .skipLightningBolt = true,
                 .hitLightColor = {1.0f, 0.5f, 0.0f},
                 .hitLightRadius = 200.0f,
                 .hitLightTime = 200,
@@ -662,7 +661,7 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 		e[i] += fx->beamEndOffset[i];
 	}
 
-	physgunActive = (fx->continuousFire && weapon == WP_PHYSGUN && cg.grabbedEntityNum > 0 && cg.grabbedEntityNum < MAX_GENTITIES);
+	physgunActive = (fx->continuousFire && jsd_weapon[weapon].wType == WT_PHYSGUN && cg.grabbedEntityNum > 0 && cg.grabbedEntityNum < MAX_GENTITIES);
 
 	// No active grab -> no tension. Wipe spring state so the next grab starts
 	// perfectly straight instead of inheriting stale bend.
@@ -1108,9 +1107,7 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 	fx = &jsd_weaponFx[cent->currentState.weapon];
 	if(!fx->isBeam) return;
 
-	// Beams flagged skipLightningBolt are already drawn by another event
-	// (e.g. EV_BEAM_TRAIL for the railgun); rendering here would duplicate them.
-	if(fx->skipLightningBolt) return;
+	if(jsd_weapon[cent->currentState.weapon].wType == WT_BEAM) return;
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
 
@@ -1470,7 +1467,7 @@ static void CG_StepWeaponSelector(int direction) {
 void CG_NextWeapon_f(void) {
 	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
 
-	if(cg.snap->ps.weapon == WP_PHYSGUN && (cg.snap->ps.eFlags & EF_FIRING)) {
+	if(jsd_weapon[cg.snap->ps.weapon].wType == WT_PHYSGUN && (cg.snap->ps.eFlags & EF_FIRING)) {
 		trap_SendConsoleCommand(EXEC_INSERT, "physgun_dist 0\n");
 		return;
 	}
@@ -1481,7 +1478,7 @@ void CG_NextWeapon_f(void) {
 void CG_PrevWeapon_f(void) {
 	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
 
-	if(cg.snap->ps.weapon == WP_PHYSGUN && (cg.snap->ps.eFlags & EF_FIRING)) {
+	if(jsd_weapon[cg.snap->ps.weapon].wType == WT_PHYSGUN && (cg.snap->ps.eFlags & EF_FIRING)) {
 		trap_SendConsoleCommand(EXEC_INSERT, "physgun_dist 1\n");
 		return;
 	}

@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 //
 #include "../qcommon/vm_javascript.h"
+#include "bg_public.h"
 
 /*
 ==================
@@ -530,7 +531,7 @@ void Cmd_SetViewpos_f(gentity_t* ent) {
 }
 
 static void Cmd_Altfire_Physgun_f(gentity_t* ent) {
-	if(ent->client->ps.weapon == WP_PHYSGUN) {
+	if(jsd_weapon[ent->client->ps.weapon].wType == WT_PHYSGUN) {
 		if(ent->client->buttons & BUTTON_ATTACK) {
 			if(ent->grabbedEntity) {
 				ent->grabbedEntity->grabNewPhys = PHYS_STATIC;  // say physgun about freeze option
@@ -544,7 +545,7 @@ static void Cmd_PhysgunDist_f(gentity_t* ent) {
 
 	trap_Argv(1, mode, sizeof(mode));
 
-	if(ent->client->ps.weapon == WP_PHYSGUN) {
+	if(jsd_weapon[ent->client->ps.weapon].wType == WT_PHYSGUN) {
 		if(ent->client->buttons & BUTTON_ATTACK) {
 			if(ent->grabbedEntity) {
 				if(atoi(mode) == 0) {

@@ -236,7 +236,7 @@ typedef enum {
 #define EF_TEAMVOTED 0x00080000         // already cast a team vote
 
 typedef enum {
-	WP_NONE,
+	WP_NONE,  // ВСЕГДА = 0
 
 	WP_GAUNTLET,
 	WP_MACHINEGUN,
@@ -252,8 +252,10 @@ typedef enum {
 	WP_GRAVITYGUN,
 	WP_TOOLGUN,
 
-	WEAPONS_NUM
+	WEAPONS_NUM  // считай в JS
 } weapon_t;
+
+#define MAX_WEAPONS 2048
 
 typedef enum {
 	WT_NONE,
@@ -262,6 +264,8 @@ typedef enum {
 	WT_BULLET,
 	WT_SHOTGUN,
 	WT_BEAM,
+	WT_PHYSGUN,
+	WT_GRAVITYGUN,
 	WT_TOOLGUN,
 	WT_MISSILE,
 	WT_EMPTY,
@@ -366,8 +370,8 @@ typedef enum {
 	EV_GLOBAL_SOUND,  // no attenuation
 	EV_GLOBAL_TEAM_SOUND,
 
-	EV_BULLET_HIT_FLESH,
-	EV_BULLET_HIT_WALL,
+	EV_BULLET_HIT_ENTITY,
+	EV_BULLET_HIT_WORLD,
 
 	EV_MISSILE_HIT,
 	EV_MISSILE_MISS,
@@ -490,7 +494,7 @@ typedef enum { TEAMTASK_NONE, TEAMTASK_OFFENSE, TEAMTASK_DEFENSE, TEAMTASK_PATRO
 // means of death
 typedef enum {
 	MOD_UNKNOWN,
-	MOD_WEAPONS = WEAPONS_NUM,  // Weapons (check weapon_t)
+	MOD_WEAPONS = MAX_WEAPONS,  // Weapons (check weapon_t)
 
 	MOD_WATER,
 	MOD_SLIME,

@@ -156,7 +156,7 @@ static void CG_OffsetBodyView(void) {
 
 void CG_ZoomDown_f(void) {
 	if(cg.zoomed) return;
-	if(cg.snap->ps.weapon != WP_PHYSGUN) {
+	if(jsd_weapon[cg.snap->ps.weapon].wType != WT_PHYSGUN) {
 		cg.zoomed = true;
 		cg.zoomTime = cg.time;
 	} else {

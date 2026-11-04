@@ -1434,7 +1434,7 @@ void PM_UpdateViewAngles(playerState_t* ps, const usercmd_t* cmd) {
 	short temp;
 	int i;
 
-	if(pm->cmd.buttons & BUTTON_GESTURE && pm->cmd.buttons & BUTTON_ATTACK && pm->cmd.weapon == WP_PHYSGUN) {
+	if(pm->cmd.buttons & BUTTON_GESTURE && pm->cmd.buttons & BUTTON_ATTACK && jsd_weapon[pm->cmd.weapon].wType == WT_PHYSGUN) {
 		return;
 	}
 

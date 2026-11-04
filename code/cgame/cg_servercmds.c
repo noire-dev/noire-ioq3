@@ -420,7 +420,6 @@ static void CG_ServerCommand(void) {
 	}
 
 	if(!strcmp(cmd, "pg")) {
-		// Noire's Mod: server tells us which entity the physgun is holding
 		cg.grabbedEntityNum = atoi(CG_Argv(1));
 		return;
 	}

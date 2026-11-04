@@ -108,7 +108,7 @@ static void CG_DrawWeaponSelect(void) {
 	vec4_t selectedColor = {0.0f, 0.0f, 0.0f, 1.00f};
 	vec4_t numberColor = {1.0f, 0.86f, 0.20f, 1.00f};
 	vec4_t weaponNameColor = {1.0f, 0.86f, 0.20f, 1.00f};
-	int sectionWeapons[WEAPONS_NUM];
+	int sectionWeapons[MAX_WEAPONS];
 	int activeSection, section, count, i, weapon;
 	bool firstWeaponSelected;
 	float x, y, width, height, activeX, alpha = 1.0f;

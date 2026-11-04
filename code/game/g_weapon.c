@@ -121,13 +121,15 @@ static void Bullet_Fire(gentity_t* ent, int weapon) {
 
 	// send bullet impact
 	if(traceEnt->takedamage && traceEnt->client) {
-		tent = G_TempEntity(tr.endpos, EV_BULLET_HIT_FLESH);
+		tent = G_TempEntity(tr.endpos, EV_BULLET_HIT_ENTITY);
 		tent->s.eventParm = traceEnt->s.number;
 		tent->s.clientNum = ent->s.clientNum;
+		tent->s.weapon = ent->s.weapon;
 	} else {
-		tent = G_TempEntity(tr.endpos, EV_BULLET_HIT_WALL);
+		tent = G_TempEntity(tr.endpos, EV_BULLET_HIT_WORLD);
 		tent->s.eventParm = DirToByte(tr.plane.normal);
 		tent->s.clientNum = ent->s.clientNum;
+		tent->s.weapon = ent->s.weapon;
 	}
 	tent->s.otherEntityNum = ent->s.number;
 

@@ -402,11 +402,11 @@ static void PhysgunHold(gentity_t* player) {
 	gentity_t* findent;
 	vec3_t velocity;
 
-	if(player->client->ps.weapon != WP_PHYSGUN) return;
+	if(jsd_weapon[player->client->ps.weapon].wType != WT_PHYSGUN) return;
 
 	if(player->client->buttons & BUTTON_ATTACK && player->client->ps.stats[STAT_HEALTH] && player->client->ps.pm_type != PM_DEAD) {
 		if(!player->grabbedEntity) {
-			findent = FindEntityForPhysgun(player, jsd_weapon[WP_PHYSGUN].range);
+			findent = FindEntityForPhysgun(player, jsd_weapon[player->client->ps.weapon].range);
 			if(findent && findent->isGrabbed == false) {
 				if(!G_PlayerIsOwner(player, findent)) return;
 				if(findent) player->grabbedEntity = findent;
@@ -435,11 +435,11 @@ static void GravitygunHold(gentity_t* player) {
 	gentity_t* findent;
 	vec3_t velocity;
 
-	if(player->client->ps.weapon != WP_GRAVITYGUN) return;
+	if(jsd_weapon[player->client->ps.weapon].wType != WT_GRAVITYGUN) return;
 
 	if(player->client->buttons & BUTTON_ATTACK && player->client->ps.stats[STAT_HEALTH] && player->client->ps.pm_type != PM_DEAD) {
 		if(!player->grabbedEntity) {
-			findent = FindEntityForGravitygun(player, jsd_weapon[WP_GRAVITYGUN].range);
+			findent = FindEntityForGravitygun(player, jsd_weapon[player->client->ps.weapon].range);
 			if(findent && findent->isGrabbed == false) {
 				if(!G_PlayerIsOwner(player, findent)) return;
 				if(findent) player->grabbedEntity = findent;

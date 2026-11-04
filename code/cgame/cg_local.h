@@ -463,8 +463,8 @@ typedef struct {
 
 	// input state sent to server
 	int weaponSelect;
-	int swep_listcl[WEAPONS_NUM];
-	int swep_spawncl[WEAPONS_NUM];  // stores spawn weapons
+	int swep_listcl[MAX_WEAPONS];
+	int swep_spawncl[MAX_WEAPONS];  // stores spawn weapons
 
 	float savedSens;  // physgun
 
@@ -909,9 +909,6 @@ typedef struct {
 	int modelColorSource;
 	float modelColor[3];
 
-	// Skip CG_LightningBolt for this weapon (beam drawn by another event, e.g. EV_BEAM_TRAIL)
-	bool skipLightningBolt;
-
 	// Emit red blood particles on flesh impact (grenade/rocket style)
 	bool explodeOnFleshHit;
 
@@ -956,7 +953,7 @@ typedef struct {
 	bool registered;
 } weaponFx_t;
 
-extern weaponFx_t jsd_weaponFx[WEAPONS_NUM];
+extern weaponFx_t jsd_weaponFx[MAX_WEAPONS];
 
 extern cgs_t cgs;
 extern cg_t cg;
