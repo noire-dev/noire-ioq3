@@ -2,7 +2,6 @@
 // weapon.none is always id 0 (WP_NONE), so ids stay in sync with weapon_t
 // and with CG_RegisterWeapon lookups
 // Default weapon properties + FX both live here (no weapon data left in C)
-weapon.none = weapon.register(WT.NONE, WAT.NONE, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false, 0.0, 0.0);
 weapon.crowbar = weapon.register(WT.MELEE, WAT.MELEE, null, 400, 1, 50, 0, 0, 64, 0, 0, 0, 0, false, false, 0.0, 0.0);
 weapon.machinegun = weapon.register(WT.BULLET, WAT.NONE, null, 100, 1, 7, 0, 0, 131072, 0, 0, 200, 0, false, false, 0.0, 0.0);
 weapon.shotgun = weapon.register(WT.SHOTGUN, WAT.NONE, null, 1000, 11, 10, 0, 0, 8192, 0, 0, 700, 0, false, false, 0.0, 0.0);
@@ -15,20 +14,6 @@ weapon.bfg = weapon.register(WT.MISSILE, WAT.NONE, "bfg", 200, 1, 100, 100, 120,
 weapon.physgun = weapon.register(WT.PHYSGUN, WAT.NONE, null, 100, 1, 0, 0, 0, 8192, 0, 0, 0, 0, false, false, 0.0, 0.0);
 weapon.gravitygun = weapon.register(WT.GRAVITYGUN, WAT.NONE, null, 100, 1, 0, 0, 0, 1024, 0, 0, 0, 0, false, false, 0.0, 0.0);
 weapon.toolgun = weapon.register(WT.TOOLGUN, WAT.NONE, null, 200, 1, 0, 0, 0, 4096, 0, 0, 0, 0, false, false, 0.0, 0.0);
-
-console.log("weapon.none = " + weapon.none);
-console.log("weapon.crowbar = " + weapon.crowbar);
-console.log("weapon.machinegun = " + weapon.machinegun);
-console.log("weapon.shotgun = " + weapon.shotgun);
-console.log("weapon.grenadelauncher = " + weapon.grenadelauncher);
-console.log("weapon.rocketlauncher = " + weapon.rocketlauncher);
-console.log("weapon.lightning = " + weapon.lightning);
-console.log("weapon.railgun = " + weapon.railgun);
-console.log("weapon.plasmagun = " + weapon.plasmagun);
-console.log("weapon.bfg = " + weapon.bfg);
-console.log("weapon.physgun = " + weapon.physgun);
-console.log("weapon.gravitygun = " + weapon.gravitygun);
-console.log("weapon.toolgun = " + weapon.toolgun);
 
 // ---------------------------------------------------------------------------
 // Default weapon FX (moved 1:1 from cgame/cg_weapons.c jsd_weaponFx table)

@@ -1,5 +1,4 @@
 // giTag links to weapon ids registered in js/weapons/default.js (weapon.crowbar, weapon.railgun, ...)
-item.register(null, null, null, null, 0, 0, 0);
 item.register("weapon_crowbar", "models/weapons/crowbar/wmodel", "icons/iconw_crowbar", "Crowbar", 0, 1, weapon.crowbar);
 item.register("weapon_machinegun", "models/weapons2/machinegun/machinegun.md3", "icons/iconw_machinegun", "Machinegun", 40, 1, weapon.machinegun);
 item.register("weapon_shotgun", "models/weapons2/shotgun/shotgun.md3", "icons/iconw_shotgun", "Shotgun", 10, 1, weapon.shotgun);

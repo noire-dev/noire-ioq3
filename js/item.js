@@ -2,10 +2,6 @@ const item = {};
 item.list = [];
 
 item.register = function (classname, model, icon, pickup_name, quantity, giType, giTag) {
-    var id = item.list.length;
-    if (!item.list[id]) item.list[id] = {};
-    item.list[id].classname = classname;
-
     var itemCount = api.item(item.vmIndex, 0, "itemCount");
 
     api.item(item.vmIndex, itemCount, "classname", classname);
@@ -20,10 +16,12 @@ item.register = function (classname, model, icon, pickup_name, quantity, giType,
     api.item(item.vmIndex, itemCount, "sounds", "");
 
     api.item(item.vmIndex, 0, "itemCount", itemCount + 1);
+    return itemCount;
 }
 
 item.initSystem = function (vmIndex) {
     item.vmIndex = vmIndex;
     api.item(item.vmIndex, 0, "itemCount", 0);
+    item.register(null, null, null, null, 0, 0, 0);
     openjs.folder("js/items", "items");
 }

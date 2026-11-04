@@ -92,5 +92,6 @@ weapon.fxv = function (weaponID, fieldName, x, y, z, w) {
 weapon.initSystem = function (vmIndex) {
     weapon.vmIndex = vmIndex;
     api.weapon(weapon.vmIndex, 0, "weaponCount", 0);
+    weapon.none = weapon.register(WT.NONE, WAT.NONE, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false, 0.0, 0.0);
     openjs.folder("js/weapons", "weapons");
 }
