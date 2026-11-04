@@ -1250,7 +1250,7 @@ static void PM_WaterEvents(void) {
 }
 
 static void PM_BeginWeaponChange(int weapon) {
-	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	if(weapon <= WP_NONE || weapon >= jsd_weaponCount) return;
 	if(pm->ps->weaponstate == WEAPON_DROPPING) return;
 
 	pm->ps->weaponstate = WEAPON_DROPPING;
@@ -1262,7 +1262,7 @@ static void PM_FinishWeaponChange(void) {
 	int weapon;
 
 	weapon = pm->cmd.weapon;
-	if(weapon < WP_NONE || weapon >= WEAPONS_NUM) weapon = WP_NONE;
+	if(weapon < WP_NONE || weapon >= jsd_weaponCount) weapon = WP_NONE;
 
 #ifdef GAME
 	if(!G_CheckWeapon(pm->ps->clientNum, weapon, 1)) weapon = WP_NONE;

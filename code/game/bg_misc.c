@@ -28,27 +28,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 item_t jsd_item[MAX_ITEMS];
 int jsd_itemCount = 0;
 
-// clang-format off
-weaponProperties_t jsd_weapon[] = {
-// 	wType 				wAnimType		classname 		delay 	count 	dmg 	sDmg 	sRadius range 	speed	sRandom spread	timeout gravity	bounce	bMod 	zOffset
-	{ WT_NONE, 			WAT_NONE, 		NULL, 			0, 		0,		0, 		0, 		0,		0,		0, 		0, 		0, 		0, 		false,	false,	0.0, 	0.0 },
-	{ WT_MELEE, 		WAT_MELEE, 		NULL, 			400,	1, 		50, 	0, 		0,		64,		0, 		0, 		0, 		0, 		false,	false,	0.0, 	0.0 },
-	{ WT_BULLET, 		WAT_NONE, 		NULL, 			100, 	1, 		7, 		0, 		0, 		131072, 0, 		0, 		200, 	0, 		false,	false,	0.0, 	0.0 },
-	{ WT_SHOTGUN, 		WAT_NONE, 		NULL, 			1000, 	11, 	10, 	0, 		0,		8192,	0, 		0, 		700, 	0, 		false,	false,	0.0, 	0.0 },
-	{ WT_MISSILE, 		WAT_GRENADE, 	"grenade", 		800, 	1, 		100, 	100, 	150,	0,		700, 	0, 		0, 		2500, 	true,	true,	0.65,	0.25 },
-	{ WT_MISSILE, 		WAT_NONE, 		"rocket", 		800, 	1, 		100, 	100, 	120,	0,		900, 	0, 		0, 		15000,	false,	false,	0.0, 	0.0 },
-	{ WT_BEAM, 			WAT_NONE, 		NULL, 			50, 	1, 		8, 		0, 		0,		768,	0, 		0, 		0, 		0, 		false,	false,	0.0, 	0.0 },
-	{ WT_BEAM, 			WAT_NONE, 		NULL, 			1500, 	1, 		100, 	0, 		0,		16384,	0, 		0, 		0, 		0, 		false,	false,	0.0, 	0.0 },
-	{ WT_MISSILE, 		WAT_NONE, 		"plasma", 		100, 	1, 		20, 	15, 	20,		0,		2000, 	0, 		0, 		10000, 	false,	false,	0.0, 	0.0 },
-	{ WT_MISSILE, 		WAT_NONE, 		"bfg", 			200, 	1, 		100, 	100, 	120,	0,		2000, 	0, 		0, 		10000, 	false,	false,	0.0, 	0.0 },
-	{ WT_PHYSGUN, 		WAT_NONE, 		NULL, 			100, 	1, 		0, 		0, 		0,		8192,	0, 		0, 		0, 		0, 		false,	false,	0.0, 	0.0 },
-	{ WT_GRAVITYGUN,	WAT_NONE, 		NULL, 			100, 	1, 		0, 		0, 		0,		1024,	0, 		0, 		0, 		0, 		false,	false,	0.0, 	0.0 },
-	{ WT_TOOLGUN, 		WAT_NONE, 		NULL, 			200, 	1, 		0, 		0, 		0,		4096,	0, 		0, 		0, 		0, 		false,	false,	0.0, 	0.0 },
-};
-int	jsd_weaponCount = ARRAY_LEN(jsd_weapon);
-// clang-format on
+// Weapon properties are registered from JS (js/weapons/default.js) through VM_APIWEAPON
+weaponProperties_t jsd_weapon[MAX_WEAPONS];
+int jsd_weaponCount = 0;
 
-item_t* BG_FindItemForWeapon(weapon_t weapon) {
+item_t* BG_FindItemForWeapon(int weapon) {
 	for(int i = 0; i < jsd_itemCount; i++) {
 		if(jsd_item[i].giType == IT_WEAPON && jsd_item[i].giTag == weapon) return &jsd_item[i];
 	}

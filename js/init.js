@@ -20,6 +20,7 @@ const js = {
     callTool: jsCount += 1,
     gameRunFrame: jsCount += 1,
     itemInit: jsCount += 1,
+    weaponInit: jsCount += 1,
     commandRun: jsCount += 1,
     spawnUse: jsCount += 1,
 };
@@ -29,6 +30,8 @@ const vm = {
     // General
     apiItem: vmCount += 1,
     cmd: vmCount += 1,
+    apiWeapon: vmCount += 1,
+    apiWeaponFx: vmCount += 1,
 
     // game.vm
     apiGameEntity: vmCount += 1,
@@ -131,7 +134,8 @@ openjs.file("js/ui");
 openjs.file("js/utils");
 openjs.file("js/app");
 openjs.file("js/tool");
-openjs.file("js/item");
+openjs.file("js/weapons"); // sets weapon.railgun for examples
+openjs.file("js/item"); // uses weapon.railgun for link weapon to item pickup
 openjs.file("js/shell");
 openjs.file("js/spawn");
 openjs.file("js/cg");

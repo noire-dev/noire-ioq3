@@ -46,6 +46,13 @@ void JSE_String(char* string, size_t maxSize) {
 	Q_strncpyz(vmresult.v.s, string, MAX_JS_STRINGSIZE);
 }
 
+void JSE_Bool(bool* value) {
+	api_foundEntry = true;
+	if(vmargs.t[api_valueIndex] != JS_TYPE_NONE) *value = (vmargs.v[api_valueIndex].i != 0);
+	vmresult.t = JS_TYPE_INT;
+	vmresult.v.i = *value;
+}
+
 #ifdef GAME
 void JSE_Entity(gentity_t* ent) {
 	api_foundEntry = true;
@@ -66,6 +73,8 @@ void JS_SystemInit(int vmIndex) {
 	if(vmIndex == VM_CGAME) trap_Print("JS_SystemInit for cgame\n");
 	if(vmIndex == VM_UI) trap_Print("JS_SystemInit for ui\n");
 
+	// Weapons first, so js/items/*.js can link pickups to weapon.xxx ids
+	JS_WeaponInit(vmIndex);
 	JS_ItemInit(vmIndex);
 }
 
@@ -88,6 +97,34 @@ static void API_Item(int itemID, int fieldID, int i1, int i2, int i3, int i4) {
 	API_FIELD(JSE_String(jsd_item[itemID].sounds, MAX_JS_STRINGSIZE))
 
 	API_FIELD(JSE_Int(&jsd_itemCount))
+}
+
+static void API_Weapon(int weaponID, int fieldID, int i1, int i2, int i3, int i4) {
+	api_foundEntry = false;
+	api_valueIndex = 2;
+	api_counter = 0;
+
+	bounds(weaponID, MAX_WEAPONS, "API_Weapon - weaponID");
+
+	API_FIELD(JSE_Int((int*)&jsd_weapon[weaponID].wType))
+	API_FIELD(JSE_Int((int*)&jsd_weapon[weaponID].wAnimType))
+	API_FIELD(JSE_String(jsd_weapon[weaponID].classname, MAX_JS_STRINGSIZE))
+	API_FIELD(JSE_Int(&jsd_weapon[weaponID].delay))
+	API_FIELD(JSE_Int(&jsd_weapon[weaponID].count))
+	API_FIELD(JSE_Int(&jsd_weapon[weaponID].damage))
+	API_FIELD(JSE_Int(&jsd_weapon[weaponID].splashDamage))
+	API_FIELD(JSE_Int(&jsd_weapon[weaponID].splashRadius))
+	API_FIELD(JSE_Int(&jsd_weapon[weaponID].range))
+	API_FIELD(JSE_Int(&jsd_weapon[weaponID].speed))
+	API_FIELD(JSE_Int(&jsd_weapon[weaponID].speedRandom))
+	API_FIELD(JSE_Int(&jsd_weapon[weaponID].spread))
+	API_FIELD(JSE_Int(&jsd_weapon[weaponID].timeout))
+	API_FIELD(JSE_Bool(&jsd_weapon[weaponID].gravity))
+	API_FIELD(JSE_Bool(&jsd_weapon[weaponID].bounce))
+	API_FIELD(JSE_Float(&jsd_weapon[weaponID].bounceModifier))
+	API_FIELD(JSE_Float(&jsd_weapon[weaponID].zOffset))
+
+	API_FIELD(JSE_Int(&jsd_weaponCount))
 }
 
 #ifdef GAME
@@ -210,6 +247,106 @@ static void API_ClientPlayer(int fieldID, int i1, int i2, int i3, int i4) {
 	api_counter = 0;
 
 	API_FIELD(bounds(i1, MAX_STATS, "API_ClientPlayer -> stats"); JSE_Int(&cg.predictedPlayerState.stats[i1]))
+}
+
+static void API_WeaponFX(int weaponID, int fieldID, int i1, int i2, int i3, int i4) {
+	api_foundEntry = false;
+	api_valueIndex = 2;
+	api_counter = 0;
+
+	bounds(weaponID, MAX_WEAPONS, "API_WeaponFX - weaponID");
+	weaponFx_t* fx = &jsd_weaponFx[weaponID];
+
+	API_FIELD(JSE_Int((int*)&fx->animType))
+	API_FIELD(JSE_Int(&fx->weaponSection))
+	API_FIELD(JSE_Int(&fx->sectionOrder))
+	API_FIELD(JSE_Bool(&fx->colorizeItemIcon))
+
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> hitLightColor"); JSE_Float(&fx->hitLightColor[i1]))
+	API_FIELD(JSE_Float(&fx->hitLightRadius))
+	API_FIELD(JSE_Int(&fx->hitLightTime))
+	API_FIELD(bounds(i1, 4, "API_WeaponFX -> hitParticleColor"); JSE_Float(&fx->hitParticleColor[i1]))
+	API_FIELD(JSE_Int(&fx->hitParticleCount))
+	API_FIELD(JSE_Float(&fx->hitParticleSpeed))
+	API_FIELD(JSE_Int(&fx->hitParticleFlags))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> hitParticleGravity"); JSE_Float(&fx->hitParticleGravity[i1]))
+	API_FIELD(JSE_Float(&fx->hitParticleSize))
+	API_FIELD(JSE_Float(&fx->hitParticleLifetime))
+	API_FIELD(JSE_String(fx->hitParticleShader, MAX_QPATH))
+
+	API_FIELD(JSE_Bool(&fx->continuousFire))
+	API_FIELD(JSE_Bool(&fx->suppressRepeatFire))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> fireLightColor"); JSE_Float(&fx->fireLightColor[i1]))
+	API_FIELD(JSE_Float(&fx->fireLightRadius))
+	API_FIELD(JSE_Int(&fx->fireLightTime))
+	API_FIELD(bounds(i1, 4, "API_WeaponFX -> fireParticleColor"); JSE_Float(&fx->fireParticleColor[i1]))
+	API_FIELD(JSE_Int(&fx->fireParticleCount))
+	API_FIELD(JSE_Float(&fx->fireParticleSpeed))
+	API_FIELD(JSE_Int(&fx->fireParticleFlags))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> fireParticleGravity"); JSE_Float(&fx->fireParticleGravity[i1]))
+	API_FIELD(JSE_Float(&fx->fireParticleSize))
+	API_FIELD(JSE_Float(&fx->fireParticleLifetime))
+	API_FIELD(JSE_String(fx->fireParticleShader, MAX_QPATH))
+
+	API_FIELD(bounds(i1, 4, "API_WeaponFX -> trailColor"); JSE_Float(&fx->trailColor[i1]))
+	API_FIELD(JSE_Int(&fx->trailCount))
+	API_FIELD(JSE_Float(&fx->trailSpeed))
+	API_FIELD(JSE_Int(&fx->trailFlags))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> trailGravity"); JSE_Float(&fx->trailGravity[i1]))
+	API_FIELD(JSE_Float(&fx->trailSize))
+	API_FIELD(JSE_Float(&fx->trailLifetime))
+	API_FIELD(JSE_String(fx->trailShader, MAX_QPATH))
+	API_FIELD(JSE_Int(&fx->trailInterval))
+
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> missileLightColor"); JSE_Float(&fx->missileLightColor[i1]))
+	API_FIELD(JSE_Float(&fx->missileLightRadius))
+
+	API_FIELD(JSE_Float(&fx->tracerChance))
+	API_FIELD(JSE_Float(&fx->tracerLength))
+	API_FIELD(JSE_String(fx->tracerParticleShader, MAX_QPATH))
+	API_FIELD(bounds(i1, 4, "API_WeaponFX -> tracerParticleColor"); JSE_Float(&fx->tracerParticleColor[i1]))
+	API_FIELD(JSE_Int(&fx->tracerParticleCount))
+	API_FIELD(JSE_Float(&fx->tracerParticleSpeed))
+	API_FIELD(JSE_Int(&fx->tracerParticleFlags))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> tracerParticleGravity"); JSE_Float(&fx->tracerParticleGravity[i1]))
+	API_FIELD(JSE_Float(&fx->tracerParticleSize))
+	API_FIELD(JSE_Float(&fx->tracerParticleLifetime))
+	API_FIELD(JSE_String(fx->tracerSound, MAX_QPATH))
+
+	API_FIELD(JSE_Bool(&fx->isBeam))
+	API_FIELD(JSE_String(fx->beamShader, MAX_QPATH))
+	API_FIELD(bounds(i1, 4, "API_WeaponFX -> beamColor"); JSE_Float(&fx->beamColor[i1]))
+	API_FIELD(JSE_Bool(&fx->beamColorizeByClient))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> beamStartOffset"); JSE_Float(&fx->beamStartOffset[i1]))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> beamEndOffset"); JSE_Float(&fx->beamEndOffset[i1]))
+
+	API_FIELD(JSE_String(fx->readySound, MAX_QPATH))
+	API_FIELD(bounds(i1, 4, "API_WeaponFX -> fireSound"); JSE_String(fx->fireSound[i1], MAX_QPATH))
+	API_FIELD(JSE_String(fx->continuousFireSound, MAX_QPATH))
+	API_FIELD(JSE_String(fx->missileFlySound, MAX_QPATH))
+	API_FIELD(JSE_String(fx->missileBounceSound, MAX_QPATH))
+	API_FIELD(JSE_String(fx->missileExplodeSound, MAX_QPATH))
+
+	API_FIELD(JSE_String(fx->missileModel, MAX_QPATH))
+	API_FIELD(JSE_String(fx->missileSprite, MAX_QPATH))
+	API_FIELD(JSE_Int(&fx->missileRenderfx))
+
+	API_FIELD(JSE_Int(&fx->modelColorSource))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> modelColor"); JSE_Float(&fx->modelColor[i1]))
+	API_FIELD(JSE_Bool(&fx->explodeOnFleshHit))
+
+	API_FIELD(JSE_String(fx->flashModel, MAX_QPATH))
+	API_FIELD(JSE_String(fx->muzzleBone, MAX_QPATH))
+	API_FIELD(JSE_String(fx->muzzleSmokeShader, MAX_QPATH))
+
+	API_FIELD(JSE_String(fx->brassModel, MAX_QPATH))
+	API_FIELD(JSE_Int(&fx->brassCount))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> brassOffset"); JSE_Float(&fx->brassOffset[i1]))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> brassVelocity"); JSE_Float(&fx->brassVelocity[i1]))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> brassVelocitySpread"); JSE_Float(&fx->brassVelocitySpread[i1]))
+	API_FIELD(JSE_Float(&fx->brassBounceFactor))
+	API_FIELD(JSE_Int(&fx->brassLifetimeMult))
+	API_FIELD(bounds(i1, 3, "API_WeaponFX -> brassSpinDelta"); JSE_Float(&fx->brassSpinDelta[i1]))
 }
 #endif
 
@@ -358,6 +495,7 @@ void VMCall(int func_id) {
 	switch(func_id) {
 		case VM_APIITEM: API_Item(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
 		case VM_CMD: trap_SendConsoleCommand(vmargs.v[0].i, vmargs.v[1].s); break;
+		case VM_APIWEAPON: API_Weapon(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
 #ifdef GAME
 		case VM_APIGAMEENTITY: API_GameEntity(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
 		case VM_GAPIENTITYDELETE: GAPI_EntityDelete(&g_entities[vmargs.v[0].i]); break;
@@ -404,6 +542,7 @@ void VMCall(int func_id) {
 		case VM_DRAWSHADER: drawColoredShader(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].s, cgui.colors[vmargs.v[5].i]); break;
 #endif
 #ifdef CGAME
+		case VM_APIWEAPONFX: API_WeaponFX(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
 		case VM_APIHUD: API_HUD(vmargs.v[0].i, vmargs.v[2].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i); break;
 		case VM_APICLIENTPLAYER: API_ClientPlayer(vmargs.v[0].i, vmargs.v[2].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i); break;
 		case VM_HUDCOUNTER: CG_HUDCounter(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].s, vmargs.v[3].s); break;

@@ -463,7 +463,7 @@ void BotUpdateInventory(bot_state_t* bs) {
 	bs->inventory[INVENTORY_HEALTH] = bs->cur_ps.stats[STAT_HEALTH];
 	bs->inventory[INVENTORY_ARMOR] = bs->cur_ps.stats[STAT_ARMOR];
 	// weapons
-	for(int i = 1; i < WEAPONS_NUM; i++) {
+	for(int i = 1; i < jsd_weaponCount; i++) {
 		ent = g_entities + bs->client;
 		bs->swep_list[i] = ent->swep_list[i];
 		bs->swep_ammo[i] = ent->swep_ammo[i];

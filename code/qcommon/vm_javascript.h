@@ -44,6 +44,7 @@ typedef enum {
 	JS_TOOLCALL,
 	JS_GAMERUNFRAME,
 	JS_ITEMINIT,
+	JS_WEAPONINIT,
 	JS_COMMANDRUN,
 	JS_SPAWNUSE,
 } jscall_t;
@@ -52,6 +53,8 @@ typedef enum {
 	// General
 	VM_APIITEM,
 	VM_CMD,
+	VM_APIWEAPON,
+	VM_APIWEAPONFX,
 
 	// game.vm
 	VM_APIGAMEENTITY,
@@ -148,6 +151,7 @@ void JS_ToolInit(int id);
 void JS_ToolCall(int id, int targetID, int playerID, char* arg1, char* arg2, char* arg3, char* arg4, char* arg5, char* arg6, char* arg7, char* arg8, char* arg9);
 void JS_GameRunFrame(int levelTime);
 void JS_ItemInit(int vmIndex);
+void JS_WeaponInit(int vmIndex);
 int JS_CommandRun(int clientNum);
 int JS_SpawnUse(char* classname);
 

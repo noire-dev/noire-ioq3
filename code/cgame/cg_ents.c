@@ -475,7 +475,7 @@ static void CG_Missile(centity_t* cent) {
 	weaponFx_t* fx;
 
 	s1 = &cent->currentState;
-	if(s1->weapon >= WEAPONS_NUM) {
+	if(s1->weapon >= jsd_weaponCount) {
 		s1->weapon = 0;
 	}
 	fx = &jsd_weaponFx[s1->weapon];

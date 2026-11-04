@@ -59,8 +59,8 @@ static int CG_GetWeaponSectionList(int section, int* weapons, int maxWeapons) {
 	int count = 0;
 	int order, weapon;
 
-	for(order = 1; order <= WEAPONS_NUM * 4; order++) {
-		for(weapon = 1; weapon < WEAPONS_NUM; weapon++) {
+	for(order = 1; order <= jsd_weaponCount * 4; order++) {
+		for(weapon = 1; weapon < jsd_weaponCount; weapon++) {
 			weaponFx_t* fx = &jsd_weaponFx[weapon];
 			int weaponOrder;
 
@@ -80,7 +80,7 @@ static void CG_DrawWeaponSelectorIcon(int weapon, float x, float y, float w, flo
 	vec4_t iconColor = {1.0f, 1.0f, 1.0f, 1.0f};
 	qhandle_t icon;
 
-	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	if(weapon <= WP_NONE || weapon >= jsd_weaponCount) return;
 	CG_RegisterWeapon(weapon);
 	fx = &jsd_weaponFx[weapon];
 	icon = cg_weapons[weapon].weaponIcon;
@@ -126,7 +126,7 @@ static void CG_DrawWeaponSelect(void) {
 	if(alpha > 1.0f) alpha = 1.0f;
 
 	activeSection = 1;
-	if(cg.weaponSelect > WP_NONE && cg.weaponSelect < WEAPONS_NUM && jsd_weaponFx[cg.weaponSelect].weaponSection >= 1 && jsd_weaponFx[cg.weaponSelect].weaponSection <= WEAPON_SELECTOR_SECTIONS) {
+	if(cg.weaponSelect > WP_NONE && cg.weaponSelect < jsd_weaponCount && jsd_weaponFx[cg.weaponSelect].weaponSection >= 1 && jsd_weaponFx[cg.weaponSelect].weaponSection <= WEAPON_SELECTOR_SECTIONS) {
 		activeSection = jsd_weaponFx[cg.weaponSelect].weaponSection;
 	}
 

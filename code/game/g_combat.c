@@ -36,7 +36,7 @@ void TossClientItems(gentity_t* self) {
 	gentity_t* drop;
 
 	// drop all weapons
-	for(int i = 1; i < WEAPONS_NUM; i++) {
+	for(int i = 1; i < jsd_weaponCount; i++) {
 		if(self->swep_list[i] >= WS_HAVE) {
 			item = BG_FindItemForWeapon(i);
 			if(!item) continue;

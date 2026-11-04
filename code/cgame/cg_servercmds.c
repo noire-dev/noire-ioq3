@@ -50,12 +50,12 @@ static void CG_ParseSweps(void) {
 	int weaponIndex;
 	int numArgs = trap_Argc();
 
-	for(i = 0; i < WEAPONS_NUM; i++) cg.swep_listcl[i] = WS_NONE;
+	for(i = 0; i < jsd_weaponCount; i++) cg.swep_listcl[i] = WS_NONE;
 
 	for(i = 1; i < numArgs; i++) {
 		weaponIndex = atoi(CG_Argv(i));
 
-		if(weaponIndex >= -WEAPONS_NUM && weaponIndex < WEAPONS_NUM) {
+		if(weaponIndex >= -jsd_weaponCount && weaponIndex < jsd_weaponCount) {
 			if(weaponIndex > 0) {
 				cg.swep_listcl[weaponIndex] = WS_HAVE;
 			} else if(weaponIndex < 0) {
@@ -70,12 +70,12 @@ static void CG_ParseSpawnSweps(void) {
 	int weaponIndex;
 	int numArgs = trap_Argc();
 
-	for(i = 0; i < WEAPONS_NUM; i++) cg.swep_spawncl[i] = WS_NONE;
+	for(i = 0; i < jsd_weaponCount; i++) cg.swep_spawncl[i] = WS_NONE;
 
 	for(i = 1; i < numArgs; i++) {
 		weaponIndex = atoi(CG_Argv(i));
 
-		if(weaponIndex >= -WEAPONS_NUM && weaponIndex < WEAPONS_NUM) {
+		if(weaponIndex >= -jsd_weaponCount && weaponIndex < jsd_weaponCount) {
 			if(weaponIndex > 0) {
 				cg.swep_spawncl[weaponIndex] = WS_HAVE;
 			} else if(weaponIndex < 0) {

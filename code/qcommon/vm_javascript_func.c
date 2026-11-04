@@ -168,6 +168,13 @@ void JS_ItemInit(int vmIndex) {
 	JS_Function(JS_ITEMINIT);
 }
 
+void JS_WeaponInit(int vmIndex) {
+	JS_StackClean();
+	jsargs.t[0] = JS_TYPE_INT;
+	jsargs.v[0].i = vmIndex;
+	JS_Function(JS_WEAPONINIT);
+}
+
 int JS_CommandRun(int clientNum) {
 	JS_StackClean();
 

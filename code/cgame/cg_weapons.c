@@ -23,414 +23,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_weapons.c -- events and effects dealing with weapons
 #include "cg_local.h"
 
-weaponFx_t jsd_weaponFx[MAX_WEAPONS] =
-    {
-        [WP_GAUNTLET] =
-            {
-                .weaponSection = 1,
-                .sectionOrder = 1,
-                .colorizeItemIcon = true,
-                .animType = AMTYPE_MELEE,
-                .continuousFire = true,
-                .hitLightColor = {0.6f, 0.6f, 1.0f},
-                .hitLightRadius = 80.0f,
-                .hitLightTime = 80,
-                .hitParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
-                .hitParticleCount = 8,
-                .hitParticleSpeed = 120.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE,
-                .hitParticleGravity = {0.0f, 0.0f, -200.0f},
-                .fireLightColor = {0.6f, 0.6f, 1.0f},
-                .fireLightRadius = 80.0f,
-                .fireLightTime = 50,
-                .fireParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
-                .fireParticleCount = 4,
-                .fireParticleSpeed = 60.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .fireSound = {"sound/weapons/melee/fstatck.wav"},
-                .continuousFireSound = "sound/weapons/melee/fstrun.wav",
-            },
-        [WP_MACHINEGUN] =
-            {
-                .weaponSection = 2,
-                .sectionOrder = 1,
-                .colorizeItemIcon = false,
-                .animType = AMTYPE_SMG1,
-                .hitLightColor = {1.0f, 1.0f, 0.0f},
-                .hitLightRadius = 100.0f,
-                .hitLightTime = 50,
-                .hitParticleColor = {1.0f, 0.9f, 0.5f, 1.0f},
-                .hitParticleCount = 6,
-                .hitParticleSpeed = 150.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE | PF_GRAVITY,
-                .hitParticleGravity = {0.0f, 0.0f, -600.0f},
-                .fireLightColor = {1.0f, 1.0f, 0.0f},
-                .fireLightRadius = 150.0f,
-                .fireLightTime = 50,
-                .fireParticleColor = {1.0f, 0.9f, 0.5f, 1.0f},
-                .fireParticleCount = 3,
-                .fireParticleSpeed = 80.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .tracerChance = 0.4f,
-                .tracerLength = 300.0f,
-                .tracerParticleShader = "",
-                .tracerParticleColor = {1.0f, 1.0f, 0.7f, 1.0f},
-                .tracerParticleCount = 10,
-                .tracerParticleSpeed = 0.0f,
-                .tracerParticleFlags = PF_SMOOTH_FADE,
-                .tracerParticleGravity = {0.0f, 0.0f, 0.0f},
-                .tracerParticleSize = 4.0f,
-                .tracerParticleLifetime = 0.25f,
-                .tracerSound = "sound/weapons/machinegun/buletby1.wav",
-                .fireSound = {"sound/weapons/machinegun/machgf1b.wav", "sound/weapons/machinegun/machgf2b.wav", "sound/weapons/machinegun/machgf3b.wav", "sound/weapons/machinegun/machgf4b.wav"},
-                .brassModel = "models/weapons2/shells/m_shell.md3",
-                .brassCount = 1,
-                .brassOffset = {8.0f, -4.0f, 24.0f},
-                .brassVelocity = {0.0f, -50.0f, 100.0f},
-                .brassVelocitySpread = {0.0f, 40.0f, 50.0f},
-                .brassBounceFactor = 0.4f,
-                .brassLifetimeMult = 1,
-                .brassSpinDelta = {2.0f, 1.0f, 0.0f},
-            },
-        [WP_SHOTGUN] =
-            {
-                .weaponSection = 3,
-                .sectionOrder = 1,
-                .colorizeItemIcon = false,
-                .animType = AMTYPE_SHOTGUN,
-                .hitLightColor = {1.0f, 1.0f, 0.0f},
-                .hitLightRadius = 100.0f,
-                .hitLightTime = 50,
-                .hitParticleColor = {1.0f, 0.9f, 0.5f, 1.0f},
-                .hitParticleCount = 6,
-                .hitParticleSpeed = 150.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE | PF_GRAVITY,
-                .hitParticleGravity = {0.0f, 0.0f, -600.0f},
-                .fireLightColor = {1.0f, 1.0f, 0.0f},
-                .fireLightRadius = 150.0f,
-                .fireLightTime = 50,
-                .fireParticleColor = {1.0f, 0.9f, 0.5f, 1.0f},
-                .fireParticleCount = 6,
-                .fireParticleSpeed = 100.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .tracerChance = 0.4f,
-                .tracerLength = 300.0f,
-                .tracerParticleShader = "",
-                .tracerParticleColor = {1.0f, 1.0f, 0.7f, 1.0f},
-                .tracerParticleCount = 10,
-                .tracerParticleSpeed = 0.0f,
-                .tracerParticleFlags = PF_SMOOTH_FADE,
-                .tracerParticleGravity = {0.0f, 0.0f, 0.0f},
-                .tracerParticleSize = 4.0f,
-                .tracerParticleLifetime = 0.25f,
-                .fireSound = {"sound/weapons/shotgun/sshotf1b.wav"},
-                .muzzleSmokeShader = "shotgunSmokePuff",
-                .brassModel = "models/weapons2/shells/s_shell.md3",
-                .brassCount = 2,
-                .brassOffset = {8.0f, 0.0f, 24.0f},
-                .brassVelocity = {60.0f, 0.0f, 100.0f},
-                .brassVelocitySpread = {60.0f, 40.0f, 50.0f},
-                .brassBounceFactor = 0.3f,
-                .brassLifetimeMult = 3,
-                .brassSpinDelta = {1.0f, 0.5f, 0.0f},
-            },
-        [WP_GRENADE_LAUNCHER] =
-            {
-                .weaponSection = 4,
-                .sectionOrder = 1,
-                .colorizeItemIcon = false,
-                .animType = AMTYPE_GRENADE,
-                .explodeOnFleshHit = true,
-                .hitLightColor = {1.0f, 0.7f, 0.0f},
-                .hitLightRadius = 300.0f,
-                .hitLightTime = 400,
-                .hitParticleColor = {1.0f, 0.7f, 0.3f, 1.0f},
-                .hitParticleCount = 48,
-                .hitParticleSpeed = 300.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE | PF_GRAVITY,
-                .hitParticleGravity = {0.0f, 0.0f, -800.0f},
-                .fireLightColor = {1.0f, 0.7f, 0.0f},
-                .fireLightRadius = 150.0f,
-                .fireLightTime = 100,
-                .fireParticleColor = {1.0f, 0.7f, 0.3f, 1.0f},
-                .fireParticleCount = 8,
-                .fireParticleSpeed = 100.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .trailColor = {0.6f, 0.6f, 0.6f, 0.5f},
-                .trailCount = 2,
-                .trailSpeed = 30.0f,
-                .trailFlags = PF_SMOOTH_FADE,
-                .trailGravity = {0.0f, 0.0f, 30.0f},
-                .trailInterval = 50,
-                .missileLightColor = {1.0f, 0.7f, 0.0f},
-                .missileLightRadius = 150.0f,
-                .missileModel = "models/ammo/grenade1.md3",
-                .missileBounceSound = "sound/weapons/grenade/hgrenb1a.wav",
-                .missileExplodeSound = "sound/weapons/grenade/hgrenb2a.wav",
-                .fireSound = {"sound/weapons/grenade/grenlf1a.wav"},
-            },
-        [WP_ROCKET_LAUNCHER] =
-            {
-                .weaponSection = 4,
-                .sectionOrder = 2,
-                .colorizeItemIcon = false,
-                .animType = AMTYPE_RPG,
-                .explodeOnFleshHit = true,
-                .hitLightColor = {1.0f, 0.75f, 0.0f},
-                .hitLightRadius = 400.0f,
-                .hitLightTime = 400,
-                .hitParticleColor = {1.0f, 0.7f, 0.3f, 1.0f},
-                .hitParticleCount = 64,
-                .hitParticleSpeed = 400.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE | PF_GRAVITY,
-                .hitParticleGravity = {0.0f, 0.0f, -800.0f},
-                .fireLightColor = {1.0f, 0.75f, 0.0f},
-                .fireLightRadius = 200.0f,
-                .fireLightTime = 100,
-                .fireParticleColor = {1.0f, 0.7f, 0.3f, 1.0f},
-                .fireParticleCount = 10,
-                .fireParticleSpeed = 120.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .trailColor = {0.7f, 0.7f, 0.7f, 0.5f},
-                .trailCount = 2,
-                .trailSpeed = 30.0f,
-                .trailFlags = PF_SMOOTH_FADE,
-                .trailGravity = {0.0f, 0.0f, 20.0f},
-                .trailInterval = 50,
-                .missileLightColor = {1.0f, 0.75f, 0.0f},
-                .missileLightRadius = 200.0f,
-                .missileModel = "models/ammo/rocket/rocket.md3",
-                .missileFlySound = "sound/weapons/rocket/rockfly.wav",
-                .missileExplodeSound = "sound/weapons/rocket/rocklx1a.wav",
-                .fireSound = {"sound/weapons/rocket/rocklf1a.wav"},
-            },
-        [WP_LIGHTNING] =
-            {
-                .weaponSection = 5,
-                .sectionOrder = 1,
-                .colorizeItemIcon = false,
-                .animType = AMTYPE_AR2,
-                .isBeam = true,
-                .beamColor = {1.0f, 1.0f, 1.0f, 1.0f},
-                .continuousFire = true,
-                .suppressRepeatFire = true,
-                .hitLightColor = {0.6f, 0.6f, 1.0f},
-                .hitLightRadius = 150.0f,
-                .hitLightTime = 100,
-                .hitParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
-                .hitParticleCount = 12,
-                .hitParticleSpeed = 200.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE,
-                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
-                .fireLightColor = {0.6f, 0.6f, 1.0f},
-                .fireLightRadius = 200.0f,
-                .fireLightTime = 50,
-                .fireParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
-                .fireParticleCount = 4,
-                .fireParticleSpeed = 80.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .beamShader = "railCore",
-                .readySound = "sound/weapons/melee/fsthum.wav",
-                .fireSound = {"sound/weapons/lightning/lg_fire.wav"},
-                .continuousFireSound = "sound/weapons/lightning/lg_hum.wav",
-            },
-        [WP_RAILGUN] =
-            {
-                .weaponSection = 5,
-                .sectionOrder = 2,
-                .colorizeItemIcon = false,
-                .animType = AMTYPE_CROSSBOW,
-                .hitLightColor = {1.0f, 0.5f, 0.0f},
-                .hitLightRadius = 200.0f,
-                .hitLightTime = 200,
-                .hitParticleColor = {1.0f, 0.5f, 0.0f, 1.0f},
-                .hitParticleCount = 24,
-                .hitParticleSpeed = 250.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE,
-                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
-                .fireLightColor = {1.0f, 0.5f, 0.0f},
-                .fireLightRadius = 200.0f,
-                .fireLightTime = 100,
-                .fireParticleColor = {1.0f, 0.5f, 0.0f, 1.0f},
-                .fireParticleCount = 6,
-                .fireParticleSpeed = 100.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .isBeam = true,
-                .beamShader = "railCore",
-                .beamColor = {0.0f, 1.0f, 0.0f, 1.0f},
-                .beamStartOffset = {0.0f, 0.0f, -12.0f},
-                .beamEndOffset = {0.0f, 0.0f, -8.0f},
-                .readySound = "sound/weapons/railgun/rg_hum.wav",
-                .fireSound = {"sound/weapons/railgun/railgf1a.wav"},
-            },
-        [WP_PLASMAGUN] =
-            {
-                .weaponSection = 6,
-                .sectionOrder = 1,
-                .colorizeItemIcon = false,
-                .animType = AMTYPE_MAGIC,
-                .hitLightColor = {0.6f, 0.6f, 1.0f},
-                .hitLightRadius = 150.0f,
-                .hitLightTime = 100,
-                .hitParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
-                .hitParticleCount = 16,
-                .hitParticleSpeed = 200.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE,
-                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
-                .fireLightColor = {0.6f, 0.6f, 1.0f},
-                .fireLightRadius = 150.0f,
-                .fireLightTime = 50,
-                .fireParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
-                .fireParticleCount = 4,
-                .fireParticleSpeed = 80.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .trailColor = {0.6f, 0.6f, 1.0f, 0.5f},
-                .trailCount = 2,
-                .trailSpeed = 30.0f,
-                .trailFlags = PF_SMOOTH_FADE,
-                .trailGravity = {0.0f, 0.0f, 0.0f},
-                .trailInterval = 30,
-                .missileLightColor = {0.6f, 0.6f, 1.0f},
-                .missileLightRadius = 100.0f,
-                .missileSprite = "sprites/plasma1",
-                .fireSound = {"sound/weapons/plasma/hyprbf1a.wav"},
-                .missileFlySound = "sound/weapons/plasma/lasfly.wav",
-                .missileExplodeSound = "sound/weapons/plasma/plasmx1a.wav",
-            },
-        [WP_BFG] =
-            {
-                .weaponSection = 6,
-                .sectionOrder = 2,
-                .colorizeItemIcon = false,
-                .animType = AMTYPE_MAGIC,
-                .hitLightColor = {1.0f, 0.7f, 1.0f},
-                .hitLightRadius = 500.0f,
-                .hitLightTime = 500,
-                .hitParticleColor = {1.0f, 0.7f, 1.0f, 1.0f},
-                .hitParticleCount = 80,
-                .hitParticleSpeed = 500.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE,
-                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
-                .fireLightColor = {1.0f, 0.7f, 1.0f},
-                .fireLightRadius = 300.0f,
-                .fireLightTime = 150,
-                .fireParticleColor = {1.0f, 0.7f, 1.0f, 1.0f},
-                .fireParticleCount = 12,
-                .fireParticleSpeed = 150.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .trailColor = {1.0f, 0.7f, 1.0f, 0.6f},
-                .trailCount = 4,
-                .trailSpeed = 50.0f,
-                .trailFlags = PF_SMOOTH_FADE,
-                .trailGravity = {0.0f, 0.0f, 0.0f},
-                .trailInterval = 30,
-                .missileLightColor = {1.0f, 0.7f, 1.0f},
-                .missileLightRadius = 300.0f,
-                .missileModel = "models/weaphits/bfg.md3",
-                .missileFlySound = "sound/weapons/rocket/rockfly.wav",
-                .missileExplodeSound = "sound/weapons/bfg/bfg_explode.wav",
-                .readySound = "sound/weapons/bfg/bfg_hum.wav",
-                .fireSound = {"sound/weapons/bfg/bfg_fire.wav"},
-            },
-        [WP_PHYSGUN] =
-            {
-                .weaponSection = 1,
-                .sectionOrder = 3,
-                .colorizeItemIcon = true,
-                .animType = AMTYPE_PHYSGUN,
-                .continuousFire = true,
-                .modelColorSource = 1,
-                .hitLightColor = {0.6f, 0.6f, 1.0f},
-                .hitLightRadius = 5.0f,
-                .hitLightTime = 50,
-                .hitParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
-                .hitParticleCount = 0,
-                .hitParticleSpeed = 100.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE,
-                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
-                .fireLightColor = {0.6f, 0.6f, 1.0f},
-                .fireLightRadius = 0.0f,
-                .fireLightTime = 50,
-                .fireParticleColor = {0.7f, 0.7f, 1.0f, 1.0f},
-                .fireParticleCount = 0,
-                .fireParticleSpeed = 60.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .isBeam = true,
-                .beamShader = "gfx/beams/core",
-                .beamColorizeByClient = true,
-                .fireSound = {"sound/misc/silence.wav"},
-                .muzzleBone = "ValveBiped.Core",
-            },
-        [WP_GRAVITYGUN] =
-            {
-                .weaponSection = 1,
-                .sectionOrder = 2,
-                .colorizeItemIcon = true,
-                .animType = AMTYPE_FIST,
-                .continuousFire = true,
-                .modelColorSource = 2,
-                .modelColor = {160.0f / 255.0f, 80.0f / 255.0f, 0.0f},
-                .hitLightColor = {1.0f, 0.5f, 0.0f},
-                .hitLightRadius = 0.0f,
-                .hitLightTime = 50,
-                .hitParticleColor = {1.0f, 0.5f, 0.0f, 1.0f},
-                .hitParticleCount = 0,
-                .hitParticleSpeed = 100.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE,
-                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
-                .fireLightColor = {1.0f, 0.5f, 0.0f},
-                .fireLightRadius = 0.0f,
-                .fireLightTime = 50,
-                .fireParticleColor = {1.0f, 0.5f, 0.0f, 1.0f},
-                .fireParticleCount = 0,
-                .fireParticleSpeed = 60.0f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .isBeam = true,
-                .beamShader = "gfx/beams/core",
-                .beamColor = {120.0f / 255.0f, 60.0f / 255.0f, 0.0f, 1.0f},
-                .fireSound = {"sound/misc/silence.wav"},
-                .muzzleBone = "ValveBiped.Core",
-            },
-        [WP_TOOLGUN] =
-            {
-                .weaponSection = 6,
-                .sectionOrder = 4,
-                .colorizeItemIcon = false,
-                .animType = AMTYPE_REVOLVER,
-                .hitLightColor = {0.5f, 0.5f, 0.5f},
-                .hitLightRadius = 100.0f,
-                .hitLightTime = 50,
-                .hitParticleColor = {0.5f, 0.5f, 0.5f, 1.0f},
-                .hitParticleCount = 4,
-                .hitParticleSpeed = 100.0f,
-                .hitParticleFlags = PF_SMOOTH_FADE,
-                .hitParticleGravity = {0.0f, 0.0f, 0.0f},
-                .fireLightColor = {0.5f, 0.5f, 0.5f},
-                .fireLightRadius = 100.0f,
-                .fireLightTime = 50,
-                .fireParticleColor = {0.5f, 0.5f, 0.5f, 1.0f},
-                .fireParticleCount = 50,
-                .fireParticleSpeed = 20.0f,
-                .fireParticleSize = 0.2f,
-                .fireParticleFlags = PF_SMOOTH_FADE,
-                .fireParticleGravity = {0.0f, 0.0f, 0.0f},
-                .isBeam = true,
-                .beamColor = {1.0f, 1.0f, 1.0f, 1.0f},
-                .beamShader = "lightningBoltNew",
-                .fireSound = {"sound/weapons/toolgun/fire1.wav", "sound/weapons/toolgun/fire2.wav"},
-            },
-};
+// Weapon FX defaults live in JS now (js/weapons/default.js -> weapon.fx via VM_APIWEAPONFX)
+weaponFx_t jsd_weaponFx[MAX_WEAPONS];
 
 // Spawns a fading light using a lightweight local entity.
 static void CG_SpawnWeaponLight(vec3_t origin, float radius, int duration, const float* color) {
@@ -453,7 +47,7 @@ static void CG_SpawnWeaponLight(vec3_t origin, float radius, int duration, const
 static void CG_EmitWeaponHitFx(int weapon, vec3_t origin, vec3_t dir) {
 	weaponFx_t* fx;
 	vec3_t sprOrg;
-	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	if(weapon <= WP_NONE || weapon >= jsd_weaponCount) return;
 	fx = &jsd_weaponFx[weapon];
 	if(fx->hitParticleCount > 0) {
 		VectorMA(origin, 24, dir, sprOrg);
@@ -467,7 +61,7 @@ static void CG_EmitWeaponHitFx(int weapon, vec3_t origin, vec3_t dir) {
 // Emit muzzle fire effects from the table.
 static void CG_EmitWeaponFireFx(int weapon, vec3_t origin) {
 	weaponFx_t* fx;
-	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	if(weapon <= WP_NONE || weapon >= jsd_weaponCount) return;
 	fx = &jsd_weaponFx[weapon];
 	if(fx->fireParticleCount > 0) {
 		CG_AddParticles(origin, fx->fireParticleColor, fx->fireParticleCount, fx->fireParticleSpeed, fx->fireParticleFlags, fx->fireParticleGravity, fx->fireParticleHandle, fx->fireParticleSize, fx->fireParticleLifetime);
@@ -649,7 +243,7 @@ void CG_RailTrail(clientInfo_t* ci, vec3_t start, vec3_t end, int weapon) {
 	bool physgunActive;
 	int i;
 
-	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	if(weapon <= WP_NONE || weapon >= jsd_weaponCount) return;
 	fx = &jsd_weaponFx[weapon];
 	if(!fx->isBeam) return;
 
@@ -942,7 +536,7 @@ void CG_MissileTrail(centity_t* ent) {
 	int contents;
 
 	if(cg_noProjectileTrail.integer) return;
-	if(ent->currentState.weapon <= WP_NONE || ent->currentState.weapon >= WEAPONS_NUM) return;
+	if(ent->currentState.weapon <= WP_NONE || ent->currentState.weapon >= jsd_weaponCount) return;
 	fx = &jsd_weaponFx[ent->currentState.weapon];
 	if(fx->trailCount <= 0) return;
 
@@ -972,7 +566,7 @@ void CG_RegisterWeapon(int weaponNum) {
 	int i;
 	int itemIdx = -1;
 
-	if(weaponNum <= 0 || weaponNum >= WEAPONS_NUM) return;
+	if(weaponNum <= 0 || weaponNum >= jsd_weaponCount) return;
 
 	fx = &jsd_weaponFx[weaponNum];
 	if(fx->registered) return;
@@ -984,25 +578,25 @@ void CG_RegisterWeapon(int weaponNum) {
 	fx->registered = true;
 
 	// Register every data-driven shader / model / sound handle from the table.
-	if(fx->hitParticleShader && fx->hitParticleShader[0]) fx->hitParticleHandle = trap_R_RegisterShader(fx->hitParticleShader);
-	if(fx->fireParticleShader && fx->fireParticleShader[0]) fx->fireParticleHandle = trap_R_RegisterShader(fx->fireParticleShader);
-	if(fx->trailShader && fx->trailShader[0]) fx->trailHandle = trap_R_RegisterShader(fx->trailShader);
-	if(fx->tracerParticleShader && fx->tracerParticleShader[0]) fx->tracerHandle = trap_R_RegisterShader(fx->tracerParticleShader);
-	if(fx->beamShader && fx->beamShader[0]) fx->beamHandle = trap_R_RegisterShader(fx->beamShader);
-	if(fx->muzzleSmokeShader && fx->muzzleSmokeShader[0]) fx->muzzleSmokeHandle = trap_R_RegisterShader(fx->muzzleSmokeShader);
-	if(fx->readySound && fx->readySound[0]) fx->readySoundHandle = trap_S_RegisterSound(fx->readySound, false);
+	if(fx->hitParticleShader[0]) fx->hitParticleHandle = trap_R_RegisterShader(fx->hitParticleShader);
+	if(fx->fireParticleShader[0]) fx->fireParticleHandle = trap_R_RegisterShader(fx->fireParticleShader);
+	if(fx->trailShader[0]) fx->trailHandle = trap_R_RegisterShader(fx->trailShader);
+	if(fx->tracerParticleShader[0]) fx->tracerHandle = trap_R_RegisterShader(fx->tracerParticleShader);
+	if(fx->beamShader[0]) fx->beamHandle = trap_R_RegisterShader(fx->beamShader);
+	if(fx->muzzleSmokeShader[0]) fx->muzzleSmokeHandle = trap_R_RegisterShader(fx->muzzleSmokeShader);
+	if(fx->readySound[0]) fx->readySoundHandle = trap_S_RegisterSound(fx->readySound, false);
 	for(i = 0; i < 4; i++) {
-		if(fx->fireSound[i] && fx->fireSound[i][0]) fx->fireSoundHandle[i] = trap_S_RegisterSound(fx->fireSound[i], false);
+		if(fx->fireSound[i][0]) fx->fireSoundHandle[i] = trap_S_RegisterSound(fx->fireSound[i], false);
 	}
-	if(fx->continuousFireSound && fx->continuousFireSound[0]) fx->continuousFireSoundHandle = trap_S_RegisterSound(fx->continuousFireSound, false);
-	if(fx->missileFlySound && fx->missileFlySound[0]) fx->missileFlySoundHandle = trap_S_RegisterSound(fx->missileFlySound, false);
-	if(fx->missileBounceSound && fx->missileBounceSound[0]) fx->missileBounceSoundHandle = trap_S_RegisterSound(fx->missileBounceSound, false);
-	if(fx->missileExplodeSound && fx->missileExplodeSound[0]) fx->missileExplodeSoundHandle = trap_S_RegisterSound(fx->missileExplodeSound, false);
-	if(fx->tracerSound && fx->tracerSound[0]) fx->tracerSoundHandle = trap_S_RegisterSound(fx->tracerSound, false);
-	if(fx->missileModel && fx->missileModel[0]) fx->missileModelHandle = trap_R_RegisterModel(fx->missileModel);
-	if(fx->missileSprite && fx->missileSprite[0]) fx->missileSpriteHandle = trap_R_RegisterShader(fx->missileSprite);
-	if(fx->brassModel && fx->brassModel[0]) fx->brassModelHandle = trap_R_RegisterModel(fx->brassModel);
-	if(fx->flashModel && fx->flashModel[0]) fx->flashModelHandle = trap_R_RegisterModel(fx->flashModel);
+	if(fx->continuousFireSound[0]) fx->continuousFireSoundHandle = trap_S_RegisterSound(fx->continuousFireSound, false);
+	if(fx->missileFlySound[0]) fx->missileFlySoundHandle = trap_S_RegisterSound(fx->missileFlySound, false);
+	if(fx->missileBounceSound[0]) fx->missileBounceSoundHandle = trap_S_RegisterSound(fx->missileBounceSound, false);
+	if(fx->missileExplodeSound[0]) fx->missileExplodeSoundHandle = trap_S_RegisterSound(fx->missileExplodeSound, false);
+	if(fx->tracerSound[0]) fx->tracerSoundHandle = trap_S_RegisterSound(fx->tracerSound, false);
+	if(fx->missileModel[0]) fx->missileModelHandle = trap_R_RegisterModel(fx->missileModel);
+	if(fx->missileSprite[0]) fx->missileSpriteHandle = trap_R_RegisterShader(fx->missileSprite);
+	if(fx->brassModel[0]) fx->brassModelHandle = trap_R_RegisterModel(fx->brassModel);
+	if(fx->flashModel[0]) fx->flashModelHandle = trap_R_RegisterModel(fx->flashModel);
 
 	// Find the corresponding item.
 	for(i = 0; i < jsd_itemCount; i++) {
@@ -1033,7 +627,7 @@ void CG_RegisterWeapon(int weaponNum) {
 	}
 
 	// Default muzzle tag when the table didn't specify one.
-	if(!fx->muzzleBone || !fx->muzzleBone[0]) fx->muzzleBone = "ValveBiped.Muzzle";
+	if(!fx->muzzleBone[0]) Q_strncpyz(fx->muzzleBone, "ValveBiped.Muzzle", sizeof(fx->muzzleBone));
 }
 
 /*
@@ -1102,7 +696,7 @@ static void CG_LightningBolt(centity_t* cent, vec3_t origin) {
 	clientInfo_t* ci;
 	weaponFx_t* fx;
 
-	if(cent->currentState.weapon <= WP_NONE || cent->currentState.weapon >= WEAPONS_NUM) return;
+	if(cent->currentState.weapon <= WP_NONE || cent->currentState.weapon >= jsd_weaponCount) return;
 
 	fx = &jsd_weaponFx[cent->currentState.weapon];
 	if(!fx->isBeam) return;
@@ -1169,7 +763,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 	refEntity_t gun;
 	refEntity_t flash;
 	vec3_t angles;
-	weapon_t weaponNum;
+	int weaponNum;
 	weaponInfo_t* weapon;
 	centity_t* nonPredictedCent;
 
@@ -1414,8 +1008,8 @@ static int CG_BuildWeaponSelectorOrder(int* weapons, int maxWeapons) {
 	int section, order, weapon;
 
 	for(section = 1; section <= 6; section++) {
-		for(order = 1; order <= WEAPONS_NUM * 4; order++) {
-			for(weapon = 1; weapon < WEAPONS_NUM; weapon++) {
+		for(order = 1; order <= jsd_weaponCount * 4; order++) {
+			for(weapon = 1; weapon < jsd_weaponCount; weapon++) {
 				weaponFx_t* fx = &jsd_weaponFx[weapon];
 				int weaponOrder;
 
@@ -1432,7 +1026,7 @@ static int CG_BuildWeaponSelectorOrder(int* weapons, int maxWeapons) {
 }
 
 static void CG_StepWeaponSelector(int direction) {
-	int weapons[WEAPONS_NUM];
+	int weapons[MAX_WEAPONS];
 	int count, i, currentIndex = -1, nextIndex;
 
 	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
@@ -1493,7 +1087,7 @@ void CG_Weapon_f(void) {
 
 	num = atoi(CG_Argv(1));
 
-	if(num <= WP_NONE || num >= WEAPONS_NUM || !cg.swep_listcl[num]) return;
+	if(num <= WP_NONE || num >= jsd_weaponCount || !cg.swep_listcl[num]) return;
 
 	cg.weaponSelect = num;
 	cg.weaponSelectTime = cg.time;
@@ -1523,8 +1117,8 @@ void CG_FireWeapon(centity_t* cent) {
 	if(ent->weapon == WP_NONE) {
 		return;
 	}
-	if(ent->weapon >= WEAPONS_NUM) {
-		CG_Error("CG_FireWeapon: ent->weapon >= WEAPONS_NUM");
+	if(ent->weapon >= jsd_weaponCount) {
+		CG_Error("CG_FireWeapon: ent->weapon >= jsd_weaponCount");
 		return;
 	}
 	weap = &cg_weapons[ent->weapon];
@@ -1570,7 +1164,7 @@ Caused by an EV_MISSILE_MISS event, or directly by local bullet tracing
 =================
 */
 void CG_MissileHitWall(int weapon, int clientNum, vec3_t origin, vec3_t dir, impactSound_t soundType) {
-	if(weapon > WP_NONE && weapon < WEAPONS_NUM && jsd_weaponFx[weapon].missileExplodeSoundHandle) {
+	if(weapon > WP_NONE && weapon < jsd_weaponCount && jsd_weaponFx[weapon].missileExplodeSoundHandle) {
 		trap_S_StartSound(origin, ENTITYNUM_WORLD, CHAN_AUTO, jsd_weaponFx[weapon].missileExplodeSoundHandle);
 	}
 	CG_EmitWeaponHitFx(weapon, origin, dir);
@@ -1582,7 +1176,7 @@ CG_MissileHitPlayer
 =================
 */
 void CG_MissileHitPlayer(int weapon, vec3_t origin, vec3_t dir, int entityNum) {
-	if(weapon > WP_NONE && weapon < WEAPONS_NUM && jsd_weaponFx[weapon].explodeOnFleshHit) {
+	if(weapon > WP_NONE && weapon < jsd_weaponCount && jsd_weaponFx[weapon].explodeOnFleshHit) {
 		vec4_t bloodColor = {0.75f, 0.0f, 0.0f, 1.0f};
 		vec3_t bloodGravity = {0.0f, 0.0f, -600.0f};
 
@@ -1719,7 +1313,7 @@ void CG_Tracer(vec3_t source, vec3_t dest, int weapon) {
 	float len, begin, end, f;
 	int i, numParticles;
 
-	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	if(weapon <= WP_NONE || weapon >= jsd_weaponCount) return;
 	fx = &jsd_weaponFx[weapon];
 	if(fx->tracerParticleCount <= 0) return;
 
@@ -1805,7 +1399,7 @@ void CG_Bullet(vec3_t end, int sourceEntityNum, vec3_t normal, bool flesh, int f
 	vec3_t start;
 	weaponFx_t* fx;
 
-	if(weapon <= WP_NONE || weapon >= WEAPONS_NUM) return;
+	if(weapon <= WP_NONE || weapon >= jsd_weaponCount) return;
 	fx = &jsd_weaponFx[weapon];
 
 	// if the shooter is currently valid, calc a source point and possibly

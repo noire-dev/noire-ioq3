@@ -19,6 +19,124 @@ apiFields.item = {
 };
 
 apiField = -1;
+apiFields.weapon = {
+    "wType": apiField += 1,
+    "wAnimType": apiField += 1,
+    "classname": apiField += 1,
+    "delay": apiField += 1,
+    "count": apiField += 1,
+    "damage": apiField += 1,
+    "splashDamage": apiField += 1,
+    "splashRadius": apiField += 1,
+    "range": apiField += 1,
+    "speed": apiField += 1,
+    "speedRandom": apiField += 1,
+    "spread": apiField += 1,
+    "timeout": apiField += 1,
+    "gravity": apiField += 1,
+    "bounce": apiField += 1,
+    "bounceModifier": apiField += 1,
+    "zOffset": apiField += 1,
+
+    "weaponCount": apiField += 1,
+};
+
+// cgame.vm only (jsd_weaponFx), colors/vectors are per-component with i1
+apiField = -1;
+apiFields.weaponFx = {
+    "animType": apiField += 1,
+    "weaponSection": apiField += 1,
+    "sectionOrder": apiField += 1,
+    "colorizeItemIcon": apiField += 1,
+
+    "hitLightColor": apiField += 1, // [3]
+    "hitLightRadius": apiField += 1,
+    "hitLightTime": apiField += 1,
+    "hitParticleColor": apiField += 1, // [4]
+    "hitParticleCount": apiField += 1,
+    "hitParticleSpeed": apiField += 1,
+    "hitParticleFlags": apiField += 1,
+    "hitParticleGravity": apiField += 1, // [3]
+    "hitParticleSize": apiField += 1,
+    "hitParticleLifetime": apiField += 1,
+    "hitParticleShader": apiField += 1,
+
+    "continuousFire": apiField += 1,
+    "suppressRepeatFire": apiField += 1,
+    "fireLightColor": apiField += 1, // [3]
+    "fireLightRadius": apiField += 1,
+    "fireLightTime": apiField += 1,
+    "fireParticleColor": apiField += 1, // [4]
+    "fireParticleCount": apiField += 1,
+    "fireParticleSpeed": apiField += 1,
+    "fireParticleFlags": apiField += 1,
+    "fireParticleGravity": apiField += 1, // [3]
+    "fireParticleSize": apiField += 1,
+    "fireParticleLifetime": apiField += 1,
+    "fireParticleShader": apiField += 1,
+
+    "trailColor": apiField += 1, // [4]
+    "trailCount": apiField += 1,
+    "trailSpeed": apiField += 1,
+    "trailFlags": apiField += 1,
+    "trailGravity": apiField += 1, // [3]
+    "trailSize": apiField += 1,
+    "trailLifetime": apiField += 1,
+    "trailShader": apiField += 1,
+    "trailInterval": apiField += 1,
+
+    "missileLightColor": apiField += 1, // [3]
+    "missileLightRadius": apiField += 1,
+
+    "tracerChance": apiField += 1,
+    "tracerLength": apiField += 1,
+    "tracerParticleShader": apiField += 1,
+    "tracerParticleColor": apiField += 1, // [4]
+    "tracerParticleCount": apiField += 1,
+    "tracerParticleSpeed": apiField += 1,
+    "tracerParticleFlags": apiField += 1,
+    "tracerParticleGravity": apiField += 1, // [3]
+    "tracerParticleSize": apiField += 1,
+    "tracerParticleLifetime": apiField += 1,
+    "tracerSound": apiField += 1,
+
+    "isBeam": apiField += 1,
+    "beamShader": apiField += 1,
+    "beamColor": apiField += 1, // [4]
+    "beamColorizeByClient": apiField += 1,
+    "beamStartOffset": apiField += 1, // [3]
+    "beamEndOffset": apiField += 1, // [3]
+
+    "readySound": apiField += 1,
+    "fireSound": apiField += 1, // [4]
+    "continuousFireSound": apiField += 1,
+    "missileFlySound": apiField += 1,
+    "missileBounceSound": apiField += 1,
+    "missileExplodeSound": apiField += 1,
+
+    "missileModel": apiField += 1,
+    "missileSprite": apiField += 1,
+    "missileRenderfx": apiField += 1,
+
+    "modelColorSource": apiField += 1,
+    "modelColor": apiField += 1, // [3]
+    "explodeOnFleshHit": apiField += 1,
+
+    "flashModel": apiField += 1,
+    "muzzleBone": apiField += 1,
+    "muzzleSmokeShader": apiField += 1,
+
+    "brassModel": apiField += 1,
+    "brassCount": apiField += 1,
+    "brassOffset": apiField += 1, // [3]
+    "brassVelocity": apiField += 1, // [3]
+    "brassVelocitySpread": apiField += 1, // [3]
+    "brassBounceFactor": apiField += 1,
+    "brassLifetimeMult": apiField += 1,
+    "brassSpinDelta": apiField += 1, // [3]
+};
+
+apiField = -1;
 apiFields.gameEntity = {
 };
 
@@ -170,6 +288,26 @@ api.item = function (vmIndex, itemID, fieldName, value, i1, i2, i3, i4) {
         return false;
     }
     return qvm.call(vm.apiItem, vmIndex, itemID, fieldID, newValue, i1, i2, i3, i4);
+}
+
+api.weapon = function (vmIndex, weaponID, fieldName, value, i1, i2, i3, i4) {
+    var fieldID = apiFields.weapon[fieldName];
+    var newValue = value;
+    if (fieldID === undefined) {
+        console.log("#ff5api.weapon: invalid field '" + fieldName + "'");
+        return false;
+    }
+    return qvm.call(vm.apiWeapon, vmIndex, weaponID, fieldID, newValue, i1, i2, i3, i4);
+}
+
+api.weaponFx = function (weaponID, fieldName, value, i1, i2, i3, i4) {
+    var fieldID = apiFields.weaponFx[fieldName];
+    var newValue = value;
+    if (fieldID === undefined) {
+        console.log("#ff5api.weaponFx: invalid field '" + fieldName + "'");
+        return false;
+    }
+    return qvm.call(vm.apiWeaponFx, qvm.cgame, weaponID, fieldID, newValue, i1, i2, i3, i4);
 }
 
 api.gameEntity = function (entityID, fieldName, value, i1, i2, i3, i4) {

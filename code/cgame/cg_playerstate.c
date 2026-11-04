@@ -135,7 +135,7 @@ void CG_Respawn(void) {
 	// no error decay on player movement
 	cg.thisFrameTeleport = true;
 
-	for(i = 1; i < WEAPONS_NUM; i++) cg.swep_listcl[i] = cg.swep_spawncl[i];  // Noire's Mod weapon predict
+	for(i = 1; i < jsd_weaponCount; i++) cg.swep_listcl[i] = cg.swep_spawncl[i];  // Noire's Mod weapon predict
 
 	// display weapons available
 	cg.weaponSelectTime = cg.time;

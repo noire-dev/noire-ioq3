@@ -811,6 +811,7 @@ typedef struct {
 //==============================================================================
 
 // Data-driven weapon effects table (see cg_weapons.c)
+// String paths are fixed buffers (MAX_QPATH) so they can be written from JS through VM_APIWEAPONFX
 typedef struct {
 	animType_t animType;  // Selects the weapon-specific IQM locomotion block.
 
@@ -831,7 +832,7 @@ typedef struct {
 	float hitParticleGravity[3];
 	float hitParticleSize;
 	float hitParticleLifetime;
-	const char* hitParticleShader;
+	char hitParticleShader[MAX_QPATH];
 
 	// Fire (muzzle) effects
 	bool continuousFire;
@@ -846,7 +847,7 @@ typedef struct {
 	float fireParticleGravity[3];
 	float fireParticleSize;
 	float fireParticleLifetime;
-	const char* fireParticleShader;
+	char fireParticleShader[MAX_QPATH];
 
 	// Missile trail
 	float trailColor[4];
@@ -856,7 +857,7 @@ typedef struct {
 	float trailGravity[3];
 	float trailSize;
 	float trailLifetime;
-	const char* trailShader;
+	char trailShader[MAX_QPATH];
 	int trailInterval;
 
 	// Missile light (per-frame)
@@ -866,7 +867,7 @@ typedef struct {
 	// Hitscan tracer (particle based)
 	float tracerChance;
 	float tracerLength;
-	const char* tracerParticleShader;
+	char tracerParticleShader[MAX_QPATH];
 	float tracerParticleColor[4];
 	int tracerParticleCount;
 	float tracerParticleSpeed;
@@ -874,27 +875,27 @@ typedef struct {
 	float tracerParticleGravity[3];
 	float tracerParticleSize;
 	float tracerParticleLifetime;
-	const char* tracerSound;
+	char tracerSound[MAX_QPATH];
 
 	// Beam (rail / lightning / physgun / toolgun)
 	bool isBeam;
-	const char* beamShader;
+	char beamShader[MAX_QPATH];
 	float beamColor[4];
 	bool beamColorizeByClient;
 	float beamStartOffset[3];
 	float beamEndOffset[3];
 
 	// Sounds
-	const char* readySound;
-	const char* fireSound[4];
-	const char* continuousFireSound;
-	const char* missileFlySound;
-	const char* missileBounceSound;
-	const char* missileExplodeSound;
+	char readySound[MAX_QPATH];
+	char fireSound[4][MAX_QPATH];
+	char continuousFireSound[MAX_QPATH];
+	char missileFlySound[MAX_QPATH];
+	char missileBounceSound[MAX_QPATH];
+	char missileExplodeSound[MAX_QPATH];
 
 	// Missile visual
-	const char* missileModel;
-	const char* missileSprite;
+	char missileModel[MAX_QPATH];
+	char missileSprite[MAX_QPATH];
 	int missileRenderfx;
 
 	// Model color override (0 = none, 1 = client physRGB, 2 = fixed modelColor)
@@ -904,17 +905,17 @@ typedef struct {
 	// Emit red blood particles on flesh impact (grenade/rocket style)
 	bool explodeOnFleshHit;
 
-	// Weapon visual model overrides (NULL = derive from item->model)
-	const char* flashModel;
+	// Weapon visual model overrides (empty = derive from item->model)
+	char flashModel[MAX_QPATH];
 
 	// Tag on the weapon model where the muzzle flash and fire FX originate
-	const char* muzzleBone;
+	char muzzleBone[MAX_QPATH];
 
 	// Muzzle smoke (shotgun etc.)
-	const char* muzzleSmokeShader;
+	char muzzleSmokeShader[MAX_QPATH];
 
 	// Brass (shells)
-	const char* brassModel;
+	char brassModel[MAX_QPATH];
 	int brassCount;
 	float brassOffset[3];
 	float brassVelocity[3];

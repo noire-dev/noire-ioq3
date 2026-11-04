@@ -303,7 +303,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		case EV_MISSILE_BOUNCE:
 			// bounce sound comes from the weapon's weaponFx entry;
 			// fall back to the classic grenade thud when none is set
-			if(es->weapon > WP_NONE && es->weapon < WEAPONS_NUM && jsd_weaponFx[es->weapon].missileBounceSoundHandle) {
+			if(es->weapon > WP_NONE && es->weapon < jsd_weaponCount && jsd_weaponFx[es->weapon].missileBounceSoundHandle) {
 				trap_S_StartSound(NULL, es->number, CHAN_AUTO, jsd_weaponFx[es->weapon].missileBounceSoundHandle);
 			} else if(rand() & 1) {
 				trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.hgrenb1aSound);

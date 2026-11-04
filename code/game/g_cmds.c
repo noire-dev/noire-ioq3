@@ -64,7 +64,7 @@ void G_SendSwepWeapons(gentity_t* ent) {
 	int i;
 	int len;
 
-	for(i = 1; i < WEAPONS_NUM; i++) {
+	for(i = 1; i < jsd_weaponCount; i++) {
 		if(ent->swep_list[i] >= WS_HAVE) {
 			if(ent->swep_ammo[i] > 0 || ent->swep_ammo[i] == -1) {
 				ent->swep_list[i] = WS_HAVE;  // we have weapon and ammo
@@ -92,7 +92,7 @@ void G_SendSpawnSwepWeapons(gentity_t* ent) {
 	int i;
 	int len;
 
-	for(i = 1; i < WEAPONS_NUM; i++) {
+	for(i = 1; i < jsd_weaponCount; i++) {
 		if(ent->swep_list[i] >= WS_HAVE) {
 			if(ent->swep_ammo[i] > 0 || ent->swep_ammo[i] == -1) {
 				ent->swep_list[i] = WS_HAVE;  // we have weapon and ammo
@@ -267,7 +267,7 @@ void Cmd_Give_f(gentity_t* ent) {
 		give_all = false;
 
 	if(give_all || Q_stricmp(name, "weapons") == 0) {
-		for(i = 1; i < WEAPONS_NUM; i++) {
+		for(i = 1; i < jsd_weaponCount; i++) {
 			ent->swep_list[i] = WS_HAVE;
 			ent->swep_ammo[i] = 9999;
 		}

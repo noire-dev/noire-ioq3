@@ -235,26 +235,7 @@ typedef enum {
 #define EF_AWARD_DENIED 0x00040000      // denied
 #define EF_TEAMVOTED 0x00080000         // already cast a team vote
 
-typedef enum {
-	WP_NONE,  // ВСЕГДА = 0
-
-	WP_GAUNTLET,
-	WP_MACHINEGUN,
-	WP_SHOTGUN,
-	WP_GRENADE_LAUNCHER,
-	WP_ROCKET_LAUNCHER,
-	WP_LIGHTNING,
-	WP_RAILGUN,
-	WP_PLASMAGUN,
-	WP_BFG,
-
-	WP_PHYSGUN,
-	WP_GRAVITYGUN,
-	WP_TOOLGUN,
-
-	WEAPONS_NUM  // считай в JS
-} weapon_t;
-
+#define WP_NONE 0
 #define MAX_WEAPONS 2048
 
 typedef enum {
@@ -284,7 +265,7 @@ typedef enum {
 typedef struct weaponPropeties_s {
 	weaponType_t wType;
 	weaponAnimType_t wAnimType;
-	char* classname;
+	char classname[MAX_JS_STRINGSIZE];
 	int delay;
 	int count;
 	int damage;
@@ -515,7 +496,7 @@ extern item_t jsd_item[MAX_ITEMS];
 extern int jsd_itemCount;
 
 item_t* BG_FindItem(const char* pickupName);
-item_t* BG_FindItemForWeapon(weapon_t weapon);
+item_t* BG_FindItemForWeapon(int weapon);
 #define ITEM_INDEX(x) ((x) - jsd_item)
 
 bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps);

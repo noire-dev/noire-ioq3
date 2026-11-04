@@ -827,7 +827,7 @@ static int CG_PlayerAnimationNumber(const centity_t* cent) {
 	movementOffset = movementAnim - AM_IDLE;
 
 	weapon = cent->currentState.weapon;
-	if(weapon < WP_NONE || weapon >= WEAPONS_NUM) {
+	if(weapon < WP_NONE || weapon >= jsd_weaponCount) {
 		weapon = WP_NONE;
 	}
 	animType = jsd_weaponFx[weapon].animType;

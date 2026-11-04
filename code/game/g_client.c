@@ -811,7 +811,7 @@ void ClientSpawn(gentity_t* ent) {
 	// force the base weapon up
 	client->ps.weapon = 0;
 	client->ps.weaponstate = WEAPON_READY;
-	for(i = 1; i < WEAPONS_NUM; i++) {
+	for(i = 1; i < jsd_weaponCount; i++) {
 		ent->swep_list[i] = WS_NONE;
 		ent->swep_ammo[i] = 0;
 	}
