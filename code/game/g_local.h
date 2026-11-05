@@ -278,14 +278,10 @@ gentity_t* G_Spawn(void);
 gentity_t* G_TempEntity(vec3_t origin, int event, int eventParm);
 void G_Sound(gentity_t* ent, int channel, int soundIndex);
 void G_FreeEntity(gentity_t* e);
-bool G_EntitiesFree(void);
 
 void G_TouchTriggers(gentity_t* ent);
 
-float* tv(float x, float y, float z);
 char* vtos(const vec3_t v);
-
-float vectoyaw(const vec3_t vec);
 
 void G_AddPredictableEvent(gentity_t* ent, int event, int eventParm);
 void G_AddEvent(gentity_t* ent, int event, int eventParm);
@@ -295,7 +291,6 @@ gentity_t* FindEntityForPhysgun(gentity_t* ent, int range);
 gentity_t* FindEntityForGravitygun(gentity_t* ent, int range);
 void CrosshairPointPhys(gentity_t* ent, int range, vec3_t outPoint);
 void CrosshairPointGravity(gentity_t* ent, int range, vec3_t outPoint);
-gentity_t* G_FindEntityForEntityNum(int entityNum);
 bool G_PlayerIsOwner(gentity_t* player, gentity_t* ent);
 
 //
@@ -340,8 +335,6 @@ void TeleportPlayer(gentity_t* player, vec3_t origin, vec3_t angles);
 // g_weapon.c
 void CalcMuzzlePoint(gentity_t* ent, vec3_t forward, vec3_t right, vec3_t up, vec3_t muzzlePoint);
 void G_ExplodeMissile(gentity_t* ent);
-void Weapon_HookFree(gentity_t* ent);
-void ProximityMine_Trigger(gentity_t* trigger, gentity_t* other, trace_t* trace);
 void G_RunMissile(gentity_t* ent);
 gentity_t* fire_missile(gentity_t* self, vec3_t start, vec3_t forward, vec3_t right, vec3_t up, int weapon);
 void FireWeapon(gentity_t* ent);
@@ -379,7 +372,6 @@ void G_SendSpawnSwepWeapons(gentity_t* ent);
 // g_main.c
 //
 void G_RunThink(gentity_t* ent);
-void SendScoreboardMessageToAllClients(void);
 void QDECL G_Printf(const char* fmt, ...) Q_PRINTF_FUNC(1, 2);
 void QDECL G_Error(const char* fmt, ...) Q_NO_RETURN Q_PRINTF_FUNC(1, 2);
 

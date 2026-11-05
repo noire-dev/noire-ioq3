@@ -199,50 +199,6 @@ bool StringIsInteger(const char* s) {
 
 /*
 ==================
-ClientNumberFromString
-
-Returns a player number for either a number or name string
-Returns -1 if invalid
-==================
-*/
-int ClientNumberFromString(gentity_t* to, char* s, bool checkNums, bool checkNames) {
-	gclient_t* cl;
-	int idnum;
-	char cleanName[MAX_STRING_CHARS];
-
-	if(checkNums) {
-		// numeric values could be slot numbers
-		if(StringIsInteger(s)) {
-			idnum = atoi(s);
-			if(idnum >= 0 && idnum < level.maxclients) {
-				cl = &level.clients[idnum];
-				if(cl->pers.connected == CON_CONNECTED) {
-					return idnum;
-				}
-			}
-		}
-	}
-
-	if(checkNames) {
-		// check for a name match
-		for(idnum = 0, cl = level.clients; idnum < level.maxclients; idnum++, cl++) {
-			if(cl->pers.connected != CON_CONNECTED) {
-				continue;
-			}
-			Q_strncpyz(cleanName, cl->pers.netname, sizeof(cleanName));
-			Q_CleanStr(cleanName);
-			if(!Q_stricmp(cleanName, s)) {
-				return idnum;
-			}
-		}
-	}
-
-	trap_SendServerCommand(to - g_entities, va("print \"User %s is not on the server\n\"", s));
-	return -1;
-}
-
-/*
-==================
 Cmd_Give_f
 
 Give items to a client

@@ -159,31 +159,6 @@ void G_UseTargets(gentity_t* ent, gentity_t* activator) {
 
 /*
 =============
-TempVector
-
-This is just a convenience function
-for making temporary vectors for function calls
-=============
-*/
-float* tv(float x, float y, float z) {
-	static int index;
-	static vec3_t vecs[8];
-	float* v;
-
-	// use an array so that multiple tempvectors won't collide
-	// for a while
-	v = vecs[index];
-	index = (index + 1) & 7;
-
-	v[0] = x;
-	v[1] = y;
-	v[2] = z;
-
-	return v;
-}
-
-/*
-=============
 VectorToString
 
 This is just a convenience function
@@ -228,27 +203,6 @@ void G_SetMovedir(vec3_t angles, vec3_t movedir) {
 		AngleVectors(angles, movedir, NULL, NULL);
 	}
 	VectorClear(angles);
-}
-
-float vectoyaw(const vec3_t vec) {
-	float yaw;
-
-	if(vec[YAW] == 0 && vec[PITCH] == 0) {
-		yaw = 0;
-	} else {
-		if(vec[PITCH]) {
-			yaw = (atan2(vec[YAW], vec[PITCH]) * 180 / M_PI);
-		} else if(vec[YAW] > 0) {
-			yaw = 90;
-		} else {
-			yaw = 270;
-		}
-		if(yaw < 0) {
-			yaw += 360;
-		}
-	}
-
-	return yaw;
 }
 
 void G_InitGentity(gentity_t* e) {
@@ -320,31 +274,6 @@ gentity_t* G_Spawn(void) {
 
 /*
 =================
-G_EntitiesFree
-=================
-*/
-bool G_EntitiesFree(void) {
-	int i;
-	gentity_t* e;
-
-	if(level.num_entities < ENTITYNUM_MAX_NORMAL) {
-		// can open a new slot if needed
-		return true;
-	}
-
-	e = &g_entities[MAX_CLIENTS];
-	for(i = MAX_CLIENTS; i < level.num_entities; i++, e++) {
-		if(e->inuse) {
-			continue;
-		}
-		// slot available
-		return true;
-	}
-	return false;
-}
-
-/*
-=================
 G_FreeEntity
 
 Marks the entity as free
@@ -353,9 +282,9 @@ Marks the entity as free
 void G_FreeEntity(gentity_t* ed) {
 	trap_UnlinkEntity(ed);  // unlink from world
 
-	if(ed->neverFree) {
-		return;
-	}
+	if(ed->neverFree) return;
+
+	trap_Phys_DeleteObject(ed->s.number);
 
 	memset(ed, 0, sizeof(*ed));
 	ed->classname = "freed";
@@ -476,9 +405,7 @@ void G_AddEvent(gentity_t* ent, int event, int eventParm) {
 G_Sound
 =============
 */
-void G_Sound(gentity_t* ent, int channel, int soundIndex) {
-	G_TempEntity(ent->r.currentOrigin, EV_GENERAL_SOUND, soundIndex);
-}
+void G_Sound(gentity_t* ent, int channel, int soundIndex) { G_TempEntity(ent->r.currentOrigin, EV_GENERAL_SOUND, soundIndex); }
 
 void G_SetOrigin(gentity_t* ent, vec3_t origin) {
 	VectorCopy(origin, ent->s.pos.trBase);
@@ -566,17 +493,6 @@ void CrosshairPointGravity(gentity_t* ent, int range, vec3_t outPoint) {
 	VectorMA(start, range, forward, end);
 
 	VectorCopy(end, outPoint);
-}
-
-gentity_t* G_FindEntityForEntityNum(int entityNum) {
-	int i;
-	gentity_t* ent;
-
-	for(i = 0, ent = g_entities; i < level.num_entities; i++, ent++) {
-		if(ent && ent->s.number == entityNum && ent->inuse) return ent;
-	}
-
-	return NULL;
 }
 
 bool G_PlayerIsOwner(gentity_t* player, gentity_t* ent) {

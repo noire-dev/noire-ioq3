@@ -5,15 +5,9 @@
 void Set_Weapon(gentity_t* ent, int weapon, int status) { ent->swep_list[weapon] = status; }
 
 void Add_Ammo(gentity_t* ent, int weapon, int count) {
-	if(count == 9999) {
-		ent->swep_ammo[weapon] = 9999;
-	} else {
-		ent->swep_ammo[weapon] += count;
-		if(ent->swep_ammo[weapon] > 9000) ent->swep_ammo[weapon] = 9000;
-	}
+	ent->swep_ammo[weapon] += count;
+	if(ent->swep_ammo[weapon] > 9999) ent->swep_ammo[weapon] = 9999;
 }
-
-void Set_Ammo(gentity_t* ent, int weapon, int count) { ent->swep_ammo[weapon] = count; }
 
 static int Pickup_Weapon(gentity_t* ent, gentity_t* other) {
 	int quantity;

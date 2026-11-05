@@ -218,30 +218,6 @@ static void Beam_Fire(gentity_t* ent, int weapon) {
 	tent->s.clientNum = ent->s.clientNum;
 }
 
-// Lightning type
-static void Lightning_Fire(gentity_t* ent, int weapon) {
-	trace_t tr;
-	vec3_t end;
-	gentity_t *traceEnt, *tent;
-
-	VectorMA(muzzle, jsd_weapon[weapon].range, forward, end);
-	trap_Trace(&tr, muzzle, NULL, NULL, end, ent->s.number, MASK_SHOT);
-
-	if(tr.entityNum == ENTITYNUM_NONE) return;
-
-	traceEnt = &g_entities[tr.entityNum];
-
-	if(traceEnt->takedamage) G_Damage(traceEnt, ent, ent, forward, tr.endpos, jsd_weapon[weapon].damage, 0, weapon);
-
-	if(traceEnt->takedamage && traceEnt->client) {
-		tent = G_TempEntity(tr.endpos, EV_MISSILE_MISS, DirToByte(tr.plane.normal));
-		tent->s.otherEntityNum = traceEnt->s.number;
-		tent->s.weapon = ent->s.weapon;
-	} else {
-		tent = G_TempEntity(tr.endpos, EV_MISSILE_MISS, DirToByte(tr.plane.normal));
-	}
-}
-
 // Missile type
 static void G_MissileImpact(gentity_t* ent, trace_t* trace) {
 	gentity_t* other;

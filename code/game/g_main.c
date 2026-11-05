@@ -293,24 +293,6 @@ void QDECL Com_Printf(const char* msg, ...) {
 }
 
 /*
-========================================================================
-
-MAP CHANGING
-
-========================================================================
-*/
-
-void SendScoreboardMessageToAllClients(void) {
-	int i;
-
-	for(i = 0; i < level.maxclients; i++) {
-		if(level.clients[i].pers.connected == CON_CONNECTED) {
-			DeathmatchScoreboardMessage(g_entities + i);
-		}
-	}
-}
-
-/*
 ==================
 CheckCvars
 ==================

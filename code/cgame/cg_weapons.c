@@ -667,13 +667,6 @@ VIEW WEAPON
 */
 
 /*
-=================
-CG_MapTorsoToWeaponFrame
-
-=================
-*/
-
-/*
 ===============
 CG_LightningBolt
 
