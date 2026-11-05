@@ -318,7 +318,7 @@ void BotChangeViewAngles(bot_state_t* bs, float thinktime) {
 BotInputToUserCommand
 ==============
 */
-void BotInputToUserCommand(bot_input_t* bi, usercmd_t* ucmd, int delta_angles[3], int time) {
+void BotInputToUserCommand(bot_input_t* bi, usercmd_t* ucmd, int delta_angles[2], int time) {
 	vec3_t angles, forward, right;
 	short temp;
 	int j;
@@ -344,7 +344,7 @@ void BotInputToUserCommand(bot_input_t* bi, usercmd_t* ucmd, int delta_angles[3]
 	ucmd->angles[YAW] = ANGLE2SHORT(bi->viewangles[YAW]);
 	ucmd->angles[ROLL] = ANGLE2SHORT(bi->viewangles[ROLL]);
 	// subtract the delta angles
-	for(j = 0; j < 3; j++) {
+	for(j = 0; j < 2; j++) {
 		temp = ucmd->angles[j] - delta_angles[j];
 		ucmd->angles[j] = temp;
 	}
@@ -642,8 +642,7 @@ static int BotIsSoundEvent(int event) {
 	switch(event) {
 		case EV_FALL:
 		case EV_WATER_SPLASH:
-		case EV_FIRE_WEAPON:
-			return true;
+		case EV_FIRE_WEAPON: return true;
 		default:
 			// the footstep events are a contiguous block in the event enum
 			return (event >= EV_FOOTSTEP_CHAINLINK && event <= EV_FOOTSTEP_WOODPANEL);

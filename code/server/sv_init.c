@@ -591,9 +591,6 @@ void SV_Init(void) {
 	phys_gravity_z = Cvar_Get("phys_gravity_z", "-800", CVAR_ARCHIVE);
 
 	// serverinfo vars
-	Cvar_Get("dmflags", "0", CVAR_SERVERINFO);
-	Cvar_Get("fraglimit", "20", CVAR_SERVERINFO);
-	Cvar_Get("timelimit", "0", CVAR_SERVERINFO);
 	Cvar_Get("sv_keywords", "", CVAR_SERVERINFO);
 	sv_mapname = Cvar_Get("mapname", "nomap", CVAR_SERVERINFO | CVAR_ROM);
 	sv_privateClients = Cvar_Get("sv_privateClients", "0", CVAR_SERVERINFO);

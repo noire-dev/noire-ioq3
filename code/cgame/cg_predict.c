@@ -196,7 +196,7 @@ Generates cg.predictedPlayerState by interpolating between
 cg.snap->player_state and cg.nextFrame->player_state
 ========================
 */
-static void CG_InterpolatePlayerState(bool grabAngles) {
+static void CG_InterpolatePlayerState(void) {
 	float f;
 	int i;
 	playerState_t* out;
@@ -207,17 +207,6 @@ static void CG_InterpolatePlayerState(bool grabAngles) {
 	next = cg.nextSnap;
 
 	*out = cg.snap->ps;
-
-	// if we are still allowing local input, short circuit the view angles
-	if(grabAngles) {
-		usercmd_t cmd;
-		int cmdNum;
-
-		cmdNum = trap_GetCurrentCmdNumber();
-		trap_GetUserCmd(cmdNum, &cmd);
-
-		PM_UpdateViewAngles(out, &cmd);
-	}
 
 	// if the next frame is a teleport, we can't lerp to it
 	if(cg.nextFrameTeleport) {
@@ -238,9 +227,7 @@ static void CG_InterpolatePlayerState(bool grabAngles) {
 
 	for(i = 0; i < 3; i++) {
 		out->origin[i] = prev->ps.origin[i] + f * (next->ps.origin[i] - prev->ps.origin[i]);
-		if(!grabAngles) {
-			out->viewangles[i] = LerpAngle(prev->ps.viewangles[i], next->ps.viewangles[i], f);
-		}
+		out->viewangles[i] = LerpAngle(prev->ps.viewangles[i], next->ps.viewangles[i], f);
 		out->velocity[i] = prev->ps.velocity[i] + f * (next->ps.velocity[i] - prev->ps.velocity[i]);
 	}
 }
@@ -323,12 +310,6 @@ static void CG_TouchTriggerPrediction(void) {
 			cg.hyperspace = true;
 		}
 	}
-
-	// if we didn't touch a jump pad this pmove frame
-	if(cg.predictedPlayerState.jumppad_frame != cg.predictedPlayerState.pmove_framecount) {
-		cg.predictedPlayerState.jumppad_frame = 0;
-		cg.predictedPlayerState.jumppad_ent = 0;
-	}
 }
 
 /*
@@ -376,13 +357,7 @@ void CG_PredictPlayerState(void) {
 
 	// demo playback just copies the moves
 	if(cg.demoPlayback) {
-		CG_InterpolatePlayerState(false);
-		return;
-	}
-
-	// non-predicting local movement will grab the latest angles
-	if(cg_nopredict.integer || cg_synchronousClients.integer) {
-		CG_InterpolatePlayerState(true);
+		CG_InterpolatePlayerState();
 		return;
 	}
 

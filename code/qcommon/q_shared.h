@@ -1058,7 +1058,6 @@ typedef struct {
 // bit field limits
 #define MAX_STATS 16
 #define MAX_PERSISTANT 16
-#define MAX_POWERUPS 16
 
 #define MAX_PS_EVENTS 2
 
@@ -1086,7 +1085,7 @@ typedef struct playerState_s {
 	int weaponTime;
 	int gravity;
 	int speed;
-	int delta_angles[3];  // add to command angles to get view direction
+	int delta_angles[2];  // add to command angles to get view direction
 	                      // changed by spawns, rotating objects, and teleporters
 
 	int groundEntityNum;  // ENTITYNUM_NONE = in air
@@ -1119,24 +1118,15 @@ typedef struct playerState_s {
 	vec3_t viewangles;  // for fixed views
 	int viewheight;
 
-	// damage feedback
-	int damageEvent;  // when it changes, latch the other parms
-	int damageYaw;
-	int damagePitch;
-	int damageCount;
-
 	int stats[MAX_STATS];
 	int persistant[MAX_PERSISTANT];  // stats that aren't cleared on death
-	int powerups[MAX_POWERUPS];      // level.time that the powerup runs out
 
 	int generic1;
 	int loopSound;
-	int jumppad_ent;  // jumppad entity hit this frame
 
 	// not communicated over the net at all
 	int ping;  // server to game info for scoreboard
 	int pmove_framecount;
-	int jumppad_frame;
 	int entityEventSequence;
 } playerState_t;
 
@@ -1149,19 +1139,16 @@ typedef struct playerState_s {
 #define BUTTON_ATTACK 1
 #define BUTTON_USE 2
 #define BUTTON_WALKING 4
-
 #define BUTTON_ANY 2048  // any key whatsoever
 
-#define MOVE_RUN \
-	120  // if forwardmove or rightmove are >= MOVE_RUN,
-	     // then BUTTON_WALKING should be set
+#define MOVE_RUN 120
 
 // usercmd_t is sent to the server each client frame
 typedef struct usercmd_s {
 	int serverTime;
-	int angles[3];
+	int angles[2];
 	int buttons;
-	byte weapon;  // weapon
+	int weapon;
 	signed char forwardmove, rightmove, upmove;
 } usercmd_t;
 
@@ -1230,7 +1217,6 @@ typedef struct entityState_s {
 	int eventParm;
 
 	// for players
-	int powerups;   // bit flags
 	int weapon;     // determines weapon and flash model, etc
 	int legsAnim;   // mask off ANIM_TOGGLEBIT
 	int torsoAnim;  // mask off ANIM_TOGGLEBIT

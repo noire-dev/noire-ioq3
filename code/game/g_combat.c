@@ -102,7 +102,6 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 		self->takedamage = true;
 
 		self->s.weapon = WP_NONE;
-		self->s.powerups = 0;
 		self->r.contents = CONTENTS_CORPSE;
 
 		self->s.angles[0] = 0;
@@ -115,9 +114,6 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 		self->r.maxs[2] = DEAD_HEIGHT;
 
 		self->client->respawnTime = level.time + 1700;
-
-		// remove powerups
-		memset(self->client->ps.powerups, 0, sizeof(self->client->ps.powerups));
 
 		// normal death
 		static int lastDeath;
@@ -320,57 +316,18 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 	if(targ->s.eType == ET_PHYSICS && targ->health == -1) return;
 
 	// check for completely getting out of the damage
-	if(!(dflags & DAMAGE_NO_PROTECTION)) {
-		// check for godmode
-		if(targ->flags & FL_GODMODE) {
-			return;
-		}
-	}
-
-	// add to the attacker's hit counter (if the target isn't a general entity like a prox mine)
-	if(attacker->client && client && targ != attacker && targ->health > 0 && targ->s.eType != ET_MISSILE && targ->s.eType != ET_GENERAL) {
-		attacker->client->ps.persistant[PERS_ATTACKEE_ARMOR] = (targ->health << 8) | (client->ps.stats[STAT_ARMOR]);
-	}
+	if(!(dflags & DAMAGE_NO_PROTECTION) && targ->flags & FL_GODMODE) return;
 
 	// always give half damage if hurting self
 	// calculated after knockback, so rocket jumping works
-	if(targ == attacker) {
-		damage *= 0.5;
-	}
+	if(targ == attacker) damage *= 0.5;
+	if(damage < 1) damage = 1;
 
-	if(damage < 1) {
-		damage = 1;
-	}
 	take = damage;
 
 	// save some from armor
 	asave = CheckArmor(targ, take, dflags);
 	take -= asave;
-
-	if(g_debugDamage.integer) {
-		G_Printf("%i: client:%i health:%i damage:%i armor:%i\n", level.time, targ->s.number, targ->health, take, asave);
-	}
-
-	// add to the damage inflicted on a player this frame
-	// the total will be turned into screen blends and view angle kicks
-	// at the end of the frame
-	if(client) {
-		if(attacker) {
-			client->ps.persistant[PERS_ATTACKER] = attacker->s.number;
-		} else {
-			client->ps.persistant[PERS_ATTACKER] = ENTITYNUM_WORLD;
-		}
-		client->damage_armor += asave;
-		client->damage_blood += take;
-		client->damage_knockback += knockback;
-		if(dir) {
-			VectorCopy(dir, client->damage_from);
-			client->damage_fromWorld = false;
-		} else {
-			VectorCopy(targ->r.currentOrigin, client->damage_from);
-			client->damage_fromWorld = true;
-		}
-	}
 
 	// do the damage
 	if(take) {

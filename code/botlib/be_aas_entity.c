@@ -88,7 +88,6 @@ int AAS_UpdateEntity(int entnum, bot_entitystate_t* state) {
 	ent->i.frame = state->frame;
 	ent->i.event = state->event;
 	ent->i.eventParm = state->eventParm;
-	ent->i.powerups = state->powerups;
 	ent->i.weapon = state->weapon;
 	ent->i.legsAnim = state->legsAnim;
 	ent->i.torsoAnim = state->torsoAnim;

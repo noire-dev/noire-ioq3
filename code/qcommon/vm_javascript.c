@@ -347,9 +347,6 @@ static void GAPI_EntitySpeed(int entityID) {
 
 	entity = GAPI_Entity(entityID, "GAPI_EntitySpeed - entityID");
 	if(!entity) return;
-
-	// 0 = use g_speed, anything above overrides it (cleared on respawn)
-	JSE_Int(&entity->client->speedOverride);
 }
 
 static void GAPI_EntityAmmo(int entityID, int weaponID) {

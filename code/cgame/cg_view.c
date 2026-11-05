@@ -271,16 +271,11 @@ static int CG_CalcFov(void) {
 	int inwater;
 
 	// user selectable
-	if(cgs.dmflags & DF_FIXED_FOV) {
-		// dmflag to prevent wide fov for all clients
-		fov_x = 90;
-	} else {
-		fov_x = cg_fov.value;
-		if(fov_x < 1) {
-			fov_x = 1;
-		} else if(fov_x > 160) {
-			fov_x = 160;
-		}
+	fov_x = cg_fov.value;
+	if(fov_x < 1) {
+		fov_x = 1;
+	} else if(fov_x > 160) {
+		fov_x = 160;
 	}
 
 	// account for zooms

@@ -534,7 +534,6 @@ void CG_MissileTrail(centity_t* ent) {
 	vec3_t origin;
 	int contents;
 
-	if(cg_noProjectileTrail.integer) return;
 	if(ent->currentState.weapon <= WP_NONE || ent->currentState.weapon >= jsd_weaponCount) return;
 	fx = &jsd_weaponFx[ent->currentState.weapon];
 	if(fx->trailCount <= 0) return;

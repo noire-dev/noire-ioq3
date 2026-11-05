@@ -246,7 +246,6 @@ void CopyToBodyQue(gentity_t* ent) {
 
 	body->s = ent->s;
 	body->s.eFlags = EF_DEAD;  // clear
-	body->s.powerups = 0;      // clear powerups
 	body->s.loopSound = 0;     // clear lava burning
 	body->s.number = body - g_entities;
 	body->timestamp = level.time;
@@ -296,7 +295,7 @@ void SetClientViewAngle(gentity_t* ent, vec3_t angle) {
 	int i;
 
 	// set the delta angle
-	for(i = 0; i < 3; i++) {
+	for(i = 0; i < 2; i++) {
 		int cmdAngle;
 
 		cmdAngle = ANGLE2SHORT(angle[i]);

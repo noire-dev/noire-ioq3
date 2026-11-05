@@ -64,7 +64,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // CS_SERVERINFO and CS_SYSTEMINFO are defined in q_shared.h
 #define CS_MUSIC 2
 #define CS_MESSAGE 3  // from the map worldspawn's message field
-#define CS_MOTD 4     // g_motd string for server message of the day
 
 #define CS_GAME_VERSION 20
 #define CS_LEVEL_START_TIME 21  // so the timer only shows the current level
@@ -122,8 +121,7 @@ typedef struct {
 
 	// command (in)
 	usercmd_t cmd;
-	int tracemask;   // collide against these types of surfaces
-	int debugLevel;  // if set, diagnostic output will be printed
+	int tracemask;  // collide against these types of surfaces
 
 	int framecount;
 
@@ -163,9 +161,7 @@ typedef enum {
 // cleared on respawn
 // NOTE: may not have more than 16
 typedef enum {
-	PERS_SPAWN_COUNT,    // incremented every respawn
-	PERS_ATTACKER,       // clientnum of last damage inflicter
-	PERS_ATTACKEE_ARMOR  // health/armor of last person we attacked
+	PERS_SPAWN_COUNT,  // incremented every respawn
 } persEnum_t;
 
 // entityState_t->eFlags
@@ -310,7 +306,6 @@ typedef enum {
 	EV_MISSILE_MISS,
 	EV_BEAM_TRAIL,
 	EV_SHOTGUN,
-	EV_PAIN,
 	EV_OBITUARY,
 	EV_PARTICLE,
 } entity_event_t;
@@ -443,10 +438,6 @@ item_t* BG_FindItemForWeapon(int weapon);
 #define ITEM_INDEX(x) ((x) - jsd_item)
 
 bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps);
-
-// g_dmflags->integer flags
-#define DF_NO_FALLING 8
-#define DF_FIXED_FOV 16
 
 // content masks
 #define MASK_ALL (-1)

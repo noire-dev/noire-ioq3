@@ -272,12 +272,7 @@ void PM_StepSlideMove(bool gravity) {
 
 	// test the player position if they were a stepheight higher
 	pm->trace(&trace, start_o, pm->mins, pm->maxs, up, pm->ps->clientNum, pm->tracemask);
-	if(trace.allsolid) {
-		if(pm->debugLevel) {
-			Com_Printf("%i:bend can't step\n", c_pmove);
-		}
-		return;  // can't step up
-	}
+	if(trace.allsolid) return;  // can't step up
 
 	stepSize = trace.endpos[2] - start_o[2];
 	// try slidemove from this position

@@ -24,68 +24,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "g_local.h"
 
 /*
-===============
-G_DamageFeedback
-
-Called just before a snapshot is sent to the given player.
-Totals up all damage and generates both the player_state_t
-damage values to that client for pain blends and kicks, and
-global pain sound events for all clients.
-===============
-*/
-void P_DamageFeedback(gentity_t* player) {
-	gclient_t* client;
-	float count;
-	vec3_t angles;
-
-	client = player->client;
-	if(client->ps.pm_type == PM_DEAD) {
-		return;
-	}
-
-	// total points of damage shot at the player this frame
-	count = client->damage_blood + client->damage_armor;
-	if(count == 0) {
-		return;  // didn't take any damage
-	}
-
-	if(count > 255) {
-		count = 255;
-	}
-
-	// send the information to the client
-
-	// world damage (falling, slime, etc) uses a special code
-	// to make the blend blob centered instead of positional
-	if(client->damage_fromWorld) {
-		client->ps.damagePitch = 255;
-		client->ps.damageYaw = 255;
-
-		client->damage_fromWorld = false;
-	} else {
-		vectoangles(client->damage_from, angles);
-		client->ps.damagePitch = angles[PITCH] / 360.0 * 256;
-		client->ps.damageYaw = angles[YAW] / 360.0 * 256;
-	}
-
-	// play an appropriate pain sound
-	if((level.time > player->pain_debounce_time) && !(player->flags & FL_GODMODE)) {
-		player->pain_debounce_time = level.time + 700;
-		G_AddEvent(player, EV_PAIN, player->health);
-		client->ps.damageEvent++;
-	}
-
-	client->ps.damageCount = count;
-
-	//
-	// clear totals
-	//
-	client->damage_blood = 0;
-	client->damage_armor = 0;
-	client->damage_knockback = 0;
-}
-
-/*
 =============
 P_WorldEffects
 
@@ -254,12 +192,6 @@ void G_TouchTriggers(gentity_t* ent) {
 			ent->touch(ent, hit, &trace);
 		}
 	}
-
-	// if we didn't touch a jump pad this pmove frame
-	if(ent->client->ps.jumppad_frame != ent->client->ps.pmove_framecount) {
-		ent->client->ps.jumppad_frame = 0;
-		ent->client->ps.jumppad_ent = 0;
-	}
 }
 
 /*
@@ -330,12 +262,7 @@ void ClientEvents(gentity_t* ent, int oldEventSequence) {
 		switch(event) {
 			case EV_FALL:
 				if(ent->s.eType != ET_PLAYER) {
-					break;  // not in the player model
-				}
-				if(g_dmflags.integer & DF_NO_FALLING) {
-					break;
-				}
-				{
+					break;  // not in the player mode
 					damage = 5;
 				}
 				ent->pain_debounce_time = level.time + 200;  // no normal pain sound
@@ -453,9 +380,6 @@ ClientThink
 
 This will be called once for each client frame, which will
 usually be a couple times for each server frame on fast clients.
-
-If "g_synchronousClients 1" is set, this will be called exactly
-once for each server frame, which makes for smooth demo recording.
 ==============
 */
 void ClientThink_real(gentity_t* ent) {
@@ -506,11 +430,7 @@ void ClientThink_real(gentity_t* ent) {
 	client->ps.gravity = g_gravity.value;
 
 	// set speed
-	if(client->speedOverride > 0) {
-		client->ps.speed = client->speedOverride;
-	} else {
-		client->ps.speed = g_speed.value;
-	}
+	client->ps.speed = g_speed.value;
 
 	// set up for pmove
 	oldEventSequence = client->ps.eventSequence;
@@ -528,9 +448,6 @@ void ClientThink_real(gentity_t* ent) {
 	}
 	pm.trace = trap_Trace;
 	pm.pointcontents = trap_PointContents;
-	pm.debugLevel = g_debugMove.integer;
-
-	VectorCopy(client->ps.origin, client->oldOrigin);
 
 	Pmove(&pm);
 
@@ -597,13 +514,11 @@ void ClientThink(int clientNum) {
 	ent = g_entities + clientNum;
 	trap_GetUsercmd(clientNum, &ent->client->pers.cmd);
 
-	if(!(ent->r.svFlags & SVF_BOT) && !g_synchronousClients.integer) ClientThink_real(ent);
+	if(!(ent->r.svFlags & SVF_BOT)) ClientThink_real(ent);
 }
 
 void G_RunClient(gentity_t* ent) {
-	if(!(ent->r.svFlags & SVF_BOT) && !g_synchronousClients.integer) {
-		return;
-	}
+	if(!(ent->r.svFlags & SVF_BOT)) return;
 	ent->client->pers.cmd.serverTime = level.time;
 	ClientThink_real(ent);
 }
@@ -620,9 +535,6 @@ while a slow client may have multiple ClientEndFrame between ClientThink.
 void ClientEndFrame(gentity_t* ent) {
 	// burn from lava, etc
 	P_WorldEffects(ent);
-
-	// apply all the damage taken this frame
-	P_DamageFeedback(ent);
 
 	ent->client->ps.stats[STAT_HEALTH] = ent->health;  // FIXME: get rid of ent->health...
 

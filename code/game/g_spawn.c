@@ -168,7 +168,6 @@ spawn_t spawns[] = {// info entities don't do anything at all, but provide posit
                     {"misc_portal_surface", SP_misc_portal_surface},
                     {"misc_portal_camera", SP_misc_portal_camera},
 
-
                     {NULL, 0}};
 
 /*
@@ -429,8 +428,6 @@ void SP_worldspawn(void) {
 
 	G_SpawnString("music", "", &s);
 	trap_SetConfigstring(CS_MUSIC, s);
-
-	trap_SetConfigstring(CS_MOTD, g_motd.string);  // message of the day
 
 	G_SpawnString("gravity", "800", &s);
 	trap_Cvar_Set("g_gravity", s);

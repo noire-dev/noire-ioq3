@@ -186,20 +186,9 @@ struct gclient_s {
 
 	bool noclip;
 
-	// js entity api: > 0 overrides g_speed for this client, 0 = default, cleared on respawn
-	int speedOverride;
-
 	int buttons;
 
 	vec3_t oldOrigin;
-
-	// sum up damage over an entire frame, so
-	// shotgun blasts give a single big kick
-	int damage_armor;       // damage absorbed by armor
-	int damage_blood;       // damage taken out of health
-	int damage_knockback;   // impact damage
-	vec3_t damage_from;     // origin for vector calculation
-	bool damage_fromWorld;  // if true, don't use the damage_from vector
 
 	// timers
 	int respawnTime;         // can respawn when time > this, force after g_forcerespwan
@@ -451,18 +440,12 @@ extern vmCvar_t g_dedicated;
 extern vmCvar_t g_cheats;
 extern vmCvar_t g_maxclients;  // allow this many total, including spectators
 
-extern vmCvar_t g_dmflags;
 extern vmCvar_t g_password;
 extern vmCvar_t g_needpass;
 extern vmCvar_t g_gravity;
 extern vmCvar_t g_speed;
 extern vmCvar_t g_knockback;
 extern vmCvar_t g_inactivity;
-extern vmCvar_t g_debugMove;
-extern vmCvar_t g_debugAlloc;
-extern vmCvar_t g_debugDamage;
-extern vmCvar_t g_synchronousClients;
-extern vmCvar_t g_motd;
 
 void trap_LocateGameData(gentity_t* gEnts, int numGEntities, int sizeofGEntity_t, playerState_t* gameClients, int sizeofGameClient);
 void trap_DropClient(int clientNum, const char* reason);
@@ -548,7 +531,6 @@ void trap_EA_View(int client, vec3_t viewangles);
 void trap_EA_GetInput(int client, float thinktime, void /* struct bot_input_s */* input);
 void trap_EA_ResetInput(int client);
 
-
 int trap_BotGetServerCommand(int client, char* message, int size);
 int trap_BotTouchingGoal(vec3_t origin, void /* struct bot_goal_s */* goal);
 
@@ -563,4 +545,3 @@ int trap_BotAllocMoveState(void);
 void trap_BotFreeMoveState(int handle);
 void trap_BotInitMoveState(int handle, void /* struct bot_initmove_s */* initmove);
 void trap_BotAddAvoidSpot(int movestate, vec3_t origin, float radius, int type);
-

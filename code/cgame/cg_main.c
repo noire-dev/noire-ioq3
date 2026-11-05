@@ -62,7 +62,6 @@ vmCvar_t cg_crosshairScale;
 vmCvar_t cg_draw2D;
 vmCvar_t cg_animSpeed;
 vmCvar_t cg_errorDecay;
-vmCvar_t cg_nopredict;
 vmCvar_t cg_noPlayerAnims;
 vmCvar_t cg_showmiss;
 vmCvar_t cg_addMarks;
@@ -79,7 +78,6 @@ vmCvar_t cg_thirdPersonOffsetZ;
 vmCvar_t cg_thirdPersonSmoothing;
 vmCvar_t cg_firstPerson_Fwd;
 vmCvar_t cg_firstPerson_Up;
-vmCvar_t cg_synchronousClients;
 vmCvar_t cg_teamOverlayUserinfo;
 vmCvar_t cg_stats;
 vmCvar_t cg_buildScript;
@@ -92,7 +90,6 @@ vmCvar_t cg_cameraOrbitDelay;
 vmCvar_t cg_timescaleFadeEnd;
 vmCvar_t cg_timescaleFadeSpeed;
 vmCvar_t cg_timescale;
-vmCvar_t cg_noProjectileTrail;
 vmCvar_t cg_trueLightning;
 
 typedef struct {
@@ -114,7 +111,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE},
     {&cg_animSpeed, "cg_animspeed", "1", CVAR_CHEAT},
     {&cg_errorDecay, "cg_errordecay", "100", 0},
-    {&cg_nopredict, "cg_nopredict", "0", 0},
     {&cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT},
     {&cg_showmiss, "cg_showmiss", "0", 0},
     {&cg_thirdPersonRange, "cg_thirdPersonRange", "40", CVAR_CHEAT},
@@ -137,13 +133,11 @@ static cvarTable_t cvarTable[] = {
     {&cg_buildScript, "com_buildScript", "0", 0},  // force loading of all possible data amd error on failures
     {&cg_paused, "cl_paused", "0", CVAR_ROM},
     {&cg_blood, "com_blood", "1", CVAR_ARCHIVE},
-    {&cg_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO},
     {&cg_cameraOrbit, "cg_cameraOrbit", "0", CVAR_CHEAT},
     {&cg_cameraOrbitDelay, "cg_cameraOrbitDelay", "50", CVAR_ARCHIVE},
     {&cg_timescaleFadeEnd, "cg_timescaleFadeEnd", "1", 0},
     {&cg_timescaleFadeSpeed, "cg_timescaleFadeSpeed", "0", 0},
     {&cg_timescale, "timescale", "1", 0},
-    {&cg_noProjectileTrail, "cg_noProjectileTrail", "0", CVAR_ARCHIVE},
     {&cg_trueLightning, "cg_trueLightning", "0.0", CVAR_ARCHIVE},
 };
 

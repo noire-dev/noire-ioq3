@@ -398,7 +398,7 @@ void FireWeapon(gentity_t* ent) {
 	// set aiming directions
 	AngleVectors(ent->client->ps.viewangles, forward, right, up);
 
-	CalcMuzzlePointOrigin(ent, ent->client->oldOrigin, forward, right, up, muzzle);
+	CalcMuzzlePointOrigin(ent, ent->client->ps.origin, forward, right, up, muzzle);
 
 	switch(jsd_weapon[ent->s.weapon].wType) {
 		case WT_MELEE: Melee_Fire(ent, ent->s.weapon); break;

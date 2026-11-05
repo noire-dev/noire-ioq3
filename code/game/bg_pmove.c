@@ -890,10 +890,6 @@ static int PM_CorrectAllSolid(trace_t* trace) {
 	int i, j, k;
 	vec3_t point;
 
-	if(pm->debugLevel) {
-		Com_Printf("%i:allsolid\n", c_pmove);
-	}
-
 	// jitter around
 	for(i = -1; i <= 1; i++) {
 		for(j = -1; j <= 1; j++) {
@@ -935,11 +931,6 @@ static void PM_GroundTraceMissed(void) {
 	vec3_t point;
 
 	if(pm->ps->groundEntityNum != ENTITYNUM_NONE) {
-		// we just transitioned into freefall
-		if(pm->debugLevel) {
-			Com_Printf("%i:lift\n", c_pmove);
-		}
-
 		// if they aren't in a jumping animation and the ground is a ways away, force into it
 		// if we didn't do the trace, the player would be backflipping down staircases
 		VectorCopy(pm->ps->origin, point);
@@ -993,9 +984,6 @@ static void PM_GroundTrace(void) {
 
 	// check if getting thrown off the ground
 	if(pm->ps->velocity[2] > 0 && DotProduct(pm->ps->velocity, trace.plane.normal) > 10) {
-		if(pm->debugLevel) {
-			Com_Printf("%i:kickoff\n", c_pmove);
-		}
 		// go into jump animation
 		if(pm->cmd.forwardmove >= 0) {
 			PM_ForceLegsAnim(AM_JUMP);
@@ -1013,9 +1001,6 @@ static void PM_GroundTrace(void) {
 
 	// slopes that are too steep will not be considered onground
 	if(trace.plane.normal[2] < MIN_WALK_NORMAL) {
-		if(pm->debugLevel) {
-			Com_Printf("%i:steep\n", c_pmove);
-		}
 		// FIXME: if they can't slide down the slope, let them
 		// walk (sharp crevices)
 		pm->ps->groundEntityNum = ENTITYNUM_NONE;
@@ -1034,11 +1019,6 @@ static void PM_GroundTrace(void) {
 	}
 
 	if(pm->ps->groundEntityNum == ENTITYNUM_NONE) {
-		// just hit the ground
-		if(pm->debugLevel) {
-			Com_Printf("%i:Land\n", c_pmove);
-		}
-
 		PM_CrashLand();
 
 		// don't do landing time if we were just going down a slope
@@ -1431,7 +1411,7 @@ void PM_UpdateViewAngles(playerState_t* ps, const usercmd_t* cmd) {
 	}
 
 	// circularly clamp the angles with deltas
-	for(i = 0; i < 3; i++) {
+	for(i = 0; i < 2; i++) {
 		temp = cmd->angles[i] + ps->delta_angles[i];
 		if(i == PITCH) {
 			// don't let the player look up or down more than 90 degrees

@@ -330,9 +330,6 @@ typedef struct {
 
 	int physicsTime;  // either cg.snap->time or cg.nextSnap->time
 
-	int timelimitWarnings;  // 5 min, 1 min, overtime
-	int fraglimitWarnings;
-
 	bool mapRestart;  // set on a map restart to set back the weapon
 
 	bool renderingThirdPerson;  // during deaths, chasecams, etc
@@ -472,9 +469,6 @@ typedef struct {
 	int serverCommandSequence;  // reliable command stream counter
 	int processedSnapshotNum;   // the number of snapshots cgame has requested
 
-	int dmflags;
-	int fraglimit;
-	int timelimit;
 	int maxclients;
 	char mapname[MAX_QPATH];
 	char redTeam[MAX_QPATH];
@@ -662,7 +656,6 @@ extern vmCvar_t cg_drawStatus;
 extern vmCvar_t cg_draw2D;
 extern vmCvar_t cg_animSpeed;
 extern vmCvar_t cg_errorDecay;
-extern vmCvar_t cg_nopredict;
 extern vmCvar_t cg_noPlayerAnims;
 extern vmCvar_t cg_showmiss;
 extern vmCvar_t cg_addMarks;
@@ -681,7 +674,6 @@ extern vmCvar_t cg_thirdPerson;
 extern vmCvar_t cg_firstPerson_Fwd;
 extern vmCvar_t cg_firstPerson_Up;
 extern vmCvar_t cg_drawAttacker;
-extern vmCvar_t cg_synchronousClients;
 extern vmCvar_t cg_teamChatTime;
 extern vmCvar_t cg_teamChatHeight;
 extern vmCvar_t cg_stats;
@@ -698,7 +690,6 @@ extern vmCvar_t cg_cameraOrbitDelay;
 extern vmCvar_t cg_timescaleFadeEnd;
 extern vmCvar_t cg_timescaleFadeSpeed;
 extern vmCvar_t cg_timescale;
-extern vmCvar_t cg_noProjectileTrail;
 extern vmCvar_t cg_oldRail;
 extern vmCvar_t cg_oldRocket;
 extern vmCvar_t cg_oldPlasma;

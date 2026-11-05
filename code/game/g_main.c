@@ -37,7 +37,6 @@ typedef struct {
 gentity_t g_entities[MAX_GENTITIES];
 gclient_t g_clients[MAX_CLIENTS];
 
-vmCvar_t g_dmflags;
 vmCvar_t g_password;
 vmCvar_t g_needpass;
 vmCvar_t g_maxclients;
@@ -47,11 +46,6 @@ vmCvar_t g_gravity;
 vmCvar_t g_cheats;
 vmCvar_t g_knockback;
 vmCvar_t g_inactivity;
-vmCvar_t g_debugMove;
-vmCvar_t g_debugDamage;
-vmCvar_t g_debugAlloc;
-vmCvar_t g_motd;
-vmCvar_t g_synchronousClients;
 vmCvar_t g_listEntity;
 
 static cvarTable_t gameCvarTable[] = {// don't override the cheat state set by the system
@@ -64,24 +58,13 @@ static cvarTable_t gameCvarTable[] = {// don't override the cheat state set by t
                                       {&g_maxclients, "sv_maxclients", "8", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, false},
 
                                       // change anytime vars
-                                      {&g_dmflags, "dmflags", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, true},
-
-                                      {&g_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO, 0, false},
-
                                       {&g_password, "g_password", "", CVAR_USERINFO, 0, false},
-
                                       {&g_needpass, "g_needpass", "0", CVAR_SERVERINFO | CVAR_ROM, 0, false},
-
                                       {&g_dedicated, "dedicated", "0", 0, 0, false},
-
-                                      {&g_speed, "g_speed", "320", 0, 0, true},
+                                      {&g_speed, "g_speed", "280", 0, 0, true},
                                       {&g_gravity, "g_gravity", "800", 0, 0, true},
                                       {&g_knockback, "g_knockback", "1000", 0, 0, true},
                                       {&g_inactivity, "g_inactivity", "60", 0, 0, true},
-                                      {&g_debugMove, "g_debugMove", "0", 0, 0, false},
-                                      {&g_debugDamage, "g_debugDamage", "0", 0, 0, false},
-                                      {&g_debugAlloc, "g_debugAlloc", "0", 0, 0, false},
-                                      {&g_motd, "g_motd", "", 0, 0, false},
 
                                       {&g_listEntity, "g_listEntity", "0", 0, 0, false}
 

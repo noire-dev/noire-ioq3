@@ -98,9 +98,6 @@ void CG_ParseServerinfo(void) {
 	char* mapname;
 
 	info = CG_ConfigString(CS_SERVERINFO);
-	cgs.dmflags = atoi(Info_ValueForKey(info, "dmflags"));
-	cgs.fraglimit = atoi(Info_ValueForKey(info, "fraglimit"));
-	cgs.timelimit = atoi(Info_ValueForKey(info, "timelimit"));
 	cgs.maxclients = atoi(Info_ValueForKey(info, "sv_maxclients"));
 	mapname = Info_ValueForKey(info, "mapname");
 	Com_sprintf(cgs.mapname, sizeof(cgs.mapname), "maps/%s.bsp", mapname);
@@ -175,11 +172,6 @@ static void CG_MapRestart(void) {
 	CG_InitLocalEntities();
 	CG_InitMarkPolys();
 	CG_ClearParticles();
-
-	// make sure the "3 frags left" warnings play again
-	cg.fraglimitWarnings = 0;
-
-	cg.timelimitWarnings = 0;
 
 	cg.mapRestart = true;
 
