@@ -1576,7 +1576,7 @@ void CL_PlayCinematic_f(void) {
 
 	S_StopAllSounds();
 
-	CL_handle = CIN_PlayCinematic(arg, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, bits);
+	CL_handle = CIN_PlayCinematic(arg, 0, 0, 640, 480, bits);
 	if(CL_handle >= 0) {
 		do {
 			SCR_RunCinematic();

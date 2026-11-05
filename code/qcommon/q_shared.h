@@ -401,40 +401,12 @@ typedef int fixed8_t;
 typedef int fixed16_t;
 
 #ifndef M_PI
-#define M_PI 3.14159265358979323846f  // matches value in gcc v2 math.h
+#define M_PI 3.14159265358979323846f
 #endif
 
 #define NUMVERTEXNORMALS 162
-extern vec3_t bytedirs[NUMVERTEXNORMALS];
 
-// all drawing is done to a 640*480 virtual screen size
-// and will be automatically scaled to the real resolution
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
-
-#define TINYCHAR_WIDTH (SMALLCHAR_WIDTH)
-#define TINYCHAR_HEIGHT (SMALLCHAR_HEIGHT / 2)
-
-#define SMALLCHAR_WIDTH 8
-#define SMALLCHAR_HEIGHT 16
-
-#define BIGCHAR_WIDTH 16
-#define BIGCHAR_HEIGHT 16
-
-#define GIANTCHAR_WIDTH 32
-#define GIANTCHAR_HEIGHT 48
-
-extern vec4_t colorBlack;
-extern vec4_t colorRed;
-extern vec4_t colorGreen;
-extern vec4_t colorBlue;
-extern vec4_t colorYellow;
-extern vec4_t colorMagenta;
-extern vec4_t colorCyan;
 extern vec4_t colorWhite;
-extern vec4_t colorLtGrey;
-extern vec4_t colorMdGrey;
-extern vec4_t colorDkGrey;
 
 #define Q_COLOR_ESCAPE '#'
 
@@ -598,8 +570,6 @@ static ID_INLINE vec_t DistanceSquared(const vec3_t p1, const vec3_t p2) {
 	return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
 }
 
-// fast vector normalize routine that does not check to make sure
-// that length != 0, nor does it return length, uses rsqrt approximation
 static ID_INLINE void VectorNormalizeFast(vec3_t v) {
 	float ilength;
 
@@ -772,10 +742,6 @@ char* Q_CleanStr(char* string);
 // Count the number of char tocount encountered in string
 int Q_CountChar(const char* string, char tocount);
 
-//=============================================
-
-// 64-bit integers for global rankings interface
-// implemented as a struct for qvm compatibility
 typedef struct {
 	byte b0;
 	byte b1;
@@ -788,18 +754,6 @@ typedef struct {
 } qint64;
 
 //=============================================
-/*
-short	BigShort(short l);
-short	LittleShort(short l);
-int		BigLong (int l);
-int		LittleLong (int l);
-qint64  BigLong64 (qint64 l);
-qint64  LittleLong64 (qint64 l);
-float	BigFloat (const float *l);
-float	LittleFloat (const float *l);
-
-void	Swap_Init (void);
-*/
 char* QDECL va(char* format, ...) Q_PRINTF_FUNC(1, 2);
 
 #define TRUNCATE_LENGTH 64

@@ -24,16 +24,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "g_local.h"
 
-typedef struct {
-	char oldShader[MAX_QPATH];
-	char newShader[MAX_QPATH];
-	float timeOffset;
-} shaderRemap_t;
-
-#define MAX_SHADER_REMAPS 128
-
-shaderRemap_t remappedShaders[MAX_SHADER_REMAPS];
-
 int G_FindConfigstringIndex(char* name, int start, int max, bool create) {
 	int i;
 	char s[MAX_STRING_CHARS];

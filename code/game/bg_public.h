@@ -123,8 +123,6 @@ typedef struct {
 	usercmd_t cmd;
 	int tracemask;  // collide against these types of surfaces
 
-	int framecount;
-
 	// results (out)
 	int numtouch;
 	int touchents[MAXTOUCH];

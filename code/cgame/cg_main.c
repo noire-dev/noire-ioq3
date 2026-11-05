@@ -78,12 +78,9 @@ vmCvar_t cg_thirdPersonOffsetZ;
 vmCvar_t cg_thirdPersonSmoothing;
 vmCvar_t cg_firstPerson_Fwd;
 vmCvar_t cg_firstPerson_Up;
-vmCvar_t cg_teamOverlayUserinfo;
 vmCvar_t cg_stats;
 vmCvar_t cg_buildScript;
 vmCvar_t cg_forceModel;
-vmCvar_t cg_paused;
-vmCvar_t cg_blood;
 vmCvar_t cg_deferPlayers;
 vmCvar_t cg_cameraOrbit;
 vmCvar_t cg_cameraOrbitDelay;
@@ -125,14 +122,10 @@ static cvarTable_t cvarTable[] = {
     {&cg_forceModel, "cg_forceModel", "0", CVAR_ARCHIVE},
     {&cg_deferPlayers, "cg_deferPlayers", "0", CVAR_ARCHIVE},
 
-    {&cg_teamOverlayUserinfo, "teamoverlay", "0", CVAR_ROM | CVAR_USERINFO},  // userinfo, читается сервером
-
     {&cg_stats, "cg_stats", "0", 0},
     // the following variables are created in other parts of the system,
     // but we also reference them here
     {&cg_buildScript, "com_buildScript", "0", 0},  // force loading of all possible data amd error on failures
-    {&cg_paused, "cl_paused", "0", CVAR_ROM},
-    {&cg_blood, "com_blood", "1", CVAR_ARCHIVE},
     {&cg_cameraOrbit, "cg_cameraOrbit", "0", CVAR_CHEAT},
     {&cg_cameraOrbitDelay, "cg_cameraOrbitDelay", "50", CVAR_ARCHIVE},
     {&cg_timescaleFadeEnd, "cg_timescaleFadeEnd", "1", 0},

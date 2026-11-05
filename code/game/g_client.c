@@ -717,6 +717,7 @@ void ClientDisconnect(int clientNum) {
 		return;
 	}
 
+	JS_ClearJSSpawnedNPC(clientNum);
 	// send effect if they were completely connected
 	if(ent->client->pers.connected == CON_CONNECTED) {
 		G_TempEntity(ent->client->ps.origin, EV_PARTICLE, PP_TELEPORT_OUT);

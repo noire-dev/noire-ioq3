@@ -53,15 +53,6 @@ void JSE_Bool(bool* value) {
 	vmresult.v.i = *value;
 }
 
-#ifdef GAME
-void JSE_Entity(gentity_t* ent) {
-	api_foundEntry = true;
-	if(vmargs.t[api_valueIndex] != JS_TYPE_NONE) trap_Print("JSE_Entity: can't modify entity pointer from JS");
-	vmresult.t = JS_TYPE_INT;
-	vmresult.v.i = ent - g_entities;
-}
-#endif
-
 #define API_FIELD(expression)      \
 	if(fieldID == api_counter++) { \
 		expression;                \
@@ -139,6 +130,18 @@ static void GAPI_EntityDelete(gentity_t* entity) {
 
 	G_FreeEntity(entity);
 }
+
+// clientNums allocated by GAPI_NPCSpawn; ClientThink_real removes these npcs
+// when they die instead of letting them respawn
+static bool jsSpawnedNPC[MAX_CLIENTS];
+
+bool JS_IsJSSpawnedNPC(int clientNum) { return clientNum >= 0 && clientNum < MAX_CLIENTS && jsSpawnedNPC[clientNum]; }
+
+void JS_ClearJSSpawnedNPC(int clientNum) {
+	if(clientNum >= 0 && clientNum < MAX_CLIENTS) jsSpawnedNPC[clientNum] = false;
+}
+
+void JS_ClearAllSpawnedNPCs(void) { memset(jsSpawnedNPC, 0, sizeof(jsSpawnedNPC)); }
 
 static float GAPI_PlayerCrosshairPoint(gentity_t* player, float distance, int xyz) {
 	vec3_t end, start, forward, up, right;
@@ -265,6 +268,9 @@ static int GAPI_NPCSpawn(char* npcName, char* npcModel, float skill, float x, fl
 
 	ClientBegin(clientNum);
 
+	// remember the npc so it is removed instead of respawning when it dies
+	if(clientNum >= 0 && clientNum < MAX_CLIENTS) jsSpawnedNPC[clientNum] = true;
+
 	// teleport the npc to the requested position
 	entity = &g_entities[clientNum];
 
@@ -310,110 +316,423 @@ static gentity_t* GAPI_Entity(int entityID, char* apiName) {
 	return entity;
 }
 
-// safe default for the value-returning entity getters, so an error
-// never leaks a stale result back into JS
-static void GAPI_EntityResultDefault(void) {
+/*
+================
+Direct struct APIs
+
+Every API_ function exposes one field of a game struct (level_locals_t,
+gentity_s, entityState_s, entityShared_t, gclient_s, clientPersistant_t,
+usercmd_t, playerState_t). The JSE_ helpers read the value from JS when JS
+passes one, otherwise they only return the current value. Array and vector
+fields take the component index in i1.
+================
+*/
+
+// entity getter for the struct apis, works for players, npcs and props
+static gentity_t* GAPI_GameEntity(int entityID, char* apiName) {
+	gentity_t* entity;
+
+	bounds(entityID, MAX_GENTITIES, apiName);
+
+	entity = &g_entities[entityID];
+	if(!entity->inuse) {
+		trap_Print(va("#ff5%s: entity %d is not in use\n", apiName, entityID));
+		return NULL;
+	}
+
+	return entity;
+}
+
+// resolves an entity number from JS to a gentity pointer, -1 and invalid
+// numbers become NULL
+static gentity_t* GAPI_EntityFromJS(int entityID) {
+	if(entityID < 0 || entityID >= MAX_GENTITIES || !g_entities[entityID].inuse) return NULL;
+	return &g_entities[entityID];
+}
+
+// string field: reads back "" when the pointer is NULL, a JS value
+// replaces the string through alloc
+static void GAPI_StringField(char** dest, char* apiName) {
+	if(vmargs.t[api_valueIndex] != JS_TYPE_NONE) {
+		if(!dest || !*dest) {
+			trap_Print(va("#ff5%s: field is NULL, can't write\n", apiName));
+		} else {
+			CopyAlloc(*dest, vmargs.v[api_valueIndex].s);
+		}
+	}
+	vmresult.t = JS_TYPE_STRING;
+	StringCopy(vmresult.v.s, (dest && *dest) ? *dest : "", MAX_JS_STRINGSIZE);
+}
+
+static void API_Level(int fieldID, int i1, int i2, int i3, int i4) {
+	api_foundEntry = false;
+	api_valueIndex = 1;
+	api_counter = 0;
+
 	vmresult.t = JS_TYPE_INT;
 	vmresult.v.i = 0;
+
+	API_FIELD(JSE_Int(&level.num_entities))
+	API_FIELD(JSE_Int(&level.maxclients))
+	API_FIELD(JSE_Int(&level.framenum))
+	API_FIELD(JSE_Int(&level.time))
+	API_FIELD(JSE_Int(&level.previousTime))
+	API_FIELD(JSE_Int(&level.startTime))
+	API_FIELD(JSE_Bool(&level.restarted))
 }
 
-static void GAPI_EntityStat(int entityID, int statID) {
+static void API_GameEntity(int entityID, int fieldID, int i1, int i2, int i3, int i4) {
 	gentity_t* entity;
 
 	api_foundEntry = false;
 	api_valueIndex = 2;
-	GAPI_EntityResultDefault();
+	api_counter = 0;
 
-	entity = GAPI_Entity(entityID, "GAPI_EntityStat - entityID");
+	vmresult.t = JS_TYPE_INT;
+	vmresult.v.i = 0;
+
+	entity = GAPI_GameEntity(entityID, "API_GameEntity - entityID");
 	if(!entity) return;
 
-	bounds(statID, MAX_STATS, "GAPI_EntityStat - statID");
-
-	JSE_Int(&entity->client->ps.stats[statID]);
-
-	// health is the damage/death source of truth, ps.stats only mirrors it for
-	// the hud, so keep ent->health in sync when js writes STAT_HEALTH
-	if(statID == STAT_HEALTH && vmargs.t[api_valueIndex] != JS_TYPE_NONE) {
-		entity->health = entity->client->ps.stats[STAT_HEALTH];
-	}
+	API_FIELD(JSE_IntRead(entity->inuse))
+	API_FIELD(GAPI_StringField(&entity->classname, "API_GameEntity -> classname"))
+	API_FIELD({  // model: writes go through the full model change
+		if(vmargs.t[api_valueIndex] != JS_TYPE_NONE) GAPI_SetEntityModel(entity, vmargs.v[api_valueIndex].s);
+		vmresult.t = JS_TYPE_STRING;
+		StringCopy(vmresult.v.s, entity->model ? entity->model : "", MAX_JS_STRINGSIZE);
+	})
+	API_FIELD(GAPI_StringField(&entity->model2, "API_GameEntity -> model2"))
+	API_FIELD(JSE_Bool(&entity->physicsObject))
+	API_FIELD(JSE_Float(&entity->physicsBounce))
+	API_FIELD(JSE_Int(&entity->health))
+	API_FIELD(JSE_Bool(&entity->takedamage))
+	API_FIELD(JSE_Int(&entity->count))
+	API_FIELD(JSE_Int(&entity->waterlevel))
+	API_FIELD(JSE_IntRead(entity->item ? entity->item - jsd_item : -1))  // item id or -1
+	API_FIELD(bounds(i1, MAX_WEAPONS, "API_GameEntity -> swep_list"); JSE_Int(&entity->swep_list[i1]))
+	API_FIELD(bounds(i1, MAX_WEAPONS, "API_GameEntity -> swep_ammo"); JSE_Int(&entity->swep_ammo[i1]))
+	API_FIELD(JSE_Bool(&entity->flashlight))
+	API_FIELD({  // owner (entity id, -1 = none)
+		if(vmargs.t[api_valueIndex] != JS_TYPE_NONE) entity->owner = GAPI_EntityFromJS(vmargs.v[api_valueIndex].i);
+		vmresult.t = JS_TYPE_INT;
+		vmresult.v.i = entity->owner ? entity->owner - g_entities : -1;
+	})
+	API_FIELD({  // grabbedEntity (entity id, -1 = none)
+		if(vmargs.t[api_valueIndex] != JS_TYPE_NONE) entity->grabbedEntity = GAPI_EntityFromJS(vmargs.v[api_valueIndex].i);
+		vmresult.t = JS_TYPE_INT;
+		vmresult.v.i = entity->grabbedEntity ? entity->grabbedEntity - g_entities : -1;
+	})
+	API_FIELD(JSE_Bool(&entity->isGrabbed))
+	API_FIELD({  // lastPlayer (entity id, -1 = none)
+		if(vmargs.t[api_valueIndex] != JS_TYPE_NONE) entity->lastPlayer = GAPI_EntityFromJS(vmargs.v[api_valueIndex].i);
+		vmresult.t = JS_TYPE_INT;
+		vmresult.v.i = entity->lastPlayer ? entity->lastPlayer - g_entities : -1;
+	})
+	API_FIELD(JSE_Int(&entity->sb_phys))
 }
 
-static void GAPI_EntitySpeed(int entityID) {
+static void API_EntityState(int entityID, int fieldID, int i1, int i2, int i3, int i4) {
+	gentity_t* entity;
+	entityState_t* s;
+
+	api_foundEntry = false;
+	api_valueIndex = 2;
+	api_counter = 0;
+
+	vmresult.t = JS_TYPE_INT;
+	vmresult.v.i = 0;
+
+	entity = GAPI_GameEntity(entityID, "API_EntityState - entityID");
+	if(!entity) return;
+	s = &entity->s;
+
+	API_FIELD(JSE_IntRead(s->number))
+	API_FIELD(JSE_Int(&s->eType))
+	API_FIELD(JSE_Int(&s->eFlags))
+
+	API_FIELD(JSE_Int((int*)&s->pos.trType))
+	API_FIELD(JSE_Int(&s->pos.trTime))
+	API_FIELD(JSE_Int(&s->pos.trDuration))
+	API_FIELD(bounds(i1, 3, "API_EntityState -> pos.trBase"); JSE_Float(&s->pos.trBase[i1]))
+	API_FIELD(bounds(i1, 3, "API_EntityState -> pos.trDelta"); JSE_Float(&s->pos.trDelta[i1]))
+
+	API_FIELD(JSE_Int((int*)&s->apos.trType))
+	API_FIELD(JSE_Int(&s->apos.trTime))
+	API_FIELD(JSE_Int(&s->apos.trDuration))
+	API_FIELD(bounds(i1, 3, "API_EntityState -> apos.trBase"); JSE_Float(&s->apos.trBase[i1]))
+	API_FIELD(bounds(i1, 3, "API_EntityState -> apos.trDelta"); JSE_Float(&s->apos.trDelta[i1]))
+
+	API_FIELD(JSE_Int(&s->time))
+	API_FIELD(JSE_Int(&s->time2))
+
+	API_FIELD(bounds(i1, 3, "API_EntityState -> origin"); JSE_Float(&s->origin[i1]))
+	API_FIELD(bounds(i1, 3, "API_EntityState -> origin2"); JSE_Float(&s->origin2[i1]))
+
+	API_FIELD(bounds(i1, 3, "API_EntityState -> angles"); JSE_Float(&s->angles[i1]))
+	API_FIELD(bounds(i1, 3, "API_EntityState -> angles2"); JSE_Float(&s->angles2[i1]))
+
+	API_FIELD(JSE_Int(&s->otherEntityNum))
+	API_FIELD(JSE_Int(&s->otherEntityNum2))
+
+	API_FIELD(JSE_Int(&s->groundEntityNum))
+
+	API_FIELD(JSE_Int(&s->constantLight))
+	API_FIELD(JSE_Int(&s->loopSound))
+
+	API_FIELD(JSE_Int(&s->modelindex))
+	API_FIELD(JSE_Int(&s->modelindex2))
+	API_FIELD(JSE_Int(&s->clientNum))
+	API_FIELD(JSE_Int(&s->frame))
+
+	API_FIELD(JSE_Int(&s->solid))
+
+	API_FIELD(JSE_Int(&s->event))
+	API_FIELD(JSE_Int(&s->eventParm))
+
+	API_FIELD(JSE_Int(&s->weapon))
+	API_FIELD(JSE_Int(&s->legsAnim))
+	API_FIELD(JSE_Int(&s->torsoAnim))
+
+	API_FIELD(JSE_Int(&s->generic1))
+}
+
+static void API_EntityShared(int entityID, int fieldID, int i1, int i2, int i3, int i4) {
+	gentity_t* entity;
+	entityShared_t* r;
+
+	api_foundEntry = false;
+	api_valueIndex = 2;
+	api_counter = 0;
+
+	vmresult.t = JS_TYPE_INT;
+	vmresult.v.i = 0;
+
+	entity = GAPI_GameEntity(entityID, "API_EntityShared - entityID");
+	if(!entity) return;
+	r = &entity->r;
+
+	// the leading entityState_t 'unused' pad is not exposed
+	API_FIELD(JSE_IntRead(r->linked))
+	API_FIELD(JSE_IntRead(r->linkcount))
+
+	API_FIELD(JSE_Int(&r->svFlags))
+
+	API_FIELD(JSE_Int(&r->singleClient))
+
+	API_FIELD(JSE_IntRead(r->bmodel))
+	API_FIELD(bounds(i1, 3, "API_EntityShared -> mins"); JSE_Float(&r->mins[i1]))
+	API_FIELD(bounds(i1, 3, "API_EntityShared -> maxs"); JSE_Float(&r->maxs[i1]))
+	API_FIELD(JSE_Int(&r->contents))
+
+	API_FIELD(bounds(i1, 3, "API_EntityShared -> absmin"); JSE_Float(&r->absmin[i1]))
+	API_FIELD(bounds(i1, 3, "API_EntityShared -> absmax"); JSE_Float(&r->absmax[i1]))
+
+	API_FIELD(bounds(i1, 3, "API_EntityShared -> currentOrigin"); JSE_Float(&r->currentOrigin[i1]))
+	API_FIELD(bounds(i1, 3, "API_EntityShared -> currentAngles"); JSE_Float(&r->currentAngles[i1]))
+
+	API_FIELD(JSE_Int(&r->ownerNum))
+}
+
+static void API_GameClient(int entityID, int fieldID, int i1, int i2, int i3, int i4) {
 	gentity_t* entity;
 
 	api_foundEntry = false;
 	api_valueIndex = 2;
-	GAPI_EntityResultDefault();
+	api_counter = 0;
 
-	entity = GAPI_Entity(entityID, "GAPI_EntitySpeed - entityID");
+	vmresult.t = JS_TYPE_INT;
+	vmresult.v.i = 0;
+
+	entity = GAPI_Entity(entityID, "API_GameClient - entityID");
 	if(!entity) return;
+
+	API_FIELD(JSE_Bool(&entity->client->noclip))
+	API_FIELD(JSE_Int(&entity->client->buttons))
+	API_FIELD(JSE_Int(&entity->client->respawnTime))
 }
 
-static void GAPI_EntityAmmo(int entityID, int weaponID) {
+static void API_ClientPersistant(int entityID, int fieldID, int i1, int i2, int i3, int i4) {
 	gentity_t* entity;
 
 	api_foundEntry = false;
 	api_valueIndex = 2;
-	GAPI_EntityResultDefault();
+	api_counter = 0;
 
-	entity = GAPI_Entity(entityID, "GAPI_EntityAmmo - entityID");
+	vmresult.t = JS_TYPE_INT;
+	vmresult.v.i = 0;
+
+	entity = GAPI_Entity(entityID, "API_ClientPersistant - entityID");
 	if(!entity) return;
 
-	bounds(weaponID, MAX_WEAPONS, "GAPI_EntityAmmo - weaponID");
-	JSE_Int(&entity->swep_ammo[weaponID]);
+	// clientConnected_t as int, the values are exposed as CON.* in js
+	API_FIELD(JSE_Int((int*)&entity->client->pers.connected))
+	API_FIELD(JSE_Bool(&entity->client->pers.localClient))
+	API_FIELD(JSE_String(entity->client->pers.netname, MAX_NETNAME))
 }
 
-static void GAPI_EntityWeapon(int entityID, int weaponID) {
+static void API_ClientCommand(int entityID, int fieldID, int i1, int i2, int i3, int i4) {
 	gentity_t* entity;
 
 	api_foundEntry = false;
 	api_valueIndex = 2;
-	GAPI_EntityResultDefault();
+	api_counter = 0;
 
-	entity = GAPI_Entity(entityID, "GAPI_EntityWeapon - entityID");
+	vmresult.t = JS_TYPE_INT;
+	vmresult.v.i = 0;
+
+	entity = GAPI_Entity(entityID, "API_ClientCommand - entityID");
 	if(!entity) return;
 
-	bounds(weaponID, MAX_WEAPONS, "GAPI_EntityWeapon - weaponID");
-	// swep_list status: WS_NONE 0, WS_HAVE 1, WS_NOAMMO 2
-	JSE_Int(&entity->swep_list[weaponID]);
+	API_FIELD(JSE_Int(&entity->client->pers.cmd.serverTime))
+	API_FIELD(bounds(i1, 2, "API_ClientCommand -> angles"); JSE_Int(&entity->client->pers.cmd.angles[i1]))
+	API_FIELD(JSE_Int(&entity->client->pers.cmd.buttons))
+	API_FIELD(JSE_Int(&entity->client->pers.cmd.weapon))
+	API_FIELD({
+		int m = entity->client->pers.cmd.forwardmove;
+		JSE_Int(&m);
+		entity->client->pers.cmd.forwardmove = (signed char)m;
+	})
+	API_FIELD({
+		int m = entity->client->pers.cmd.rightmove;
+		JSE_Int(&m);
+		entity->client->pers.cmd.rightmove = (signed char)m;
+	})
+	API_FIELD({
+		int m = entity->client->pers.cmd.upmove;
+		JSE_Int(&m);
+		entity->client->pers.cmd.upmove = (signed char)m;
+	})
 }
 
-static void GAPI_EntityActiveWeapon(int entityID) {
+static void API_ClientState(int entityID, int fieldID, int i1, int i2, int i3, int i4) {
 	gentity_t* entity;
+	playerState_t* ps;
 
 	api_foundEntry = false;
 	api_valueIndex = 2;
-	GAPI_EntityResultDefault();
+	api_counter = 0;
 
-	entity = GAPI_Entity(entityID, "GAPI_EntityActiveWeapon - entityID");
+	vmresult.t = JS_TYPE_INT;
+	vmresult.v.i = 0;
+
+	entity = GAPI_Entity(entityID, "API_ClientState - entityID");
 	if(!entity) return;
+	ps = &entity->client->ps;
 
-	JSE_Int(&entity->client->ps.weapon);
+	API_FIELD(JSE_Int(&ps->commandTime))
+	API_FIELD(JSE_Int(&ps->pm_type))
+	API_FIELD(JSE_Int(&ps->bobCycle))
+	API_FIELD(JSE_Int(&ps->pm_flags))
+	API_FIELD(JSE_Int(&ps->pm_time))
+
+	API_FIELD(bounds(i1, 3, "API_ClientState -> origin"); JSE_Float(&ps->origin[i1]))
+	API_FIELD(bounds(i1, 3, "API_ClientState -> velocity"); JSE_Float(&ps->velocity[i1]))
+	API_FIELD(JSE_Int(&ps->weaponTime))
+	API_FIELD(JSE_Int(&ps->gravity))
+	API_FIELD(JSE_Int(&ps->speed))
+	API_FIELD(bounds(i1, 2, "API_ClientState -> delta_angles"); JSE_Int(&ps->delta_angles[i1]))
+
+	API_FIELD(JSE_Int(&ps->groundEntityNum))
+
+	API_FIELD(JSE_Int(&ps->legsTimer))
+	API_FIELD(JSE_Int(&ps->legsAnim))
+
+	API_FIELD(JSE_Int(&ps->torsoTimer))
+	API_FIELD(JSE_Int(&ps->torsoAnim))
+
+	API_FIELD(JSE_Int(&ps->movementDir))
+
+	API_FIELD(JSE_Int(&ps->eFlags))
+
+	API_FIELD(JSE_Int(&ps->eventSequence))
+	API_FIELD(bounds(i1, MAX_PS_EVENTS, "API_ClientState -> events"); JSE_Int(&ps->events[i1]))
+	API_FIELD(bounds(i1, MAX_PS_EVENTS, "API_ClientState -> eventParms"); JSE_Int(&ps->eventParms[i1]))
+
+	API_FIELD(JSE_Int(&ps->externalEvent))
+	API_FIELD(JSE_Int(&ps->externalEventParm))
+	API_FIELD(JSE_Int(&ps->externalEventTime))
+
+	API_FIELD(JSE_Int(&ps->clientNum))
+	API_FIELD(JSE_Int(&ps->weapon))
+	API_FIELD(JSE_Int(&ps->weaponstate))
+
+	API_FIELD(bounds(i1, 3, "API_ClientState -> viewangles"); JSE_Float(&ps->viewangles[i1]))
+	API_FIELD(JSE_Int(&ps->viewheight))
+
+	API_FIELD(bounds(i1, MAX_STATS, "API_ClientState -> stats"); JSE_Int(&ps->stats[i1]))
+	API_FIELD(bounds(i1, MAX_PERSISTANT, "API_ClientState -> persistant"); JSE_Int(&ps->persistant[i1]))
+
+	API_FIELD(JSE_Int(&ps->generic1))
+	API_FIELD(JSE_Int(&ps->loopSound))
+
+	API_FIELD(JSE_Int(&ps->ping))
+	API_FIELD(JSE_Int(&ps->pmove_framecount))
+	API_FIELD(JSE_Int(&ps->entityEventSequence))
 }
 
-static void GAPI_EntityInventory(int entityID) {
-	gentity_t* entity;
-	char inventory[MAX_JS_STRINGSIZE];
-	int weaponID;
+/*
+================
+Entity getters
+================
+*/
 
-	api_foundEntry = true;
-	api_valueIndex = 2;
+static void GAPI_GetEntityModel(int entityID) {
+	gentity_t* entity;
+
+	api_foundEntry = false;
+	api_valueIndex = 1;
 
 	vmresult.t = JS_TYPE_STRING;
 	vmresult.v.s[0] = '\0';
 
-	entity = GAPI_Entity(entityID, "GAPI_EntityInventory - entityID");
-	if(!entity) return;
+	bounds(entityID, MAX_GENTITIES, "GAPI_GetEntityModel - entityID");
+	entity = &g_entities[entityID];
 
-	inventory[0] = '\0';
-	for(weaponID = 1; weaponID < jsd_weaponCount && weaponID < MAX_WEAPONS; weaponID++) {
-		if(entity->swep_list[weaponID] < WS_HAVE) continue;
+	if(entity->inuse && entity->model) StringCopy(vmresult.v.s, entity->model, MAX_JS_STRINGSIZE);
+}
 
-		if(inventory[0]) Q_strcat(inventory, sizeof(inventory), ",");
-		Q_strcat(inventory, sizeof(inventory), va("%i:%i", weaponID, entity->swep_ammo[weaponID]));
-	}
+static float GAPI_GetEntityPosition(int entityID, int xyz) {
+	gentity_t* entity;
 
-	StringCopy(vmresult.v.s, inventory, MAX_JS_STRINGSIZE);
+	bounds(entityID, MAX_GENTITIES, "GAPI_GetEntityPosition - entityID");
+	bounds(xyz, 3, "GAPI_GetEntityPosition - xyz");
+
+	entity = &g_entities[entityID];
+	if(!entity->inuse) return 0.0f;
+
+	return entity->r.currentOrigin[xyz];
+}
+
+static float GAPI_GetEntityAngles(int entityID, int xyz) {
+	gentity_t* entity;
+
+	bounds(entityID, MAX_GENTITIES, "GAPI_GetEntityAngles - entityID");
+	bounds(xyz, 3, "API_GetEntityAngles - xyz");
+
+	entity = &g_entities[entityID];
+	if(!entity->inuse) return 0.0f;
+
+	return entity->s.angles[xyz];
+}
+
+/*
+================
+Physics API
+
+Thin js wrappers around the engine physics traps, everything is
+addressed by entity number.
+================
+*/
+
+static float GAPI_PhysGetVector(int entityID, int xyz, char* apiName, void (*getter)(int, float*, float*, float*)) {
+	vec3_t v;
+
+	VectorClear(v);
+	bounds(entityID, MAX_GENTITIES, apiName);
+	bounds(xyz, 3, apiName);
+	getter(entityID, &v[0], &v[1], &v[2]);
+
+	return v[xyz];
 }
 
 static int GAPI_EntityIsClient(int entityID) {
@@ -718,12 +1037,41 @@ void VMCall(int func_id) {
 			vmresult.v.i = GAPI_NPCSpawn(vmargs.v[0].s, vmargs.v[1].s, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].f);
 			vmresult.t = JS_TYPE_INT;
 			break;
-		case VM_GAPIENTITYSTAT: GAPI_EntityStat(vmargs.v[0].i, vmargs.v[1].i); break;
-		case VM_GAPIENTITYSPEED: GAPI_EntitySpeed(vmargs.v[0].i); break;
-		case VM_GAPIENTITYAMMO: GAPI_EntityAmmo(vmargs.v[0].i, vmargs.v[1].i); break;
-		case VM_GAPIENTITYWEAPON: GAPI_EntityWeapon(vmargs.v[0].i, vmargs.v[1].i); break;
-		case VM_GAPIENTITYACTIVEWEAPON: GAPI_EntityActiveWeapon(vmargs.v[0].i); break;
-		case VM_GAPIENTITYINVENTORY: GAPI_EntityInventory(vmargs.v[0].i); break;
+		case VM_GAPIENTITYGETMODEL: GAPI_GetEntityModel(vmargs.v[0].i); break;
+		case VM_GAPIENTITYGETPOSITION:
+			vmresult.v.f = GAPI_GetEntityPosition(vmargs.v[0].i, vmargs.v[1].i);
+			vmresult.t = JS_TYPE_FLOAT;
+			break;
+		case VM_GAPIENTITYGETANGLES:
+			vmresult.v.f = GAPI_GetEntityAngles(vmargs.v[0].i, vmargs.v[1].i);
+			vmresult.t = JS_TYPE_FLOAT;
+			break;
+		case VM_APILEVEL: API_Level(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].i, vmargs.v[3].i, vmargs.v[4].i); break;
+		case VM_APIGAMEENTITY: API_GameEntity(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
+		case VM_APIENTITYSTATE: API_EntityState(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
+		case VM_APIENTITYSHARED: API_EntityShared(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
+		case VM_APIGAMECLIENT: API_GameClient(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
+		case VM_APICLIENTPERSISTANT: API_ClientPersistant(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
+		case VM_APICLIENTCOMMAND: API_ClientCommand(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
+		case VM_APICLIENTSTATE: API_ClientState(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
+		case VM_GAPIPHYS_GETLINEARVELOCITY:
+			vmresult.v.f = GAPI_PhysGetVector(vmargs.v[0].i, vmargs.v[1].i, "VM_GAPIPHYS_GETLINEARVELOCITY - xyz", trap_Phys_GetLinearVelocity);
+			vmresult.t = JS_TYPE_FLOAT;
+			break;
+		case VM_GAPIPHYS_SETLINEARVELOCITY: trap_Phys_SetLinearVelocity(vmargs.v[0].i, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f); break;
+		case VM_GAPIPHYS_GETANGULARVELOCITY:
+			vmresult.v.f = GAPI_PhysGetVector(vmargs.v[0].i, vmargs.v[1].i, "VM_GAPIPHYS_GETANGULARVELOCITY - xyz", trap_Phys_GetAngularVelocity);
+			vmresult.t = JS_TYPE_FLOAT;
+			break;
+		case VM_GAPIPHYS_SETANGULARVELOCITY: trap_Phys_SetAngularVelocity(vmargs.v[0].i, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f); break;
+		case VM_GAPIPHYS_APPLYCENTRALFORCE: trap_Phys_ApplyCentralForce(vmargs.v[0].i, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f); break;
+		case VM_GAPIPHYS_FREEZEOBJECT: trap_Phys_FreezeObject(vmargs.v[0].i); break;
+		case VM_GAPIPHYS_UNFREEZEOBJECT: trap_Phys_UnfreezeObject(vmargs.v[0].i); break;
+		case VM_GAPIPHYS_WELD: trap_Phys_Weld(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f); break;
+		case VM_GAPIPHYS_ISSLEEPING:
+			vmresult.v.i = trap_Phys_IsSleeping(vmargs.v[0].i);
+			vmresult.t = JS_TYPE_INT;
+			break;
 		case VM_GAPIENTITYISCLIENT:
 			vmresult.v.i = GAPI_EntityIsClient(vmargs.v[0].i);
 			vmresult.t = JS_TYPE_INT;

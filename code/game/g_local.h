@@ -352,6 +352,15 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 bool SpotWouldTelefrag(gentity_t* spot);
 
 //
+// vm_javascript.c (game vm js api)
+//
+// npcs spawned through GAPI_NPCSpawn are remembered so they can be removed
+// on death instead of respawning (see ClientThink_real)
+bool JS_IsJSSpawnedNPC(int clientNum);
+void JS_ClearJSSpawnedNPC(int clientNum);
+void JS_ClearAllSpawnedNPCs(void);
+
+//
 // g_svcmds.c
 //
 bool ConsoleCommand(void);
@@ -421,7 +430,6 @@ int BotAILoadMap(int restart);
 int BotAISetupClient(int client, struct bot_settings_s* settings, bool restart);
 int BotAIShutdownClient(int client, bool restart);
 int BotAIStartFrame(int time);
-void BotTestAAS(vec3_t origin);
 
 extern level_locals_t level;
 extern gentity_t g_entities[MAX_GENTITIES];

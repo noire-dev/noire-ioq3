@@ -61,7 +61,6 @@ CG_OffsetThirdPersonView
 
 ===============
 */
-#define FOCUS_DISTANCE 512
 static void CG_OffsetThirdPersonView(void) {
 	vec3_t forward, right, up;
 	vec3_t view, pivot, target;

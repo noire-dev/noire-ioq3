@@ -175,30 +175,6 @@ char* ConcatArgs(int start) {
 
 /*
 ==================
-StringIsInteger
-==================
-*/
-bool StringIsInteger(const char* s) {
-	int i;
-	int len;
-	bool foundDigit;
-
-	len = strlen(s);
-	foundDigit = false;
-
-	for(i = 0; i < len; i++) {
-		if(!isdigit(s[i])) {
-			return false;
-		}
-
-		foundDigit = true;
-	}
-
-	return foundDigit;
-}
-
-/*
-==================
 Cmd_Give_f
 
 Give items to a client

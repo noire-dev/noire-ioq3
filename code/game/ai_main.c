@@ -177,36 +177,6 @@ int BotAI_GetEntityState(int entityNum, entityState_t* state) {
 }
 
 /*
-==================
-BotTestAAS
-==================
-*/
-void BotTestAAS(vec3_t origin) {
-	int areanum;
-	aas_areainfo_t info;
-
-	trap_Cvar_Update(&bot_testsolid);
-	trap_Cvar_Update(&bot_testclusters);
-	if(bot_testsolid.integer) {
-		if(!trap_AAS_Initialized()) return;
-		areanum = BotPointAreaNum(origin);
-		if(areanum)
-			BotAI_Print(PRT_MESSAGE, "\rempty area");
-		else
-			BotAI_Print(PRT_MESSAGE, "\r^1SOLID area");
-	} else if(bot_testclusters.integer) {
-		if(!trap_AAS_Initialized()) return;
-		areanum = BotPointAreaNum(origin);
-		if(!areanum)
-			BotAI_Print(PRT_MESSAGE, "\r^1Solid!                              ");
-		else {
-			trap_AAS_AreaInfo(areanum, &info);
-			BotAI_Print(PRT_MESSAGE, "\rarea %d, cluster %d       ", areanum, info.cluster);
-		}
-	}
-}
-
-/*
 ==============
 BotEntityInfo
 ==============

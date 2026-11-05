@@ -239,7 +239,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 	}
 
 	// figure momentum add, even if the damage won't be taken
-	if(knockback && targ->client || knockback && targ->s.eType == ET_PHYSICS) {
+	if((knockback && targ->client) || (knockback && targ->s.eType == ET_PHYSICS)) {
 		vec3_t kvel;
 		vec3_t kvel_angular;
 		float mass;

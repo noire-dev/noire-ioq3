@@ -389,11 +389,6 @@ typedef struct {
 	score_t scores[MAX_CLIENTS];
 	bool showScores;
 
-	// sound buffer mainly for announcer sounds
-	int soundBufferIn;
-	int soundBufferOut;
-	int soundTime;
-
 	// temp working variables for player view
 	int nextOrbitTime;
 
@@ -430,7 +425,6 @@ typedef struct {
 	sfxHandle_t footsteps[FOOTSTEP_TOTAL][4];
 	sfxHandle_t talkSound;
 	sfxHandle_t fallPain;
-	sfxHandle_t fallSound;
 
 	sfxHandle_t oneMinuteSound;
 	sfxHandle_t fiveMinuteSound;
@@ -441,7 +435,6 @@ typedef struct {
 	sfxHandle_t oneFragSound;
 
 	sfxHandle_t hitSound;
-	sfxHandle_t hitTeamSound;
 	sfxHandle_t hgrenb1aSound;
 	sfxHandle_t hgrenb2aSound;
 
@@ -475,8 +468,6 @@ typedef struct {
 	char blueTeam[MAX_QPATH];
 
 	int levelStartTime;
-
-	int scores1, scores2;  // from configstrings
 
 	//
 	// locally derived information from gamestate
@@ -640,19 +631,9 @@ extern weaponInfo_t cg_weapons[MAX_WEAPONS];
 extern itemInfo_t cg_items[MAX_ITEMS];
 extern markPoly_t cg_markPolys[MAX_MARK_POLYS];
 
-extern vmCvar_t cg_centertime;
-extern vmCvar_t cg_swingSpeed;
-extern vmCvar_t cg_drawTimer;
 extern vmCvar_t cg_drawFPS;
-extern vmCvar_t cg_drawSnapshot;
-extern vmCvar_t cg_draw3dIcons;
-extern vmCvar_t cg_drawIcons;
-extern vmCvar_t cg_drawAmmoWarning;
 extern vmCvar_t cg_drawCrosshair;
-extern vmCvar_t cg_drawTeamOverlay;
-extern vmCvar_t cg_teamOverlayUserinfo;
 extern vmCvar_t cg_crosshairScale;
-extern vmCvar_t cg_drawStatus;
 extern vmCvar_t cg_draw2D;
 extern vmCvar_t cg_animSpeed;
 extern vmCvar_t cg_errorDecay;
@@ -661,7 +642,6 @@ extern vmCvar_t cg_showmiss;
 extern vmCvar_t cg_addMarks;
 extern vmCvar_t cg_brassTime;
 extern vmCvar_t cg_viewsize;
-extern vmCvar_t cg_ignore;
 extern vmCvar_t cg_fov;
 extern vmCvar_t cg_zoomFov;
 extern vmCvar_t cg_thirdPersonRange;
@@ -673,26 +653,15 @@ extern vmCvar_t cg_thirdPersonSmoothing;
 extern vmCvar_t cg_thirdPerson;
 extern vmCvar_t cg_firstPerson_Fwd;
 extern vmCvar_t cg_firstPerson_Up;
-extern vmCvar_t cg_drawAttacker;
-extern vmCvar_t cg_teamChatTime;
-extern vmCvar_t cg_teamChatHeight;
 extern vmCvar_t cg_stats;
 extern vmCvar_t cg_forceModel;
 extern vmCvar_t cg_buildScript;
-extern vmCvar_t cg_paused;
-extern vmCvar_t cg_blood;
 extern vmCvar_t cg_deferPlayers;
-extern vmCvar_t cg_drawFriend;
-extern vmCvar_t cg_teamChatsOnly;
-extern vmCvar_t cg_scorePlum;
 extern vmCvar_t cg_cameraOrbit;
 extern vmCvar_t cg_cameraOrbitDelay;
 extern vmCvar_t cg_timescaleFadeEnd;
 extern vmCvar_t cg_timescaleFadeSpeed;
 extern vmCvar_t cg_timescale;
-extern vmCvar_t cg_oldRail;
-extern vmCvar_t cg_oldRocket;
-extern vmCvar_t cg_oldPlasma;
 extern vmCvar_t cg_trueLightning;
 
 //

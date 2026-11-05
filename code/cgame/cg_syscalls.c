@@ -42,7 +42,6 @@ void trap_CM_LoadMap(const char* mapname) { syscall(CG_CM_LOADMAP, mapname); }
 int trap_CM_NumInlineModels(void) { return syscall(CG_CM_NUMINLINEMODELS); }
 clipHandle_t trap_CM_InlineModel(int index) { return syscall(CG_CM_INLINEMODEL, index); }
 clipHandle_t trap_CM_TempBoxModel(const vec3_t mins, const vec3_t maxs) { return syscall(CG_CM_TEMPBOXMODEL, mins, maxs); }
-clipHandle_t trap_CM_TempCapsuleModel(const vec3_t mins, const vec3_t maxs) { return syscall(CG_CM_TEMPCAPSULEMODEL, mins, maxs); }
 int trap_CM_MarkFragments(int numPoints, const vec3_t* points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t* fragmentBuffer) { return syscall(CG_CM_MARKFRAGMENTS, numPoints, points, projection, maxPoints, pointBuffer, maxFragments, fragmentBuffer); }
 void trap_S_StartSound(vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfx) { syscall(CG_S_STARTSOUND, origin, entityNum, entchannel, sfx); }
 void trap_S_ClearLoopingSounds(bool killall) { syscall(CG_S_CLEARLOOPINGSOUNDS, killall); }
