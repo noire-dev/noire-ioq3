@@ -88,44 +88,6 @@ void SV_BotFreeClient(int clientNum) {
 
 /*
 ==================
-BotDrawDebugPolygons
-==================
-*/
-void BotDrawDebugPolygons(void (*drawPoly)(int color, int numPoints, float* points), int value) {
-	static cvar_t *bot_debug, *bot_groundonly, *bot_reachability, *bot_highlightarea;
-	bot_debugpoly_t* poly;
-	int i, parm0;
-
-	if(!debugpolygons) return;
-	// bot debugging
-	if(!bot_debug) bot_debug = Cvar_Get("bot_debug", "0", 0);
-	//
-	if(bot_enable && bot_debug->integer) {
-		// show reachabilities
-		if(!bot_reachability) bot_reachability = Cvar_Get("bot_reachability", "0", 0);
-		// show ground faces only
-		if(!bot_groundonly) bot_groundonly = Cvar_Get("bot_groundonly", "1", 0);
-		// get the hightlight area
-		if(!bot_highlightarea) bot_highlightarea = Cvar_Get("bot_highlightarea", "0", 0);
-		//
-		parm0 = 0;
-		if(svs.clients[0].lastUsercmd.buttons & BUTTON_ATTACK) parm0 |= 1;
-		if(bot_reachability->integer) parm0 |= 2;
-		if(bot_groundonly->integer) parm0 |= 4;
-		botlib_export->BotLibVarSet("bot_highlightarea", bot_highlightarea->string);
-		botlib_export->Test(parm0, NULL, svs.clients[0].gentity->r.currentOrigin, svs.clients[0].gentity->r.currentAngles);
-	}  // end if
-	// draw all debug polys
-	for(i = 0; i < bot_maxdebugpolys; i++) {
-		poly = &debugpolygons[i];
-		if(!poly->inuse) continue;
-		drawPoly(poly->color, poly->numPoints, (float*)poly->points);
-		// Com_Printf("poly %i, numpoints = %d\n", i, poly->numPoints);
-	}
-}
-
-/*
-==================
 BotImport_Print
 ==================
 */

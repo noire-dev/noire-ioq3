@@ -24,9 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 /*****************************************************************************
  * name:		ai_dmq3.h
  *
- * desc:		Quake3 bot AI
- *
- * $Archive: /source/code/botai/ai_chat.c $
+ * desc:		bot AI
  *
  *****************************************************************************/
 
@@ -36,72 +34,58 @@ void BotSetupDeathmatchAI(void);
 void BotShutdownDeathmatchAI(void);
 // let the bot live within its deathmatch AI net
 void BotDeathmatchAI(bot_state_t* bs, float thinktime);
-// free waypoints
-void BotFreeWaypoints(bot_waypoint_t* wp);
+// remember a player for 180 seconds and track them down
+void BotStartHunt(bot_state_t* bs, int client);
+// true if the remembered hunt target is still connected and alive
+bool BotHuntTargetAlive(bot_state_t* bs);
+// react to the sounds players made: footsteps, falls and gunshots
+void BotListenSounds(bot_state_t* bs);
+// damage types
+#define DAMAGETYPE_IMPACT 1   // damage on impact
+#define DAMAGETYPE_RADIAL 2   // radial damage
+#define DAMAGETYPE_VISIBLE 4  // damage to all entities visible to the projectile
+
+// aiming information of a dynamic weapon, filled from jsd_weapon
+typedef struct weaponinfo_s {
+	int number;  // number of the weapon
+	vec3_t offset;
+	float hspread;
+	float vspread;
+	float speed;
+	struct {
+		int damagetype;
+		int damage;
+		float radius;
+	} proj;
+} weaponinfo_t;
+
 // choose a weapon
 void BotChooseWeapon(bot_state_t* bs);
+// returns the number of the best weapon the bot can fight with, 0 if none
+int BotBestWeapon(bot_state_t* bs);
+// fills the aiming info of a weapon from the dynamic jsd_weapon data
+void BotGetWeaponInfo(int weapon, weaponinfo_t* wi);
 // setup movement stuff
 void BotSetupForMovement(bot_state_t* bs);
-// update the inventory
-void BotUpdateInventory(bot_state_t* bs);
-// update the inventory during battle
-void BotUpdateBattleInventory(bot_state_t* bs, int enemy);
 // return true if the bot is dead
 bool BotIsDead(bot_state_t* bs);
 // returns true if the bot is in lava or slime
 bool BotInLavaOrSlime(bot_state_t* bs);
 // returns true if the entity is dead
 bool EntityIsDead(aas_entityinfo_t* entinfo);
-// returns true if the entity is invisible
-bool EntityIsInvisible(aas_entityinfo_t* entinfo);
 // returns true if the entity is shooting
 bool EntityIsShooting(aas_entityinfo_t* entinfo);
-// set a user info key/value pair
-void BotSetUserInfo(bot_state_t* bs, char* key, char* value);
-// set the team status (offense, defense etc.)
-void BotSetTeamStatus(bot_state_t* bs);
 // returns the name of the client
 char* ClientName(int client, char* name, int size);
-// returns a simplified client name
-char* EasyClientName(int client, char* name, int size);
-// returns the skin used by the client
-char* ClientSkin(int client, char* skin, int size);
-// returns the appropriate synonym context for the current game type and situation
-int BotSynonymContext(bot_state_t* bs);
-// set last ordered task
-int BotSetLastOrderedTask(bot_state_t* bs);
-// selection of goals for teamplay
-void BotTeamGoals(bot_state_t* bs, int retreat);
 // returns the aggression of the bot in the range [0, 100]
 float BotAggression(bot_state_t* bs);
-// returns how bad the bot feels
-float BotFeelingBad(bot_state_t* bs);
 // returns true if the bot wants to retreat
 int BotWantsToRetreat(bot_state_t* bs);
 // returns true if the bot wants to chase
 int BotWantsToChase(bot_state_t* bs);
-// returns true if the bot wants to help
-int BotWantsToHelp(bot_state_t* bs);
 // returns true if the bot can and wants to rocketjump
-int BotCanAndWantsToRocketJump(bot_state_t* bs);
-// returns true if the bot has a persistant powerup and a weapon
-int BotHasPersistantPowerupAndWeapon(bot_state_t* bs);
-// returns true if the bot wants to and goes camping
-int BotWantsToCamp(bot_state_t* bs);
 // the bot will perform attack movements
-bot_moveresult_t BotAttackMove(bot_state_t* bs, int tfl);
-// returns true if the bot and the entity are in the same team
-int BotSameTeam(bot_state_t* bs, int entnum);
-// returns true if teamplay is on
-int TeamPlayIsOn(void);
-// returns the client number of the team mate flag carrier (-1 if none)
-int BotTeamFlagCarrier(bot_state_t* bs);
-// returns visible team mate flag carrier if available
-int BotTeamFlagCarrierVisible(bot_state_t* bs);
-// returns visible enemy flag carrier if available
-int BotEnemyFlagCarrierVisible(bot_state_t* bs);
-// get the number of visible teammates and enemies
-void BotVisibleTeamMatesAndEnemies(bot_state_t* bs, int* teammates, int* enemies, float range);
+bot_moveresult_t BotCombatMove(bot_state_t* bs, int tfl);
 // returns true if within the field of vision for the given angles
 bool InFieldOfVision(vec3_t viewangles, float fov, vec3_t angles);
 // returns true and sets the .enemy field when an enemy is found
@@ -124,43 +108,10 @@ void BotEnableActivateGoalAreas(bot_activategoal_t* activategoal, int enable);
 int BotPopFromActivateGoalStack(bot_state_t* bs);
 // clear the activate goal stack
 void BotClearActivateGoalStack(bot_state_t* bs);
-// returns the team the bot is in
-int BotTeam(bot_state_t* bs);
-// returns the opposite team of the bot
-int BotOppositeTeam(bot_state_t* bs);
-// returns the flag the bot is carrying (CTFFLAG_?)
-int BotCTFCarryingFlag(bot_state_t* bs);
-// remember the last ordered task
-void BotRememberLastOrderedTask(bot_state_t* bs);
-// create a new waypoint
-bot_waypoint_t* BotCreateWayPoint(char* name, vec3_t origin, int areanum);
-// find a waypoint with the given name
-bot_waypoint_t* BotFindWayPoint(bot_waypoint_t* waypoints, char* name);
-// strstr but case insensitive
-char* stristr(char* str, char* charset);
-// returns the number of the client with the given name
-int ClientFromName(char* name);
-int ClientOnSameTeamFromName(bot_state_t* bs, char* name);
 //
 int BotPointAreaNum(vec3_t origin);
-//
-void BotMapScripts(bot_state_t* bs);
 
-// ctf flags
-#define CTF_FLAG_NONE 0
-#define CTF_FLAG_RED 1
-#define CTF_FLAG_BLUE 2
-// CTF skins
-#define CTF_SKIN_REDTEAM "red"
-#define CTF_SKIN_BLUETEAM "blue"
+extern int max_bspmodelindex;  // maximum BSP model index
 
-extern int maxclients;  // maximum number of clients
-
-extern vmCvar_t bot_rocketjump;
-extern vmCvar_t bot_fastchat;
-extern vmCvar_t bot_nochat;
-extern vmCvar_t bot_testrchat;
 extern vmCvar_t bot_challenge;
-
-extern bot_goal_t ctf_redflag;
-extern bot_goal_t ctf_blueflag;
+extern vmCvar_t bot_predictobstacles;

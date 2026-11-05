@@ -33,9 +33,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "l_memory.h"
 #include "l_libvar.h"
 #include "l_utils.h"
-#include "l_script.h"
-#include "l_precomp.h"
-#include "l_struct.h"
 #include "l_log.h"
 #include "aasfile.h"
 #include "botlib.h"
@@ -251,7 +248,6 @@ int AAS_LoadMap(const char* mapname) {
 	// initialize reachability for the new map
 	AAS_InitReachability();
 	// initialize the alternative routing
-	AAS_InitAlternativeRouting();
 	// everything went ok
 	return 0;
 }  // end of the function AAS_LoadMap
@@ -285,7 +281,6 @@ int AAS_Setup(void) {
 // Changes Globals:		-
 //===========================================================================
 void AAS_Shutdown(void) {
-	AAS_ShutdownAlternativeRouting();
 	//
 	AAS_DumpBSPData();
 	// free routing caches

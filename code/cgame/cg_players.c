@@ -926,6 +926,16 @@ static void CG_PlayerAngles(centity_t* cent, vec3_t axis[3]) {
 	VectorCopy(cent->lerpAngles, angles);
 	angles[PITCH] = 0.0f;
 	angles[ROLL] = 0.0f;
+
+	// Genshin-style third-person: for the local player in third person, the
+	// rendered body uses cg.charYaw instead of the camera-derived viewangle
+	// yaw. That lets the camera orbit the character without spinning it in
+	// place while idle; the body catches up only while moving or firing
+	// (see the charYaw update in CG_DrawActiveFrame).
+	if(cent->currentState.number == cg.clientNum && cg.renderingThirdPerson) {
+		angles[YAW] = cg.charYaw;
+	}
+
 	AnglesToAxis(angles, axis);
 }
 
@@ -961,10 +971,14 @@ bool CG_GetLocalPlayerHeadOrigin(vec3_t origin) {
 	}
 
 	// the predicted player entity is rebuilt from the playerstate every
-	// frame, so the pose matches what CG_Player will use
+	// frame, so the pose matches what CG_Player will use.
+	// Genshin-style third person: the body is rendered with cg.charYaw
+	// (see CG_PlayerAngles), so the head joint must be evaluated with the
+	// same yaw, otherwise the third-person orbit pivot would drift away
+	// from the visible head while the camera rotates at idle.
 	angles[PITCH] = 0.0f;
 	angles[ROLL] = 0.0f;
-	angles[YAW] = cg.predictedPlayerState.viewangles[YAW];
+	angles[YAW] = cg.renderingThirdPerson ? cg.charYaw : cg.predictedPlayerState.viewangles[YAW];
 	AnglesToAxis(angles, axis);
 
 	CG_PlayerAnimation(cent, &oldframe, &frame, &backlerp);

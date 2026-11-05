@@ -125,7 +125,6 @@ void SP_trigger_hurt(gentity_t* ent);
 void SP_light(gentity_t* self);
 void SP_info_null(gentity_t* self);
 void SP_info_notnull(gentity_t* self);
-void SP_info_camp(gentity_t* self);
 void SP_path_corner(gentity_t* self);
 
 void SP_misc_teleporter_dest(gentity_t* self);
@@ -133,15 +132,12 @@ void SP_misc_model(gentity_t* ent);
 void SP_misc_portal_camera(gentity_t* ent);
 void SP_misc_portal_surface(gentity_t* ent);
 
-void SP_item_botroam(gentity_t* ent) {}
-
 spawn_t spawns[] = {// info entities don't do anything at all, but provide positional
                     // information for things controlled by other processes
                     {"info_player_start", SP_info_player_start},
                     {"info_player_deathmatch", SP_info_player_deathmatch},
                     {"info_null", SP_info_null},
                     {"info_notnull", SP_info_notnull},  // use target_position instead
-                    {"info_camp", SP_info_camp},
 
                     {"func_plat", SP_func_plat},
                     {"func_button", SP_func_button},
@@ -172,7 +168,6 @@ spawn_t spawns[] = {// info entities don't do anything at all, but provide posit
                     {"misc_portal_surface", SP_misc_portal_surface},
                     {"misc_portal_camera", SP_misc_portal_camera},
 
-                    {"item_botroam", SP_item_botroam},
 
                     {NULL, 0}};
 
@@ -310,7 +305,6 @@ level.spawnVars[], then call the class specific spawn function
 void G_SpawnGEntityFromSpawnVars(void) {
 	int i;
 	gentity_t* ent;
-	char *s, *value;
 
 	// get the next free entity
 	ent = G_Spawn();

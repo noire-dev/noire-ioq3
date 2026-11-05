@@ -65,22 +65,13 @@ set(BOTLIB_SOURCES
     ${SOURCE_DIR}/botlib/be_aas_optimize.c
     ${SOURCE_DIR}/botlib/be_aas_reach.c
     ${SOURCE_DIR}/botlib/be_aas_route.c
-    ${SOURCE_DIR}/botlib/be_aas_routealt.c
     ${SOURCE_DIR}/botlib/be_aas_sample.c
-    ${SOURCE_DIR}/botlib/be_ai_char.c
-    ${SOURCE_DIR}/botlib/be_ai_chat.c
-    ${SOURCE_DIR}/botlib/be_ai_gen.c
-    ${SOURCE_DIR}/botlib/be_ai_goal.c
     ${SOURCE_DIR}/botlib/be_ai_move.c
-    ${SOURCE_DIR}/botlib/be_ai_weap.c
-    ${SOURCE_DIR}/botlib/be_ai_weight.c
     ${SOURCE_DIR}/botlib/be_ea.c
     ${SOURCE_DIR}/botlib/be_interface.c
     ${SOURCE_DIR}/botlib/l_crc.c
     ${SOURCE_DIR}/botlib/l_libvar.c
     ${SOURCE_DIR}/botlib/l_log.c
     ${SOURCE_DIR}/botlib/l_memory.c
-    ${SOURCE_DIR}/botlib/l_precomp.c
     ${SOURCE_DIR}/botlib/l_script.c
-    ${SOURCE_DIR}/botlib/l_struct.c
 )

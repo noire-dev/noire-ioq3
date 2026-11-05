@@ -962,7 +962,7 @@ static void CG_StepWeaponSelector(int direction) {
 	int weapons[MAX_WEAPONS];
 	int count, i, currentIndex = -1, nextIndex;
 
-	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
+	if(!cg.snap) return;
 
 	count = CG_BuildWeaponSelectorOrder(weapons, ARRAY_LEN(weapons));
 	if(count <= 0) return;
@@ -992,7 +992,7 @@ static void CG_StepWeaponSelector(int direction) {
 }
 
 void CG_NextWeapon_f(void) {
-	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
+	if(!cg.snap) return;
 
 	if(jsd_weapon[cg.snap->ps.weapon].wType == WT_PHYSGUN && (cg.snap->ps.eFlags & EF_FIRING)) {
 		trap_SendConsoleCommand(EXEC_INSERT, "physgun_dist 0\n");
@@ -1003,7 +1003,7 @@ void CG_NextWeapon_f(void) {
 }
 
 void CG_PrevWeapon_f(void) {
-	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
+	if(!cg.snap) return;
 
 	if(jsd_weapon[cg.snap->ps.weapon].wType == WT_PHYSGUN && (cg.snap->ps.eFlags & EF_FIRING)) {
 		trap_SendConsoleCommand(EXEC_INSERT, "physgun_dist 1\n");
@@ -1016,7 +1016,7 @@ void CG_PrevWeapon_f(void) {
 void CG_Weapon_f(void) {
 	int num;
 
-	if(!cg.snap || (cg.snap->ps.pm_flags & PMF_FOLLOW)) return;
+	if(!cg.snap) return;
 
 	num = atoi(CG_Argv(1));
 

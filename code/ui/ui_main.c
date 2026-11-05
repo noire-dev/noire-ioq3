@@ -65,197 +65,6 @@ void* UI_Alloc(int size) {
 void UI_InitMemory(void) { allocPoint = 0; }
 
 // Quake 3 Content Format
-#define DIRLIST_SIZE 65536
-
-static int ui_numBots;
-static char* ui_botInfos[MAX_BOTS];
-
-static int ui_numArenas;
-static char* ui_arenaInfos[MAX_ARENAS];
-
-static char dirlist[DIRLIST_SIZE];
-
-static int UI_ParseInfos(char* buf, int max, char* infos[], bool arenas) {
-	char* token;
-	int count;
-	char key[MAX_TOKEN_CHARS], info[MAX_INFO_STRING];
-
-	count = 0;
-
-	while(1) {
-		token = COM_Parse(&buf);
-		if(!token[0]) break;
-		if(strcmp(token, "{")) {
-			trap_Print("Missing { in info file\n");
-			break;
-		}
-		if(count == max) {
-			trap_Print("Max infos exceeded\n");
-			break;
-		}
-
-		info[0] = '\0';
-		while(1) {
-			token = COM_ParseExt(&buf, true);
-			if(!token[0]) {
-				trap_Print("Unexpected end of info file\n");
-				break;
-			}
-			if(!strcmp(token, "}")) break;
-			Q_strncpyz(key, token, sizeof(key));
-			token = COM_ParseExt(&buf, false);
-			if(!token[0]) strcpy(token, "<NULL>");
-			if(!arenas || (!strcmp(key, "map") || !strcmp(key, "type"))) Info_SetValueForKey(info, key, token);
-		}
-		infos[count] = UI_Alloc(strlen(info) + 1);
-		if(infos[count]) {
-			strcpy(infos[count], info);
-			count++;
-		}
-	}
-	return count;
-}
-
-static void UI_LoadArenasFromFile(char* filename) {
-	int len;
-	fileHandle_t f;
-	char buf[MAX_ARENAS_TEXT];
-
-	len = trap_FS_FOpenFile(filename, &f, FS_READ);
-	if(!f) {
-		trap_Print(va(S_COLOR_RED "file not found: %s\n", filename));
-		return;
-	}
-	if(len >= MAX_ARENAS_TEXT) {
-		trap_Print(va(S_COLOR_RED "file too large: %s is %i, max allowed is %i", filename, len, MAX_ARENAS_TEXT));
-		trap_FS_FCloseFile(f);
-		return;
-	}
-
-	trap_FS_Read(buf, len, f);
-	buf[len] = 0;
-	trap_FS_FCloseFile(f);
-
-	ui_numArenas += UI_ParseInfos(buf, MAX_ARENAS - ui_numArenas, &ui_arenaInfos[ui_numArenas], true);
-}
-
-static void UI_LoadArenas(void) {
-	int numdirs, i, dirlen;
-	char filename[128], dirlist[1024];
-	char* dirptr;
-
-	ui_numArenas = 0;
-
-	numdirs = trap_FS_GetFileList("scripts", ".arena", dirlist, 1024);
-	dirptr = dirlist;
-	for(i = 0; i < numdirs; i++, dirptr += dirlen + 1) {
-		dirlen = strlen(dirptr);
-		strcpy(filename, "scripts/");
-		strcat(filename, dirptr);
-		UI_LoadArenasFromFile(filename);
-	}
-}
-
-static void UI_LoadBotsFromFile(char* filename) {
-	int len;
-	fileHandle_t f;
-	char buf[MAX_BOTS_TEXT];
-
-	len = trap_FS_FOpenFile(filename, &f, FS_READ);
-	if(!f) {
-		trap_Print(va(S_COLOR_RED "file not found: %s\n", filename));
-		return;
-	}
-	if(len >= MAX_BOTS_TEXT) {
-		trap_Print(va(S_COLOR_RED "file too large: %s is %i, max allowed is %i", filename, len, MAX_BOTS_TEXT));
-		trap_FS_FCloseFile(f);
-		return;
-	}
-
-	trap_FS_Read(buf, len, f);
-	buf[len] = 0;
-	trap_FS_FCloseFile(f);
-
-	ui_numBots += UI_ParseInfos(buf, MAX_BOTS - ui_numBots, &ui_botInfos[ui_numBots], false);
-}
-
-static void UI_LoadBots(void) {
-	int numdirs;
-	char filename[128];
-	char* dirptr;
-	int i;
-	int dirlen;
-
-	ui_numBots = 0;
-
-	numdirs = trap_FS_GetFileList("scripts", ".bot", dirlist, DIRLIST_SIZE);
-	dirptr = dirlist;
-	for(i = 0; i < numdirs; i++, dirptr += dirlen + 1) {
-		dirlen = strlen(dirptr);
-		strcpy(filename, "scripts/");
-		strcat(filename, dirptr);
-		UI_LoadBotsFromFile(filename);
-	}
-}
-
-static char* UI_GetBotInfoByName(const char* name) {
-	int n;
-	char* value;
-
-	for(n = 0; n < ui_numBots; n++) {
-		value = Info_ValueForKey(ui_botInfos[n], "name");
-		if(!Q_stricmp(value, name)) {
-			return ui_botInfos[n];
-		}
-	}
-
-	return NULL;
-}
-
-static bool MapHasGametype(char* typeString, const char* mode) {
-	char* token;
-
-	while(1) {
-		token = COM_ParseExt(&typeString, false);
-		if(!typeString || !token[0]) break;
-		if(!Q_stricmp(token, mode)) return true;
-	}
-
-	return false;
-}
-
-static char mapListCache[MAX_ARENAS][64];
-static int mapListCacheCount = 0;
-static char mapListCacheGametype[64];
-
-static void UI_BuildMapCache(char* gametype) {
-	int i, count = 0;
-	char *map, *type;
-
-	for(i = 0; i < ui_numArenas; i++) {
-		map = Info_ValueForKey(ui_arenaInfos[i], "map");
-		type = Info_ValueForKey(ui_arenaInfos[i], "type");
-
-		if(MapHasGametype(type, gametype)) {
-			StringCopy(mapListCache[count], map, 64);
-			count++;
-		}
-	}
-	mapListCacheCount = count;
-	StringCopy(mapListCacheGametype, gametype, 64);
-}
-
-static char* UI_MapForID(int id, char* gametype) {
-	if(strcmp(mapListCacheGametype, gametype)) UI_BuildMapCache(gametype);
-	if(id >= 0 && id < mapListCacheCount) return mapListCache[id];
-	return "Empty";
-}
-
-static int UI_CountOfMaps(char* gametype) {
-	if(strcmp(mapListCacheGametype, gametype)) UI_BuildMapCache(gametype);
-	return mapListCacheCount;
-}
-
 #define MAX_PLAYERMODELS 4096
 static int ui_numPlayerModels = 0;
 static char ui_playerModelNames[MAX_PLAYERMODELS][MAX_QPATH];
@@ -296,8 +105,6 @@ static void UI_LoadPlayerModels(void) {
 
 static int UI_ListGetCount(int listType, int listSubtype) {
 	if(listType == LTYPE_APPS) return shell.appCount;
-	if(listType == LTYPE_MAPS) return UI_CountOfMaps("ffa");
-	if(listType == LTYPE_BOTS) return UI_CountOfMaps("ffa");
 	if(listType == LTYPE_PLAYERMODELS) return ui_numPlayerModels;
 	if(listType == LTYPE_GAMEITEMS) return jsd_itemCount - 1;
 	if(listType == LTYPE_TOOLS) return shell.toolCount;
@@ -306,8 +113,6 @@ static int UI_ListGetCount(int listType, int listSubtype) {
 
 static char* UI_ListGetCallbackName(int listType, int listSubtype, int index) {
 	if(listType == LTYPE_APPS) return shell.app[index].name;
-	if(listType == LTYPE_MAPS) return UI_MapForID(index, "ffa");
-	if(listType == LTYPE_BOTS) return UI_MapForID(index, "ffa");
 	if(listType == LTYPE_PLAYERMODELS) return ui_playerModelNames[index];
 	if(listType == LTYPE_GAMEITEMS) return jsd_item[index + 1].pickup_name;
 	if(listType == LTYPE_TOOLS) return shell.tool[index].nameID;
@@ -316,8 +121,6 @@ static char* UI_ListGetCallbackName(int listType, int listSubtype, int index) {
 
 static char* UI_ListGetName(int listType, int listSubtype, int index) {
 	if(listType == LTYPE_APPS) return shell.app[index].name;
-	if(listType == LTYPE_MAPS) return UI_MapForID(index, "ffa");
-	if(listType == LTYPE_BOTS) return UI_MapForID(index, "ffa");
 	if(listType == LTYPE_PLAYERMODELS) return ui_playerModelNames[index];
 	if(listType == LTYPE_GAMEITEMS) return jsd_item[index + 1].pickup_name;
 	if(listType == LTYPE_TOOLS) return shell.tool[index].name;
@@ -326,8 +129,6 @@ static char* UI_ListGetName(int listType, int listSubtype, int index) {
 
 static char* UI_ListGetIcon(int listType, int listSubtype, int index) {
 	if(listType == LTYPE_APPS) return shell.app[index].icon;
-	if(listType == LTYPE_MAPS) return va("levelshots/%s", UI_MapForID(index, "ffa"));
-	if(listType == LTYPE_BOTS) return va("levelshots/%s", UI_MapForID(index, "ffa"));
 	if(listType == LTYPE_PLAYERMODELS) return ui_playerModelIcons[index];
 	if(listType == LTYPE_GAMEITEMS) return jsd_item[index + 1].icon;
 	if(listType == LTYPE_TOOLS) return "";
@@ -410,8 +211,6 @@ int UI_Init(void) {  // Инициализация UI и загрузка сос
 	UI_ShellInit();
 	UI_LoadApps();
 	UI_LoadTools();
-	UI_LoadArenas();
-	UI_LoadBots();
 	// UI_LoadPlayerModels();
 
 	for(i = SHELL_MAX_WINDOWS - 1; i > 0; i--) {

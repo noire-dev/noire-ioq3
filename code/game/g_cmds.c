@@ -367,29 +367,6 @@ void Cmd_Noclip_f(gentity_t* ent) {
 }
 
 /*
-==================
-Cmd_TeamTask_f
-==================
-*/
-void Cmd_TeamTask_f(gentity_t* ent) {
-	char userinfo[MAX_INFO_STRING];
-	char arg[MAX_TOKEN_CHARS];
-	int task;
-	int client = ent->client - level.clients;
-
-	if(trap_Argc() != 2) {
-		return;
-	}
-	trap_Argv(1, arg, sizeof(arg));
-	task = atoi(arg);
-
-	trap_GetUserinfo(client, userinfo, sizeof(userinfo));
-	Info_SetValueForKey(userinfo, "teamtask", va("%d", task));
-	trap_SetUserinfo(client, userinfo);
-	ClientUserinfoChanged(client);
-}
-
-/*
 =================
 Cmd_Kill_f
 =================
@@ -433,7 +410,6 @@ void G_Say(gentity_t* ent, gentity_t* target, const char* chatText) {
 	char name[64];
 	// don't let text be too long for malicious reasons
 	char text[MAX_SAY_TEXT];
-	char location[64];
 
 	Com_sprintf(name, sizeof(name), "%s%c%s" EC ": ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE);
 	color = COLOR_GREEN;

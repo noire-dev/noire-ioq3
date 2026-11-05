@@ -117,61 +117,7 @@ CG_SetConfigValues
 Called on load to set the initial values from configure strings
 ================
 */
-void CG_SetConfigValues(void) {
-	cgs.scores1 = atoi(CG_ConfigString(CS_SCORES1));
-	cgs.scores2 = atoi(CG_ConfigString(CS_SCORES2));
-	cgs.levelStartTime = atoi(CG_ConfigString(CS_LEVEL_START_TIME));
-}
-
-/*
-=====================
-CG_ShaderStateChanged
-=====================
-*/
-void CG_ShaderStateChanged(void) {
-	char originalShader[MAX_QPATH];
-	char newShader[MAX_QPATH];
-	char timeOffset[16];
-	const char* o;
-	char *n, *t;
-	int length;
-
-	o = CG_ConfigString(CS_SHADERSTATE);
-	while(o && *o) {
-		n = strstr(o, "=");
-		if(n && *n) {
-			length = n - o + 1;
-			if(length > (int)sizeof(originalShader)) {
-				length = sizeof(originalShader);
-			}
-			Q_strncpyz(originalShader, o, length);
-			n++;
-			t = strstr(n, ":");
-			if(t && *t) {
-				length = t - n + 1;
-				if(length > (int)sizeof(newShader)) {
-					length = sizeof(newShader);
-				}
-				Q_strncpyz(newShader, n, length);
-			} else {
-				break;
-			}
-			t++;
-			o = strstr(t, "@");
-			if(o) {
-				length = o - t + 1;
-				if(length > (int)sizeof(timeOffset)) {
-					length = sizeof(timeOffset);
-				}
-				Q_strncpyz(timeOffset, t, length);
-				o++;
-				trap_R_RemapShader(originalShader, newShader, timeOffset);
-			}
-		} else {
-			break;
-		}
-	}
-}
+void CG_SetConfigValues(void) { cgs.levelStartTime = atoi(CG_ConfigString(CS_LEVEL_START_TIME)); }
 
 /*
 ================
@@ -197,10 +143,6 @@ static void CG_ConfigStringModified(void) {
 		CG_StartMusic();
 	} else if(num == CS_SERVERINFO) {
 		CG_ParseServerinfo();
-	} else if(num == CS_SCORES1) {
-		cgs.scores1 = atoi(str);
-	} else if(num == CS_SCORES2) {
-		cgs.scores2 = atoi(str);
 	} else if(num == CS_LEVEL_START_TIME) {
 		cgs.levelStartTime = atoi(str);
 	} else if(num >= CS_MODELS && num < CS_MODELS + MAX_MODELS) {
@@ -211,8 +153,6 @@ static void CG_ConfigStringModified(void) {
 		}
 	} else if(num >= CS_PLAYERS && num < CS_PLAYERS + MAX_CLIENTS) {
 		CG_NewClientInfo(num - CS_PLAYERS);
-	} else if(num == CS_SHADERSTATE) {
-		CG_ShaderStateChanged();
 	}
 }
 

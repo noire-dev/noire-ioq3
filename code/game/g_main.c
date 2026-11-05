@@ -32,38 +32,26 @@ typedef struct {
 	int cvarFlags;
 	int modificationCount;  // for tracking changes
 	bool trackChange;       // track this variable, and announce if changed
-	bool teamShader;        // track and if changed, update shader state
 } cvarTable_t;
 
 gentity_t g_entities[MAX_GENTITIES];
 gclient_t g_clients[MAX_CLIENTS];
 
 vmCvar_t g_dmflags;
-vmCvar_t g_fraglimit;
-vmCvar_t g_timelimit;
-vmCvar_t g_capturelimit;
-vmCvar_t g_friendlyFire;
 vmCvar_t g_password;
 vmCvar_t g_needpass;
 vmCvar_t g_maxclients;
-vmCvar_t g_maxGameClients;
 vmCvar_t g_dedicated;
 vmCvar_t g_speed;
 vmCvar_t g_gravity;
 vmCvar_t g_cheats;
 vmCvar_t g_knockback;
-vmCvar_t g_quadfactor;
 vmCvar_t g_inactivity;
 vmCvar_t g_debugMove;
 vmCvar_t g_debugDamage;
 vmCvar_t g_debugAlloc;
-vmCvar_t g_weaponRespawn;
-vmCvar_t g_weaponTeamRespawn;
 vmCvar_t g_motd;
 vmCvar_t g_synchronousClients;
-vmCvar_t g_blood;
-vmCvar_t g_banIPs;
-vmCvar_t g_filterBan;
 vmCvar_t g_listEntity;
 
 static cvarTable_t gameCvarTable[] = {// don't override the cheat state set by the system
@@ -74,22 +62,13 @@ static cvarTable_t gameCvarTable[] = {// don't override the cheat state set by t
                                       {NULL, "gamedate", PRODUCT_DATE, CVAR_ROM, 0, false},
 
                                       {&g_maxclients, "sv_maxclients", "8", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, false},
-                                      {&g_maxGameClients, "g_maxGameClients", "0", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, false},
 
                                       // change anytime vars
                                       {&g_dmflags, "dmflags", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, true},
-                                      {&g_fraglimit, "fraglimit", "20", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, true},
-                                      {&g_timelimit, "timelimit", "0", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, true},
-                                      {&g_capturelimit, "capturelimit", "8", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, 0, true},
 
                                       {&g_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO, 0, false},
 
-                                      {&g_friendlyFire, "g_friendlyFire", "0", CVAR_ARCHIVE, 0, true},
-
                                       {&g_password, "g_password", "", CVAR_USERINFO, 0, false},
-
-                                      {&g_banIPs, "g_banIPs", "", CVAR_ARCHIVE, 0, false},
-                                      {&g_filterBan, "g_filterBan", "1", CVAR_ARCHIVE, 0, false},
 
                                       {&g_needpass, "g_needpass", "0", CVAR_SERVERINFO | CVAR_ROM, 0, false},
 
@@ -98,15 +77,11 @@ static cvarTable_t gameCvarTable[] = {// don't override the cheat state set by t
                                       {&g_speed, "g_speed", "320", 0, 0, true},
                                       {&g_gravity, "g_gravity", "800", 0, 0, true},
                                       {&g_knockback, "g_knockback", "1000", 0, 0, true},
-                                      {&g_quadfactor, "g_quadfactor", "3", 0, 0, true},
-                                      {&g_weaponRespawn, "g_weaponrespawn", "5", 0, 0, true},
-                                      {&g_weaponTeamRespawn, "g_weaponTeamRespawn", "30", 0, 0, true},
                                       {&g_inactivity, "g_inactivity", "60", 0, 0, true},
                                       {&g_debugMove, "g_debugMove", "0", 0, 0, false},
                                       {&g_debugDamage, "g_debugDamage", "0", 0, 0, false},
                                       {&g_debugAlloc, "g_debugAlloc", "0", 0, 0, false},
                                       {&g_motd, "g_motd", "", 0, 0, false},
-                                      {&g_blood, "com_blood", "1", 0, 0, false},
 
                                       {&g_listEntity, "g_listEntity", "0", 0, 0, false}
 
@@ -207,29 +182,19 @@ static void G_FindEntityTeams(void) {
 	G_Printf("%i teams with %i entities\n", c, c2);
 }
 
-void G_RemapTeamShaders(void) {}
-
 void G_RegisterCvars(void) {
 	int i;
 	cvarTable_t* cv;
-	bool remapped = false;
 
 	for(i = 0, cv = gameCvarTable; i < gameCvarTableSize; i++, cv++) {
 		trap_Cvar_Register(cv->vmCvar, cv->cvarName, cv->defaultString, cv->cvarFlags);
 		if(cv->vmCvar) cv->modificationCount = cv->vmCvar->modificationCount;
-
-		if(cv->teamShader) {
-			remapped = true;
-		}
 	}
-
-	if(remapped) G_RemapTeamShaders();
 }
 
 void G_UpdateCvars(void) {
 	int i;
 	cvarTable_t* cv;
-	bool remapped = false;
 
 	for(i = 0, cv = gameCvarTable; i < gameCvarTableSize; i++, cv++) {
 		if(cv->vmCvar) {
@@ -241,16 +206,8 @@ void G_UpdateCvars(void) {
 				if(cv->trackChange) {
 					trap_SendServerCommand(-1, va("print \"Server: %s changed to %s\n\"", cv->cvarName, cv->vmCvar->string));
 				}
-
-				if(cv->teamShader) {
-					remapped = true;
-				}
 			}
 		}
-	}
-
-	if(remapped) {
-		G_RemapTeamShaders();
 	}
 }
 
@@ -314,10 +271,7 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	if(trap_Cvar_VariableIntegerValue("bot_enable")) {
 		BotAISetup(restart);
 		BotAILoadMap(restart);
-		G_InitBots(restart);
 	}
-
-	G_RemapTeamShaders();
 }
 
 /*

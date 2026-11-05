@@ -399,12 +399,6 @@ intptr_t CL_CgameSystemCalls(intptr_t* args) {
 		case CG_MEMORY_REMAINING: return Hunk_MemoryRemaining();
 		case CG_KEY_SETCATCHER: Key_SetCatcher(args[1] | (Key_GetCatcher() & KEYCATCH_CONSOLE)); return 0;
 
-		case CG_PC_ADD_GLOBAL_DEFINE: return botlib_export->PC_AddGlobalDefine(VMA(1));
-		case CG_PC_LOAD_SOURCE: return botlib_export->PC_LoadSourceHandle(VMA(1));
-		case CG_PC_FREE_SOURCE: return botlib_export->PC_FreeSourceHandle(args[1]);
-		case CG_PC_READ_TOKEN: return botlib_export->PC_ReadTokenHandle(args[1], VMA(2));
-		case CG_PC_SOURCE_FILE_AND_LINE: return botlib_export->PC_SourceFileAndLine(args[1], VMA(2), VMA(3));
-
 		case CG_S_STOPBACKGROUNDTRACK: S_StopBackgroundTrack(); return 0;
 
 		case CG_CIN_PLAYCINEMATIC: return CIN_PlayCinematic(VMA(1), args[2], args[3], args[4], args[5], args[6]);

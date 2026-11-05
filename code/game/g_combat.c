@@ -82,10 +82,8 @@ player_die
 void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int meansOfDeath) {
 	gentity_t* ent;
 	int anim;
-	int contents;
 	int killer;
 	int i;
-	char* killerName;
 
 	if(self->client->ps.pm_type == PM_DEAD) return;
 	self->client->ps.pm_type = PM_DEAD;
@@ -134,8 +132,6 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 
 		// remove powerups
 		memset(self->client->ps.powerups, 0, sizeof(self->client->ps.powerups));
-
-		contents = trap_PointContents(self->r.currentOrigin, -1);
 
 		// normal death
 		static int lastDeath;
@@ -241,7 +237,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 	int take;
 	int asave;
 	int knockback;
-	int max;
 
 	if(!targ->takedamage) {
 		return;

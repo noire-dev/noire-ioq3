@@ -704,11 +704,6 @@ intptr_t CL_UISystemCalls(intptr_t* args) {
 		case UI_GET_CDKEY: CLUI_GetCDKey(VMA(1), args[2]); return 0;
 		case UI_SET_CDKEY: return 0;
 		case UI_SET_PBCLSTATUS: return 0;
-		case UI_PC_ADD_GLOBAL_DEFINE: return botlib_export->PC_AddGlobalDefine(VMA(1));
-		case UI_PC_LOAD_SOURCE: return botlib_export->PC_LoadSourceHandle(VMA(1));
-		case UI_PC_FREE_SOURCE: return botlib_export->PC_FreeSourceHandle(args[1]);
-		case UI_PC_READ_TOKEN: return botlib_export->PC_ReadTokenHandle(args[1], VMA(2));
-		case UI_PC_SOURCE_FILE_AND_LINE: return botlib_export->PC_SourceFileAndLine(args[1], VMA(2), VMA(3));
 		case UI_S_STOPBACKGROUNDTRACK: S_StopBackgroundTrack(); return 0;
 		case UI_S_STARTBACKGROUNDTRACK: S_StartBackgroundTrack(VMA(1), VMA(2)); return 0;
 		case UI_CIN_PLAYCINEMATIC: Com_DPrintf("UI_CIN_PlayCinematic\n"); return CIN_PlayCinematic(VMA(1), args[2], args[3], args[4], args[5], args[6]);

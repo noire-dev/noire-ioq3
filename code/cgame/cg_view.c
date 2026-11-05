@@ -63,56 +63,137 @@ CG_OffsetThirdPersonView
 */
 #define FOCUS_DISTANCE 512
 static void CG_OffsetThirdPersonView(void) {
-	vec3_t forward, right;
-	vec3_t view;
-	vec3_t focusAngles;
-	vec3_t focusPoint;
-	float focusDist;
-	float forwardScale, sideScale;
+	vec3_t forward, right, up;
+	vec3_t view, pivot, target;
+	vec3_t traceMins = {-1.0f, -1.0f, -1.0f};
+	vec3_t traceMaxs = {1.0f, 1.0f, 1.0f};
+	trace_t trace;
+	float pitch, yaw, cp, sp, cy, sy;
+	float frameTime;
+	vec3_t dir;
 
-	cg.refdef.vieworg[2] += cg.predictedPlayerState.viewheight;
+	// Genshin-style third-person camera.
+	// The orbit pivot is the local character's head joint: the camera
+	// travels on a sphere centered on the head so the whole body stays
+	// in frame. Falls back to the classic eye position if the head joint
+	// is unavailable.
+	if(!CG_GetLocalPlayerHeadOrigin(pivot)) {
+		VectorCopy(cg.refdef.vieworg, pivot);
+		pivot[2] += cg.predictedPlayerState.viewheight;
+	}
 
-	VectorCopy(cg.refdefViewAngles, focusAngles);
-
-	// if dead, look at killer
+	// dead: look at killer
 	if(cg.predictedPlayerState.stats[STAT_HEALTH] <= 0) {
-		focusAngles[YAW] = cg.predictedPlayerState.stats[STAT_DEAD_YAW];
 		cg.refdefViewAngles[YAW] = cg.predictedPlayerState.stats[STAT_DEAD_YAW];
 	}
 
-	if(focusAngles[PITCH] > 45) {
-		focusAngles[PITCH] = 45;  // don't go too far overhead
+	pitch = cg.refdefViewAngles[PITCH];
+	yaw = cg.refdefViewAngles[YAW] + cg_thirdPersonAngle.value;
+
+	// Clamp pitch so the sphere point never ends up directly below the
+	// character at extreme look angles.
+	if(pitch > 75.0f) pitch = 75.0f;
+	if(pitch < -75.0f) pitch = -75.0f;
+
+	// Direction from camera toward pivot (the camera's look direction).
+	cp = cos(pitch * M_PI / 180.0f);
+	sp = sin(pitch * M_PI / 180.0f);
+	cy = cos(yaw * M_PI / 180.0f);
+	sy = sin(yaw * M_PI / 180.0f);
+	dir[0] = cp * cy;
+	dir[1] = cp * sy;
+	dir[2] = -sp;
+
+	// Sphere point at radius cg_thirdPersonRange behind the head pivot.
+	VectorCopy(pivot, target);
+	VectorMA(target, -cg_thirdPersonRange.value, dir, target);
+
+	// Camera-local right/up axes for the offset (they orbit with the
+	// camera, so cg_thirdPersonOffsetX is always "right shoulder" of the
+	// current view, not a fixed world direction).
+	{
+		vec3_t angles;
+		angles[PITCH] = pitch;
+		angles[YAW] = yaw;
+		angles[ROLL] = 0.0f;
+		AngleVectors(angles, forward, right, up);
 	}
-	AngleVectors(focusAngles, forward, NULL, NULL);
 
-	VectorMA(cg.refdef.vieworg, FOCUS_DISTANCE, forward, focusPoint);
+	// Apply shoulder / vertical / depth offset.
+	//   X = right shoulder (positive = camera to the right of view)
+	//   Y = up            (positive = camera above view)
+	//   Z = back          (positive = camera pulled further behind pivot)
+	VectorMA(target, cg_thirdPersonOffsetX.value, right, target);
+	VectorMA(target, cg_thirdPersonOffsetY.value, up, target);
+	VectorMA(target, -cg_thirdPersonOffsetZ.value, forward, target);
 
-	VectorCopy(cg.refdef.vieworg, view);
-
-	view[2] += 8;
-
-	cg.refdefViewAngles[PITCH] *= 0.5;
-
-	AngleVectors(cg.refdefViewAngles, forward, right, NULL);
-
-	forwardScale = cos(cg_thirdPersonAngle.value / 180 * M_PI);
-	sideScale = sin(cg_thirdPersonAngle.value / 180 * M_PI);
-	VectorMA(view, -cg_thirdPersonRange.value * forwardScale, forward, view);
-	VectorMA(view, -cg_thirdPersonRange.value * sideScale, right, view);
-
-	// trace a ray from the origin to the viewpoint to make sure the view isn't
-	// in a solid block.  Use an 8 by 8 block to prevent the view from near clipping anything
-
-	VectorCopy(view, cg.refdef.vieworg);
-
-	// select pitch to look at focus point from vieword
-	VectorSubtract(focusPoint, cg.refdef.vieworg, focusPoint);
-	focusDist = sqrt(focusPoint[0] * focusPoint[0] + focusPoint[1] * focusPoint[1]);
-	if(focusDist < 1) {
-		focusDist = 1;  // should never happen
+	// Sphere collision with a 2x2x2 box: trace from the head pivot to the
+	// (offset) sphere point. On hit, snap to the hit point so the camera
+	// cannot clip through walls while orbiting. The local player is
+	// skipped so their own body never blocks the orbit.
+	CG_Trace(&trace, pivot, traceMins, traceMaxs, target, cg.predictedPlayerState.clientNum, MASK_PLAYERSOLID);
+	if(trace.fraction < 1.0f) {
+		VectorCopy(trace.endpos, target);
 	}
-	cg.refdefViewAngles[PITCH] = -180 / M_PI * atan2(focusPoint[2], focusDist);
-	cg.refdefViewAngles[YAW] -= cg_thirdPersonAngle.value;
+
+	// Camera smoothing: exponential lag toward the target position.
+	// cg_thirdPersonSmoothing 0 = instant, 100 = very smooth.
+	// Also snap on teleport / first frame so the camera never flies
+	// across the map when the pivot jumps.
+	frameTime = (float)(cg.time - cg.oldTime) * 0.001f;
+	if(frameTime <= 0.0f || frameTime > 0.1f) frameTime = 1.0f / 60.0f;
+
+	{
+		bool snap = !cg.thirdPersonCamValid || DistanceSquared(pivot, cg.thirdPersonCamLastPivot) > 200.0f * 200.0f;
+
+		if(snap) {
+			VectorCopy(target, cg.thirdPersonCamPos);
+		} else {
+			float smoothing = cg_thirdPersonSmoothing.value;
+			if(smoothing < 0.0f) smoothing = 0.0f;
+			if(smoothing > 100.0f) smoothing = 100.0f;
+
+			if(smoothing < 0.5f) {
+				VectorCopy(target, cg.thirdPersonCamPos);
+			} else {
+				// Exponential smoothing: time constant grows with the
+				// slider. 1.0 = very responsive (~20ms), 100 = floaty
+				// (~500ms). The exp form is framerate-independent.
+				float timeConst = (smoothing / 100.0f) * 0.5f;
+				float rate = 1.0f / timeConst;
+				float alpha = 1.0f - exp(-rate * frameTime);
+				if(alpha > 1.0f) alpha = 1.0f;
+				if(alpha < 0.0f) alpha = 0.0f;
+
+				VectorSubtract(target, cg.thirdPersonCamPos, view);
+				VectorMA(cg.thirdPersonCamPos, alpha, view, cg.thirdPersonCamPos);
+			}
+		}
+
+		VectorCopy(pivot, cg.thirdPersonCamLastPivot);
+		cg.thirdPersonCamValid = true;
+	}
+
+	// Re-collide the smoothed position so the camera cannot clip while
+	// smoothly lagging behind a wall (e.g. sliding along geometry).
+	CG_Trace(&trace, pivot, traceMins, traceMaxs, cg.thirdPersonCamPos, cg.predictedPlayerState.clientNum, MASK_PLAYERSOLID);
+	if(trace.fraction < 1.0f) {
+		VectorCopy(trace.endpos, cg.thirdPersonCamPos);
+	}
+
+	VectorCopy(cg.thirdPersonCamPos, cg.refdef.vieworg);
+
+	// Look at the pivot from the (possibly offset/smoothed/collision-
+	// corrected) camera position so the character stays centered
+	// regardless of where the camera ended up.
+	VectorSubtract(pivot, cg.refdef.vieworg, view);
+	if(VectorLength(view) > 0.01f) {
+		vectoangles(view, cg.refdefViewAngles);
+	} else {
+		cg.refdefViewAngles[PITCH] = pitch;
+		cg.refdefViewAngles[YAW] = yaw;
+		cg.refdefViewAngles[ROLL] = 0.0f;
+	}
 }
 
 /*
@@ -147,6 +228,11 @@ static void CG_OffsetBodyView(void) {
 	} else {
 		cg.refdef.vieworg[2] += cg.predictedPlayerState.viewheight;
 	}
+
+	// first person: invalidate the smoothed third-person camera so that
+	// returning to third person snaps to the sphere instead of flying in
+	// from the last eye/head position
+	cg.thirdPersonCamValid = false;
 }
 
 //======================================================================
@@ -365,6 +451,43 @@ void CG_DrawActiveFrame(int serverTime, bool demoPlayback) {
 
 	// decide on third person view
 	cg.renderingThirdPerson = (cg_thirdPerson.integer || (cg.snap->ps.stats[STAT_HEALTH] <= 0));
+
+	// Genshin-style third-person camera: the camera (viewangles) is fully
+	// decoupled from the character facing. While idle in third person the
+	// body keeps its last heading even as the camera orbits; it turns toward
+	// the camera yaw only while moving or firing. In first person (full body
+	// awareness) facing is snapped to viewangles so head-joint tracking stays
+	// consistent. Follow mode is ignored because the followed player's body
+	// is not under our control.
+	if(cg.renderingThirdPerson) {
+		playerState_t* cps = &cg.predictedPlayerState;
+
+		if(cps->stats[STAT_HEALTH] > 0) {
+			float velSq = cps->velocity[0] * cps->velocity[0] + cps->velocity[1] * cps->velocity[1];
+			bool turning = (velSq > 100.0f) || (cps->eFlags & EF_FIRING);
+
+			if(turning) {
+				float targetYaw = cps->viewangles[YAW];
+				float delta = targetYaw - cg.charYaw;
+				float frameTime = (float)(cg.time - cg.oldTime) * 0.001f;
+				float rate;
+
+				while(delta > 180.0f) delta -= 360.0f;
+				while(delta < -180.0f) delta += 360.0f;
+
+				if(frameTime <= 0.0f || frameTime > 0.1f) frameTime = 1.0f / 60.0f;
+				rate = 20.0f * frameTime;
+				if(rate > 1.0f) rate = 1.0f;
+
+				cg.charYaw += delta * rate;
+
+				while(cg.charYaw > 360.0f) cg.charYaw -= 360.0f;
+				while(cg.charYaw < 0.0f) cg.charYaw += 360.0f;
+			}
+		}
+	} else {
+		cg.charYaw = cg.predictedPlayerState.viewangles[YAW];
+	}
 
 	// build cg.refdef
 	inwater = CG_CalcViewValues();

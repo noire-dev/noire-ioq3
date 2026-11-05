@@ -74,6 +74,10 @@ vmCvar_t cg_zoomFov;
 vmCvar_t cg_thirdPerson;
 vmCvar_t cg_thirdPersonRange;
 vmCvar_t cg_thirdPersonAngle;
+vmCvar_t cg_thirdPersonOffsetX;
+vmCvar_t cg_thirdPersonOffsetY;
+vmCvar_t cg_thirdPersonOffsetZ;
+vmCvar_t cg_thirdPersonSmoothing;
 vmCvar_t cg_firstPerson_Fwd;
 vmCvar_t cg_firstPerson_Up;
 vmCvar_t cg_synchronousClients;
@@ -117,6 +121,10 @@ static cvarTable_t cvarTable[] = {
     {&cg_showmiss, "cg_showmiss", "0", 0},
     {&cg_thirdPersonRange, "cg_thirdPersonRange", "40", CVAR_CHEAT},
     {&cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", CVAR_CHEAT},
+    {&cg_thirdPersonOffsetX, "cg_thirdPersonOffsetX", "0", CVAR_ARCHIVE},
+    {&cg_thirdPersonOffsetY, "cg_thirdPersonOffsetY", "0", CVAR_ARCHIVE},
+    {&cg_thirdPersonOffsetZ, "cg_thirdPersonOffsetZ", "0", CVAR_ARCHIVE},
+    {&cg_thirdPersonSmoothing, "cg_thirdPersonSmoothing", "0", CVAR_ARCHIVE},
     {&cg_thirdPerson, "cg_thirdPerson", "0", 0},
     {&cg_firstPerson_Fwd, "cg_firstPerson_Fwd", "0", CVAR_CHEAT},
     {&cg_firstPerson_Up, "cg_firstPerson_Up", "0", CVAR_CHEAT},
@@ -649,8 +657,6 @@ void CG_Init(int serverMessageNum, int serverCommandSequence, int clientNum) {
 	cg.infoScreenText[0] = 0;
 
 	CG_LoadingString("", -1);
-
-	CG_ShaderStateChanged();
 
 	trap_S_ClearLoopingSounds(true);
 }

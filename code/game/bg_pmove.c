@@ -1108,7 +1108,6 @@ Sets mins, maxs, and pm->ps->viewheight
 static void PM_CheckDuck(void) {
 	trace_t trace;
 
-	pm->ps->pm_flags &= ~PMF_INVULEXPAND;
 
 	pm->mins[0] = -PLAYER_WIDTH;
 	pm->mins[1] = -PLAYER_WIDTH;

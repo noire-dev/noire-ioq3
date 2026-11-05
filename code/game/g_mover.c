@@ -192,57 +192,6 @@ bool G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, vec3_t
 	return false;
 }
 
-/*
-==================
-G_CheckProxMinePosition
-==================
-*/
-bool G_CheckProxMinePosition(gentity_t* check) {
-	vec3_t start, end;
-	trace_t tr;
-
-	VectorMA(check->s.pos.trBase, 0.125, check->movedir, start);
-	VectorMA(check->s.pos.trBase, 2, check->movedir, end);
-	trap_Trace(&tr, start, NULL, NULL, end, check->s.number, MASK_SOLID);
-
-	if(tr.startsolid || tr.fraction < 1) return false;
-
-	return true;
-}
-
-/*
-==================
-G_TryPushingProxMine
-==================
-*/
-bool G_TryPushingProxMine(gentity_t* check, gentity_t* pusher, vec3_t move, vec3_t amove) {
-	vec3_t forward, right, up;
-	vec3_t org, org2, move2;
-	int ret;
-
-	// we need this for pushing things later
-	VectorSubtract(vec3_origin, amove, org);
-	AngleVectors(org, forward, right, up);
-
-	// try moving the contacted entity
-	VectorAdd(check->s.pos.trBase, move, check->s.pos.trBase);
-
-	// figure movement due to the pusher's amove
-	VectorSubtract(check->s.pos.trBase, pusher->r.currentOrigin, org);
-	org2[0] = DotProduct(org, forward);
-	org2[1] = -DotProduct(org, right);
-	org2[2] = DotProduct(org, up);
-	VectorSubtract(org2, org, move2);
-	VectorAdd(check->s.pos.trBase, move2, check->s.pos.trBase);
-
-	ret = G_CheckProxMinePosition(check);
-	if(ret) {
-		VectorCopy(check->s.pos.trBase, check->r.currentOrigin);
-		trap_LinkEntity(check);
-	}
-	return ret;
-}
-
 void G_ExplodeMissile(gentity_t* ent);
 
 /*

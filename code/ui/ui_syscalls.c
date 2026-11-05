@@ -59,11 +59,6 @@ int trap_LAN_CompareServers(int source, int sortKey, int sortDir, int s1, int s2
 int trap_MemoryRemaining(void) { return syscall(UI_MEMORY_REMAINING); }
 void trap_GetCDKey(char* buf, int buflen) { syscall(UI_GET_CDKEY, buf, buflen); }
 void trap_SetCDKey(char* buf) { syscall(UI_SET_CDKEY, buf); }
-int trap_PC_AddGlobalDefine(char* define) { return syscall(UI_PC_ADD_GLOBAL_DEFINE, define); }
-int trap_PC_LoadSource(const char* filename) { return syscall(UI_PC_LOAD_SOURCE, filename); }
-int trap_PC_FreeSource(int handle) { return syscall(UI_PC_FREE_SOURCE, handle); }
-int trap_PC_ReadToken(int handle, pc_token_t* pc_token) { return syscall(UI_PC_READ_TOKEN, handle, pc_token); }
-int trap_PC_SourceFileAndLine(int handle, char* filename, int* line) { return syscall(UI_PC_SOURCE_FILE_AND_LINE, handle, filename, line); }
 void trap_S_StopBackgroundTrack(void) { syscall(UI_S_STOPBACKGROUNDTRACK); }
 void trap_S_StartBackgroundTrack(const char* intro, const char* loop) { syscall(UI_S_STARTBACKGROUNDTRACK, intro, loop); }
 int trap_CIN_PlayCinematic(const char* arg0, int xpos, int ypos, int width, int height, int bits) { return syscall(UI_CIN_PLAYCINEMATIC, arg0, xpos, ypos, width, height, bits); }

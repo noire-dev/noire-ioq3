@@ -184,15 +184,14 @@ static void Shotgun_Fire(gentity_t* ent, int weapon) {
 // Beam type (railgun, lightning, physgun, toolgun — any WT_BEAM weapon)
 #define MAX_RAIL_HITS 4
 static void Beam_Fire(gentity_t* ent, int weapon) {
-	vec3_t end, impactpoint, bouncedir;
+	vec3_t end;
 	trace_t trace;
 	gentity_t *tent, *traceEnt, *unlinkedEntities[MAX_RAIL_HITS];
-	int i, hits, unlinked;
+	int i, unlinked;
 
 	VectorMA(muzzle, jsd_weapon[weapon].range, forward, end);
 
 	unlinked = 0;
-	hits = 0;
 	do {
 		trap_Trace(&trace, muzzle, NULL, NULL, end, ent->s.number, MASK_SHOT);
 		if(trace.entityNum >= ENTITYNUM_MAX_NORMAL) break;
@@ -222,7 +221,7 @@ static void Beam_Fire(gentity_t* ent, int weapon) {
 // Lightning type
 static void Lightning_Fire(gentity_t* ent, int weapon) {
 	trace_t tr;
-	vec3_t end, impactpoint, bouncedir;
+	vec3_t end;
 	gentity_t *traceEnt, *tent;
 
 	VectorMA(muzzle, jsd_weapon[weapon].range, forward, end);
@@ -246,9 +245,7 @@ static void Lightning_Fire(gentity_t* ent, int weapon) {
 // Missile type
 static void G_MissileImpact(gentity_t* ent, trace_t* trace) {
 	gentity_t* other;
-	bool hitClient = false;
-	vec3_t forward, impactpoint, bouncedir;
-	int eFlags;
+
 	other = &g_entities[trace->entityNum];
 
 	// check for bounce
@@ -386,12 +383,11 @@ gentity_t* fire_missile(gentity_t* self, vec3_t start, vec3_t forward, vec3_t ri
 }
 
 static void Missile_Fire(gentity_t* ent, int weapon) {
-	gentity_t* m;
 	int count;
 
 	forward[2] += jsd_weapon[weapon].zOffset;
 	VectorNormalize(forward);
-	for(count = 0; count < jsd_weapon[weapon].count; count++) m = fire_missile(ent, muzzle, forward, right, up, weapon);
+	for(count = 0; count < jsd_weapon[weapon].count; count++) fire_missile(ent, muzzle, forward, right, up, weapon);
 }
 
 // Fire Weapon

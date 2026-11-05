@@ -24,9 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 /*****************************************************************************
  * name:		ai_main.c
  *
- * desc:		Quake3 bot AI
- *
- * $Archive: /MissionPack/code/game/ai_main.c $
+ * desc:		bot AI
  *
  *****************************************************************************/
 
@@ -35,21 +33,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../botlib/botlib.h"  //bot lib interface
 #include "../botlib/be_aas.h"
 #include "../botlib/be_ea.h"
-#include "../botlib/be_ai_char.h"
-#include "../botlib/be_ai_chat.h"
-#include "../botlib/be_ai_gen.h"
 #include "../botlib/be_ai_goal.h"
 #include "../botlib/be_ai_move.h"
-#include "../botlib/be_ai_weap.h"
 //
 #include "ai_main.h"
 #include "ai_dmq3.h"
 #include "ai_dmnet.h"
-
 //
-#include "chars.h"
-#include "inv.h"
-#include "syn.h"
 
 // bot states
 bot_state_t* botstates[MAX_CLIENTS];
@@ -57,14 +47,11 @@ bot_state_t* botstates[MAX_CLIENTS];
 int numbots;
 // floating point time
 float floattime;
-// time to do a regular update
-float regularupdate_time;
 
 vmCvar_t bot_thinktime;
 vmCvar_t bot_memorydump;
 vmCvar_t bot_saveroutingcache;
 vmCvar_t bot_pause;
-vmCvar_t bot_report;
 vmCvar_t bot_testsolid;
 vmCvar_t bot_testclusters;
 vmCvar_t bot_developer;
@@ -108,6 +95,22 @@ void QDECL BotAI_Print(int type, char* fmt, ...) {
 			break;
 		}
 	}
+}
+
+/*
+==================
+BotSkill_BFloat
+
+Replaces the character file characteristics: every skill parameter is
+linearly interpolated from worst (skill 1) to best (skill 5).
+==================
+*/
+float BotSkill_BFloat(bot_state_t* bs, float min, float max) {
+	float frac = (bs->settings.skill - 1) / 4.0f;
+
+	if(frac < 0) frac = 0;
+	if(frac > 1) frac = 1;
+	return min + (max - min) * frac;
 }
 
 /*
@@ -175,53 +178,6 @@ int BotAI_GetEntityState(int entityNum, entityState_t* state) {
 
 /*
 ==================
-BotAI_GetSnapshotEntity
-==================
-*/
-int BotAI_GetSnapshotEntity(int clientNum, int sequence, entityState_t* state) {
-	int entNum;
-
-	entNum = trap_BotGetSnapshotEntity(clientNum, sequence);
-	if(entNum == -1) {
-		memset(state, 0, sizeof(entityState_t));
-		return -1;
-	}
-
-	BotAI_GetEntityState(entNum, state);
-
-	return sequence + 1;
-}
-
-/*
-==================
-BotAI_BotInitialChat
-==================
-*/
-void QDECL BotAI_BotInitialChat(bot_state_t* bs, char* type, ...) {
-	int i, mcontext;
-	va_list ap;
-	char* p;
-	char* vars[MAX_MATCHVARIABLES];
-
-	memset(vars, 0, sizeof(vars));
-	va_start(ap, type);
-	p = va_arg(ap, char*);
-	for(i = 0; i < MAX_MATCHVARIABLES; i++) {
-		if(!p) {
-			break;
-		}
-		vars[i] = p;
-		p = va_arg(ap, char*);
-	}
-	va_end(ap);
-
-	mcontext = BotSynonymContext(bs);
-
-	trap_BotInitialChat(bs->cs, type, mcontext, vars[0], vars[1], vars[2], vars[3], vars[4], vars[5], vars[6], vars[7]);
-}
-
-/*
-==================
 BotTestAAS
 ==================
 */
@@ -251,282 +207,6 @@ void BotTestAAS(vec3_t origin) {
 }
 
 /*
-==================
-BotReportStatus
-==================
-*/
-void BotReportStatus(bot_state_t* bs) {
-	char goalname[MAX_MESSAGE_SIZE];
-	char netname[MAX_MESSAGE_SIZE];
-	char *leader, flagstatus[32];
-	//
-	ClientName(bs->client, netname, sizeof(netname));
-	if(Q_stricmp(netname, bs->teamleader) == 0)
-		leader = "L";
-	else
-		leader = " ";
-
-	strcpy(flagstatus, "  ");
-
-	switch(bs->ltgtype) {
-		case LTG_TEAMHELP: {
-			EasyClientName(bs->teammate, goalname, sizeof(goalname));
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: helping %s\n", netname, leader, flagstatus, goalname);
-			break;
-		}
-		case LTG_TEAMACCOMPANY: {
-			EasyClientName(bs->teammate, goalname, sizeof(goalname));
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: accompanying %s\n", netname, leader, flagstatus, goalname);
-			break;
-		}
-		case LTG_DEFENDKEYAREA: {
-			trap_BotGoalName(bs->teamgoal.number, goalname, sizeof(goalname));
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: defending %s\n", netname, leader, flagstatus, goalname);
-			break;
-		}
-		case LTG_GETITEM: {
-			trap_BotGoalName(bs->teamgoal.number, goalname, sizeof(goalname));
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: getting item %s\n", netname, leader, flagstatus, goalname);
-			break;
-		}
-		case LTG_KILL: {
-			ClientName(bs->teamgoal.entitynum, goalname, sizeof(goalname));
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: killing %s\n", netname, leader, flagstatus, goalname);
-			break;
-		}
-		case LTG_CAMP:
-		case LTG_CAMPORDER: {
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: camping\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_PATROL: {
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: patrolling\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_GETFLAG: {
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: capturing flag\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_RUSHBASE: {
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: rushing base\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_RETURNFLAG: {
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: returning flag\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_ATTACKENEMYBASE: {
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: attacking the enemy base\n", netname, leader, flagstatus);
-			break;
-		}
-		case LTG_HARVEST: {
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: harvesting\n", netname, leader, flagstatus);
-			break;
-		}
-		default: {
-			BotAI_Print(PRT_MESSAGE, "%-20s%s%s: roaming\n", netname, leader, flagstatus);
-			break;
-		}
-	}
-}
-
-/*
-==================
-BotTeamplayReport
-==================
-*/
-void BotTeamplayReport(void) {
-	int i;
-	char buf[MAX_INFO_STRING];
-
-	BotAI_Print(PRT_MESSAGE, S_COLOR_RED "RED\n");
-	for(i = 0; i < level.maxclients; i++) {
-		//
-		if(!botstates[i] || !botstates[i]->inuse) continue;
-		//
-		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
-		// if no config string or no name
-		if(!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) continue;
-	}
-	BotAI_Print(PRT_MESSAGE, S_COLOR_BLUE "BLUE\n");
-	for(i = 0; i < level.maxclients; i++) {
-		//
-		if(!botstates[i] || !botstates[i]->inuse) continue;
-		//
-		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
-		// if no config string or no name
-		if(!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) continue;
-	}
-}
-
-/*
-==================
-BotSetInfoConfigString
-==================
-*/
-void BotSetInfoConfigString(bot_state_t* bs) {
-	char goalname[MAX_MESSAGE_SIZE];
-	char netname[MAX_MESSAGE_SIZE];
-	char action[MAX_MESSAGE_SIZE];
-	char *leader, carrying[32], *cs;
-	bot_goal_t goal;
-	//
-	ClientName(bs->client, netname, sizeof(netname));
-	if(Q_stricmp(netname, bs->teamleader) == 0)
-		leader = "L";
-	else
-		leader = " ";
-
-	strcpy(carrying, "  ");
-
-	switch(bs->ltgtype) {
-		case LTG_TEAMHELP: {
-			EasyClientName(bs->teammate, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "helping %s", goalname);
-			break;
-		}
-		case LTG_TEAMACCOMPANY: {
-			EasyClientName(bs->teammate, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "accompanying %s", goalname);
-			break;
-		}
-		case LTG_DEFENDKEYAREA: {
-			trap_BotGoalName(bs->teamgoal.number, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "defending %s", goalname);
-			break;
-		}
-		case LTG_GETITEM: {
-			trap_BotGoalName(bs->teamgoal.number, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "getting item %s", goalname);
-			break;
-		}
-		case LTG_KILL: {
-			ClientName(bs->teamgoal.entitynum, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "killing %s", goalname);
-			break;
-		}
-		case LTG_CAMP:
-		case LTG_CAMPORDER: {
-			Com_sprintf(action, sizeof(action), "camping");
-			break;
-		}
-		case LTG_PATROL: {
-			Com_sprintf(action, sizeof(action), "patrolling");
-			break;
-		}
-		case LTG_GETFLAG: {
-			Com_sprintf(action, sizeof(action), "capturing flag");
-			break;
-		}
-		case LTG_RUSHBASE: {
-			Com_sprintf(action, sizeof(action), "rushing base");
-			break;
-		}
-		case LTG_RETURNFLAG: {
-			Com_sprintf(action, sizeof(action), "returning flag");
-			break;
-		}
-		case LTG_ATTACKENEMYBASE: {
-			Com_sprintf(action, sizeof(action), "attacking the enemy base");
-			break;
-		}
-		case LTG_HARVEST: {
-			Com_sprintf(action, sizeof(action), "harvesting");
-			break;
-		}
-		default: {
-			trap_BotGetTopGoal(bs->gs, &goal);
-			trap_BotGoalName(goal.number, goalname, sizeof(goalname));
-			Com_sprintf(action, sizeof(action), "roaming %s", goalname);
-			break;
-		}
-	}
-	cs = va("l\\%s\\c\\%s\\a\\%s", leader, carrying, action);
-	trap_SetConfigstring(CS_BOTINFO + bs->client, cs);
-}
-
-/*
-==============
-BotUpdateInfoConfigStrings
-==============
-*/
-void BotUpdateInfoConfigStrings(void) {
-	int i;
-	char buf[MAX_INFO_STRING];
-
-	for(i = 0; i < level.maxclients; i++) {
-		//
-		if(!botstates[i] || !botstates[i]->inuse) continue;
-		//
-		trap_GetConfigstring(CS_PLAYERS + i, buf, sizeof(buf));
-		// if no config string or no name
-		if(!strlen(buf) || !strlen(Info_ValueForKey(buf, "n"))) continue;
-		BotSetInfoConfigString(botstates[i]);
-	}
-}
-
-/*
-==============
-BotInterbreedBots
-==============
-*/
-void BotInterbreedBots(void) {
-	float ranks[MAX_CLIENTS];
-	int parent1, parent2, child;
-	int i;
-
-	// get rankings for all the bots
-	for(i = 0; i < MAX_CLIENTS; i++) {
-		if(botstates[i] && botstates[i]->inuse) {
-			ranks[i] = botstates[i]->num_kills * 2 - botstates[i]->num_deaths;
-		} else {
-			ranks[i] = -1;
-		}
-	}
-
-	if(trap_GeneticParentsAndChildSelection(MAX_CLIENTS, ranks, &parent1, &parent2, &child)) {
-		trap_BotInterbreedGoalFuzzyLogic(botstates[parent1]->gs, botstates[parent2]->gs, botstates[child]->gs);
-		trap_BotMutateGoalFuzzyLogic(botstates[child]->gs, 1);
-	}
-	// reset the kills and deaths
-	for(i = 0; i < MAX_CLIENTS; i++) {
-		if(botstates[i] && botstates[i]->inuse) {
-			botstates[i]->num_kills = 0;
-			botstates[i]->num_deaths = 0;
-		}
-	}
-}
-
-/*
-==============
-BotWriteInterbreeded
-==============
-*/
-void BotWriteInterbreeded(char* filename) {
-	float rank, bestrank;
-	int i, bestbot;
-
-	bestrank = 0;
-	bestbot = -1;
-	// get the best bot
-	for(i = 0; i < MAX_CLIENTS; i++) {
-		if(botstates[i] && botstates[i]->inuse) {
-			rank = botstates[i]->num_kills * 2 - botstates[i]->num_deaths;
-		} else {
-			rank = -1;
-		}
-		if(rank > bestrank) {
-			bestrank = rank;
-			bestbot = i;
-		}
-	}
-	if(bestbot >= 0) {
-		// write out the new goal fuzzy logic
-		trap_BotSaveGoalFuzzyLogic(botstates[bestbot]->gs, filename);
-	}
-}
-
-/*
 ==============
 BotEntityInfo
 ==============
@@ -539,20 +219,6 @@ NumBots
 ==============
 */
 int NumBots(void) { return numbots; }
-
-/*
-==============
-BotTeamLeader
-==============
-*/
-int BotTeamLeader(bot_state_t* bs) {
-	int leader;
-
-	leader = ClientFromName(bs->teamleader);
-	if(leader < 0) return false;
-	if(!botstates[leader] || !botstates[leader]->inuse) return false;
-	return true;
-}
 
 /*
 ==============
@@ -608,8 +274,8 @@ void BotChangeViewAngles(bot_state_t* bs, float thinktime) {
 	if(bs->ideal_viewangles[PITCH] > 180) bs->ideal_viewangles[PITCH] -= 360;
 	//
 	if(bs->enemy >= 0) {
-		factor = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_VIEW_FACTOR, 0.01f, 1);
-		maxchange = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_VIEW_MAXCHANGE, 1, 1800);
+		factor = BotSkill_BFloat(bs, 0.01f, 1);
+		maxchange = BotSkill_BFloat(bs, 1, 1800);
 	} else {
 		factor = 0.05f;
 		maxchange = 360;
@@ -641,10 +307,7 @@ void BotChangeViewAngles(bot_state_t* bs, float thinktime) {
 			// demping
 			bs->viewanglespeed[i] *= 0.45 * (1 - factor);
 		}
-		// BotAI_Print(PRT_MESSAGE, "ideal_angles %f %f\n", bs->ideal_viewangles[0], bs->ideal_viewangles[1], bs->ideal_viewangles[2]);`
-		// bs->viewangles[i] = bs->ideal_viewangles[i];
 	}
-	// bs->viewangles[PITCH] = 0;
 	if(bs->viewangles[PITCH] > 180) bs->viewangles[PITCH] -= 360;
 	// elementary action: view
 	trap_EA_View(bs->client, bs->viewangles);
@@ -673,16 +336,6 @@ void BotInputToUserCommand(bot_input_t* bi, usercmd_t* ucmd, int delta_angles[3]
 	// set the buttons
 	if(bi->actionflags & ACTION_RESPAWN) ucmd->buttons = BUTTON_ATTACK;
 	if(bi->actionflags & ACTION_ATTACK) ucmd->buttons |= BUTTON_ATTACK;
-	if(bi->actionflags & ACTION_TALK) ucmd->buttons |= BUTTON_TALK;
-	if(bi->actionflags & ACTION_GESTURE) ucmd->buttons |= BUTTON_GESTURE;
-	if(bi->actionflags & ACTION_USE) ucmd->buttons |= BUTTON_USE_HOLDABLE;
-	if(bi->actionflags & ACTION_WALK) ucmd->buttons |= BUTTON_WALKING;
-	if(bi->actionflags & ACTION_AFFIRMATIVE) ucmd->buttons |= BUTTON_AFFIRMATIVE;
-	if(bi->actionflags & ACTION_NEGATIVE) ucmd->buttons |= BUTTON_NEGATIVE;
-	if(bi->actionflags & ACTION_GETFLAG) ucmd->buttons |= BUTTON_GETFLAG;
-	if(bi->actionflags & ACTION_GUARDBASE) ucmd->buttons |= BUTTON_GUARDBASE;
-	if(bi->actionflags & ACTION_PATROL) ucmd->buttons |= BUTTON_PATROL;
-	if(bi->actionflags & ACTION_FOLLOWME) ucmd->buttons |= BUTTON_FOLLOWME;
 	//
 	ucmd->weapon = bi->weapon;
 	// set the view angles
@@ -693,13 +346,6 @@ void BotInputToUserCommand(bot_input_t* bi, usercmd_t* ucmd, int delta_angles[3]
 	// subtract the delta angles
 	for(j = 0; j < 3; j++) {
 		temp = ucmd->angles[j] - delta_angles[j];
-		/*NOTE: disabled because temp should be mod first
-		if ( j == PITCH ) {
-		    // don't let the player look up or down more than 90 degrees
-		    if ( temp > 16000 ) temp = 16000;
-		    else if ( temp < -16000 ) temp = -16000;
-		}
-		*/
 		ucmd->angles[j] = temp;
 	}
 	// NOTE: movement is relative to the REAL view angles
@@ -779,40 +425,12 @@ void BotUpdateInput(bot_state_t* bs, int time, int elapsed_time) {
 
 /*
 ==============
-BotAIRegularUpdate
-==============
-*/
-void BotAIRegularUpdate(void) {
-	if(regularupdate_time < FloatTime()) {
-		trap_BotUpdateEntityItems();
-		regularupdate_time = FloatTime() + 0.3;
-	}
-}
-
-/*
-==============
-RemoveColorEscapeSequences
-==============
-*/
-void RemoveColorEscapeSequences(char* text) {
-	int i, l;
-
-	l = 0;
-	for(i = 0; text[i]; i++) {
-		if(text[i] > 0x7E) continue;
-		text[l++] = text[i];
-	}
-	text[l] = '\0';
-}
-
-/*
-==============
 BotAI
 ==============
 */
 int BotAI(int client, float thinktime) {
 	bot_state_t* bs;
-	char buf[1024], *args;
+	char buf[128];
 	int j;
 
 	trap_EA_ResetInput(client);
@@ -823,40 +441,17 @@ int BotAI(int client, float thinktime) {
 		return false;
 	}
 
+	// retrieve any waiting server commands and ignore them: bots don't
+	// process console commands, but the reliable command queue must be
+	// drained every frame or the server drops the bot with an overflow
+	while(trap_BotGetServerCommand(client, buf, sizeof(buf))) {
+		// ignore
+	}
+
 	// retrieve the current client state
 	if(!BotAI_GetClientState(client, &bs->cur_ps)) {
 		BotAI_Print(PRT_FATAL, "BotAI: failed to get player state for player %d\n", client);
 		return false;
-	}
-	// retrieve any waiting server commands
-	while(trap_BotGetServerCommand(client, buf, sizeof(buf))) {
-		// have buf point to the command and args to the command arguments
-		args = strchr(buf, ' ');
-		if(!args) continue;
-		*args++ = '\0';
-
-		// remove color espace sequences from the arguments
-		RemoveColorEscapeSequences(args);
-
-		if(!Q_stricmp(buf, "cp ")) {       /*CenterPrintf*/
-		} else if(!Q_stricmp(buf, "cs")) { /*ConfigStringModified*/
-		} else if(!Q_stricmp(buf, "print")) {
-			// remove first and last quote from the chat message
-			memmove(args, args + 1, strlen(args));
-			args[strlen(args) - 1] = '\0';
-			trap_BotQueueConsoleMessage(bs->cs, CMS_NORMAL, args);
-		} else if(!Q_stricmp(buf, "chat")) {
-			// remove first and last quote from the chat message
-			memmove(args, args + 1, strlen(args));
-			args[strlen(args) - 1] = '\0';
-			trap_BotQueueConsoleMessage(bs->cs, CMS_CHAT, args);
-		} else if(!Q_stricmp(buf, "tchat")) {
-			// remove first and last quote from the chat message
-			memmove(args, args + 1, strlen(args));
-			args[strlen(args) - 1] = '\0';
-			trap_BotQueueConsoleMessage(bs->cs, CMS_CHAT, args);
-		} else if(!Q_stricmp(buf, "scores")) { /*FIXME: parse scores?*/
-		}
 	}
 	// add the delta angles to the bot's current view angles
 	for(j = 0; j < 3; j++) {
@@ -911,9 +506,7 @@ BotAISetupClient
 ==============
 */
 int BotAISetupClient(int client, struct bot_settings_s* settings, bool restart) {
-	char filename[144], name[144], gender[144];
 	bot_state_t* bs;
-	int errnum;
 
 	if(!botstates[client]) botstates[client] = G_Alloc(sizeof(bot_state_t));
 	bs = botstates[client];
@@ -922,7 +515,7 @@ int BotAISetupClient(int client, struct bot_settings_s* settings, bool restart) 
 		return false;
 	}
 
-	if(bs && bs->inuse) {
+	if(bs->inuse) {
 		BotAI_Print(PRT_FATAL, "BotAISetupClient: client %d already setup\n", client);
 		return false;
 	}
@@ -933,53 +526,8 @@ int BotAISetupClient(int client, struct bot_settings_s* settings, bool restart) 
 	}
 
 	// load the bot character
-	bs->character = trap_BotLoadCharacter(settings->characterfile, settings->skill);
-	if(!bs->character) {
-		BotAI_Print(PRT_FATAL, "couldn't load skill %f from %s\n", settings->skill, settings->characterfile);
-		return false;
-	}
 	// copy the settings
 	memcpy(&bs->settings, settings, sizeof(bot_settings_t));
-	// allocate a goal state
-	bs->gs = trap_BotAllocGoalState(client);
-	// load the item weights
-	trap_Characteristic_String(bs->character, CHARACTERISTIC_ITEMWEIGHTS, filename, sizeof(filename));
-	errnum = trap_BotLoadItemWeights(bs->gs, filename);
-	if(errnum != BLERR_NOERROR) {
-		trap_BotFreeGoalState(bs->gs);
-		return false;
-	}
-	// allocate a weapon state
-	bs->ws = trap_BotAllocWeaponState();
-	// load the weapon weights
-	trap_Characteristic_String(bs->character, CHARACTERISTIC_WEAPONWEIGHTS, filename, sizeof(filename));
-	errnum = trap_BotLoadWeaponWeights(bs->ws, filename);
-	if(errnum != BLERR_NOERROR) {
-		trap_BotFreeGoalState(bs->gs);
-		trap_BotFreeWeaponState(bs->ws);
-		return false;
-	}
-	// allocate a chat state
-	bs->cs = trap_BotAllocChatState();
-	// load the chat file
-	trap_Characteristic_String(bs->character, CHARACTERISTIC_CHAT_FILE, filename, sizeof(filename));
-	trap_Characteristic_String(bs->character, CHARACTERISTIC_CHAT_NAME, name, sizeof(name));
-	errnum = trap_BotLoadChatFile(bs->cs, filename, name);
-	if(errnum != BLERR_NOERROR) {
-		trap_BotFreeChatState(bs->cs);
-		trap_BotFreeGoalState(bs->gs);
-		trap_BotFreeWeaponState(bs->ws);
-		return false;
-	}
-	// get the gender characteristic
-	trap_Characteristic_String(bs->character, CHARACTERISTIC_GENDER, gender, sizeof(gender));
-	// set the chat gender
-	if(*gender == 'f' || *gender == 'F')
-		trap_BotSetChatGender(bs->cs, CHAT_GENDERFEMALE);
-	else if(*gender == 'm' || *gender == 'M')
-		trap_BotSetChatGender(bs->cs, CHAT_GENDERMALE);
-	else
-		trap_BotSetChatGender(bs->cs, CHAT_GENDERLESS);
 
 	bs->inuse = true;
 	bs->client = client;
@@ -987,7 +535,7 @@ int BotAISetupClient(int client, struct bot_settings_s* settings, bool restart) 
 	bs->setupcount = 4;
 	bs->entergame_time = FloatTime();
 	bs->ms = trap_BotAllocMoveState();
-	bs->walker = trap_Characteristic_BFloat(bs->character, CHARACTERISTIC_WALKER, 0, 1);
+	bs->walker = BotSkill_BFloat(bs, 1, 0);
 	numbots++;
 
 	// NOTE: reschedule the bot thinking
@@ -1006,24 +554,11 @@ int BotAIShutdownClient(int client, bool restart) {
 
 	bs = botstates[client];
 	if(!bs || !bs->inuse) {
-		// BotAI_Print(PRT_ERROR, "BotAIShutdownClient: client %d already shutdown\n", client);
 		return false;
 	}
 
 	trap_BotFreeMoveState(bs->ms);
-	// free the goal state
-	trap_BotFreeGoalState(bs->gs);
-	// free the chat file
-	trap_BotFreeChatState(bs->cs);
-	// free the weapon weights
-	trap_BotFreeWeaponState(bs->ws);
 	// free the bot character
-	trap_BotFreeCharacter(bs->character);
-	//
-	BotFreeWaypoints(bs->checkpoints);
-	BotFreeWaypoints(bs->patrolpoints);
-	// clear activate goal stack
-	BotClearActivateGoalStack(bs);
 	// clear the bot state
 	memset(bs, 0, sizeof(bot_state_t));
 	// set the inuse flag to false
@@ -1036,11 +571,13 @@ int BotAIShutdownClient(int client, bool restart) {
 
 void BotResetState(bot_state_t* bs) {
 	int client, entitynum, inuse;
-	int movestate, goalstate, chatstate, weaponstate;
+	int movestate;
 	bot_settings_t settings;
-	int character;
 	playerState_t ps;  // current player state
 	float entergame_time;
+	float hunt_expire_time;
+	int hunt_enemy;
+	int sound_id;
 
 	// save some things that should not be reset here
 	memcpy(&settings, &bs->settings, sizeof(bot_settings_t));
@@ -1048,35 +585,166 @@ void BotResetState(bot_state_t* bs) {
 	inuse = bs->inuse;
 	client = bs->client;
 	entitynum = bs->entitynum;
-	character = bs->character;
 	movestate = bs->ms;
-	goalstate = bs->gs;
-	chatstate = bs->cs;
-	weaponstate = bs->ws;
 	entergame_time = bs->entergame_time;
-	// free checkpoints and patrol points
-	BotFreeWaypoints(bs->checkpoints);
-	BotFreeWaypoints(bs->patrolpoints);
+	hunt_expire_time = bs->hunt_expire_time;
+	hunt_enemy = bs->hunt_enemy;
+	sound_id = bs->sound_id;
 	// reset the whole state
 	memset(bs, 0, sizeof(bot_state_t));
 	// copy back some state stuff that should not be reset
 	bs->ms = movestate;
-	bs->gs = goalstate;
-	bs->cs = chatstate;
-	bs->ws = weaponstate;
 	memcpy(&bs->cur_ps, &ps, sizeof(playerState_t));
 	memcpy(&bs->settings, &settings, sizeof(bot_settings_t));
 	bs->inuse = inuse;
 	bs->client = client;
 	bs->entitynum = entitynum;
-	bs->character = character;
 	bs->entergame_time = entergame_time;
+	bs->hunt_expire_time = hunt_expire_time;
+	bs->hunt_enemy = hunt_enemy;
+	bs->sound_id = sound_id;
 	// reset several states
 	if(bs->ms) trap_BotResetMoveState(bs->ms);
-	if(bs->gs) trap_BotResetGoalState(bs->gs);
-	if(bs->ws) trap_BotResetWeaponState(bs->ws);
-	if(bs->gs) trap_BotResetAvoidGoals(bs->gs);
-	if(bs->ms) trap_BotResetAvoidReach(bs->ms);
+}
+
+// one snapshot per second per player, 180 seconds of memory
+#define BOT_TRAIL_LENGTH 180
+typedef struct {
+	int time;       // level time of the snapshot
+	vec3_t origin;  // where the player was
+	int areanum;    // AAS area of the position
+} bot_trail_snapshot_t;
+static bot_trail_snapshot_t bot_playertrails[MAX_CLIENTS][BOT_TRAIL_LENGTH];
+static int bot_trailhead[MAX_CLIENTS];
+static int bot_traillasttime[MAX_CLIENTS];
+
+// player sounds: footsteps, falls and gunshots
+#define BOT_MAX_SOUNDS 64
+typedef struct {
+	int client;
+	vec3_t origin;
+	int areanum;
+} bot_framesound_t;
+static bot_framesound_t bot_framesounds[BOT_MAX_SOUNDS];
+static int bot_soundtotal;
+static int bot_lastsoundevent[MAX_CLIENTS];
+static int bot_lastfiringsound[MAX_CLIENTS];
+
+/*
+==================
+BotIsSoundEvent
+
+true for events a bot can hear: footsteps on any surface, falling,
+weapon fire and water splashes
+==================
+*/
+static int BotIsSoundEvent(int event) {
+	switch(event) {
+		case EV_FALL:
+		case EV_WATER_SPLASH:
+		case EV_FIRE_WEAPON:
+			return true;
+		default:
+			// the footstep events are a contiguous block in the event enum
+			return (event >= EV_FOOTSTEP_CHAINLINK && event <= EV_FOOTSTEP_WOODPANEL);
+	}
+}
+
+/*
+==================
+BotTrailPoint
+
+Returns the area of the position a player was at 'delay' milliseconds
+ago and writes the position, 0 if nothing is known about the player.
+==================
+*/
+int BotTrailPoint(int client, int delay, vec3_t origin) {
+	int i, idx, oldest = -1, want;
+	bot_trail_snapshot_t* snap;
+
+	want = level.time - delay;
+	for(i = 1; i <= BOT_TRAIL_LENGTH; i++) {
+		idx = (bot_trailhead[client] - i + BOT_TRAIL_LENGTH) % BOT_TRAIL_LENGTH;
+		snap = &bot_playertrails[client][idx];
+		// ran past the oldest recorded point
+		if(!snap->time) break;
+		// stale point from before a map restart or a reused client slot
+		if(snap->time < level.time - (BOT_TRAIL_LENGTH + 2) * 1000) break;
+		oldest = idx;
+		// the newest snapshot at or before the wanted moment
+		if(snap->time <= want) break;
+	}
+	if(oldest < 0) return 0;
+	VectorCopy(bot_playertrails[client][oldest].origin, origin);
+	return bot_playertrails[client][oldest].areanum;
+}
+
+/*
+==================
+BotTotalSounds / BotGetSound
+
+Access to the player sounds recorded so far, indexed by an absolute
+id that keeps increasing.
+==================
+*/
+int BotTotalSounds(void) { return bot_soundtotal; }
+
+void BotGetSound(int id, int* client, vec3_t origin, int* areanum) {
+	bot_framesound_t* snd = &bot_framesounds[id % BOT_MAX_SOUNDS];
+
+	*client = snd->client;
+	VectorCopy(snd->origin, origin);
+	*areanum = snd->areanum;
+}
+
+/*
+==================
+BotUpdatePlayerTracking
+
+Records the position of every player once per second (the trail bots
+follow when hunting) and collects the sounds players make this frame.
+==================
+*/
+static void BotUpdatePlayerTracking(void) {
+	int i, raw, ev;
+	gentity_t* ent;
+	playerState_t* ps;
+
+	for(i = 0; i < MAX_CLIENTS; i++) {
+		ent = &g_entities[i];
+		if(!ent->inuse || !ent->client || ent->client->pers.connected != CON_CONNECTED) continue;
+		ps = &ent->client->ps;
+		// trail snapshot once per second, alive players only
+		if(level.time - bot_traillasttime[i] >= 1000) {
+			bot_traillasttime[i] = level.time;
+			if(ps->pm_type == PM_NORMAL) {
+				bot_playertrails[i][bot_trailhead[i]].time = level.time;
+				VectorCopy(ps->origin, bot_playertrails[i][bot_trailhead[i]].origin);
+				bot_playertrails[i][bot_trailhead[i]].areanum = BotPointAreaNum(ps->origin);
+				bot_trailhead[i] = (bot_trailhead[i] + 1) % BOT_TRAIL_LENGTH;
+			}
+		}
+		// a new event on the entity: check if the bots can hear it
+		raw = ent->s.event;
+		if(raw != bot_lastsoundevent[i]) {
+			bot_lastsoundevent[i] = raw;
+			ev = raw & ~EV_EVENT_BITS;
+			if(BotIsSoundEvent(ev)) {
+				bot_framesounds[bot_soundtotal % BOT_MAX_SOUNDS].client = i;
+				VectorCopy(ps->origin, bot_framesounds[bot_soundtotal % BOT_MAX_SOUNDS].origin);
+				bot_framesounds[bot_soundtotal % BOT_MAX_SOUNDS].areanum = BotPointAreaNum(ps->origin);
+				bot_soundtotal++;
+			}
+		}
+		// continuous fire (beam like weapons) is heard as a gunshot too
+		if((ent->s.eFlags & EF_FIRING) && level.time - bot_lastfiringsound[i] >= 500) {
+			bot_lastfiringsound[i] = level.time;
+			bot_framesounds[bot_soundtotal % BOT_MAX_SOUNDS].client = i;
+			VectorCopy(ps->origin, bot_framesounds[bot_soundtotal % BOT_MAX_SOUNDS].origin);
+			bot_framesounds[bot_soundtotal % BOT_MAX_SOUNDS].areanum = BotPointAreaNum(ps->origin);
+			bot_soundtotal++;
+		}
+	}
 }
 
 /*
@@ -1097,8 +765,16 @@ int BotAILoadMap(int restart) {
 		if(botstates[i] && botstates[i]->inuse) {
 			BotResetState(botstates[i]);
 			botstates[i]->setupcount = 4;
+			botstates[i]->enemy = -1;
+			botstates[i]->hunt_expire_time = 0;
 		}
+		bot_trailhead[i] = 0;
+		bot_traillasttime[i] = 0;
+		bot_lastsoundevent[i] = 0;
+		bot_lastfiringsound[i] = 0;
 	}
+	memset(bot_playertrails, 0, sizeof(bot_playertrails));
+	bot_soundtotal = 0;
 
 	BotSetupDeathmatchAI();
 
@@ -1119,21 +795,11 @@ int BotAIStartFrame(int time) {
 	static int botlib_residual;
 	static int lastbotthink_time;
 
-	trap_Cvar_Update(&bot_rocketjump);
-	trap_Cvar_Update(&bot_fastchat);
-	trap_Cvar_Update(&bot_nochat);
-	trap_Cvar_Update(&bot_testrchat);
 	trap_Cvar_Update(&bot_thinktime);
 	trap_Cvar_Update(&bot_memorydump);
 	trap_Cvar_Update(&bot_saveroutingcache);
 	trap_Cvar_Update(&bot_pause);
-	trap_Cvar_Update(&bot_report);
-
-	if(bot_report.integer) {
-		//		BotTeamplayReport();
-		//		trap_Cvar_Set("bot_report", "0");
-		BotUpdateInfoConfigStrings();
-	}
+	trap_Cvar_Update(&bot_predictobstacles);
 
 	if(bot_pause.integer) {
 		// execute bot user commands every frame
@@ -1239,18 +905,18 @@ int BotAIStartFrame(int time) {
 			state.frame = ent->s.frame;
 			state.event = ent->s.event;
 			state.eventParm = ent->s.eventParm;
-			state.powerups = ent->s.powerups;
 			state.legsAnim = ent->s.legsAnim;
 			state.torsoAnim = ent->s.torsoAnim;
 			state.weapon = ent->s.weapon;
 			//
 			trap_BotLibUpdateEntity(i, &state);
 		}
-
-		BotAIRegularUpdate();
 	}
 
 	floattime = trap_AAS_Time();
+
+	// record player position trails and collect player sounds
+	BotUpdatePlayerTracking();
 
 	// execute scheduled bot AI
 	for(i = 0; i < MAX_CLIENTS; i++) {
@@ -1311,9 +977,6 @@ int BotInitLibrary(void) {
 	if(strlen(buf)) trap_BotLibVarSet("max_levelitems", buf);
 	// bot developer mode and log file
 	trap_BotLibVarSet("bot_developer", bot_developer.string);
-	// no chatting
-	trap_Cvar_VariableStringBuffer("bot_nochat", buf, sizeof(buf));
-	if(strlen(buf)) trap_BotLibVarSet("nochat", buf);
 	// visualize jump pads
 	trap_Cvar_VariableStringBuffer("bot_visualizejumppads", buf, sizeof(buf));
 	if(strlen(buf)) trap_BotLibVarSet("bot_visualizejumppads", buf);
@@ -1358,7 +1021,6 @@ int BotAISetup(int restart) {
 	trap_Cvar_Register(&bot_memorydump, "bot_memorydump", "0", CVAR_CHEAT);
 	trap_Cvar_Register(&bot_saveroutingcache, "bot_saveroutingcache", "0", CVAR_CHEAT);
 	trap_Cvar_Register(&bot_pause, "bot_pause", "0", CVAR_CHEAT);
-	trap_Cvar_Register(&bot_report, "bot_report", "0", CVAR_CHEAT);
 	trap_Cvar_Register(&bot_testsolid, "bot_testsolid", "0", CVAR_CHEAT);
 	trap_Cvar_Register(&bot_testclusters, "bot_testclusters", "0", CVAR_CHEAT);
 	trap_Cvar_Register(&bot_developer, "bot_developer", "0", CVAR_CHEAT);

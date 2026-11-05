@@ -138,11 +138,9 @@ const LCONTENT = {
 const LMODE = {
     NONE: 0,
     APPS: 1,
-    MAPS: 2,
-    BOTS: 3,
-    PLAYERMODELS: 4,
-    GAMEITEMS: 5,
-    TOOLS: 6,
+    PLAYERMODELS: 2,
+    GAMEITEMS: 3,
+    TOOLS: 4,
 }
 
 ui.func = function (windowID, elementID, func) {

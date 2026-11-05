@@ -364,6 +364,11 @@ typedef struct {
 
 	bool renderingThirdPerson;  // during deaths, chasecams, etc
 
+	// Genshin-style third-person camera: smoothed sphere position + offset
+	vec3_t thirdPersonCamPos;
+	vec3_t thirdPersonCamLastPivot;
+	bool thirdPersonCamValid;
+
 	// prediction state
 	bool hyperspace;  // true if prediction has hit a trigger_teleport
 	playerState_t predictedPlayerState;
@@ -380,6 +385,12 @@ typedef struct {
 	int weaponSelectTime;
 	int swep_listcl[MAX_WEAPONS];
 	int swep_spawncl[MAX_WEAPONS];  // stores spawn weapons
+
+	// Genshin-style third-person camera: local player's body yaw is
+	// decoupled from the camera yaw (viewangles). The camera orbits freely
+	// while the character stands still and only turns to face the camera
+	// direction when the player is actually moving or firing.
+	float charYaw;
 
 	float savedSens;  // physgun
 
@@ -691,6 +702,10 @@ extern vmCvar_t cg_fov;
 extern vmCvar_t cg_zoomFov;
 extern vmCvar_t cg_thirdPersonRange;
 extern vmCvar_t cg_thirdPersonAngle;
+extern vmCvar_t cg_thirdPersonOffsetX;
+extern vmCvar_t cg_thirdPersonOffsetY;
+extern vmCvar_t cg_thirdPersonOffsetZ;
+extern vmCvar_t cg_thirdPersonSmoothing;
 extern vmCvar_t cg_thirdPerson;
 extern vmCvar_t cg_firstPerson_Fwd;
 extern vmCvar_t cg_firstPerson_Up;
@@ -852,7 +867,6 @@ void CG_InitConsoleCommands(void);
 void CG_ExecuteNewServerCommands(int latestSequence);
 void CG_ParseServerinfo(void);
 void CG_SetConfigValues(void);
-void CG_ShaderStateChanged(void);
 
 //
 // cg_playerstate.c

@@ -32,55 +32,8 @@ typedef struct {
 
 #define MAX_SHADER_REMAPS 128
 
-int remapCount = 0;
 shaderRemap_t remappedShaders[MAX_SHADER_REMAPS];
 
-void AddRemap(const char* oldShader, const char* newShader, float timeOffset) {
-	int i;
-
-	for(i = 0; i < remapCount; i++) {
-		if(Q_stricmp(oldShader, remappedShaders[i].oldShader) == 0) {
-			// found it, just update this one
-			strcpy(remappedShaders[i].newShader, newShader);
-			remappedShaders[i].timeOffset = timeOffset;
-			return;
-		}
-	}
-	if(remapCount < MAX_SHADER_REMAPS) {
-		strcpy(remappedShaders[remapCount].newShader, newShader);
-		strcpy(remappedShaders[remapCount].oldShader, oldShader);
-		remappedShaders[remapCount].timeOffset = timeOffset;
-		remapCount++;
-	}
-}
-
-const char* BuildShaderStateConfig(void) {
-	static char buff[MAX_STRING_CHARS * 4];
-	char out[(MAX_QPATH * 2) + 5];
-	int i;
-
-	memset(buff, 0, sizeof(buff));
-	for(i = 0; i < remapCount; i++) {
-		Com_sprintf(out, (MAX_QPATH * 2) + 5, "%s=%s:%5.2f@", remappedShaders[i].oldShader, remappedShaders[i].newShader, remappedShaders[i].timeOffset);
-		Q_strcat(buff, sizeof(buff), out);
-	}
-	return buff;
-}
-
-/*
-=========================================================================
-
-model / sound configstring indexes
-
-=========================================================================
-*/
-
-/*
-================
-G_FindConfigstringIndex
-
-================
-*/
 int G_FindConfigstringIndex(char* name, int start, int max, bool create) {
 	int i;
 	char s[MAX_STRING_CHARS];
@@ -524,20 +477,9 @@ G_Sound
 =============
 */
 void G_Sound(gentity_t* ent, int channel, int soundIndex) {
-	gentity_t* te;
-
-	te = G_TempEntity(ent->r.currentOrigin, EV_GENERAL_SOUND, soundIndex);
+	G_TempEntity(ent->r.currentOrigin, EV_GENERAL_SOUND, soundIndex);
 }
 
-//==============================================================================
-
-/*
-================
-G_SetOrigin
-
-Sets the pos trajectory for a fixed position
-================
-*/
 void G_SetOrigin(gentity_t* ent, vec3_t origin) {
 	VectorCopy(origin, ent->s.pos.trBase);
 	ent->s.pos.trType = TR_STATIONARY;

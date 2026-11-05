@@ -33,9 +33,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "l_memory.h"
 #include "l_libvar.h"
 #include "l_utils.h"
-#include "l_script.h"
-#include "l_precomp.h"
-#include "l_struct.h"
 #include "aasfile.h"
 #include "botlib.h"
 #include "be_aas.h"
@@ -2754,6 +2751,34 @@ bot_moveresult_t BotMoveInGoalArea(bot_movestate_t* ms, bot_goal_t* goal) {
 	//
 	return result;
 }  // end of the function BotMoveInGoalArea
+//===========================================================================
+//
+// Parameter:				-
+// Returns:					-
+// Changes Globals:		-
+//===========================================================================
+int BotTouchingGoal(vec3_t origin, bot_goal_t* goal) {
+	int i;
+	vec3_t boxmins, boxmaxs;
+	vec3_t absmins, absmaxs;
+	vec3_t safety_maxs = {0, 0, 0};  //{4, 4, 10};
+	vec3_t safety_mins = {0, 0, 0};  //{-4, -4, 0};
+
+	AAS_PresenceTypeBoundingBox(PRESENCE_NORMAL, boxmins, boxmaxs);
+	VectorSubtract(goal->mins, boxmaxs, absmins);
+	VectorSubtract(goal->maxs, boxmins, absmaxs);
+	VectorAdd(absmins, goal->origin, absmins);
+	VectorAdd(absmaxs, goal->origin, absmaxs);
+	// make the box a little smaller for safety
+	VectorSubtract(absmaxs, safety_maxs, absmaxs);
+	VectorSubtract(absmins, safety_mins, absmins);
+
+	for(i = 0; i < 3; i++) {
+		if(origin[i] < absmins[i] || origin[i] > absmaxs[i]) return false;
+	}
+	return true;
+}
+
 //===========================================================================
 //
 // Parameter:				-

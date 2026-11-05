@@ -47,6 +47,9 @@ void CG_Respawn(void) {
 
 	// select the weapon the server says we are using
 	cg.weaponSelect = cg.snap->ps.weapon;
+
+	// Genshin-style: spawn facing where the server says we are looking
+	cg.charYaw = cg.snap->ps.viewangles[YAW];
 }
 
 /*
@@ -87,20 +90,6 @@ static void CG_CheckPlayerstateEvents(playerState_t* ps, playerState_t* ops) {
 }
 
 /*
-==================
-CG_CheckLocalSounds
-==================
-*/
-static void CG_CheckLocalSounds(playerState_t* ps, playerState_t* ops) {
-	int highScore;
-
-	// hit changes
-	if(ps->persistant[PERS_HITS] > ops->persistant[PERS_HITS]) {
-		trap_S_StartLocalSound(cgs.media.hitSound, CHAN_LOCAL_SOUND);
-	}
-}
-
-/*
 ===============
 CG_TransitionPlayerState
 
@@ -123,8 +112,6 @@ void CG_TransitionPlayerState(playerState_t* ps, playerState_t* ops) {
 		CG_Respawn();
 		cg.mapRestart = false;
 	}
-
-	CG_CheckLocalSounds(ps, ops);
 
 	// run events
 	CG_CheckPlayerstateEvents(ps, ops);

@@ -91,72 +91,7 @@ bool SpotWouldTelefrag(gentity_t* spot) {
 	return false;
 }
 
-/*
-================
-SelectNearestDeathmatchSpawnPoint
-
-Find the spot that we DON'T want to use
-================
-*/
 #define MAX_SPAWN_POINTS 128
-gentity_t* SelectNearestDeathmatchSpawnPoint(vec3_t from) {
-	gentity_t* spot;
-	vec3_t delta;
-	float dist, nearestDist;
-	gentity_t* nearestSpot;
-
-	nearestDist = 999999;
-	nearestSpot = NULL;
-	spot = NULL;
-
-	while((spot = G_Find(spot, FOFS(classname), "info_player_deathmatch")) != NULL) {
-		VectorSubtract(spot->s.origin, from, delta);
-		dist = VectorLength(delta);
-		if(dist < nearestDist) {
-			nearestDist = dist;
-			nearestSpot = spot;
-		}
-	}
-
-	return nearestSpot;
-}
-
-/*
-================
-SelectRandomDeathmatchSpawnPoint
-
-go to a random point that doesn't telefrag
-================
-*/
-#define MAX_SPAWN_POINTS 128
-gentity_t* SelectRandomDeathmatchSpawnPoint(bool isbot) {
-	gentity_t* spot;
-	int count;
-	int selection;
-	gentity_t* spots[MAX_SPAWN_POINTS];
-
-	count = 0;
-	spot = NULL;
-
-	while((spot = G_Find(spot, FOFS(classname), "info_player_deathmatch")) != NULL && count < MAX_SPAWN_POINTS) {
-		if(SpotWouldTelefrag(spot)) continue;
-
-		if(((spot->flags & FL_NO_BOTS) && isbot) || ((spot->flags & FL_NO_HUMANS) && !isbot)) {
-			// spot is not for this human/bot player
-			continue;
-		}
-
-		spots[count] = spot;
-		count++;
-	}
-
-	if(!count) {  // no spots that won't telefrag
-		return G_Find(NULL, FOFS(classname), "info_player_deathmatch");
-	}
-
-	selection = rand() % count;
-	return spots[selection];
-}
 
 /*
 ===========
@@ -241,64 +176,6 @@ Chooses a player start, deathmatch start, etc
 */
 gentity_t* SelectSpawnPoint(vec3_t avoidPoint, vec3_t origin, vec3_t angles, bool isbot) {
 	return SelectRandomFurthestSpawnPoint(avoidPoint, origin, angles, isbot);
-
-	/*
-	gentity_t	*spot;
-	gentity_t	*nearestSpot;
-
-	nearestSpot = SelectNearestDeathmatchSpawnPoint( avoidPoint );
-
-	spot = SelectRandomDeathmatchSpawnPoint ( );
-	if ( spot == nearestSpot ) {
-	    // roll again if it would be real close to point of death
-	    spot = SelectRandomDeathmatchSpawnPoint ( );
-	    if ( spot == nearestSpot ) {
-	        // last try
-	        spot = SelectRandomDeathmatchSpawnPoint ( );
-	    }
-	}
-
-	// find a single player start spot
-	if (!spot) {
-	    G_Error( "Couldn't find a spawn point" );
-	}
-
-	VectorCopy (spot->s.origin, origin);
-	origin[2] += 9;
-	VectorCopy (spot->s.angles, angles);
-
-	return spot;
-	*/
-}
-
-/*
-===========
-SelectInitialSpawnPoint
-
-Try to find a spawn point marked 'initial', otherwise
-use normal spawn selection.
-============
-*/
-gentity_t* SelectInitialSpawnPoint(vec3_t origin, vec3_t angles, bool isbot) {
-	gentity_t* spot;
-
-	spot = NULL;
-
-	while((spot = G_Find(spot, FOFS(classname), "info_player_deathmatch")) != NULL) {
-		if(((spot->flags & FL_NO_BOTS) && isbot) || ((spot->flags & FL_NO_HUMANS) && !isbot)) {
-			continue;
-		}
-
-		if((spot->spawnflags & 0x01)) break;
-	}
-
-	if(!spot || SpotWouldTelefrag(spot)) return SelectSpawnPoint(vec3_origin, origin, angles, isbot);
-
-	VectorCopy(spot->s.origin, origin);
-	origin[2] += 9;
-	VectorCopy(spot->s.angles, angles);
-
-	return spot;
 }
 
 /*
@@ -487,13 +364,10 @@ if desired.
 */
 void ClientUserinfoChanged(int clientNum) {
 	gentity_t* ent;
-	int health;
 	char* s;
 	char model[MAX_QPATH];
 	char oldname[MAX_STRING_CHARS];
 	gclient_t* client;
-	char c1[MAX_INFO_STRING];
-	char c2[MAX_INFO_STRING];
 	char userinfo[MAX_INFO_STRING];
 	char physR[16], physG[16], physB[16];
 
@@ -550,8 +424,6 @@ void ClientUpdateGrabbedConfigstring(gentity_t* ent) {
 	gclient_t* client;
 	char* s;
 	char model[MAX_QPATH];
-	char c1[MAX_INFO_STRING];
-	char c2[MAX_INFO_STRING];
 	char userinfo[MAX_INFO_STRING];
 	char physR[16], physG[16], physB[16];
 	int grabbedEntityNum;
@@ -571,7 +443,7 @@ void ClientUpdateGrabbedConfigstring(gentity_t* ent) {
 
 	grabbedEntityNum = ent->grabbedEntity ? ent->grabbedEntity->s.number : 0;
 
-	s = va("n\\%s\\model\\%s\\c1\\%s\\c2\\%s\\pr\\%s\\pg\\%s\\pb\\%s\\ge\\%d", client->pers.netname, model, c1, c2, physR, physG, physB, grabbedEntityNum);
+	s = va("n\\%s\\model\\%s\\pr\\%s\\pg\\%s\\pb\\%s\\ge\\%d", client->pers.netname, model, physR, physG, physB, grabbedEntityNum);
 	trap_SetConfigstring(CS_PLAYERS + clientNum, s);
 }
 
@@ -715,7 +587,6 @@ void ClientSpawn(gentity_t* ent) {
 	clientPersistant_t saved;
 	int persistant[MAX_PERSISTANT];
 	gentity_t* spawnPoint;
-	gentity_t* tent;
 	int flags;
 	int savedPing;
 	int eventSequence;
@@ -729,8 +600,7 @@ void ClientSpawn(gentity_t* ent) {
 	spawnPoint = SelectSpawnPoint(client->ps.origin, spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
 
 	// toggle the teleport bit so the client knows to not lerp
-	// and never clear the voted flag
-	flags = ent->client->ps.eFlags & (EF_TELEPORT_BIT | EF_VOTED | EF_TEAMVOTED);
+	flags = ent->client->ps.eFlags & EF_TELEPORT_BIT;
 	flags ^= EF_TELEPORT_BIT;
 
 	// clear everything but the persistant data
@@ -815,7 +685,7 @@ void ClientSpawn(gentity_t* ent) {
 	// positively link the client, even if the command times are weird
 	VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);
 
-	tent = G_TempEntity(ent->client->ps.origin, EV_PARTICLE, PP_TELEPORT_IN);
+	G_TempEntity(ent->client->ps.origin, EV_PARTICLE, PP_TELEPORT_IN);
 
 	trap_LinkEntity(ent);
 
@@ -844,12 +714,6 @@ server system housekeeping.
 */
 void ClientDisconnect(int clientNum) {
 	gentity_t* ent;
-	gentity_t* tent;
-	int i;
-
-	// cleanup if we are kicking a bot that
-	// hasn't spawned yet
-	G_RemoveQueuedBotBegin(clientNum);
 
 	ent = g_entities + clientNum;
 	if(!ent->client || ent->client->pers.connected == CON_DISCONNECTED) {
@@ -858,7 +722,7 @@ void ClientDisconnect(int clientNum) {
 
 	// send effect if they were completely connected
 	if(ent->client->pers.connected == CON_CONNECTED) {
-		tent = G_TempEntity(ent->client->ps.origin, EV_PARTICLE, PP_TELEPORT_OUT);
+		G_TempEntity(ent->client->ps.origin, EV_PARTICLE, PP_TELEPORT_OUT);
 		TossClientItems(ent);
 	}
 

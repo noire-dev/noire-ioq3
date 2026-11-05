@@ -106,6 +106,8 @@ typedef struct bot_avoidspot_s {
 	int type;
 } bot_avoidspot_t;
 
+// returns true if the origin is inside the goal bounding box
+int BotTouchingGoal(vec3_t origin, bot_goal_t* goal);
 // resets the whole move state
 void BotResetMoveState(int movestate);
 // moves the bot to the given goal

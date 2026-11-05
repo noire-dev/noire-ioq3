@@ -267,7 +267,6 @@ static void CG_TouchItem(centity_t* cent) {
 	// grab it
 	BG_AddPredictableEventToPlayerstate(EV_ITEM_PICKUP, cent->currentState.modelindex, &cg.predictedPlayerState);
 
-
 	// remove it from the frame so it won't be drawn
 	cent->currentState.eFlags |= EF_NODRAW;
 
@@ -376,7 +375,7 @@ void CG_PredictPlayerState(void) {
 	}
 
 	// demo playback just copies the moves
-	if(cg.demoPlayback || (cg.snap->ps.pm_flags & PMF_FOLLOW)) {
+	if(cg.demoPlayback) {
 		CG_InterpolatePlayerState(false);
 		return;
 	}

@@ -22,8 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "g_local.h"
 
-void SP_info_camp(gentity_t* self) { G_SetOrigin(self, self->s.origin); }
-
 void SP_info_null(gentity_t* self) { G_FreeEntity(self); }
 
 void SP_info_notnull(gentity_t* self) { G_SetOrigin(self, self->s.origin); }
@@ -31,12 +29,11 @@ void SP_info_notnull(gentity_t* self) { G_SetOrigin(self, self->s.origin); }
 void SP_light(gentity_t* self) { G_FreeEntity(self); }
 
 void TeleportPlayer(gentity_t* player, vec3_t origin, vec3_t angles) {
-	gentity_t* tent;
 	bool noAngles;
 
 	noAngles = (angles[0] > 999999.0);
-	tent = G_TempEntity(player->client->ps.origin, EV_PARTICLE, PP_TELEPORT_OUT);
-	tent = G_TempEntity(origin, EV_PARTICLE, PP_TELEPORT_IN);
+	G_TempEntity(player->client->ps.origin, EV_PARTICLE, PP_TELEPORT_OUT);
+	G_TempEntity(origin, EV_PARTICLE, PP_TELEPORT_IN);
 
 	// unlink to make sure it can't possibly interfere with G_KillBox
 	trap_UnlinkEntity(player);

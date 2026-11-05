@@ -314,14 +314,10 @@ but any server game effects are handled here
 ================
 */
 void ClientEvents(gentity_t* ent, int oldEventSequence) {
-	int i, j;
+	int i;
 	int event;
 	gclient_t* client;
 	int damage;
-	vec3_t origin, angles;
-	//	bool	fired;
-	item_t* item;
-	gentity_t* drop;
 
 	client = ent->client;
 
@@ -348,8 +344,6 @@ void ClientEvents(gentity_t* ent, int oldEventSequence) {
 
 			case EV_FIRE_WEAPON:
 				FireWeapon(ent);
-				break;
-
 				break;
 
 			default: break;
@@ -622,8 +616,6 @@ while a slow client may have multiple ClientEndFrame between ClientThink.
 ==============
 */
 void ClientEndFrame(gentity_t* ent) {
-	int i;
-
 	// burn from lava, etc
 	P_WorldEffects(ent);
 

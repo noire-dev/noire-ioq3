@@ -35,18 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define MAX_ITEMS 256
 
-#define RANK_TIED_FLAG 0x4000
-
-#define DEFAULT_SHOTGUN_SPREAD 700
-#define DEFAULT_SHOTGUN_COUNT 11
-
 #define ITEM_RADIUS 15  // item sizes are needed for client side pickup detection
-
-#define LIGHTNING_RANGE 768
-
-#define SCORE_NOT_PRESENT -9999  // for the CS_SCORES[12] when only one player is present
-
-#define VOTE_TIME 30000  // 30 seconds before vote times out
 
 #define PLAYER_WIDTH 15
 #define MINS_Z -24
@@ -56,7 +45,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CROUCH_VIEWHEIGHT 12
 #define DEAD_HEIGHT -8
 #define DEAD_VIEWHEIGHT -16
-#define INVUL_RADIUS 42
 
 // weapon status
 #define WS_NONE 0
@@ -77,23 +65,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CS_MUSIC 2
 #define CS_MESSAGE 3  // from the map worldspawn's message field
 #define CS_MOTD 4     // g_motd string for server message of the day
-#define CS_SCORES1 6
-#define CS_SCORES2 7
-#define CS_VOTE_TIME 8
-#define CS_VOTE_STRING 9
-#define CS_VOTE_YES 10
-#define CS_VOTE_NO 11
-
-#define CS_TEAMVOTE_TIME 12
-#define CS_TEAMVOTE_STRING 14
-#define CS_TEAMVOTE_YES 16
-#define CS_TEAMVOTE_NO 18
 
 #define CS_GAME_VERSION 20
 #define CS_LEVEL_START_TIME 21  // so the timer only shows the current level
-#define CS_FLAGSTATUS 23        // string indicating flag status in CTF
-#define CS_SHADERSTATE 24
-#define CS_BOTINFO 25
 
 #define CS_MODELS 32
 #define CS_SOUNDS (CS_MODELS + MAX_MODELS)
@@ -108,8 +82,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 #define MAX_NETNAME 256
-
-typedef enum { GENDER_MALE, GENDER_FEMALE, GENDER_NEUTER } gender_t;
 
 /*
 ===================================================================================
@@ -140,10 +112,6 @@ typedef enum { WEAPON_READY, WEAPON_RAISING, WEAPON_DROPPING, WEAPON_FIRING } we
 #define PMF_TIME_KNOCKBACK 64   // pm_time is an air-accelerate only time
 #define PMF_TIME_WATERJUMP 256  // pm_time is waterjump
 #define PMF_RESPAWNED 512       // clear after attack and jump buttons come up
-#define PMF_USE_ITEM_HELD 1024
-#define PMF_FOLLOW 4096        // spectate following another player
-#define PMF_SCOREBOARD 8192    // spectate as a scoreboard
-#define PMF_INVULEXPAND 16384  // invulnerability sphere set to full size
 
 #define PMF_ALL_TIMES (PMF_TIME_WATERJUMP | PMF_TIME_LAND | PMF_TIME_KNOCKBACK)
 
@@ -188,8 +156,7 @@ typedef enum {
 	STAT_HEALTH,
 	STAT_ARMOR,
 	STAT_AMMO,
-	STAT_DEAD_YAW,  // look this direction when dead (FIXME: get rid of?)
-	STAT_CLIENTS_READY
+	STAT_DEAD_YAW  // look this direction when dead (FIXME: get rid of?)
 } statIndex_t;
 
 // player_state->persistant[] indexes
@@ -197,42 +164,21 @@ typedef enum {
 // cleared on respawn
 // NOTE: may not have more than 16
 typedef enum {
-	PERS_SCORE,           // !!! MUST NOT CHANGE, SERVER AND GAME BOTH REFERENCE !!!
-	PERS_HITS,            // total points damage inflicted so damage beeps can sound on change
-	PERS_RANK,            // player rank or team rank
 	PERS_SPAWN_COUNT,     // incremented every respawn
-	PERS_PLAYEREVENTS,    // 16 bits that can be flipped for events
 	PERS_ATTACKER,        // clientnum of last damage inflicter
-	PERS_ATTACKEE_ARMOR,  // health/armor of last person we attacked
-	PERS_KILLED,          // count of the number of times you died
-	// player awards tracking
-	PERS_IMPRESSIVE_COUNT,     // two railgun hits in a row
-	PERS_EXCELLENT_COUNT,      // two successive kills in a short amount of time
-	PERS_DEFEND_COUNT,         // defend awards
-	PERS_ASSIST_COUNT,         // assist awards
-	PERS_GAUNTLET_FRAG_COUNT,  // kills with the guantlet
-	PERS_CAPTURES              // captures
+	PERS_ATTACKEE_ARMOR   // health/armor of last person we attacked
 } persEnum_t;
 
 // entityState_t->eFlags
 #define EF_DEAD 0x00000001             // don't draw a foe marker over players with EF_DEAD
 #define EF_TELEPORT_BIT 0x00000004     // toggled every time the origin abruptly changes
-#define EF_AWARD_EXCELLENT 0x00000008  // draw an excellent sprite
 #define EF_PLAYER_EVENT 0x00000010
 #define EF_BOUNCE 0x00000010            // for missiles
 #define EF_BOUNCE_HALF 0x00000020       // for missiles
-#define EF_AWARD_GAUNTLET 0x00000040    // draw a gauntlet sprite
 #define EF_NODRAW 0x00000080            // may have an event, but no model (unspawned items)
 #define EF_FIRING 0x00000100            // for lightning gun
 #define EF_MOVER_STOP 0x00000400        // will push otherwise
-#define EF_AWARD_CAP 0x00000800         // draw the capture sprite
 #define EF_TALK 0x00001000              // draw a talk balloon
-#define EF_VOTED 0x00004000             // already cast a vote
-#define EF_AWARD_IMPRESSIVE 0x00008000  // draw an impressive sprite
-#define EF_AWARD_DEFEND 0x00010000      // draw a defend sprite
-#define EF_AWARD_ASSIST 0x00020000      // draw a assist sprite
-#define EF_AWARD_DENIED 0x00040000      // denied
-#define EF_TEAMVOTED 0x00080000         // already cast a team vote
 
 #define WP_NONE 0
 #define MAX_WEAPONS 2048
@@ -371,8 +317,6 @@ typedef enum {
 	EV_PARTICLE,
 } entity_event_t;
 
-typedef enum { GTS_RED_CAPTURE, GTS_BLUE_CAPTURE, GTS_RED_RETURN, GTS_BLUE_RETURN, GTS_RED_TAKEN, GTS_BLUE_TAKEN, GTS_REDOBELISK_ATTACKED, GTS_BLUEOBELISK_ATTACKED, GTS_REDTEAM_SCORED, GTS_BLUETEAM_SCORED, GTS_REDTEAM_TOOK_LEAD, GTS_BLUETEAM_TOOK_LEAD, GTS_TEAMS_ARE_TIED, GTS_KAMIKAZE } global_team_sound_t;
-
 // IQM player animation ids. The first 19 entries are full-body actions.
 // The next 36 entries describe locomotion; each weapon animType selects a
 // 36-entry block starting at AM_IDLE.
@@ -456,15 +400,6 @@ typedef struct animation_s {
 // flip the togglebit every time an animation
 // changes so a restart of the same anim can be detected
 #define ANIM_TOGGLEBIT 0x40000000
-
-// Time between location updates
-#define TEAM_LOCATION_UPDATE_TIME 1000
-
-// How many players on the overlay
-#define TEAM_MAXOVERLAY 32
-
-// team task
-typedef enum { TEAMTASK_NONE, TEAMTASK_OFFENSE, TEAMTASK_DEFENSE, TEAMTASK_PATROL, TEAMTASK_FOLLOW, TEAMTASK_RETRIEVE, TEAMTASK_ESCORT, TEAMTASK_CAMP } teamtask_t;
 
 // means of death
 typedef enum {
@@ -555,33 +490,5 @@ void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s,
 
 bool BG_PlayerTouchesItem(playerState_t* ps, entityState_t* item, int atTime);
 
-#define ARENAS_PER_TIER 4
-#define MAX_ARENAS 8192
-#define MAX_ARENAS_TEXT 30000
-
-#define MAX_BOTS 8192
-#define MAX_BOTS_TEXT 30000
-
-// Kamikaze
-
-// 1st shockwave times
-#define KAMI_SHOCKWAVE_STARTTIME 0
-#define KAMI_SHOCKWAVEFADE_STARTTIME 1500
-#define KAMI_SHOCKWAVE_ENDTIME 2000
-// explosion/implosion times
-#define KAMI_EXPLODE_STARTTIME 250
-#define KAMI_IMPLODE_STARTTIME 2000
-#define KAMI_IMPLODE_ENDTIME 2250
-// 2nd shockwave times
-#define KAMI_SHOCKWAVE2_STARTTIME 2000
-#define KAMI_SHOCKWAVE2FADE_STARTTIME 2500
-#define KAMI_SHOCKWAVE2_ENDTIME 3000
-// radius of the models without scaling
-#define KAMI_SHOCKWAVEMODEL_RADIUS 88
-#define KAMI_BOOMSPHEREMODEL_RADIUS 72
-// maximum radius of the models during the effect
-#define KAMI_SHOCKWAVE_MAXRADIUS 1320
-#define KAMI_BOOMSPHERE_MAXRADIUS 720
-#define KAMI_SHOCKWAVE2_MAXRADIUS 704
 
 #endif
