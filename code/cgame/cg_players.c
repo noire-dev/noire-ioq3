@@ -252,6 +252,8 @@ static bool CG_FindIQMSkinFile(char* filename, int length, const char* modelName
 
 	Com_sprintf(filename, length, "models/players/%s/default.skin", modelName);
 	if(CG_FileExists(filename)) return true;
+
+	return false;
 }
 
 static bool CG_RegisterClientModelname(clientInfo_t* ci, const char* modelName, const char* skinName) {
@@ -262,8 +264,11 @@ static bool CG_RegisterClientModelname(clientInfo_t* ci, const char* modelName, 
 	animFile[0] = '\0';
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/animation.cfg", modelName);
+	if(!CG_ParseAnimationFile(filename, ci, animFile, sizeof(animFile))) {
+		Com_Printf("Failed to load IQM animation map %s\n", filename);
+		return false;
+	}
 
-	if(!animFile[0]) Q_strncpyz(animFile, "models/m_anm.iqm", sizeof(animFile));
 	Q_strncpyz(ci->animFile, animFile, sizeof(ci->animFile));
 
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/pmodel", modelName);
