@@ -1887,61 +1887,6 @@ static void ComputeJointMats(iqmData_t* data, int frame, int oldframe, float bac
 	}
 }
 
-/*
-===========================================================================
-
-JIGGLE BONES (hair / cloth)
-
-cgame says "this joint is loose by <scale>, damped by <damping>, with
-stiffness <stiffness> and gravity <gravity>" (trap_R_SetJiggleData, from
-"jiggle <bone> <coeff> <damping> <stiffness> <gravity>" in animation.cfg),
-the renderer does the rest. Once per scene (R_JiggleUpdateScene, frontend)
-every jiggled joint gets a point mass at its tip:
-
- - the tip is pulled back to where the animation wants it by a spring,
- - gravity pulls it down (per joint, default r_jiggleGravity, -800 on Z),
- - the bone is a rigid rod: the tip stays at the animated bone length from
-   the joint, so the joint's movement and the entity's movement drag it along,
- - the joint is then rotated so that it points at the simulated tip.
-
-The result is stored as one rotation per joint, expressed in the parent space
-of the joint. The backend multiplies it onto the animated rotation inside
-ComputePoseMats, so every surface / shadow / mirror pass of the entity sees
-exactly the same pose and the simulation is stepped only once per scene.
-
-scale (coeff) is the looseness: 0 = rigid, 1 = default softness, 2 = twice
-as floppy. Internally the spring gets stiffer for small scales
-(k = stiffness / scale) and the damping keeps the same damping ratio
-(c = damping / sqrt(scale)), so scale 0.5 sags half as much under gravity
-as scale 1.
-
-damping, stiffness and gravity are the per-joint spring parameters; 0 keeps
-the global defaults (cvars r_jiggleDamping 8 / r_jiggleStiffness 150 /
-r_jiggleGravity -800). The equilibrium sag under gravity is
-|gravity| * scale / stiffness in world units, so the defaults only leave a
-short bone room to move at large scales: gravity 800 vs stiffness 150 makes
-any loose enough joint hang (nearly) straight down regardless of coeff --
-which is why coeff alone barely changes the pose. To tune a bone by hand:
-stiffness resists the sag and the wobble, damping kills the oscillation
-(higher = stiffer motion), gravity sets the hang. Example, a hair strand
-that sags only a little and swings slow and heavy:
-  jiggle hair01 1 4 600 -300
-
-The swing speed of the tip can be capped globally with r_jiggleMaxSpeed
-(world units/s, 0 = no cap). Stiff springs fling the tip very fast when the
-animation snaps or the entity teleports, and the cap turns that whip into a
-fast but readable swing. The cap is a linear speed, so the angular limit it
-produces is r_jiggleMaxSpeed / bone length: the same value lets a short
-strand snap around faster in degrees than a long whip. A reasonable starting
-point is 5-15 bone lengths per second (e.g. 100-200 for a 12 unit hair
-strand), raised until the return of a hard snap no longer feels slow.
-
-Joints are processed parents first and the chain is rebuilt on the way, so
-jiggled joints can be nested (hair1 -> hair2 -> hair3), a child simulates
-relative to its already jiggled parent.
-
-===========================================================================
-*/
 // JIGGLE-BEGIN
 #define JIGGLE_SUBSTEP 0.0125f     // simulation step (80 Hz)
 #define JIGGLE_MAX_SUBSTEPS 8      // per scene, dt is clamped to 0.1 s anyway
@@ -2053,16 +1998,6 @@ R_IQMJiggleEntity
 
 Advances the jiggle simulation of one entity to timeMs and stores the
 resulting rotation of every jiggled joint in entries[].delta.
-
-Each joint tracks its own last step time (jiggleState_t::jointLastTime), so
-multiple copies of the same entity rendered at the same refdef time (main
-view + mirror, several scenes of one frame, ...) step each joint exactly
-once, regardless of the order in which the copies are processed.
-
-sceneEntityNum is the index of the entity inside the current scene (the key
-used by the bone scale entries). Returns the number of joints that were
-stepped; joints that are collapsed by a bone scale (first person head) are
-left alone so that a second copy of the same entity can still simulate them.
 =================
 */
 int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* entries, int numEntries, jiggleState_t* st, int timeMs) {
@@ -2189,17 +2124,17 @@ int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* 
 						VectorScale(acc, ks, acc);
 						acc[2] += grav;
 
-					VectorMA(st->vel[i], h, acc, st->vel[i]);
-					VectorScale(st->vel[i], damp, st->vel[i]);
+						VectorMA(st->vel[i], h, acc, st->vel[i]);
+						VectorScale(st->vel[i], damp, st->vel[i]);
 
-					// cap the swing speed so an animation snap or teleport
-					// cannot whip the tip through a huge arc in one substep
-					if(maxSpeed > 0.0f) {
-						float vlen = VectorLength(st->vel[i]);
-						if(vlen > maxSpeed) VectorScale(st->vel[i], maxSpeed / vlen, st->vel[i]);
-					}
+						// cap the swing speed so an animation snap or teleport
+						// cannot whip the tip through a huge arc in one substep
+						if(maxSpeed > 0.0f) {
+							float vlen = VectorLength(st->vel[i]);
+							if(vlen > maxSpeed) VectorScale(st->vel[i], maxSpeed / vlen, st->vel[i]);
+						}
 
-					VectorCopy(st->pos[i], before);
+						VectorCopy(st->pos[i], before);
 						VectorMA(st->pos[i], h, st->vel[i], st->pos[i]);
 
 						// rigid rod: keep the tip at the bone length from the joint

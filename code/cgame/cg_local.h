@@ -296,9 +296,6 @@ typedef struct {
 	// hand, so models smaller than that need e.g. "weaponScale 0.7".
 	float weaponScale;
 
-	// "jiggle <bone> <coeff> <damping> <stiffness> <gravity>" lines from
-	// animation.cfg: bones the renderer simulates (hair, cloth), see
-	// trap_R_SetJiggleData
 	int numJiggles;
 	cgJiggle_t jiggles[MAX_PLAYER_JIGGLES];
 
@@ -451,7 +448,7 @@ typedef struct {
 	sfxHandle_t selectSound;
 	sfxHandle_t footsteps[FOOTSTEP_TOTAL][4];
 	sfxHandle_t talkSound;
-	sfxHandle_t landSound;
+	sfxHandle_t fallPain;
 	sfxHandle_t fallSound;
 
 	sfxHandle_t oneMinuteSound;
@@ -885,10 +882,6 @@ void trap_S_StartBackgroundTrack(const char* intro, const char* loop);  // empty
 void trap_R_LoadWorldMap(const char* mapname);
 void trap_R_AddPolysToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int numPolys);
 int trap_R_LightForPoint(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir);
-// marks a joint of the NEXT added ref entity as a jiggle bone (hair, cloth);
-// scale = looseness, 0 = rigid, 1 = default softness. The renderer simulates it.
-// damping / stiffness / gravity of 0 use the renderer defaults (r_jiggleXxx).
-void trap_R_SetJiggleData(const char* boneName, float scale, float damping, float stiffness, float gravity);
 void trap_GetGameState(gameState_t* gamestate);
 void trap_GetCurrentSnapshotNumber(int* snapshotNumber, int* serverTime);
 bool trap_GetSnapshot(int snapshotNumber, snapshot_t* snapshot);

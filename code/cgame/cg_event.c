@@ -101,7 +101,7 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		case EV_FOOTSTEP_TILE:
 		case EV_FOOTSTEP_WOOD:
 		case EV_FOOTSTEP_WOODPANEL: trap_S_StartSound(NULL, es->number, CHAN_BODY, cgs.media.footsteps[event - EV_FOOTSTEP_CHAINLINK][rand() & 3]); break;
-		case EV_FALL: trap_S_StartSound(NULL, es->number, CHAN_VOICE, cgs.media.landSound); break;
+		case EV_FALL: trap_S_StartSound(NULL, es->number, CHAN_VOICE, cgs.media.fallPain); break;
 		case EV_GRAVITY_LAUNCH: trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.gravityLaunch[rand() & 3]); break;
 		case EV_WATER_SPLASH: trap_S_StartSound(NULL, es->number, CHAN_AUTO, cgs.media.waterSplash[rand() & 2]); break;
 		case EV_ITEM_PICKUP: {

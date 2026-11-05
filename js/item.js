@@ -5,7 +5,7 @@ item.register = function (classname, model, icon, pickup_name, quantity, giType,
     var itemCount = api.item(item.vmIndex, 0, "itemCount");
 
     api.item(item.vmIndex, itemCount, "classname", classname);
-    api.item(item.vmIndex, itemCount, "pickup_sound", "sound/misc/w_pkup.wav");
+    api.item(item.vmIndex, itemCount, "pickup_sound", "sound/items/ammo_pickup.wav");
     api.item(item.vmIndex, itemCount, "pickup_name", pickup_name);
     api.item(item.vmIndex, itemCount, "model", model);
     api.item(item.vmIndex, itemCount, "icon", icon);

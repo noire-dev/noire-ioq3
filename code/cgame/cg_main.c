@@ -334,7 +334,7 @@ static void CG_RegisterSounds(void) {
 	cgs.media.selectSound = trap_S_RegisterSound("sound/weapons/wpn_moveselect", false);
 
 	cgs.media.talkSound = trap_S_RegisterSound("sound/player/talk.wav", false);
-	cgs.media.landSound = trap_S_RegisterSound("sound/player/land1.wav", false);
+	cgs.media.fallPain = trap_S_RegisterSound("sound/player/pl_fallpain3.wav", false);
 
 	cgs.media.hitSound = trap_S_RegisterSound("sound/feedback/hit.wav", false);
 

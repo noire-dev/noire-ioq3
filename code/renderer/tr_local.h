@@ -106,13 +106,6 @@ typedef struct {
 	vec3_t scale;
 } boneScaleEntry_t;
 
-// per-entity per-joint jiggle (hair / cloth) requested from cgame with
-// RE_SetJiggleData. scale is the "looseness" of the joint: 0 = rigid,
-// 1 = default softness, larger = floppier. damping / stiffness / gravity of
-// 0 use the renderer defaults (cvars r_jiggleDamping / r_jiggleStiffness /
-// r_jiggleGravity). delta is the result of the simulation (rotation in the
-// joint's parent space), filled in by R_JiggleUpdateScene once per scene
-// and applied by the backend.
 #define MAX_RENDER_JIGGLES 512  // per frame
 #define MAX_ENTITY_JIGGLES 64   // per ref entity
 #define MAX_JIGGLE_STATES 64    // simultaneously simulated entities

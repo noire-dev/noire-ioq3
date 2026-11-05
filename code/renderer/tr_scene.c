@@ -107,8 +107,6 @@ static void R_ApplyPendingBoneScales(const refEntity_t* ent, int entityNum) {
 	r_numPendingBoneScales = 0;
 }
 
-// pending jiggle bones set by trap_R_SetJiggleData since the last
-// RE_AddRefEntityToScene (immediate mode: consumed by the next added entity)
 typedef struct {
 	char name[MAX_QPATH];
 	float scale;
@@ -120,8 +118,6 @@ typedef struct {
 static pendingJiggle_t r_pendingJiggles[MAX_ENTITY_JIGGLES];
 static int r_numPendingJiggles;
 
-// attach all pending jiggle bones to the entity being added.
-// entityNum is the absolute index into backEndData->entities.
 static void R_ApplyPendingJiggles(const refEntity_t* ent, int entityNum) {
 	const model_t* mod;
 	const iqmData_t* data;
