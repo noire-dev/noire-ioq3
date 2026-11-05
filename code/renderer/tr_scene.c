@@ -107,11 +107,14 @@ static void R_ApplyPendingBoneScales(const refEntity_t* ent, int entityNum) {
 	r_numPendingBoneScales = 0;
 }
 
-// pending jiggle bones set by trap_R_SetJiggleScale since the last
+// pending jiggle bones set by trap_R_SetJiggleData since the last
 // RE_AddRefEntityToScene (immediate mode: consumed by the next added entity)
 typedef struct {
 	char name[MAX_QPATH];
 	float scale;
+	float damping;    // 0 = r_jiggleDamping
+	float stiffness;  // 0 = r_jiggleStiffness
+	float gravity;    // 0 = r_jiggleGravity
 } pendingJiggle_t;
 
 static pendingJiggle_t r_pendingJiggles[MAX_ENTITY_JIGGLES];
@@ -159,6 +162,9 @@ static void R_ApplyPendingJiggles(const refEntity_t* ent, int entityNum) {
 		}
 
 		entry->scale = pending->scale;
+		entry->damping = pending->damping;
+		entry->stiffness = pending->stiffness;
+		entry->gravity = pending->gravity;
 		entry->delta[0] = entry->delta[1] = entry->delta[2] = 0.0f;
 		entry->delta[3] = 1.0f;
 	}
@@ -414,16 +420,19 @@ int R_GetEntityBoneScales(int entityNum, int* joints, vec3_t* scales, int maxCou
 
 /*
 =====================
-RE_SetJiggleScale
+RE_SetJiggleData
 
 Immediate mode, like RE_SetBoneScale: mark a joint as a jiggle bone (hair,
 cloth) of the next ref entity added to the scene (and only of it).
 scale is the looseness of the joint: 0 = rigid, 1 = default softness,
 larger = floppier. The renderer simulates the joint, cgame only has to say
 which joints are loose and by how much.
+
+damping, stiffness and gravity override the global cvars per joint; a value
+of 0 means "use r_jiggleDamping / r_jiggleStiffness / r_jiggleGravity".
 =====================
 */
-void RE_SetJiggleScale(const char* jointName, float scale) {
+void RE_SetJiggleData(const char* jointName, float scale, float damping, float stiffness, float gravity) {
 	pendingJiggle_t* pending;
 	int i;
 
@@ -434,11 +443,23 @@ void RE_SetJiggleScale(const char* jointName, float scale) {
 	if(Q_isnan(scale) || scale < 0.0f) {
 		scale = 0.0f;
 	}
+	if(Q_isnan(damping) || damping < 0.0f) {
+		damping = 0.0f;
+	}
+	if(Q_isnan(stiffness) || stiffness < 0.0f) {
+		stiffness = 0.0f;
+	}
+	if(Q_isnan(gravity)) {
+		gravity = 0.0f;
+	}
 
 	// the same joint again before the entity is added: the last call wins
 	for(i = 0; i < r_numPendingJiggles; i++) {
 		if(!Q_stricmp(r_pendingJiggles[i].name, jointName)) {
 			r_pendingJiggles[i].scale = scale;
+			r_pendingJiggles[i].damping = damping;
+			r_pendingJiggles[i].stiffness = stiffness;
+			r_pendingJiggles[i].gravity = gravity;
 			return;
 		}
 	}
@@ -446,7 +467,7 @@ void RE_SetJiggleScale(const char* jointName, float scale) {
 	if(r_numPendingJiggles >= MAX_ENTITY_JIGGLES) {
 		static bool warned = false;
 		if(!warned) {
-			ri.Printf(PRINT_WARNING, "RE_SetJiggleScale: too many pending jiggle bones (max %d)\n", MAX_ENTITY_JIGGLES);
+			ri.Printf(PRINT_WARNING, "RE_SetJiggleData: too many pending jiggle bones (max %d)\n", MAX_ENTITY_JIGGLES);
 			warned = true;
 		}
 		return;
@@ -455,6 +476,9 @@ void RE_SetJiggleScale(const char* jointName, float scale) {
 	pending = &r_pendingJiggles[r_numPendingJiggles++];
 	Q_strncpyz(pending->name, jointName, sizeof(pending->name));
 	pending->scale = scale;
+	pending->damping = damping;
+	pending->stiffness = stiffness;
+	pending->gravity = gravity;
 }
 
 /*
@@ -535,9 +559,11 @@ static jiggleState_t* R_JiggleAcquireState(const refEntity_t* re) {
 	st->inUse = true;
 	st->hModel = re->hModel;
 	VectorCopy(re->origin, st->origin);
-	st->lastTime = tr.refdef.time;
 	st->lastFrame = tr.frameCount;
 	st->claimFrame = tr.frameCount;
+	// jointLastTime[] stays zeroed: on the first call every joint sees
+	// valid[i] == 0 and is initialised at the current refdef time without
+	// an initial step.
 
 	return st;
 }
@@ -571,26 +597,16 @@ void R_JiggleUpdateScene(void) {
 		if(entityNum >= r_firstSceneEntity && entityNum < r_numentities) {
 			const refEntity_t* re = &backEndData->entities[entityNum].e;
 			jiggleState_t* st = R_JiggleAcquireState(re);
-			int dtMs = tr.refdef.time - st->lastTime;
-			float dt = 0.0f;
-			int stepped;
 
-			if(dtMs < 0) {
-				// time went backwards (demo seek, map restart): start over
-				Com_Memset(st->valid, 0, sizeof(st->valid));
-				st->lastTime = tr.refdef.time;
-			} else {
-				dt = Com_Clamp(0.0f, 0.1f, dtMs * 0.001f);
-			}
-
-			stepped = R_IQMJiggleEntity(re, entityNum - r_firstSceneEntity, &tr.jiggleEntries[n], end - n, st, dt);
+			// Time tracking is per joint (jiggleState_t::jointLastTime), so
+			// multiple copies of the same entity rendered at the same refdef
+			// time step the simulation exactly once, no matter in which order
+			// the copies are processed.
+			R_IQMJiggleEntity(re, entityNum - r_firstSceneEntity, &tr.jiggleEntries[n], end - n, st, tr.refdef.time);
 
 			VectorCopy(re->origin, st->origin);
 			st->lastFrame = tr.frameCount;
 			st->claimFrame = tr.frameCount;
-			if(stepped > 0) {
-				st->lastTime = tr.refdef.time;
-			}
 		}
 
 		n = end;

@@ -158,11 +158,11 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci, char* 
 		}
 
 		if(!Q_stricmp(token, "jiggle")) {
-			// jiggle <bonename> <scale>
-			// loose bone for hair / cloth, simulated by the renderer.
-			// scale: 0 = rigid, 1 = default softness, larger = floppier
 			char boneName[MAX_QPATH];
+			cgJiggle_t* jig;
 			float jiggleScale;
+			char* textSave;
+			int cmdLine, param;
 
 			token = COM_Parse(&text_p);
 			if(!token[0]) {
@@ -187,9 +187,39 @@ static bool CG_ParseAnimationFile(const char* filename, clientInfo_t* ci, char* 
 				continue;
 			}
 
-			Q_strncpyz(ci->jiggles[ci->numJiggles].bone, boneName, sizeof(ci->jiggles[ci->numJiggles].bone));
-			ci->jiggles[ci->numJiggles].scale = jiggleScale;
-			ci->numJiggles++;
+			jig = &ci->jiggles[ci->numJiggles++];
+			Q_strncpyz(jig->bone, boneName, sizeof(jig->bone));
+			jig->scale = jiggleScale;
+			jig->damping = 0.0f;
+			jig->stiffness = 0.0f;
+			jig->gravity = 0.0f;
+
+			cmdLine = COM_GetCurrentParseLine();
+			for(param = 0; param < 3; param++) {
+				textSave = text_p;
+				token = COM_Parse(&text_p);
+				if(!token[0] || COM_GetCurrentParseLine() != cmdLine) {
+					text_p = textSave;
+					break;
+				}
+				switch(param) {
+					case 0:
+						jig->damping = (float)atof(token);
+						if(jig->damping < 0.0f) {
+							CG_Printf("Invalid jiggle damping %s for %s in %s, using 0\n", token, boneName, filename);
+							jig->damping = 0.0f;
+						}
+						break;
+					case 1:
+						jig->stiffness = (float)atof(token);
+						if(jig->stiffness < 0.0f) {
+							CG_Printf("Invalid jiggle stiffness %s for %s in %s, using 0\n", token, boneName, filename);
+							jig->stiffness = 0.0f;
+						}
+						break;
+					default: jig->gravity = (float)atof(token); break;
+				}
+			}
 			continue;
 		}
 
@@ -388,6 +418,8 @@ static void CG_CopyClientInfoModel(clientInfo_t* from, clientInfo_t* to) {
 	to->headUp = from->headUp;
 	to->headFwd = from->headFwd;
 	to->weaponScale = from->weaponScale;
+	to->numJiggles = from->numJiggles;
+	memcpy(to->jiggles, from->jiggles, sizeof(to->jiggles));
 	Q_strncpyz(to->animFile, from->animFile, sizeof(to->animFile));
 	memcpy(to->animations, from->animations, sizeof(to->animations));
 }
@@ -964,7 +996,7 @@ static void CG_SetPlayerJiggles(const clientInfo_t* ci) {
 	int i;
 
 	for(i = 0; i < ci->numJiggles; i++) {
-		trap_R_SetJiggleScale(ci->jiggles[i].bone, ci->jiggles[i].scale);
+		trap_R_SetJiggleData(ci->jiggles[i].bone, ci->jiggles[i].scale, ci->jiggles[i].damping, ci->jiggles[i].stiffness, ci->jiggles[i].gravity);
 	}
 }
 

@@ -79,6 +79,7 @@ cvar_t* r_jiggle;
 cvar_t* r_jiggleGravity;
 cvar_t* r_jiggleStiffness;
 cvar_t* r_jiggleDamping;
+cvar_t* r_jiggleMaxSpeed;
 cvar_t* r_reflectionsMaterials;
 cvar_t* r_reflectionsEntities;
 cvar_t* r_reflectionsSkybox;
@@ -857,12 +858,11 @@ void R_Register(void) {
 	r_reflectionsEntities = ri.Cvar_Get("r_reflectionsEntities", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsSkybox = ri.Cvar_Get("r_reflectionsSkybox", "0", CVAR_ARCHIVE);
 
-	// jiggle bones (hair / cloth): the renderer has its own gravity, it does
-	// not know anything about the game's g_gravity
 	r_jiggle = ri.Cvar_Get("r_jiggle", "1", CVAR_ARCHIVE);
 	r_jiggleGravity = ri.Cvar_Get("r_jiggleGravity", "-800", CVAR_ARCHIVE);
-	r_jiggleStiffness = ri.Cvar_Get("r_jiggleStiffness", "150", CVAR_ARCHIVE);
-	r_jiggleDamping = ri.Cvar_Get("r_jiggleDamping", "8", CVAR_ARCHIVE);
+	r_jiggleStiffness = ri.Cvar_Get("r_jiggleStiffness", "192", CVAR_ARCHIVE);
+	r_jiggleDamping = ri.Cvar_Get("r_jiggleDamping", "38", CVAR_ARCHIVE);
+	r_jiggleMaxSpeed = ri.Cvar_Get("r_jiggleMaxSpeed", "128", CVAR_ARCHIVE);
 
 	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.25", CVAR_ARCHIVE | CVAR_LATCH);
 
@@ -1143,7 +1143,7 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t* rimp) {
 	re.LightForPoint = R_LightForPoint;
 	re.AddLightToScene = RE_AddLightToScene;
 	re.SetBoneScale = RE_SetBoneScale;
-	re.SetJiggleScale = RE_SetJiggleScale;
+	re.SetJiggleData = RE_SetJiggleData;
 	re.RenderScene = RE_RenderScene;
 
 	re.SetColor = RE_SetColor;

@@ -30,4 +30,4 @@ int trap_Key_GetCatcher(void) { return syscall(TRAP_KEY_GETCATCHER); }
 int trap_Key_GetKey(const char* binding) { return syscall(TRAP_KEY_GETKEY, binding); }
 void trap_ImportOBJ(const char* filename) { syscall(TRAP_IMPORTOBJ, filename); }
 void trap_R_SetBoneScale(const char* jointName, const vec3_t scale) { syscall(TRAP_R_SETBONESCALE, jointName, scale); }
-void trap_R_SetJiggleScale(const char* boneName, float scale) { syscall(TRAP_R_SETJIGGLESCALE, boneName, PASSFLOAT(scale)); }
+void trap_R_SetJiggleData(const char* boneName, float scale, float damping, float stiffness, float gravity) { syscall(TRAP_R_SETJIGGLEDATA, boneName, PASSFLOAT(scale), PASSFLOAT(damping), PASSFLOAT(stiffness), PASSFLOAT(gravity)); }

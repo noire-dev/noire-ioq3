@@ -107,10 +107,12 @@ typedef struct {
 } boneScaleEntry_t;
 
 // per-entity per-joint jiggle (hair / cloth) requested from cgame with
-// RE_SetJiggleScale. scale is the "looseness" of the joint: 0 = rigid,
-// 1 = default softness, larger = floppier. delta is the result of the
-// simulation (rotation in the joint's parent space), filled in by
-// R_JiggleUpdateScene once per scene and applied by the backend.
+// RE_SetJiggleData. scale is the "looseness" of the joint: 0 = rigid,
+// 1 = default softness, larger = floppier. damping / stiffness / gravity of
+// 0 use the renderer defaults (cvars r_jiggleDamping / r_jiggleStiffness /
+// r_jiggleGravity). delta is the result of the simulation (rotation in the
+// joint's parent space), filled in by R_JiggleUpdateScene once per scene
+// and applied by the backend.
 #define MAX_RENDER_JIGGLES 512  // per frame
 #define MAX_ENTITY_JIGGLES 64   // per ref entity
 #define MAX_JIGGLE_STATES 64    // simultaneously simulated entities
@@ -119,6 +121,9 @@ typedef struct {
 	int entityNum;  // absolute index into backEndData->entities
 	int jointIndex;
 	float scale;
+	float damping;    // 0 = r_jiggleDamping
+	float stiffness;  // 0 = r_jiggleStiffness
+	float gravity;    // 0 = r_jiggleGravity
 	quat_t delta;
 } jiggleEntry_t;
 
@@ -968,12 +973,16 @@ typedef struct {
 	bool inUse;
 	qhandle_t hModel;
 	vec3_t origin;   // entity origin at the last update, used to recognise the entity again
-	int lastTime;    // refdef time of the last simulation step
 	int lastFrame;   // tr.frameCount of the last use
 	int claimFrame;  // tr.frameCount in which an entity last claimed this state
 
-	// world space position / velocity of the tip of every simulated joint
+	// world space position / velocity of the tip of every simulated joint.
+	// jointLastTime is stored per joint so that multiple copies of the same
+	// entity rendered at the same refdef time (main view + mirror, several
+	// scenes of one frame, ...) step the simulation exactly once, no matter
+	// in which order the copies are processed.
 	byte valid[IQM_MAX_JOINTS];
+	int jointLastTime[IQM_MAX_JOINTS];  // refdef time of the last step, per joint
 	vec3_t pos[IQM_MAX_JOINTS];
 	vec3_t vel[IQM_MAX_JOINTS];
 } jiggleState_t;
@@ -1572,7 +1581,7 @@ typedef struct {
 	int numBoneScaleEntries;
 	boneScaleEntry_t boneScaleEntries[MAX_RENDER_BONESCALES];
 
-	// per-entity jiggle bones, requested from cgame with RE_SetJiggleScale
+	// per-entity jiggle bones, requested from cgame with RE_SetJiggleData
 	// and attached to the next added ref entity (reset once per frame)
 	int numJiggleEntries;
 	jiggleEntry_t jiggleEntries[MAX_RENDER_JIGGLES];
@@ -1641,6 +1650,7 @@ extern cvar_t* r_jiggle;           // enable jiggle bones (hair / cloth)
 extern cvar_t* r_jiggleGravity;    // gravity of the jiggle simulation (z, units/s^2)
 extern cvar_t* r_jiggleStiffness;  // spring stiffness pulling the tip back to the animated pose
 extern cvar_t* r_jiggleDamping;    // velocity damping
+extern cvar_t* r_jiggleMaxSpeed;   // max swing speed of the jiggle tip (units/s, 0 = no cap)
 extern cvar_t* r_reflectionsSkybox;
 extern cvar_t* r_deluxeSpecular;
 extern cvar_t* r_shadows;
@@ -2082,10 +2092,10 @@ void RE_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts,
 void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
 void RE_SetBoneScale(const char* jointName, const vec3_t scale);
 int R_GetEntityBoneScales(int entityNum, int* joints, vec3_t* scales, int maxCount);
-void RE_SetJiggleScale(const char* jointName, float scale);
+void RE_SetJiggleData(const char* jointName, float scale, float damping, float stiffness, float gravity);
 int R_GetEntityJiggles(int entityNum, int* joints, quat_t* deltas, int maxCount);
 void R_JiggleUpdateScene(void);
-int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* entries, int numEntries, jiggleState_t* st, float dt);
+int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* entries, int numEntries, jiggleState_t* st, int timeMs);
 void RE_BeginScene(const refdef_t* fd);
 void RE_RenderScene(const refdef_t* fd);
 void RE_EndScene(void);

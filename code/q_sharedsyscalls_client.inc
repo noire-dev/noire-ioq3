@@ -30,4 +30,4 @@ case TRAP_KEY_GETCATCHER: return Key_GetCatcher();
 case TRAP_KEY_GETKEY: return Key_GetKey(VMA(1));
 case TRAP_IMPORTOBJ: CL_StartConvertOBJ(VMA(1)); return 0;
 case TRAP_R_SETBONESCALE: re.SetBoneScale(VMA(1), VMA(2)); return 0;
-case TRAP_R_SETJIGGLESCALE: re.SetJiggleScale(VMA(1), VMF(2)); return 0;
+case TRAP_R_SETJIGGLEDATA: re.SetJiggleData(VMA(1), VMF(2), VMF(3), VMF(4), VMF(5)); return 0;

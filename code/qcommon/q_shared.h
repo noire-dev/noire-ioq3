@@ -210,7 +210,7 @@ typedef enum {
 	TRAP_KEY_GETKEY,
 	TRAP_IMPORTOBJ,
 	TRAP_R_SETBONESCALE,
-	TRAP_R_SETJIGGLESCALE
+	TRAP_R_SETJIGGLEDATA
 } sharedTraps_t;
 
 #include <assert.h>

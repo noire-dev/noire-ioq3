@@ -1776,7 +1776,6 @@ static int IQM_BuildRelativeJoints(iqmData_t* data, int frame, int oldframe, flo
 		}
 	}
 
-
 	return numJoints;
 }
 
@@ -1893,12 +1892,14 @@ static void ComputeJointMats(iqmData_t* data, int frame, int oldframe, float bac
 
 JIGGLE BONES (hair / cloth)
 
-cgame only says "this joint is loose by <scale>" (trap_R_SetJiggleScale), the
-renderer does the rest. Once per scene (R_JiggleUpdateScene, frontend) every
-jiggled joint gets a point mass at its tip:
+cgame says "this joint is loose by <scale>, damped by <damping>, with
+stiffness <stiffness> and gravity <gravity>" (trap_R_SetJiggleData, from
+"jiggle <bone> <coeff> <damping> <stiffness> <gravity>" in animation.cfg),
+the renderer does the rest. Once per scene (R_JiggleUpdateScene, frontend)
+every jiggled joint gets a point mass at its tip:
 
  - the tip is pulled back to where the animation wants it by a spring,
- - the renderer's own gravity (r_jiggleGravity, -800 on Z) pulls it down,
+ - gravity pulls it down (per joint, default r_jiggleGravity, -800 on Z),
  - the bone is a rigid rod: the tip stays at the animated bone length from
    the joint, so the joint's movement and the entity's movement drag it along,
  - the joint is then rotated so that it points at the simulated tip.
@@ -1908,10 +1909,32 @@ of the joint. The backend multiplies it onto the animated rotation inside
 ComputePoseMats, so every surface / shadow / mirror pass of the entity sees
 exactly the same pose and the simulation is stepped only once per scene.
 
-scale is the looseness: 0 = rigid, 1 = default softness, 2 = twice as floppy.
-Internally the spring gets stiffer for small scales (k = r_jiggleStiffness /
-scale) and the damping keeps the same damping ratio (c = r_jiggleDamping /
-sqrt(scale)), so scale 0.5 sags half as much under gravity as scale 1.
+scale (coeff) is the looseness: 0 = rigid, 1 = default softness, 2 = twice
+as floppy. Internally the spring gets stiffer for small scales
+(k = stiffness / scale) and the damping keeps the same damping ratio
+(c = damping / sqrt(scale)), so scale 0.5 sags half as much under gravity
+as scale 1.
+
+damping, stiffness and gravity are the per-joint spring parameters; 0 keeps
+the global defaults (cvars r_jiggleDamping 8 / r_jiggleStiffness 150 /
+r_jiggleGravity -800). The equilibrium sag under gravity is
+|gravity| * scale / stiffness in world units, so the defaults only leave a
+short bone room to move at large scales: gravity 800 vs stiffness 150 makes
+any loose enough joint hang (nearly) straight down regardless of coeff --
+which is why coeff alone barely changes the pose. To tune a bone by hand:
+stiffness resists the sag and the wobble, damping kills the oscillation
+(higher = stiffer motion), gravity sets the hang. Example, a hair strand
+that sags only a little and swings slow and heavy:
+  jiggle hair01 1 4 600 -300
+
+The swing speed of the tip can be capped globally with r_jiggleMaxSpeed
+(world units/s, 0 = no cap). Stiff springs fling the tip very fast when the
+animation snaps or the entity teleports, and the cap turns that whip into a
+fast but readable swing. The cap is a linear speed, so the angular limit it
+produces is r_jiggleMaxSpeed / bone length: the same value lets a short
+strand snap around faster in degrees than a long whip. A reasonable starting
+point is 5-15 bone lengths per second (e.g. 100-200 for a 12 unit hair
+strand), raised until the return of a hard snap no longer feels slow.
 
 Joints are processed parents first and the chain is rebuilt on the way, so
 jiggled joints can be nested (hair1 -> hair2 -> hair3), a child simulates
@@ -1920,11 +1943,11 @@ relative to its already jiggled parent.
 ===========================================================================
 */
 // JIGGLE-BEGIN
-#define JIGGLE_SUBSTEP 0.0125f      // simulation step (80 Hz)
-#define JIGGLE_MAX_SUBSTEPS 8       // per scene, dt is clamped to 0.1 s anyway
-#define JIGGLE_MIN_SCALE 0.1f       // below this the spring would get too stiff for explicit integration
-#define JIGGLE_MAX_SCALE 4.0f
-#define JIGGLE_MAX_ANGLE 1.3963f    // 80 degrees, a joint never bends further than this
+#define JIGGLE_SUBSTEP 0.0125f     // simulation step (80 Hz)
+#define JIGGLE_MAX_SUBSTEPS 8      // per scene, dt is clamped to 0.1 s anyway
+#define JIGGLE_MIN_SCALE 0.00001f  // below this the spring would get too stiff for explicit integration
+#define JIGGLE_MAX_SCALE 8.0f
+#define JIGGLE_MAX_ANGLE 1.3963f  // 80 degrees, a joint never bends further than this
 
 static void Jiggle_TransformPoint(const float* m, const vec3_t p, vec3_t out) {
 	out[0] = m[0] * p[0] + m[1] * p[1] + m[2] * p[2] + m[3];
@@ -2028,8 +2051,13 @@ static bool IQM_JiggleTip(const iqmData_t* data, int joint, vec3_t tip) {
 =================
 R_IQMJiggleEntity
 
-Steps the jiggle simulation of one entity by dt seconds and stores the
+Advances the jiggle simulation of one entity to timeMs and stores the
 resulting rotation of every jiggled joint in entries[].delta.
+
+Each joint tracks its own last step time (jiggleState_t::jointLastTime), so
+multiple copies of the same entity rendered at the same refdef time (main
+view + mirror, several scenes of one frame, ...) step each joint exactly
+once, regardless of the order in which the copies are processed.
 
 sceneEntityNum is the index of the entity inside the current scene (the key
 used by the bone scale entries). Returns the number of joints that were
@@ -2037,7 +2065,7 @@ stepped; joints that are collapsed by a bone scale (first person head) are
 left alone so that a second copy of the same entity can still simulate them.
 =================
 */
-int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* entries, int numEntries, jiggleState_t* st, float dt) {
+int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* entries, int numEntries, jiggleState_t* st, int timeMs) {
 	const model_t* mod = R_GetModelByHandle(re->hModel);
 	iqmData_t* data;
 	iqmTransform_t rel[IQM_MAX_JOINTS];
@@ -2046,12 +2074,16 @@ int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* 
 	int scaleJoints[MAX_RENDER_BONESCALES];
 	vec3_t scaleValues[MAX_RENDER_BONESCALES];
 	float W[12];  // model space -> world
+	float maxSpeed;
 	int numScaleJoints, numJoints, nframes, frame, oldframe, i, k, stepped = 0;
-	const float gravity = r_jiggleGravity->value;
 
 	if(!mod || mod->type != MOD_IQM) return 0;
 	data = (iqmData_t*)mod->modelData;
 	if(!data || (data->anim ? data->anim->num_poses : data->num_poses) <= 0) return 0;
+
+	// swing speed cap (r_jiggleMaxSpeed, units/s; <= 0 disables it)
+	maxSpeed = r_jiggleMaxSpeed->value;
+	if(maxSpeed < 0.0f) maxSpeed = 0.0f;
 
 	for(i = 0; i < IQM_MAX_JOINTS; i++) entryOf[i] = -1;
 	for(i = 0; i < numEntries; i++) {
@@ -2093,7 +2125,7 @@ int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* 
 			jiggleEntry_t* je = &entries[entryOf[i]];
 			float MW[12], PW[12], PWinv[12];
 			vec3_t tipBind, tipLocal, jointW, tipW0, d0, d, a, b;
-			float s, L, len, ks, c;
+			float s, L, len, ks, c, grav;
 			quat_t q;
 
 			if(!IQM_JiggleTip(data, i, tipBind)) continue;
@@ -2110,58 +2142,90 @@ int R_IQMJiggleEntity(const refEntity_t* re, int sceneEntityNum, jiggleEntry_t* 
 			s = je->scale;
 			if(s < JIGGLE_MIN_SCALE) s = JIGGLE_MIN_SCALE;
 			if(s > JIGGLE_MAX_SCALE) s = JIGGLE_MAX_SCALE;
-			ks = r_jiggleStiffness->value / s;
-			c = r_jiggleDamping->value / sqrtf(s);
+			// per joint overrides, 0 = global cvar default
+			ks = (je->stiffness > 0.0f ? je->stiffness : r_jiggleStiffness->value) / s;
+			c = (je->damping > 0.0f ? je->damping : r_jiggleDamping->value) / sqrtf(s);
+			grav = (je->gravity != 0.0f ? je->gravity : r_jiggleGravity->value);
 
 			if(!st->valid[i]) {
 				VectorCopy(tipW0, st->pos[i]);
 				VectorClear(st->vel[i]);
 				st->valid[i] = 1;
+				st->jointLastTime[i] = timeMs;
 			}
 
-			if(dt > 0.0f) {
-				int steps = (int)ceilf(dt / JIGGLE_SUBSTEP);
-				float h, damp;
+			// Time tracking is per joint: copies of the same entity rendered
+			// at the same refdef time do not step the joint twice, and the
+			// order in which the copies are processed stops mattering.
+			{
+				int dtMs = timeMs - st->jointLastTime[i];
+				float dt = 0.0f;
 
-				if(steps < 1) steps = 1;
-				if(steps > JIGGLE_MAX_SUBSTEPS) steps = JIGGLE_MAX_SUBSTEPS;
-				h = dt / steps;
-				damp = expf(-c * h);
+				if(dtMs < 0) {
+					// time went backwards for this joint (demo seek, map
+					// restart): start over at the animated position with no
+					// velocity
+					VectorCopy(tipW0, st->pos[i]);
+					VectorClear(st->vel[i]);
+					st->jointLastTime[i] = timeMs;
+				} else if(dtMs > 0) {
+					dt = Com_Clamp(0.0f, 0.1f, dtMs * 0.001f);
+				}
 
-				for(k = 0; k < steps; k++) {
-					vec3_t acc, before;
+				if(dt > 0.0f) {
+					int steps = (int)ceilf(dt / JIGGLE_SUBSTEP);
+					float h, damp;
 
-					// spring towards the animated tip + gravity
-					VectorSubtract(tipW0, st->pos[i], acc);
-					VectorScale(acc, ks, acc);
-					acc[2] += gravity;
+					if(steps < 1) steps = 1;
+					if(steps > JIGGLE_MAX_SUBSTEPS) steps = JIGGLE_MAX_SUBSTEPS;
+					h = dt / steps;
+					damp = expf(-c * h);
+
+					for(k = 0; k < steps; k++) {
+						vec3_t acc, before;
+
+						// spring towards the animated tip + gravity
+						VectorSubtract(tipW0, st->pos[i], acc);
+						VectorScale(acc, ks, acc);
+						acc[2] += grav;
 
 					VectorMA(st->vel[i], h, acc, st->vel[i]);
 					VectorScale(st->vel[i], damp, st->vel[i]);
 
-					VectorCopy(st->pos[i], before);
-					VectorMA(st->pos[i], h, st->vel[i], st->pos[i]);
-
-					// rigid rod: keep the tip at the bone length from the joint
-					VectorSubtract(st->pos[i], jointW, d);
-					len = VectorLength(d);
-					if(len > 1e-4f) {
-						VectorMA(jointW, L / len, d, st->pos[i]);
-					} else {
-						VectorCopy(tipW0, st->pos[i]);
+					// cap the swing speed so an animation snap or teleport
+					// cannot whip the tip through a huge arc in one substep
+					if(maxSpeed > 0.0f) {
+						float vlen = VectorLength(st->vel[i]);
+						if(vlen > maxSpeed) VectorScale(st->vel[i], maxSpeed / vlen, st->vel[i]);
 					}
 
-					// velocity follows the position that was really reached
-					VectorSubtract(st->pos[i], before, st->vel[i]);
-					VectorScale(st->vel[i], 1.0f / h, st->vel[i]);
+					VectorCopy(st->pos[i], before);
+						VectorMA(st->pos[i], h, st->vel[i], st->pos[i]);
+
+						// rigid rod: keep the tip at the bone length from the joint
+						VectorSubtract(st->pos[i], jointW, d);
+						len = VectorLength(d);
+						if(len > 1e-4f) {
+							VectorMA(jointW, L / len, d, st->pos[i]);
+						} else {
+							VectorCopy(tipW0, st->pos[i]);
+						}
+
+						// velocity follows the position that was really reached
+						VectorSubtract(st->pos[i], before, st->vel[i]);
+						VectorScale(st->vel[i], 1.0f / h, st->vel[i]);
+					}
+
+					st->jointLastTime[i] = timeMs;
+					stepped++;
+				} else {
+					// no time passed for this joint (same refdef time, second
+					// copy of the entity, ...): only keep the rod length for
+					// the current joint position
+					VectorSubtract(st->pos[i], jointW, d);
+					len = VectorLength(d);
+					if(len > 1e-4f) VectorMA(jointW, L / len, d, st->pos[i]);
 				}
-				stepped++;
-			} else {
-				// no time passed (second copy of the entity, second scene of
-				// the frame): only keep the rod length for the current joint
-				VectorSubtract(st->pos[i], jointW, d);
-				len = VectorLength(d);
-				if(len > 1e-4f) VectorMA(jointW, L / len, d, st->pos[i]);
 			}
 
 			if(Q_isnan(st->pos[i][0]) || Q_isnan(st->pos[i][1]) || Q_isnan(st->pos[i][2]) || Q_isnan(st->vel[i][0]) || Q_isnan(st->vel[i][1]) || Q_isnan(st->vel[i][2])) {
