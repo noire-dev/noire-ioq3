@@ -61,7 +61,6 @@ vmCvar_t cg_drawCrosshair;
 vmCvar_t cg_crosshairScale;
 vmCvar_t cg_draw2D;
 vmCvar_t cg_animSpeed;
-vmCvar_t cg_debugAnim;
 vmCvar_t cg_errorDecay;
 vmCvar_t cg_nopredict;
 vmCvar_t cg_noPlayerAnims;
@@ -114,7 +113,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE},
     {&cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE},
     {&cg_animSpeed, "cg_animspeed", "1", CVAR_CHEAT},
-    {&cg_debugAnim, "cg_debuganim", "0", CVAR_CHEAT},
     {&cg_errorDecay, "cg_errordecay", "100", 0},
     {&cg_nopredict, "cg_nopredict", "0", 0},
     {&cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT},

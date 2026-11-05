@@ -542,10 +542,6 @@ static void CG_SetLerpFrameAnimation(clientInfo_t* ci, lerpFrame_t* lf, int newA
 		// is held until the blend completes (CG_RunLerpFrame pins frameTime)
 		lf->frame = anim->firstFrame;
 	}
-
-	if(cg_debugAnim.integer) {
-		CG_Printf("Anim: %i\n", newAnimation);
-	}
 }
 
 static void CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, int newAnimation, float speedScale) {
@@ -607,9 +603,6 @@ static void CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, int newAnimation,
 		}
 		if(cg.time > lf->frameTime) {
 			lf->frameTime = cg.time;
-			if(cg_debugAnim.integer) {
-				CG_Printf("Clamp lf->frameTime\n");
-			}
 		}
 	}
 
@@ -636,9 +629,7 @@ static void CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, int newAnimation,
 			// restart the new clip's frame clock cleanly at the blend end
 			lf->animationTime = lf->frameTime;
 		} else {
-			if(blendT < 0.0f) {
-				blendT = 0.0f;  // time jumped backwards, hold the source pose
-			}
+			if(blendT < 0.0f) blendT = 0.0f;  // time jumped backwards, hold the source pose
 			lf->oldFrame = lf->blendFromFrame;
 			lf->oldFrameTime = lf->blendStartTime;
 			lf->frameTime = lf->blendStartTime + ANIM_SMOOTHING_TIME;
@@ -648,8 +639,6 @@ static void CG_RunLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, int newAnimation,
 }
 
 static void CG_ClearLerpFrame(clientInfo_t* ci, lerpFrame_t* lf, int animationNumber) {
-	// resets (spawn, respawn, teleport, coming into view) snap straight
-	// to the first frame: no crossfade out of a stale pose
 	lf->blendFromAnimation = NULL;
 	lf->animation = NULL;
 	lf->frameTime = lf->oldFrameTime = cg.time;

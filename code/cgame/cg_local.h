@@ -661,8 +661,6 @@ extern vmCvar_t cg_crosshairScale;
 extern vmCvar_t cg_drawStatus;
 extern vmCvar_t cg_draw2D;
 extern vmCvar_t cg_animSpeed;
-extern vmCvar_t cg_debugAnim;
-extern vmCvar_t cg_debugPosition;
 extern vmCvar_t cg_errorDecay;
 extern vmCvar_t cg_nopredict;
 extern vmCvar_t cg_noPlayerAnims;
