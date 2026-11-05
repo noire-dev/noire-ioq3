@@ -1,8 +1,5 @@
-/*
-===========================================================================
-cg_particles.c -- simplified particle system
-===========================================================================
-*/
+// Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
+
 #include "cg_local.h"
 
 #define MAX_PARTICLES 65536
@@ -30,11 +27,6 @@ static particle_t* activeParticles;
 static particle_t* freeParticles;
 static bool particlesReady = false;
 
-/*
-===============
-CG_ClearParticles
-===============
-*/
 void CG_ClearParticles(void) {
 	int i;
 
@@ -49,19 +41,6 @@ void CG_ClearParticles(void) {
 	particlesReady = true;
 }
 
-/*
-===============
-CG_AddParticles
-
-Спавнит count частиц в origin со сферическим разлётом.
-  origin   — точка спавна
-  color    — RGBA (0..1)
-  count    — сколько частиц
-  speed    — максимальная компонента скорости (юниты/сек)
-  flags    — PF_SMOOTH_FADE / PF_GRAVITY
-  gravity  — вектор ускорения, применяется только при PF_GRAVITY
-===============
-*/
 void CG_AddParticlesEx(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, qhandle_t shader, float lifetime, float size) {
 	int i;
 
@@ -111,20 +90,6 @@ void CG_AddParticlesEx(const vec3_t origin, const vec4_t color, int count, float
 
 void CG_AddParticles(const vec3_t origin, const vec4_t color, int count, float speed, int flags, const vec3_t gravity, qhandle_t shader, float size, float lifetime) { CG_AddParticlesEx(origin, color, count, speed, flags, gravity, shader, lifetime, size); }
 
-/*
-===============
-CG_EmitParticleQuad
-
-Строит billboard-квад одной частицы прямо в polyVert_t.
-Позиция вычисляется по кинематике (x0 + v·t + ½·g·t²),
-ориентация — по осям cg.refdef.viewaxis (right/up), alpha — с fade.
-
-Порядок вершин (TR, TL, BL, BR) совпадает с тем, что делает
-RB_AddQuadStamp для RT_SPRITE, поэтому winding и fan-триангуляция
-в RB_SurfacePolychain дают те же два треугольника и та же
-видимая сторона при включённом culling.
-===============
-*/
 static void CG_EmitParticleQuad(const particle_t* p, polyVert_t* out) {
 	float age = (cg.time - p->birthTime) * 0.001f;
 	vec3_t pos, right, up;
@@ -183,25 +148,6 @@ static void CG_EmitParticleQuad(const particle_t* p, polyVert_t* out) {
 	}
 }
 
-/*
-===============
-CG_RenderParticles
-
-Батчим живые частицы по шейдерам: на каждый уникальный шейдер —
-один вызов trap_R_AddPolysToScene. Внутри одного шейдера всё
-уходит единым RB_SurfacePolychain-батчем, как и раньше.
-
-Алгоритм:
-  проход 1 — собираем множество используемых шейдеров и их счётчики;
-  вычисляем смещения в общем массиве batch[] (prefix sum);
-  проход 2 — фильтруем мёртвых, эмитим живых в свой «слот»;
-  flush — один trap_R_AddPolysToScene на каждый непустой шейдер.
-
-Частицы с шейдером за пределами MAX_PARTICLE_SHADERS рендерятся
-по одной (крайне редкий overflow-случай) — это не ломает
-остальной батч.
-===============
-*/
 void CG_RenderParticles(void) {
 	particle_t *p, *next;
 	particle_t *active = NULL, *tail = NULL;
