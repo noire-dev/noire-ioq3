@@ -1108,7 +1108,6 @@ Sets mins, maxs, and pm->ps->viewheight
 static void PM_CheckDuck(void) {
 	trace_t trace;
 
-
 	pm->mins[0] = -PLAYER_WIDTH;
 	pm->mins[1] = -PLAYER_WIDTH;
 
@@ -1423,7 +1422,7 @@ void PM_UpdateViewAngles(playerState_t* ps, const usercmd_t* cmd) {
 	short temp;
 	int i;
 
-	if(pm->cmd.buttons & BUTTON_GESTURE && pm->cmd.buttons & BUTTON_ATTACK && jsd_weapon[pm->cmd.weapon].wType == WT_PHYSGUN) {
+	if(pm->cmd.buttons & BUTTON_USE && pm->cmd.buttons & BUTTON_ATTACK && jsd_weapon[pm->cmd.weapon].wType == WT_PHYSGUN) {
 		return;
 	}
 
@@ -1474,13 +1473,6 @@ void PmoveSingle(pmove_t* pmove) {
 		pm->cmd.buttons &= ~BUTTON_WALKING;
 	}
 
-	// set the talk balloon flag
-	if(pm->cmd.buttons & BUTTON_TALK) {
-		pm->ps->eFlags |= EF_TALK;
-	} else {
-		pm->ps->eFlags &= ~EF_TALK;
-	}
-
 	// set the firing flag for continuous beam weapons
 	if(!(pm->ps->pm_flags & PMF_RESPAWNED) && pm->ps->pm_type != PM_NOCLIP && (pm->cmd.buttons & BUTTON_ATTACK) && pm->ps->stats[STAT_AMMO]) {
 		pm->ps->eFlags |= EF_FIRING;
@@ -1489,20 +1481,8 @@ void PmoveSingle(pmove_t* pmove) {
 	}
 
 	// clear the respawned flag if attack and use are cleared
-	if(pm->ps->stats[STAT_HEALTH] > 0 && !(pm->cmd.buttons & (BUTTON_ATTACK | BUTTON_USE_HOLDABLE))) {
+	if(pm->ps->stats[STAT_HEALTH] > 0 && !(pm->cmd.buttons & BUTTON_ATTACK)) {
 		pm->ps->pm_flags &= ~PMF_RESPAWNED;
-	}
-
-	// if talk button is down, dissallow all other input
-	// this is to prevent any possible intercept proxy from
-	// adding fake talk balloons
-	if(pmove->cmd.buttons & BUTTON_TALK) {
-		// keep the talk button set tho for when the cmd.serverTime > 66 msec
-		// and the same cmd is used multiple times in Pmove
-		pmove->cmd.buttons = BUTTON_TALK;
-		pmove->cmd.forwardmove = 0;
-		pmove->cmd.rightmove = 0;
-		pmove->cmd.upmove = 0;
 	}
 
 	// clear all pmove local vars

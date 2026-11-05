@@ -342,9 +342,7 @@ void ClientEvents(gentity_t* ent, int oldEventSequence) {
 				G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
 				break;
 
-			case EV_FIRE_WEAPON:
-				FireWeapon(ent);
-				break;
+			case EV_FIRE_WEAPON: FireWeapon(ent); break;
 
 			default: break;
 		}
@@ -508,7 +506,11 @@ void ClientThink_real(gentity_t* ent) {
 	client->ps.gravity = g_gravity.value;
 
 	// set speed
-	client->ps.speed = g_speed.value;
+	if(client->speedOverride > 0) {
+		client->ps.speed = client->speedOverride;
+	} else {
+		client->ps.speed = g_speed.value;
+	}
 
 	// set up for pmove
 	oldEventSequence = client->ps.eventSequence;
@@ -574,7 +576,7 @@ void ClientThink_real(gentity_t* ent) {
 
 	// check for respawning
 	if(client->ps.stats[STAT_HEALTH] <= 0) {
-		if(level.time > client->respawnTime && ucmd->buttons & (BUTTON_ATTACK | BUTTON_USE_HOLDABLE)) ClientRespawn(ent);
+		if(level.time > client->respawnTime && ucmd->buttons & BUTTON_ATTACK) ClientRespawn(ent);
 		return;
 	}
 

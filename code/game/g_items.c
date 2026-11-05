@@ -1,6 +1,6 @@
 // Copyright (C) 2026 Noire's Mod [noire.dev] — GPLv2
 
-#include "g_local.h"
+#include "../qcommon/vm_javascript.h"
 
 void Set_Weapon(gentity_t* ent, int weapon, int status) { ent->swep_list[weapon] = status; }
 
@@ -71,6 +71,9 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 	}
 
 	if(!respawn) return;
+
+	// js hook: itemPickup(player, itemID)
+	JS_HookRun("itemPickup", other->s.number, ITEM_INDEX(ent->item), 0);
 
 	G_AddPredictableEvent(other, EV_ITEM_PICKUP, ent->s.modelindex);
 

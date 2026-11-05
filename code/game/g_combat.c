@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // g_combat.c
 
-#include "g_local.h"
+#include "../qcommon/vm_javascript.h"
 
 /*
 =================
@@ -49,26 +49,6 @@ void TossClientItems(gentity_t* self) {
 
 /*
 ==================
-LookAtKiller
-==================
-*/
-void LookAtKiller(gentity_t* self, gentity_t* inflictor, gentity_t* attacker) {
-	vec3_t dir;
-
-	if(attacker && attacker != self) {
-		VectorSubtract(attacker->s.pos.trBase, self->s.pos.trBase, dir);
-	} else if(inflictor && inflictor != self) {
-		VectorSubtract(inflictor->s.pos.trBase, self->s.pos.trBase, dir);
-	} else {
-		self->client->ps.stats[STAT_DEAD_YAW] = self->s.angles[YAW];
-		return;
-	}
-
-	self->client->ps.stats[STAT_DEAD_YAW] = vectoyaw(dir);
-}
-
-/*
-==================
 body_die
 ==================
 */
@@ -83,6 +63,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 	gentity_t* ent;
 	int anim;
 	int killer;
+	int hookKiller;
 	int i;
 
 	if(self->client->ps.pm_type == PM_DEAD) return;
@@ -92,6 +73,12 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 		killer = attacker->s.number;
 	else
 		killer = ENTITYNUM_WORLD;
+
+	// js hook: playerDeath(victim, attacker, method)
+	// attacker is -1 when killed by the world (falling, lava, crush, ...)
+	hookKiller = killer;
+	if(hookKiller >= ENTITYNUM_WORLD) hookKiller = -1;
+	JS_HookRun("playerDeath", self->s.number, hookKiller, meansOfDeath);
 
 	// broadcast the death event to everyone
 	ent = G_TempEntity(self->r.currentOrigin, EV_OBITUARY, meansOfDeath);
@@ -120,7 +107,6 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 
 		self->s.angles[0] = 0;
 		self->s.angles[2] = 0;
-		LookAtKiller(self, inflictor, attacker);
 
 		VectorCopy(self->s.angles, self->client->ps.viewangles);
 
@@ -237,6 +223,7 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 	int take;
 	int asave;
 	int knockback;
+	int hookAttacker;
 
 	if(!targ->takedamage) {
 		return;
@@ -391,6 +378,12 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 		if(targ->client) {
 			targ->client->ps.stats[STAT_HEALTH] = targ->health;
 		}
+
+		// js hook: damage(victim, attacker, method)
+		// victim is a player, npc or prop entity number, attacker is -1 for the world
+		hookAttacker = attacker->s.number;
+		if(hookAttacker >= ENTITYNUM_WORLD) hookAttacker = -1;
+		JS_HookRun("damage", targ->s.number, hookAttacker, mod);
 
 		if(targ->health <= 0) {
 			if(client) targ->flags |= FL_NO_KNOCKBACK;

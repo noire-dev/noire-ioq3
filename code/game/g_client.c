@@ -174,9 +174,7 @@ SelectSpawnPoint
 Chooses a player start, deathmatch start, etc
 ============
 */
-gentity_t* SelectSpawnPoint(vec3_t avoidPoint, vec3_t origin, vec3_t angles, bool isbot) {
-	return SelectRandomFurthestSpawnPoint(avoidPoint, origin, angles, isbot);
-}
+gentity_t* SelectSpawnPoint(vec3_t avoidPoint, vec3_t origin, vec3_t angles, bool isbot) { return SelectRandomFurthestSpawnPoint(avoidPoint, origin, angles, isbot); }
 
 /*
 =======================================================================
@@ -247,7 +245,7 @@ void CopyToBodyQue(gentity_t* ent) {
 	level.bodyQueIndex = (level.bodyQueIndex + 1) % BODY_QUEUE_SIZE;
 
 	body->s = ent->s;
-	body->s.eFlags = EF_DEAD;  // clear EF_TALK, etc
+	body->s.eFlags = EF_DEAD;  // clear
 	body->s.powerups = 0;      // clear powerups
 	body->s.loopSound = 0;     // clear lava burning
 	body->s.number = body - g_entities;

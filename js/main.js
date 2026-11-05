@@ -19,10 +19,11 @@ JSCall = function (func_id) {
         case js.getToolName: return tool.getName(args[0]);
         case js.initTool: return tool.init(args[0]);
         case js.callTool: return tool.call(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11]);
-        case js.gameRunFrame: return Game_RunFrame(args[0]);
+        case js.gameRunFrame: return Game_RunFrame(args[0], args[1]);
         case js.itemInit: return item.initSystem(args[0]);
         case js.weaponInit: return weapon.initSystem(args[0]);
         case js.commandRun: return command.run(args);
         case js.spawnUse: return spawn.use(args[0]);
+        case js.hookRun: return hook.run(args);
     }
 };

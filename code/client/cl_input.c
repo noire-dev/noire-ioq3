@@ -303,17 +303,12 @@ void CL_KeyMove(usercmd_t* cmd) {
 	int movespeed;
 	int forward, side, up;
 
-	//
-	// adjust for speed key / running
-	// the walking flag is to keep animations consistent
-	// even during acceleration and develeration
-	//
 	if(in_speed.active ^ cl_run->integer) {
 		movespeed = 127;
 		cmd->buttons &= ~BUTTON_WALKING;
 	} else {
 		cmd->buttons |= BUTTON_WALKING;
-		movespeed = 64;
+		movespeed = 32;
 	}
 
 	forward = 0;
@@ -503,10 +498,6 @@ void CL_CmdButtons(usercmd_t* cmd) {
 			cmd->buttons |= 1 << i;
 		}
 		in_buttons[i].wasPressed = false;
-	}
-
-	if(Key_GetCatcher()) {
-		cmd->buttons |= BUTTON_TALK;
 	}
 
 	// allow the game to know if any key at all is

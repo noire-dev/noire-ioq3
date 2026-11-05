@@ -186,6 +186,9 @@ struct gclient_s {
 
 	bool noclip;
 
+	// js entity api: > 0 overrides g_speed for this client, 0 = default, cleared on respawn
+	int speedOverride;
+
 	int buttons;
 
 	vec3_t oldOrigin;

@@ -23,6 +23,7 @@ const js = {
     weaponInit: jsCount += 1,
     commandRun: jsCount += 1,
     spawnUse: jsCount += 1,
+    hookRun: jsCount += 1,
 };
 
 const vmCount = -1;
@@ -34,7 +35,6 @@ const vm = {
     apiWeaponFx: vmCount += 1,
 
     // game.vm
-    apiGameEntity: vmCount += 1,
     gapiEntityDelete: vmCount += 1,
     gapiEntitySpawn: vmCount += 1,
     gapiPlayerCrosshairPoint: vmCount += 1,
@@ -42,6 +42,14 @@ const vm = {
     gapiSpawnFloat: vmCount += 1,
     gapiSpawnString: vmCount += 1,
     gapiSpawnVector: vmCount += 1,
+    gapiNPCSpawn: vmCount += 1,
+    gapiEntityStat: vmCount += 1,
+    gapiEntitySpeed: vmCount += 1,
+    gapiEntityAmmo: vmCount += 1,
+    gapiEntityWeapon: vmCount += 1,
+    gapiEntityActiveWeapon: vmCount += 1,
+    gapiEntityInventory: vmCount += 1,
+    gapiEntityIsClient: vmCount += 1,
 
     // cgame.vm + ui.vm
     apiCGUI: vmCount += 1,
@@ -129,6 +137,7 @@ openjs.file("js/translation");
 openjs.file("js/api");
 openjs.file("js/color");
 openjs.file("js/command");
+openjs.file("js/hooks");
 openjs.file("js/cgui");
 openjs.file("js/ui");
 openjs.file("js/utils");
@@ -143,3 +152,6 @@ openjs.file("js/hud/" + cvar.string("hud.module"));
 openjs.file("js/game");
 openjs.file("js/gameMain");
 openjs.file("js/spawnlists/spawnlists");
+
+// game mods: js/mods/*.js (hooks, npc, entity api, commands)
+openjs.folder("js/mods", "mods");

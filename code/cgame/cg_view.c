@@ -82,11 +82,6 @@ static void CG_OffsetThirdPersonView(void) {
 		pivot[2] += cg.predictedPlayerState.viewheight;
 	}
 
-	// dead: look at killer
-	if(cg.predictedPlayerState.stats[STAT_HEALTH] <= 0) {
-		cg.refdefViewAngles[YAW] = cg.predictedPlayerState.stats[STAT_DEAD_YAW];
-	}
-
 	pitch = cg.refdefViewAngles[PITCH];
 	yaw = cg.refdefViewAngles[YAW] + cg_thirdPersonAngle.value;
 

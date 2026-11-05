@@ -154,10 +154,12 @@ void JS_ToolCall(int id, int targetID, int playerID, char* arg1, char* arg2, cha
 	JS_Function(JS_TOOLCALL);
 }
 
-void JS_GameRunFrame(int levelTime) {
+void JS_GameRunFrame(int levelTime, int frameNum) {
 	JS_StackClean();
 	jsargs.t[0] = JS_TYPE_INT;
 	jsargs.v[0].i = levelTime;
+	jsargs.t[1] = JS_TYPE_INT;
+	jsargs.v[1].i = frameNum;
 	JS_Function(JS_GAMERUNFRAME);
 }
 
@@ -196,4 +198,17 @@ int JS_SpawnUse(char* classname) {
 	StringCopy(jsargs.v[0].s, classname, MAX_JS_STRINGSIZE);
 	JS_Function(JS_SPAWNUSE);
 	return jsresult.v.i;
+}
+
+void JS_HookRun(char* hookName, int arg1, int arg2, int arg3) {
+	JS_StackClean();
+	jsargs.t[0] = JS_TYPE_STRING;
+	StringCopy(jsargs.v[0].s, hookName, MAX_JS_STRINGSIZE);
+	jsargs.t[1] = JS_TYPE_INT;
+	jsargs.v[1].i = arg1;
+	jsargs.t[2] = JS_TYPE_INT;
+	jsargs.v[2].i = arg2;
+	jsargs.t[3] = JS_TYPE_INT;
+	jsargs.v[3].i = arg3;
+	JS_Function(JS_HOOKRUN);
 }

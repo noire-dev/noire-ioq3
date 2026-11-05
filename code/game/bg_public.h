@@ -156,7 +156,6 @@ typedef enum {
 	STAT_HEALTH,
 	STAT_ARMOR,
 	STAT_AMMO,
-	STAT_DEAD_YAW  // look this direction when dead (FIXME: get rid of?)
 } statIndex_t;
 
 // player_state->persistant[] indexes
@@ -164,21 +163,20 @@ typedef enum {
 // cleared on respawn
 // NOTE: may not have more than 16
 typedef enum {
-	PERS_SPAWN_COUNT,     // incremented every respawn
-	PERS_ATTACKER,        // clientnum of last damage inflicter
-	PERS_ATTACKEE_ARMOR   // health/armor of last person we attacked
+	PERS_SPAWN_COUNT,    // incremented every respawn
+	PERS_ATTACKER,       // clientnum of last damage inflicter
+	PERS_ATTACKEE_ARMOR  // health/armor of last person we attacked
 } persEnum_t;
 
 // entityState_t->eFlags
-#define EF_DEAD 0x00000001             // don't draw a foe marker over players with EF_DEAD
-#define EF_TELEPORT_BIT 0x00000004     // toggled every time the origin abruptly changes
+#define EF_DEAD 0x00000001          // don't draw a foe marker over players with EF_DEAD
+#define EF_TELEPORT_BIT 0x00000004  // toggled every time the origin abruptly changes
 #define EF_PLAYER_EVENT 0x00000010
-#define EF_BOUNCE 0x00000010            // for missiles
-#define EF_BOUNCE_HALF 0x00000020       // for missiles
-#define EF_NODRAW 0x00000080            // may have an event, but no model (unspawned items)
-#define EF_FIRING 0x00000100            // for lightning gun
-#define EF_MOVER_STOP 0x00000400        // will push otherwise
-#define EF_TALK 0x00001000              // draw a talk balloon
+#define EF_BOUNCE 0x00000010       // for missiles
+#define EF_BOUNCE_HALF 0x00000020  // for missiles
+#define EF_NODRAW 0x00000080       // may have an event, but no model (unspawned items)
+#define EF_FIRING 0x00000100       // for lightning gun
+#define EF_MOVER_STOP 0x00000400   // will push otherwise
 
 #define WP_NONE 0
 #define MAX_WEAPONS 2048
@@ -489,6 +487,5 @@ void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, bool snap)
 void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s, int time, bool snap);
 
 bool BG_PlayerTouchesItem(playerState_t* ps, entityState_t* item, int atTime);
-
 
 #endif

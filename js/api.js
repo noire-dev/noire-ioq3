@@ -136,10 +136,6 @@ apiFields.weaponFx = {
 };
 
 apiField = -1;
-apiFields.gameEntity = {
-};
-
-apiField = -1;
 apiFields.hud = {
     "counterW": apiField += 1,
     "counterH": apiField += 1,
@@ -307,16 +303,6 @@ api.weaponFx = function (weaponID, fieldName, value, i1, i2, i3, i4) {
         return false;
     }
     return qvm.call(vm.apiWeaponFx, qvm.cgame, weaponID, fieldID, newValue, i1, i2, i3, i4);
-}
-
-api.gameEntity = function (entityID, fieldName, value, i1, i2, i3, i4) {
-    var fieldID = apiFields.gameEntity[fieldName];
-    var newValue = value;
-    if (fieldID === undefined) {
-        console.log("#ff5api.gameEntity: invalid field '" + fieldName + "'");
-        return false;
-    }
-    return qvm.call(vm.apiGameEntity, qvm.game, entityID, fieldID, newValue, i1, i2, i3, i4);
 }
 
 api.hud = function (fieldName, value, i1, i2, i3, i4) {

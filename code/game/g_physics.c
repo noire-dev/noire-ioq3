@@ -98,7 +98,7 @@ void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun) {
 		// ps.viewangles stays frozen and its delta would be zero. Read the
 		// raw cmd input (cmd.angles + delta_angles) to get the real per-frame
 		// mouse delta regardless of the view freeze.
-		bool gestureHeld = (player->client->pers.cmd.buttons & BUTTON_GESTURE) != 0;
+		bool gestureHeld = (player->client->pers.cmd.buttons & BUTTON_USE) != 0;
 		float rawYaw = SHORT2ANGLE(player->client->pers.cmd.angles[YAW] + player->client->ps.delta_angles[YAW]);
 		float rawPitch = SHORT2ANGLE(player->client->pers.cmd.angles[PITCH] + player->client->ps.delta_angles[PITCH]);
 		float yawDelta = rawYaw - ent->grabLastPlayerYaw;
@@ -223,7 +223,7 @@ void Phys_HoldFrame(gentity_t* player, vec3_t velocity, bool isPhysgun) {
 		trap_Phys_SetPosition(ent->s.number, end[0], end[1], end[2]);
 		trap_Phys_SetLinearVelocity(ent->s.number, velocity[0], velocity[1], velocity[2]);
 		trap_Phys_SetAngularVelocity(ent->s.number, 0.00f, 0.00f, 0.00f);
-		if(player->client->pers.cmd.buttons & BUTTON_GESTURE && isPhysgun) trap_Phys_SetAngles(ent->s.number, player->client->pers.cmd.angles[0], player->client->pers.cmd.angles[1], player->client->pers.cmd.angles[0] - player->client->pers.cmd.angles[1]);  // rotate
+		if(player->client->pers.cmd.buttons & BUTTON_USE && isPhysgun) trap_Phys_SetAngles(ent->s.number, player->client->pers.cmd.angles[0], player->client->pers.cmd.angles[1], player->client->pers.cmd.angles[0] - player->client->pers.cmd.angles[1]);  // rotate
 	} else {
 		VectorClear(ent->client->ps.velocity);
 		VectorCopy(end, ent->client->ps.origin);

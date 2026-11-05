@@ -47,6 +47,7 @@ typedef enum {
 	JS_WEAPONINIT,
 	JS_COMMANDRUN,
 	JS_SPAWNUSE,
+	JS_HOOKRUN,
 } jscall_t;
 
 typedef enum {
@@ -57,7 +58,6 @@ typedef enum {
 	VM_APIWEAPONFX,
 
 	// game.vm
-	VM_APIGAMEENTITY,
 	VM_GAPIENTITYDELETE,
 	VM_GAPIENTITYSPAWN,
 	VM_GAPIPLAYERCROSHAIRPOINT,
@@ -65,6 +65,14 @@ typedef enum {
 	VM_GAPISPAWNFLOAT,
 	VM_GAPISPAWNSTRING,
 	VM_GAPISPAWNVECTOR,
+	VM_GAPINPCSPAWN,
+	VM_GAPIENTITYSTAT,
+	VM_GAPIENTITYSPEED,
+	VM_GAPIENTITYAMMO,
+	VM_GAPIENTITYWEAPON,
+	VM_GAPIENTITYACTIVEWEAPON,
+	VM_GAPIENTITYINVENTORY,
+	VM_GAPIENTITYISCLIENT,
 
 	// cgame.vm + ui.vm
 	VM_APICGUI,
@@ -149,11 +157,12 @@ const char* JS_GetToolNameID(int id);
 const char* JS_GetToolName(int id);
 void JS_ToolInit(int id);
 void JS_ToolCall(int id, int targetID, int playerID, char* arg1, char* arg2, char* arg3, char* arg4, char* arg5, char* arg6, char* arg7, char* arg8, char* arg9);
-void JS_GameRunFrame(int levelTime);
+void JS_GameRunFrame(int levelTime, int frameNum);
 void JS_ItemInit(int vmIndex);
 void JS_WeaponInit(int vmIndex);
 int JS_CommandRun(int clientNum);
 int JS_SpawnUse(char* classname);
+void JS_HookRun(char* hookName, int arg1, int arg2, int arg3);
 
 void JS_SystemInit(int vmIndex);
 

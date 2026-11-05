@@ -437,7 +437,7 @@ void CG_PredictPlayerState(void) {
 		if(trap_Key_GetCatcher() == KEYCATCH_UI || trap_Key_GetCatcher() & KEYCATCH_CONSOLE) {
 			cg.savedSens = 0;
 		} else {
-			if(cg_pmove.cmd.buttons & BUTTON_GESTURE && cg_pmove.cmd.buttons & BUTTON_ATTACK && jsd_weapon[cg_pmove.cmd.weapon].wType == WT_PHYSGUN) {
+			if(cg_pmove.cmd.buttons & BUTTON_USE && cg_pmove.cmd.buttons & BUTTON_ATTACK && jsd_weapon[cg_pmove.cmd.weapon].wType == WT_PHYSGUN) {
 				trap_Cvar_Set("sensitivity", "0.025");
 			} else {
 				if(cg.savedSens && cg.savedSens > 0.025) trap_Cvar_Set("sensitivity", va("%.3f", cg.savedSens));

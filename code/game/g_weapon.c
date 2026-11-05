@@ -392,6 +392,9 @@ static void Missile_Fire(gentity_t* ent, int weapon) {
 
 // Fire Weapon
 void FireWeapon(gentity_t* ent) {
+	// js hook: weaponFire(player, weaponID)
+	JS_HookRun("weaponFire", ent->s.number, ent->s.weapon, 0);
+
 	// set aiming directions
 	AngleVectors(ent->client->ps.viewangles, forward, right, up);
 

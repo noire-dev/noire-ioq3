@@ -128,20 +128,16 @@ static void API_Weapon(int weaponID, int fieldID, int i1, int i2, int i3, int i4
 }
 
 #ifdef GAME
-static void API_GameEntity(int entityID, int fieldID, int i1, int i2, int i3, int i4) {
-	api_foundEntry = false;
-	api_valueIndex = 2;
-	api_counter = 0;
-
-	bounds(entityID, MAX_GENTITIES, "API_GameEntity - entityID");
-}
-
 static void GAPI_EntityDelete(gentity_t* entity) {
-	if(!entity->client) {
-		G_FreeEntity(entity);
-	} else {
-		// DropClientSilently(entity->client->ps.clientNum);
+	if(!entity) return;
+
+	if(entity->client) {
+		// bots (npc) can be removed, real players can't
+		if(entity->r.svFlags & SVF_BOT) trap_DropClient(entity->s.number, "NPC removed");
+		return;
 	}
+
+	G_FreeEntity(entity);
 }
 
 static float GAPI_PlayerCrosshairPoint(gentity_t* player, float distance, int xyz) {
@@ -205,7 +201,7 @@ static void GAPI_SetEntityAngles(gentity_t* entity, float x, float y, float z) {
 	entity->s.angles[2] = z;
 }
 
-static void GAPI_EntitySpawn(float x, float y, float z, float ax, float ay, float az, char* modelName) {
+static int GAPI_EntitySpawn(float x, float y, float z, float ax, float ay, float az, char* modelName) {
 	gentity_t* entity;
 	entity = G_Spawn();
 	entity->s.eType = ET_PHYSICS;
@@ -217,6 +213,222 @@ static void GAPI_EntitySpawn(float x, float y, float z, float ax, float ay, floa
 	trap_Phys_CreateModel(entity->s.number, entity->s.modelindex, entity->s.origin[0], entity->s.origin[1], entity->s.origin[2], 10);
 	trap_Phys_SetAngles(entity->s.number, entity->s.angles[0], entity->s.angles[1], entity->s.angles[2]);
 	trap_Phys_UnfreezeObject(entity->s.number);
+
+	return entity->s.number;
+}
+
+/*
+================
+GAPI_NPCSpawn
+
+Spawns an npc (bot) and teleports it to the given position.
+Everything is addressed by entity number: for clients the entity
+number is the same as the client number.
+Returns the npc entity number or -1 on failure.
+================
+*/
+static int GAPI_NPCSpawn(char* npcName, char* npcModel, float skill, float x, float y, float z, float yaw) {
+	int clientNum;
+	char userinfo[MAX_INFO_STRING];
+	gentity_t* entity;
+	vec3_t angles;
+
+	if(!trap_Cvar_VariableIntegerValue("bot_enable")) {
+		trap_Print("GAPI_NPCSpawn: bot_enable is 0, run 'bot_enable 1' and restart the map\n");
+		return -1;
+	}
+
+	if(!npcName || !npcName[0]) npcName = "NPC";
+	if(!npcModel || !npcModel[0]) npcModel = "npc/default";
+
+	// have the server allocate a client slot
+	clientNum = trap_BotAllocateClient();
+	if(clientNum == -1) {
+		trap_Print("GAPI_NPCSpawn: no free client slots, raise sv_maxclients\n");
+		return -1;
+	}
+
+	// create the npc's userinfo
+	userinfo[0] = '\0';
+	Info_SetValueForKey(userinfo, "name", npcName);
+	Info_SetValueForKey(userinfo, "model", npcModel);
+	Info_SetValueForKey(userinfo, "rate", "25000");
+	Info_SetValueForKey(userinfo, "snaps", "20");
+	Info_SetValueForKey(userinfo, "skill", va("%.2f", skill));
+	trap_SetUserinfo(clientNum, userinfo);
+
+	// have it connect to the game as a normal client
+	if(ClientConnect(clientNum, true, true)) {
+		trap_Print("GAPI_NPCSpawn: ClientConnect failed\n");
+		return -1;
+	}
+
+	ClientBegin(clientNum);
+
+	// teleport the npc to the requested position
+	entity = &g_entities[clientNum];
+
+	trap_UnlinkEntity(entity);
+
+	entity->client->ps.origin[0] = x;
+	entity->client->ps.origin[1] = y;
+	entity->client->ps.origin[2] = z;
+
+	VectorSet(angles, 0, yaw, 0);
+	SetClientViewAngle(entity, angles);
+
+	VectorCopy(entity->client->ps.origin, entity->r.currentOrigin);
+	G_SetOrigin(entity, entity->client->ps.origin);
+
+	trap_LinkEntity(entity);
+
+	return clientNum;
+}
+
+/*
+================
+Entity API
+
+All entity / player / npc functions take an entity number
+(g_entities index), so one call works for players, npcs and props.
+The JSE_ helpers read the value from JS when JS passes one,
+otherwise they only return the current value.
+================
+*/
+
+static gentity_t* GAPI_Entity(int entityID, char* apiName) {
+	gentity_t* entity;
+
+	bounds(entityID, MAX_GENTITIES, apiName);
+
+	entity = &g_entities[entityID];
+	if(!entity->inuse || !entity->client) {
+		trap_Print(va("#ff5%s: entity %d is not a client\n", apiName, entityID));
+		return NULL;
+	}
+
+	return entity;
+}
+
+// safe default for the value-returning entity getters, so an error
+// never leaks a stale result back into JS
+static void GAPI_EntityResultDefault(void) {
+	vmresult.t = JS_TYPE_INT;
+	vmresult.v.i = 0;
+}
+
+static void GAPI_EntityStat(int entityID, int statID) {
+	gentity_t* entity;
+
+	api_foundEntry = false;
+	api_valueIndex = 2;
+	GAPI_EntityResultDefault();
+
+	entity = GAPI_Entity(entityID, "GAPI_EntityStat - entityID");
+	if(!entity) return;
+
+	bounds(statID, MAX_STATS, "GAPI_EntityStat - statID");
+
+	JSE_Int(&entity->client->ps.stats[statID]);
+
+	// health is the damage/death source of truth, ps.stats only mirrors it for
+	// the hud, so keep ent->health in sync when js writes STAT_HEALTH
+	if(statID == STAT_HEALTH && vmargs.t[api_valueIndex] != JS_TYPE_NONE) {
+		entity->health = entity->client->ps.stats[STAT_HEALTH];
+	}
+}
+
+static void GAPI_EntitySpeed(int entityID) {
+	gentity_t* entity;
+
+	api_foundEntry = false;
+	api_valueIndex = 2;
+	GAPI_EntityResultDefault();
+
+	entity = GAPI_Entity(entityID, "GAPI_EntitySpeed - entityID");
+	if(!entity) return;
+
+	// 0 = use g_speed, anything above overrides it (cleared on respawn)
+	JSE_Int(&entity->client->speedOverride);
+}
+
+static void GAPI_EntityAmmo(int entityID, int weaponID) {
+	gentity_t* entity;
+
+	api_foundEntry = false;
+	api_valueIndex = 2;
+	GAPI_EntityResultDefault();
+
+	entity = GAPI_Entity(entityID, "GAPI_EntityAmmo - entityID");
+	if(!entity) return;
+
+	bounds(weaponID, MAX_WEAPONS, "GAPI_EntityAmmo - weaponID");
+	JSE_Int(&entity->swep_ammo[weaponID]);
+}
+
+static void GAPI_EntityWeapon(int entityID, int weaponID) {
+	gentity_t* entity;
+
+	api_foundEntry = false;
+	api_valueIndex = 2;
+	GAPI_EntityResultDefault();
+
+	entity = GAPI_Entity(entityID, "GAPI_EntityWeapon - entityID");
+	if(!entity) return;
+
+	bounds(weaponID, MAX_WEAPONS, "GAPI_EntityWeapon - weaponID");
+	// swep_list status: WS_NONE 0, WS_HAVE 1, WS_NOAMMO 2
+	JSE_Int(&entity->swep_list[weaponID]);
+}
+
+static void GAPI_EntityActiveWeapon(int entityID) {
+	gentity_t* entity;
+
+	api_foundEntry = false;
+	api_valueIndex = 2;
+	GAPI_EntityResultDefault();
+
+	entity = GAPI_Entity(entityID, "GAPI_EntityActiveWeapon - entityID");
+	if(!entity) return;
+
+	JSE_Int(&entity->client->ps.weapon);
+}
+
+static void GAPI_EntityInventory(int entityID) {
+	gentity_t* entity;
+	char inventory[MAX_JS_STRINGSIZE];
+	int weaponID;
+
+	api_foundEntry = true;
+	api_valueIndex = 2;
+
+	vmresult.t = JS_TYPE_STRING;
+	vmresult.v.s[0] = '\0';
+
+	entity = GAPI_Entity(entityID, "GAPI_EntityInventory - entityID");
+	if(!entity) return;
+
+	inventory[0] = '\0';
+	for(weaponID = 1; weaponID < jsd_weaponCount && weaponID < MAX_WEAPONS; weaponID++) {
+		if(entity->swep_list[weaponID] < WS_HAVE) continue;
+
+		if(inventory[0]) Q_strcat(inventory, sizeof(inventory), ",");
+		Q_strcat(inventory, sizeof(inventory), va("%i:%i", weaponID, entity->swep_ammo[weaponID]));
+	}
+
+	StringCopy(vmresult.v.s, inventory, MAX_JS_STRINGSIZE);
+}
+
+static int GAPI_EntityIsClient(int entityID) {
+	gentity_t* entity;
+
+	bounds(entityID, MAX_GENTITIES, "GAPI_EntityIsClient - entityID");
+
+	entity = &g_entities[entityID];
+	if(!entity->inuse || !entity->client) return 0;
+	if(entity->client->pers.connected != CON_CONNECTED) return 0;
+
+	return 1;
 }
 #endif
 
@@ -496,12 +708,28 @@ void VMCall(int func_id) {
 		case VM_CMD: trap_SendConsoleCommand(vmargs.v[0].i, vmargs.v[1].s); break;
 		case VM_APIWEAPON: API_Weapon(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
 #ifdef GAME
-		case VM_APIGAMEENTITY: API_GameEntity(vmargs.v[0].i, vmargs.v[1].i, vmargs.v[3].i, vmargs.v[4].i, vmargs.v[5].i, vmargs.v[6].i); break;
 		case VM_GAPIENTITYDELETE: GAPI_EntityDelete(&g_entities[vmargs.v[0].i]); break;
-		case VM_GAPIENTITYSPAWN: GAPI_EntitySpawn(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s); break;
+		case VM_GAPIENTITYSPAWN:
+			vmresult.v.i = GAPI_EntitySpawn(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s);
+			vmresult.t = JS_TYPE_INT;
+			break;
 		case VM_GAPIPLAYERCROSHAIRPOINT:
 			vmresult.v.f = GAPI_PlayerCrosshairPoint(&g_entities[vmargs.v[0].i], vmargs.v[1].f, vmargs.v[2].i);
 			vmresult.t = JS_TYPE_FLOAT;
+			break;
+		case VM_GAPINPCSPAWN:
+			vmresult.v.i = GAPI_NPCSpawn(vmargs.v[0].s, vmargs.v[1].s, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].f);
+			vmresult.t = JS_TYPE_INT;
+			break;
+		case VM_GAPIENTITYSTAT: GAPI_EntityStat(vmargs.v[0].i, vmargs.v[1].i); break;
+		case VM_GAPIENTITYSPEED: GAPI_EntitySpeed(vmargs.v[0].i); break;
+		case VM_GAPIENTITYAMMO: GAPI_EntityAmmo(vmargs.v[0].i, vmargs.v[1].i); break;
+		case VM_GAPIENTITYWEAPON: GAPI_EntityWeapon(vmargs.v[0].i, vmargs.v[1].i); break;
+		case VM_GAPIENTITYACTIVEWEAPON: GAPI_EntityActiveWeapon(vmargs.v[0].i); break;
+		case VM_GAPIENTITYINVENTORY: GAPI_EntityInventory(vmargs.v[0].i); break;
+		case VM_GAPIENTITYISCLIENT:
+			vmresult.v.i = GAPI_EntityIsClient(vmargs.v[0].i);
+			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_GAPISPAWNINT: {
 			int out = 0;

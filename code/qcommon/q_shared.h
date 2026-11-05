@@ -1147,17 +1147,8 @@ typedef struct playerState_s {
 // so they aren't game/cgame only definitions
 //
 #define BUTTON_ATTACK 1
-#define BUTTON_TALK 2  // displays talk balloon and disables actions
-#define BUTTON_USE_HOLDABLE 4
-#define BUTTON_GESTURE 8
-#define BUTTON_WALKING 16
-#define BUTTON_AFFIRMATIVE 32
-#define BUTTON_NEGATIVE 64
-
-#define BUTTON_GETFLAG 128
-#define BUTTON_GUARDBASE 256
-#define BUTTON_PATROL 512
-#define BUTTON_FOLLOWME 1024
+#define BUTTON_USE 2
+#define BUTTON_WALKING 4
 
 #define BUTTON_ANY 2048  // any key whatsoever
 

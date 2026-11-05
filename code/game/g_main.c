@@ -393,7 +393,7 @@ void G_RunFrame(int levelTime) {
 	// get any cvar changes
 	G_UpdateCvars();
 
-	JS_GameRunFrame(level.time);
+	JS_GameRunFrame(level.time, level.framenum);
 
 	//
 	// go through all allocated objects
