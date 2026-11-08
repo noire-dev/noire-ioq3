@@ -81,17 +81,23 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 	if(hookKiller >= ENTITYNUM_WORLD) hookKiller = -1;
 	JS_HookRun("playerDeath", self->s.number, hookKiller, meansOfDeath);
 
+	if(G_RagdollModelOfPlayer(self->s.number, model, sizeof(model))) {
+		vec3_t origin;
+		VectorCopy(self->client->ps.origin, origin);
+		origin[2] += MINS_Z;
+		G_SpawnRagdoll(origin, self->client->ps.viewangles[YAW], model, self->s.number, RAGDOLL_SIMPLE, 30000);
+		self->client->ps.eFlags |= EF_NODRAW;
+	}
+
 	// broadcast the death event to everyone
 	ent = G_TempEntity(self->r.currentOrigin, EV_OBITUARY, meansOfDeath);
 	ent->s.otherEntityNum = killer;
 	ent->s.otherEntityNum2 = self->s.number;
 	ent->r.svFlags = SVF_BROADCAST;  // send to everyone
 
-	self->enemy = attacker;
-
 	TossClientItems(self);
 
-	Cmd_Score_f(self);  // show scores
+	Cmd_Scoreboard_f(self);  // show scores
 
 	self->takedamage = true;
 
@@ -111,45 +117,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 
 	self->die = body_die;
 
-	if(G_RagdollModelOfPlayer(self->s.number, model, sizeof(model))) {
-		vec3_t origin;
-		VectorCopy(self->client->ps.origin, origin);
-		origin[2] += MINS_Z;
-		G_SpawnRagdoll(origin, self->client->ps.viewangles[YAW], model, self->s.number, RAGDOLL_SIMPLE, 30000);
-		self->client->ps.eFlags |= EF_NODRAW;
-	}
-
 	trap_LinkEntity(self);
-}
-
-/*
-================
-CheckArmor
-================
-*/
-int CheckArmor(gentity_t* ent, int damage, int dflags) {
-	gclient_t* client;
-	int save;
-	int count;
-
-	if(!damage) return 0;
-
-	client = ent->client;
-
-	if(!client) return 0;
-
-	if(dflags & DAMAGE_NO_ARMOR) return 0;
-
-	// armor
-	count = client->ps.stats[STAT_ARMOR];
-	save = ceil(damage * ARMOR_PROTECTION);
-	if(save >= count) save = count;
-
-	if(!save) return 0;
-
-	client->ps.stats[STAT_ARMOR] -= save;
-
-	return save;
 }
 
 /*
@@ -170,16 +138,14 @@ inflictor, attacker, dir, and point can be NULL for environmental effects
 
 dflags		these flags are used to control how T_Damage works
     DAMAGE_RADIUS			damage was indirect (from a nearby explosion)
-    DAMAGE_NO_ARMOR			armor does not protect from this damage
     DAMAGE_NO_KNOCKBACK		do not affect velocity, just view angles
-    DAMAGE_NO_PROTECTION	kills godmode, armor, everything
+    DAMAGE_NO_PROTECTION	kills godmode and everything
 ============
 */
 
 void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t dir, vec3_t point, int damage, int dflags, int mod) {
 	gclient_t* client;
 	int take;
-	int asave;
 	int knockback;
 	int hookAttacker;
 
@@ -247,7 +213,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 		if(targ->s.eType == ET_PHYSICS) {
 			vec3_t newVelocity;
 			vec3_t newAngularVelocity;
-			targ->lastPlayer = attacker;
 			trap_Phys_GetLinearVelocity(targ->s.number, &newVelocity[0], &newVelocity[1], &newVelocity[2]);
 			VectorAdd(newVelocity, kvel, kvel);
 			trap_Phys_SetLinearVelocity(targ->s.number, kvel[0], kvel[1], kvel[2]);
@@ -287,10 +252,6 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 
 	take = damage;
 
-	// save some from armor
-	asave = CheckArmor(targ, take, dflags);
-	take -= asave;
-
 	// do the damage
 	if(take) {
 		targ->health = targ->health - take;
@@ -309,11 +270,8 @@ void G_Damage(gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t
 
 			if(targ->health < -999) targ->health = -999;
 
-			targ->enemy = attacker;
 			if(targ->die) targ->die(targ, inflictor, attacker, take, mod);
 			return;
-		} else if(targ->pain) {
-			targ->pain(targ, attacker, take);
 		}
 	}
 }

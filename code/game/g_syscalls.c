@@ -46,21 +46,13 @@ void trap_GetUserinfo(int num, char* buffer, int bufferSize) { syscall(G_GET_USE
 
 void trap_SetUserinfo(int num, const char* buffer) { syscall(G_SET_USERINFO, num, buffer); }
 
-void trap_GetServerinfo(char* buffer, int bufferSize) { syscall(G_GET_SERVERINFO, buffer, bufferSize); }
-
 void trap_SetBrushModel(gentity_t* ent, const char* name) { syscall(G_SET_BRUSH_MODEL, ent, name); }
 
 void trap_Trace(trace_t* results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask) { syscall(G_TRACE, results, start, mins, maxs, end, passEntityNum, contentmask); }
 
 int trap_PointContents(const vec3_t point, int passEntityNum) { return syscall(G_POINT_CONTENTS, point, passEntityNum); }
 
-bool trap_InPVS(const vec3_t p1, const vec3_t p2) { return syscall(G_IN_PVS, p1, p2); }
-
-bool trap_InPVSIgnorePortals(const vec3_t p1, const vec3_t p2) { return syscall(G_IN_PVS_IGNORE_PORTALS, p1, p2); }
-
 void trap_AdjustAreaPortalState(gentity_t* ent, bool open) { syscall(G_ADJUST_AREA_PORTAL_STATE, ent, open); }
-
-bool trap_AreasConnected(int area1, int area2) { return syscall(G_AREAS_CONNECTED, area1, area2); }
 
 void trap_LinkEntity(gentity_t* ent) { syscall(G_LINKENTITY, ent); }
 
@@ -72,8 +64,6 @@ bool trap_EntityContact(const vec3_t mins, const vec3_t maxs, const gentity_t* e
 
 
 int trap_BotAllocateClient(void) { return syscall(G_BOT_ALLOCATE_CLIENT); }
-
-void trap_BotFreeClient(int clientNum) { syscall(G_BOT_FREE_CLIENT, clientNum); }
 
 void trap_GetUsercmd(int clientNum, usercmd_t* cmd) { syscall(G_GET_USERCMD, clientNum, cmd); }
 

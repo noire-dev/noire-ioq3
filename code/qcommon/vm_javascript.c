@@ -132,18 +132,6 @@ static void GAPI_EntityDelete(gentity_t* entity) {
 	G_FreeEntity(entity);
 }
 
-// clientNums allocated by GAPI_NPCSpawn; ClientThink_real removes these npcs
-// when they die instead of letting them respawn
-static bool jsSpawnedNPC[MAX_CLIENTS];
-
-bool JS_IsJSSpawnedNPC(int clientNum) { return clientNum >= 0 && clientNum < MAX_CLIENTS && jsSpawnedNPC[clientNum]; }
-
-void JS_ClearJSSpawnedNPC(int clientNum) {
-	if(clientNum >= 0 && clientNum < MAX_CLIENTS) jsSpawnedNPC[clientNum] = false;
-}
-
-void JS_ClearAllSpawnedNPCs(void) { memset(jsSpawnedNPC, 0, sizeof(jsSpawnedNPC)); }
-
 static float GAPI_PlayerCrosshairPoint(gentity_t* player, float distance, int xyz) {
 	vec3_t end, start, forward, up, right;
 	trace_t tr;
@@ -269,9 +257,6 @@ static int GAPI_NPCSpawn(char* npcName, char* npcModel, float skill, float x, fl
 	}
 
 	ClientBegin(clientNum);
-
-	// remember the npc so it is removed instead of respawning when it dies
-	if(clientNum >= 0 && clientNum < MAX_CLIENTS) jsSpawnedNPC[clientNum] = true;
 
 	// teleport the npc to the requested position
 	entity = &g_entities[clientNum];

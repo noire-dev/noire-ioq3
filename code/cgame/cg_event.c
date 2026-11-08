@@ -148,7 +148,6 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 			break;
 		case EV_SHOTGUN: CG_ShotgunPattern(es->pos.trBase, es->origin2, es->eventParm, es->otherEntityNum, es->weapon); break;
 		case EV_GENERAL_SOUND: trap_S_StartSound(NULL, es->number, CHAN_VOICE, cgs.gameSounds[es->eventParm]); break;
-		case EV_GLOBAL_SOUND: trap_S_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.gameSounds[es->eventParm]); break;
 		case EV_OBITUARY: CG_Obituary(es); break;
 		case EV_PARTICLE: CG_SpawnParticlePreset(es->eventParm, position); break;
 		default:  // CG_Error("Unknown event: %i", event); break;

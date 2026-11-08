@@ -141,20 +141,15 @@ bool PM_SlideMove(bool gravity) {
 		// modify velocity so it parallels all of the clip planes
 		//
 
-		// find a plane that it enters
-		for(i = 0; i < numplanes; i++) {
-			into = DotProduct(pm->ps->velocity, planes[i]);
-			if(into >= 0.1) {
-				continue;  // move doesn't interact with the plane
-			}
+			// find a plane that it enters
+			for(i = 0; i < numplanes; i++) {
+				into = DotProduct(pm->ps->velocity, planes[i]);
+				if(into >= 0.1) {
+					continue;  // move doesn't interact with the plane
+				}
 
-			// see how hard we are hitting things
-			if(-into > pml.impactSpeed) {
-				pml.impactSpeed = -into;
-			}
-
-			// slide along the plane
-			PM_ClipVelocity(pm->ps->velocity, planes[i], clipVelocity, OVERCLIP);
+				// slide along the plane
+				PM_ClipVelocity(pm->ps->velocity, planes[i], clipVelocity, OVERCLIP);
 
 			if(gravity) {
 				// slide along the plane

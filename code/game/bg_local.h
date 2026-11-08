@@ -28,8 +28,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define JUMP_VELOCITY 270
 
-#define TIMER_LAND 130
-
 #define OVERCLIP 1.001f
 
 // all of the locals will be zeroed before each
@@ -44,8 +42,6 @@ typedef struct {
 	bool walking;
 	bool groundPlane;
 	trace_t groundTrace;
-
-	float impactSpeed;
 
 	vec3_t previous_origin;
 	vec3_t previous_velocity;
@@ -63,13 +59,9 @@ extern float pm_swimScale;
 extern float pm_accelerate;
 extern float pm_airaccelerate;
 extern float pm_wateraccelerate;
-extern float pm_flyaccelerate;
 
 extern float pm_friction;
 extern float pm_waterfriction;
-extern float pm_flightfriction;
-
-extern int c_pmove;
 
 void PM_ClipVelocity(vec3_t in, vec3_t normal, vec3_t out, float overbounce);
 void PM_AddTouchEnt(int entityNum);

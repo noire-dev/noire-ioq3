@@ -269,8 +269,6 @@ static bool CG_RegisterClientModelname(clientInfo_t* ci, const char* modelName, 
 		return false;
 	}
 
-	Q_strncpyz(ci->animFile, animFile, sizeof(ci->animFile));
-
 	Com_sprintf(filename, sizeof(filename), "models/players/%s/pmodel", modelName);
 	ci->model = trap_R_RegisterModelEx(filename, animFile);
 	foundModel = (ci->model != 0);
@@ -327,7 +325,6 @@ static void CG_CopyClientInfoModel(clientInfo_t* from, clientInfo_t* to) {
 	to->weaponScale = from->weaponScale;
 	to->numJiggles = from->numJiggles;
 	memcpy(to->jiggles, from->jiggles, sizeof(to->jiggles));
-	Q_strncpyz(to->animFile, from->animFile, sizeof(to->animFile));
 	memcpy(to->animations, from->animations, sizeof(to->animations));
 }
 

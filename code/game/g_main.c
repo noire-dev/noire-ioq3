@@ -214,9 +214,6 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	level.time = levelTime;
 	level.startTime = levelTime;
 
-	// no js-spawned npc survives a level change
-	JS_ClearAllSpawnedNPCs();
-
 	// initialize all entities for this game
 	memset(g_entities, 0, MAX_GENTITIES * sizeof(g_entities[0]));
 	level.gentities = g_entities;
@@ -245,9 +242,6 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 
 	// ragdoll states (sent to clients by the server) and ragdoll slots
 	G_InitRagdolls();
-
-	// reserve some spots for dead player bodies
-	InitBodyQue();
 
 	// parse the key/value pairs and spawn gentities
 	G_SpawnEntitiesFromString();
@@ -352,11 +346,6 @@ void G_RunFrame(int levelTime) {
 	int i;
 	gentity_t* ent;
 
-	// if we are waiting for the level to restart, do nothing
-	if(level.restarted) {
-		return;
-	}
-
 	level.framenum++;
 	level.previousTime = level.time;
 	level.time = levelTime;
@@ -397,16 +386,12 @@ void G_RunFrame(int levelTime) {
 			continue;
 		}
 
-		if(!ent->r.linked && ent->neverFree) {
-			continue;
-		}
-
 		if(ent->s.eType == ET_MISSILE) {
 			G_RunMissile(ent);
 			continue;
 		}
 
-		if(ent->s.eType == ET_ITEM || ent->physicsObject) {
+		if(ent->s.eType == ET_ITEM) {
 			G_RunItem(ent);
 			continue;
 		}

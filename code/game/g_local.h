@@ -30,16 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // the "gameversion" client command will print this plus compile date
 #define GAMEVERSION BASEGAME
 
-#define BODY_QUEUE_SIZE 8
-
-#define INFINITE 1000000
-
 #define FRAMETIME 100  // msec
-#define CARNAGE_REWARD_TIME 3000
-#define REWARD_SPRITE_TIME 2000
-
-#define INTERMISSION_DELAY_TIME 1000
-#define SP_INTERMISSION_DELAY_TIME 5000
 
 // gentity->flags
 #define FL_GODMODE 0x00000010
@@ -67,8 +58,6 @@ struct gentity_s {
 	char* classname;  // set in QuakeEd
 	int spawnflags;   // set in QuakeEd
 
-	bool neverFree;  // if true, FreeEntity will only unlink bodyque uses this
-
 	int flags;  // FL_* variables
 
 	char* model;
@@ -79,7 +68,6 @@ struct gentity_s {
 	bool freeAfterEvent;
 	bool unlinkAfterEvent;
 
-	bool physicsObject;   // if true, it can be pushed by movers and fall off edges
 	float physicsBounce;  // 1.0 = continuous bounce, 0.0 = no bounce
 	int clipmask;         // brushes with this content value will be collided against when moving.
 
@@ -88,10 +76,8 @@ struct gentity_s {
 	int sound1to2;
 	int sound2to1;
 	int soundPos2;
-	int soundLoop;
 	gentity_t* parent;
 	gentity_t* nextTrain;
-	gentity_t* prevTrain;
 	vec3_t pos1, pos2;
 
 	int timestamp;
@@ -109,11 +95,9 @@ struct gentity_s {
 	void (*blocked)(gentity_t* self, gentity_t* other);
 	void (*touch)(gentity_t* self, gentity_t* other, trace_t* trace);
 	void (*use)(gentity_t* self, gentity_t* other, gentity_t* activator);
-	void (*pain)(gentity_t* self, gentity_t* attacker, int damage);
 	void (*die)(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod);
 
 	int pain_debounce_time;
-	int fly_sound_debounce_time;
 
 	int health;
 
@@ -125,8 +109,6 @@ struct gentity_s {
 
 	int count;
 
-	gentity_t* chain;
-	gentity_t* enemy;
 	gentity_t* activator;
 	gentity_t* teamchain;
 	gentity_t* teammaster;
@@ -142,9 +124,6 @@ struct gentity_s {
 	int swep_list[MAX_WEAPONS];
 	int swep_ammo[MAX_WEAPONS];
 
-	// flashlight
-	bool flashlight;
-
 	// object private system
 	gentity_t* owner;
 
@@ -154,7 +133,6 @@ struct gentity_s {
 	float grabDist;             // physgun distance for player
 	vec3_t grabOffset;          // physgun offset for player
 	vec3_t grabOrigin;          // local grab point on the prop (where crosshair hit)
-	vec3_t grabOldOrigin;       // physgun old origin for prop
 	float grabLastPlayerYaw;    // last player yaw for rotation tracking
 	float grabLastPlayerPitch;  // last player pitch for rotation tracking (gesture mode)
 	float grabAccumPitch;       // accumulated true pitch (unbounded, gimbal-safe display)
@@ -163,7 +141,6 @@ struct gentity_s {
 	int grabNewPhys;            // for freeze prop for prop
 
 	// Props
-	gentity_t* lastPlayer;  // for damage and killfeed
 	int sb_phys;
 	float sb_mass;
 
@@ -192,8 +169,6 @@ struct gclient_s {
 
 	int buttons;
 
-	vec3_t oldOrigin;
-
 	// timers
 	int respawnTime;         // can respawn when time > this, force after g_forcerespwan
 	int inactivityTime;      // kick players when time > this
@@ -203,7 +178,7 @@ struct gclient_s {
 
 	int timeResidual;
 
-	bool ragdollDeath;  // a ragdoll was spawned at death and replaces the body-que corpse
+	bool freeAfterDeath;  // set for js-spawned npcs: removed on death instead of respawning
 };
 
 //
@@ -226,17 +201,12 @@ typedef struct {
 
 	int startTime;  // level.time the map was started
 
-	bool restarted;  // waiting for a map_restart to fire
-
 	// spawn variables
 	bool spawning;  // the G_Spawn*() functions are valid
 	int numSpawnVars;
 	char* spawnVars[MAX_SPAWN_VARS][2];  // key / value pairs
 	int numSpawnVarChars;
 	char spawnVarChars[MAX_SPAWN_VARS_CHARS];
-
-	int bodyQueIndex;  // dead bodies
-	gentity_t* bodyQue[BODY_QUEUE_SIZE];
 } level_locals_t;
 
 //
@@ -253,7 +223,7 @@ char* G_NewString(const char* string);
 //
 // g_cmds.c
 //
-void Cmd_Score_f(gentity_t* ent);
+void Cmd_Scoreboard_f(gentity_t* ent);
 
 //
 // g_items.c
@@ -296,7 +266,6 @@ void G_SetOrigin(gentity_t* ent, vec3_t origin);
 gentity_t* FindEntityForPhysgun(gentity_t* ent, int range);
 gentity_t* FindEntityForGravitygun(gentity_t* ent, int range);
 void CrosshairPointPhys(gentity_t* ent, int range, vec3_t outPoint);
-void CrosshairPointGravity(gentity_t* ent, int range, vec3_t outPoint);
 bool G_PlayerIsOwner(gentity_t* player, gentity_t* ent);
 
 //
@@ -310,7 +279,6 @@ void TossClientItems(gentity_t* self);
 
 // damage flags
 #define DAMAGE_RADIUS 0x00000001         // damage was indirect
-#define DAMAGE_NO_ARMOR 0x00000002       // armour does not protect from this damage
 #define DAMAGE_NO_KNOCKBACK 0x00000004   // do not affect velocity, just view angles
 #define DAMAGE_NO_PROTECTION 0x00000008  // armor, shields, invulnerability, and godmode have no effect
 
@@ -321,11 +289,10 @@ void G_RunMover(gentity_t* ent);
 void Touch_DoorTrigger(gentity_t* ent, gentity_t* other, trace_t* trace);
 
 // g_physics.c
-void Phys_HoldDropStatic(gentity_t* player, vec3_t velocity);
-void Phys_HoldDropDynamic(gentity_t* player, vec3_t velocity, bool isPhysgun);
+void Phys_HoldDropStatic(gentity_t* player);
+void Phys_HoldDropDynamic(gentity_t* player, bool isPhysgun);
 void Phys_HoldSetup(gentity_t* player, bool isPhysgun);
 void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun);
-void Phys_HoldFrame(gentity_t* player, vec3_t velocity, bool isPhysgun);
 void G_RunPhysics(gentity_t* ent);
 
 //
@@ -350,21 +317,10 @@ void FireWeapon(gentity_t* ent);
 //
 void SetClientViewAngle(gentity_t* ent, vec3_t angle);
 gentity_t* SelectSpawnPoint(vec3_t avoidPoint, vec3_t origin, vec3_t angles, bool isbot);
-void CopyToBodyQue(gentity_t* ent);
 void ClientRespawn(gentity_t* ent);
-void InitBodyQue(void);
 void ClientSpawn(gentity_t* ent);
 void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod);
 bool SpotWouldTelefrag(gentity_t* spot);
-
-//
-// vm_javascript.c (game vm js api)
-//
-// npcs spawned through GAPI_NPCSpawn are remembered so they can be removed
-// on death instead of respawning (see ClientThink_real)
-bool JS_IsJSSpawnedNPC(int clientNum);
-void JS_ClearJSSpawnedNPC(int clientNum);
-void JS_ClearAllSpawnedNPCs(void);
 
 //
 // g_svcmds.c
@@ -372,14 +328,9 @@ void JS_ClearAllSpawnedNPCs(void);
 bool ConsoleCommand(void);
 
 //
-// g_weapon.c
-//
-void FireWeapon(gentity_t* ent);
-
-//
 // g_cmds.c
 //
-void DeathmatchScoreboardMessage(gentity_t* ent);
+void ScoreboardMessage(gentity_t* ent);
 void G_SendSwepWeapons(gentity_t* ent);
 void G_SendSpawnSwepWeapons(gentity_t* ent);
 
@@ -460,20 +411,15 @@ void trap_SetConfigstring(int num, const char* string);
 void trap_GetConfigstring(int num, char* buffer, int bufferSize);
 void trap_GetUserinfo(int num, char* buffer, int bufferSize);
 void trap_SetUserinfo(int num, const char* buffer);
-void trap_GetServerinfo(char* buffer, int bufferSize);
 void trap_SetBrushModel(gentity_t* ent, const char* name);
 void trap_Trace(trace_t* results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask);
 int trap_PointContents(const vec3_t point, int passEntityNum);
-bool trap_InPVS(const vec3_t p1, const vec3_t p2);
-bool trap_InPVSIgnorePortals(const vec3_t p1, const vec3_t p2);
 void trap_AdjustAreaPortalState(gentity_t* ent, bool open);
-bool trap_AreasConnected(int area1, int area2);
 void trap_LinkEntity(gentity_t* ent);
 void trap_UnlinkEntity(gentity_t* ent);
 int trap_EntitiesInBox(const vec3_t mins, const vec3_t maxs, int* entityList, int maxcount);
 bool trap_EntityContact(const vec3_t mins, const vec3_t maxs, const gentity_t* ent);
 int trap_BotAllocateClient(void);
-void trap_BotFreeClient(int clientNum);
 void trap_GetUsercmd(int clientNum, usercmd_t* cmd);
 bool trap_GetEntityToken(char* buffer, int bufferSize);
 

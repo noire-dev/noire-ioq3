@@ -14,13 +14,6 @@ void CalcMuzzlePoint(gentity_t* ent, vec3_t forward, vec3_t right, vec3_t up, ve
 	SnapVector(muzzlePoint);
 }
 
-static void CalcMuzzlePointOrigin(gentity_t* ent, vec3_t origin, vec3_t forward, vec3_t right, vec3_t up, vec3_t muzzlePoint) {
-	VectorCopy(ent->s.pos.trBase, muzzlePoint);
-	muzzlePoint[2] += ent->client->ps.viewheight;
-	VectorMA(muzzlePoint, 14, forward, muzzlePoint);
-	SnapVector(muzzlePoint);
-}
-
 static void G_BounceMissile(gentity_t* ent, trace_t* trace) {
 	vec3_t velocity;
 	float dot;
@@ -303,8 +296,6 @@ gentity_t* fire_missile(gentity_t* self, vec3_t start, vec3_t forward, vec3_t ri
 	vec3_t dir, end;
 	float r, u, scale;
 
-	VectorNormalize(dir);
-
 	// create missile
 	bolt = G_Spawn();
 
@@ -374,7 +365,7 @@ void FireWeapon(gentity_t* ent) {
 	// set aiming directions
 	AngleVectors(ent->client->ps.viewangles, forward, right, up);
 
-	CalcMuzzlePointOrigin(ent, ent->client->ps.origin, forward, right, up, muzzle);
+	CalcMuzzlePoint(ent, forward, right, up, muzzle);
 
 	switch(jsd_weapon[ent->s.weapon].wType) {
 		case WT_MELEE: Melee_Fire(ent, ent->s.weapon); break;

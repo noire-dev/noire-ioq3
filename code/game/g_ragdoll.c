@@ -27,19 +27,16 @@ bool CheatsOk(gentity_t* ent);  // g_cmds.c
 
 #define RAGDOLL_DENSITY 0.01f
 #define RAGDOLL_MIN_MASS 1.00f    // light bones next to a heavy torso make the solver shake
-#define RAGDOLL_MIN_RADIUS 0.96f  // thinner capsules tunnel through the world mesh
-#define RAGDOLL_MAX_MASS 16.0f
+#define RAGDOLL_MIN_RADIUS 0.32f  // thinner capsules tunnel through the world mesh
+#define RAGDOLL_MAX_MASS 6.0f
 
 typedef struct {
 	bool inuse;
-	int type;
 	int masterEnt;
 	int mainBone;
 	int numBones;
-	int spawnTime;
 	int boneEnt[MAX_IQM_BONES];         // gentity number per boneID, -1 = no such bone
 	vec3_t jointOffset[MAX_IQM_BONES];  // body local vector: capsule center -> joint origin
-	char model[MAX_QPATH];
 } ragdoll_t;
 
 static ragdoll_t g_ragdolls[MAX_RAGDOLLS];
@@ -272,10 +269,10 @@ static int RD_PlayerAnimationNumber(const gentity_t* pl) {
 	animType_t animType;
 	int movementOffset;
 
-	if(action >= 0 && action < AM_IDLE) return action;  // death, gestures, taunts, ...
-	if(move >= 0 && move < AM_IDLE) return move;
+	if(action < AM_IDLE) return action;  // death, gestures, taunts, ...
+	if(move < AM_IDLE) return move;
 
-	if(move < AM_IDLE || move > AM_JUMP) move = AM_IDLE;
+	if(move > AM_JUMP) move = AM_IDLE;
 	movementOffset = move - AM_IDLE;
 
 	if(weapon < WP_NONE || weapon >= jsd_weaponCount) weapon = WP_NONE;
@@ -696,12 +693,9 @@ int G_SpawnRagdoll(const vec3_t origin, float yaw, const char* model, int player
 	rd = &g_ragdolls[id];
 	memset(rd, 0, sizeof(*rd));
 	rd->inuse = true;
-	rd->type = type;
 	rd->numBones = numBones;
 	rd->mainBone = mainBone;
 	rd->masterEnt = -1;
-	rd->spawnTime = level.time;
-	Q_strncpyz(rd->model, model, sizeof(rd->model));
 	for(b = 0; b < MAX_IQM_BONES; b++) rd->boneEnt[b] = -1;
 
 	memset(&g_ragdollState[id], 0, sizeof(g_ragdollState[id]));
@@ -728,7 +722,7 @@ int G_SpawnRagdoll(const vec3_t origin, float yaw, const char* model, int player
 		e->s.boneID = b;
 		e->ragdollBone = true;
 		e->sb_phys = PHYS_DYNAMIC;
-		e->sb_mass = def.mass;
+		e->sb_mass = bone->mass;
 		e->health = -1;  // knockback works, damage does not
 		e->r.contents = CONTENTS_CORPSE;
 		e->takedamage = true;

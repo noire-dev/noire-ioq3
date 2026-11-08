@@ -69,5 +69,4 @@ void CG_InitConsoleCommands(void) {
 	trap_AddCommand("addbot");
 	trap_AddCommand("setviewpos");
 	trap_AddCommand("stats");
-	trap_AddCommand("loaddefered");
 }

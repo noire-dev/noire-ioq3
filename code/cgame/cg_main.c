@@ -64,7 +64,6 @@ vmCvar_t cg_animSpeed;
 vmCvar_t cg_errorDecay;
 vmCvar_t cg_noPlayerAnims;
 vmCvar_t cg_showmiss;
-vmCvar_t cg_addMarks;
 vmCvar_t cg_brassTime;
 vmCvar_t cg_viewsize;
 vmCvar_t cg_fov;
@@ -105,7 +104,6 @@ static cvarTable_t cvarTable[] = {
     {&cg_drawCrosshair, "cg_drawCrosshair", "4", CVAR_ARCHIVE},
     {&cg_crosshairScale, "cg_crosshairScale", "24", CVAR_ARCHIVE},
     {&cg_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE},
-    {&cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE},
     {&cg_animSpeed, "cg_animspeed", "1", CVAR_CHEAT},
     {&cg_errorDecay, "cg_errordecay", "100", 0},
     {&cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT},
@@ -274,7 +272,7 @@ static void CG_RegisterItemSounds(int itemNum) {
 
 	item = &jsd_item[itemNum];
 
-	if(item->pickup_sound) {
+	if(item->pickup_sound[0]) {
 		trap_S_RegisterSound(item->pickup_sound, false);
 	}
 
@@ -317,19 +315,10 @@ static void CG_RegisterSounds(void) {
 	char name[MAX_QPATH];
 	const char* soundName;
 
-	cgs.media.oneMinuteSound = trap_S_RegisterSound("sound/feedback/1_minute.wav", true);
-	cgs.media.fiveMinuteSound = trap_S_RegisterSound("sound/feedback/5_minute.wav", true);
-	cgs.media.suddenDeathSound = trap_S_RegisterSound("sound/feedback/sudden_death.wav", true);
-	cgs.media.oneFragSound = trap_S_RegisterSound("sound/feedback/1_frag.wav", true);
-	cgs.media.twoFragSound = trap_S_RegisterSound("sound/feedback/2_frags.wav", true);
-	cgs.media.threeFragSound = trap_S_RegisterSound("sound/feedback/3_frags.wav", true);
-
 	cgs.media.selectSound = trap_S_RegisterSound("sound/weapons/wpn_moveselect", false);
 
 	cgs.media.talkSound = trap_S_RegisterSound("sound/player/talk.wav", false);
 	cgs.media.fallPain = trap_S_RegisterSound("sound/player/pl_fallpain3.wav", false);
-
-	cgs.media.hitSound = trap_S_RegisterSound("sound/feedback/hit.wav", false);
 
 	for(i = 0; i < 4; i++) {
 		Com_sprintf(name, sizeof(name), "sound/weapons/physcannon/superphys_launch%i.wav", i + 1);
@@ -442,10 +431,6 @@ static void CG_RegisterGraphics(void) {
 		CG_LoadingItem(i);
 		CG_RegisterItemVisuals(i);
 	}
-
-	// wall marks
-	cgs.media.burnMarkShader = trap_R_RegisterShader("gfx/damage/burn_med_mrk");
-	cgs.media.bloodMarkShader = trap_R_RegisterShader("bloodMark");
 
 	// register the inline models
 	cgs.numInlineModels = trap_CM_NumInlineModels();

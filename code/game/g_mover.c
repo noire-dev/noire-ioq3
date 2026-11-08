@@ -115,12 +115,6 @@ bool G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, vec3_t
 	vec3_t org, org2, move2;
 	gentity_t* block;
 
-	// EF_MOVER_STOP will just stop when contacting another entity
-	// instead of pushing it, but entities can still ride on top of it
-	if((pusher->s.eFlags & EF_MOVER_STOP) && check->s.groundEntityNum != pusher->s.number) {
-		return false;
-	}
-
 	// save off the old position
 	if(pushed_p > &pushed[MAX_GENTITIES]) {
 		G_Error("pushed_p > &pushed[MAX_GENTITIES]");
@@ -192,8 +186,6 @@ bool G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, vec3_t
 	return false;
 }
 
-void G_ExplodeMissile(gentity_t* ent);
-
 /*
 ============
 G_MoverPush
@@ -258,7 +250,7 @@ bool G_MoverPush(gentity_t* pusher, vec3_t move, vec3_t amove, gentity_t** obsta
 		check = &g_entities[entityList[e]];
 
 		// only push items and players
-		if(check->s.eType != ET_ITEM && check->s.eType != ET_PLAYER && !check->physicsObject) {
+		if(check->s.eType != ET_ITEM && check->s.eType != ET_PLAYER) {
 			continue;
 		}
 
@@ -463,7 +455,7 @@ void ReturnToPos1(gentity_t* ent) {
 	MatchTeam(ent, MOVER_2TO1, level.time);
 
 	// looping sound
-	ent->s.loopSound = ent->soundLoop;
+	ent->s.loopSound = 0;
 
 	// starting sound
 	if(ent->sound2to1) {
@@ -478,7 +470,7 @@ Reached_BinaryMover
 */
 void Reached_BinaryMover(gentity_t* ent) {
 	// stop the looping sound
-	ent->s.loopSound = ent->soundLoop;
+	ent->s.loopSound = 0;
 
 	if(ent->moverState == MOVER_1TO2) {
 		// reached pos2
@@ -544,7 +536,7 @@ void Use_BinaryMover(gentity_t* ent, gentity_t* other, gentity_t* activator) {
 		}
 
 		// looping sound
-		ent->s.loopSound = ent->soundLoop;
+		ent->s.loopSound = 0;
 
 		// open areaportal
 		if(ent->teammaster == ent || !ent->teammaster) {
@@ -956,7 +948,6 @@ void SP_func_plat(gentity_t* ent) {
 
 	G_SpawnFloat("speed", "200", &ent->speed);
 	G_SpawnInt("dmg", "2", &ent->damage);
-	G_SpawnFloat("wait", "1", &ent->wait);
 	G_SpawnFloat("lip", "8", &lip);
 
 	ent->wait = 1000;
@@ -1155,7 +1146,7 @@ void Reached_Train(gentity_t* ent) {
 	}
 
 	// looping sound
-	ent->s.loopSound = next->soundLoop;
+	ent->s.loopSound = 0;
 
 	// start it going
 	SetMoverState(ent, MOVER_1TO2, level.time);
@@ -1427,8 +1418,6 @@ void SP_func_pendulum(gentity_t* ent) {
 	}
 
 	freq = 1 / (M_PI * 2) * sqrt(g_gravity.value / (3 * length));
-
-	ent->s.pos.trDuration = (1000 / freq);
 
 	InitMover(ent);
 

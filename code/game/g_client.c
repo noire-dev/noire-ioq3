@@ -177,115 +177,6 @@ Chooses a player start, deathmatch start, etc
 gentity_t* SelectSpawnPoint(vec3_t avoidPoint, vec3_t origin, vec3_t angles, bool isbot) { return SelectRandomFurthestSpawnPoint(avoidPoint, origin, angles, isbot); }
 
 /*
-=======================================================================
-
-BODYQUE
-
-=======================================================================
-*/
-
-/*
-===============
-InitBodyQue
-===============
-*/
-void InitBodyQue(void) {
-	int i;
-	gentity_t* ent;
-
-	level.bodyQueIndex = 0;
-	for(i = 0; i < BODY_QUEUE_SIZE; i++) {
-		ent = G_Spawn();
-		ent->classname = "bodyque";
-		ent->neverFree = true;
-		level.bodyQue[i] = ent;
-	}
-}
-
-/*
-=============
-BodySink
-
-After sitting around for five seconds, fall into the ground and disappear
-=============
-*/
-void BodySink(gentity_t* ent) {
-	if(level.time - ent->timestamp > 6500) {
-		// the body ques are never actually freed, they are just unlinked
-		trap_UnlinkEntity(ent);
-		ent->physicsObject = false;
-		return;
-	}
-	ent->nextthink = level.time + 100;
-	ent->s.pos.trBase[2] -= 1;
-}
-
-/*
-=============
-CopyToBodyQue
-
-A player is respawning, so make an entity that looks
-just like the existing corpse to leave behind.
-=============
-*/
-void CopyToBodyQue(gentity_t* ent) {
-	gentity_t* body;
-	int contents;
-
-	trap_UnlinkEntity(ent);
-
-	// if client is in a nodrop area, don't leave the body
-	contents = trap_PointContents(ent->s.origin, -1);
-	if(contents & CONTENTS_NODROP) {
-		return;
-	}
-
-	// grab a body que and cycle to the next one
-	body = level.bodyQue[level.bodyQueIndex];
-	level.bodyQueIndex = (level.bodyQueIndex + 1) % BODY_QUEUE_SIZE;
-
-	body->s = ent->s;
-	body->s.eFlags = EF_DEAD;  // clear
-	body->s.loopSound = 0;     // clear lava burning
-	body->s.number = body - g_entities;
-	body->timestamp = level.time;
-	body->physicsObject = true;
-	body->physicsBounce = 0;  // don't bounce
-	if(body->s.groundEntityNum == ENTITYNUM_NONE) {
-		body->s.pos.trType = TR_GRAVITY;
-		body->s.pos.trTime = level.time;
-		VectorCopy(ent->client->ps.velocity, body->s.pos.trDelta);
-	} else {
-		body->s.pos.trType = TR_STATIONARY;
-	}
-	body->s.event = 0;
-
-	// IQM full-body death clips are non-looping; keep the selected action on the corpse.
-	body->s.torsoAnim = body->s.legsAnim;
-
-	body->r.svFlags = ent->r.svFlags;
-	VectorCopy(ent->r.mins, body->r.mins);
-	VectorCopy(ent->r.maxs, body->r.maxs);
-	VectorCopy(ent->r.absmin, body->r.absmin);
-	VectorCopy(ent->r.absmax, body->r.absmax);
-
-	body->clipmask = CONTENTS_SOLID | CONTENTS_PLAYERCLIP;
-	body->r.contents = CONTENTS_CORPSE;
-	body->r.ownerNum = ent->s.number;
-
-	body->nextthink = level.time + 5000;
-	body->think = BodySink;
-
-	body->die = body_die;
-	body->takedamage = true;
-
-	VectorCopy(body->s.pos.trBase, body->r.currentOrigin);
-	trap_LinkEntity(body);
-}
-
-//======================================================================
-
-/*
 ==================
 SetClientViewAngle
 
@@ -310,10 +201,7 @@ void SetClientViewAngle(gentity_t* ent, vec3_t angle) {
 ClientRespawn
 ================
 */
-void ClientRespawn(gentity_t* ent) {
-	CopyToBodyQue(ent);
-	ClientSpawn(ent);
-}
+void ClientRespawn(gentity_t* ent) { ClientSpawn(ent); }
 
 /*
 ===========
@@ -547,7 +435,6 @@ void ClientBegin(int clientNum) {
 	}
 	G_InitGentity(ent);
 	ent->touch = 0;
-	ent->pain = 0;
 	ent->client = client;
 
 	client->pers.connected = CON_CONNECTED;
@@ -717,7 +604,6 @@ void ClientDisconnect(int clientNum) {
 		return;
 	}
 
-	JS_ClearJSSpawnedNPC(clientNum);
 	// send effect if they were completely connected
 	if(ent->client->pers.connected == CON_CONNECTED) {
 		G_TempEntity(ent->client->ps.origin, EV_PARTICLE, PP_TELEPORT_OUT);

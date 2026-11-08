@@ -82,8 +82,6 @@ static void CG_CheckPlayerstateEvents(playerState_t* ps, playerState_t* ops) {
 			cent->currentState.eventParm = ps->eventParms[i & (MAX_PS_EVENTS - 1)];
 			CG_EntityEvent(cent, cent->lerpOrigin);
 
-			cg.predictableEvents[i & (MAX_PREDICTED_EVENTS - 1)] = event;
-
 			cg.eventSequence++;
 		}
 	}

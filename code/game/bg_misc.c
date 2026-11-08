@@ -181,9 +181,6 @@ BG_AddPredictableEventToPlayerstate
 Handles the sequence numbers
 ===============
 */
-
-void trap_Cvar_VariableStringBuffer(const char* var_name, char* buffer, int bufsize);
-
 void BG_AddPredictableEventToPlayerstate(int newEvent, int eventParm, playerState_t* ps) {
 	ps->events[ps->eventSequence & (MAX_PS_EVENTS - 1)] = newEvent;
 	ps->eventParms[ps->eventSequence & (MAX_PS_EVENTS - 1)] = eventParm;
@@ -220,14 +217,8 @@ void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, bool snap)
 	s->angles2[YAW] = ps->movementDir;
 	s->legsAnim = ps->legsAnim;
 	s->torsoAnim = ps->torsoAnim;
-	s->clientNum = ps->clientNum;  // ET_PLAYER looks here instead of at number
-	                               // so corpses can also reference the proper config
+	s->clientNum = ps->clientNum;
 	s->eFlags = ps->eFlags;
-	if(ps->stats[STAT_HEALTH] <= 0) {
-		s->eFlags |= EF_DEAD;
-	} else {
-		s->eFlags &= ~EF_DEAD;
-	}
 
 	if(ps->externalEvent) {
 		s->event = ps->externalEvent;
@@ -285,14 +276,8 @@ void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s,
 	s->angles2[YAW] = ps->movementDir;
 	s->legsAnim = ps->legsAnim;
 	s->torsoAnim = ps->torsoAnim;
-	s->clientNum = ps->clientNum;  // ET_PLAYER looks here instead of at number
-	                               // so corpses can also reference the proper config
+	s->clientNum = ps->clientNum;
 	s->eFlags = ps->eFlags;
-	if(ps->stats[STAT_HEALTH] <= 0) {
-		s->eFlags |= EF_DEAD;
-	} else {
-		s->eFlags &= ~EF_DEAD;
-	}
 
 	if(ps->externalEvent) {
 		s->event = ps->externalEvent;

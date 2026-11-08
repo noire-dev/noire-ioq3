@@ -94,11 +94,7 @@ static void CG_EntityEffects(centity_t* cent) {
 
 	// add loop sound
 	if(cent->currentState.loopSound) {
-		if(cent->currentState.eType != ET_SPEAKER) {
-			trap_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[cent->currentState.loopSound]);
-		} else {
-			trap_S_AddRealLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[cent->currentState.loopSound]);
-		}
+		trap_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[cent->currentState.loopSound]);
 	}
 
 	// constant light glow
@@ -331,29 +327,6 @@ static void CG_Physics(centity_t* cent) {
 			trap_R_AddRefEntityToScene(&outline);
 		}
 	}
-}
-
-/*
-==================
-CG_Speaker
-
-Speaker entities can automatically play sounds
-==================
-*/
-static void CG_Speaker(centity_t* cent) {
-	if(!cent->currentState.clientNum) {  // FIXME: use something other than clientNum...
-		return;                          // not auto triggering
-	}
-
-	if(cg.time < cent->miscTime) {
-		return;
-	}
-
-	trap_S_StartSound(NULL, cent->currentState.number, CHAN_ITEM, cgs.gameSounds[cent->currentState.eventParm]);
-
-	//	ent->s.frame = ent->wait * 10;
-	//	ent->s.clientNum = ent->random * 10;
-	cent->miscTime = cg.time + cent->currentState.frame * 100 + cent->currentState.clientNum * 100 * crandom();
 }
 
 /*
@@ -744,7 +717,6 @@ static void CG_AddCEntity(centity_t* cent) {
 
 	switch(cent->currentState.eType) {
 		default: CG_Error("Bad entity type: %i", cent->currentState.eType); break;
-		case ET_INVISIBLE:
 		case ET_TELEPORT_TRIGGER: break;
 		case ET_GENERAL: CG_General(cent); break;
 		case ET_PHYSICS: CG_Physics(cent); break;
@@ -754,7 +726,6 @@ static void CG_AddCEntity(centity_t* cent) {
 		case ET_MISSILE: CG_Missile(cent); break;
 		case ET_MOVER: CG_Mover(cent); break;
 		case ET_PORTAL: CG_Portal(cent); break;
-		case ET_SPEAKER: CG_Speaker(cent); break;
 	}
 }
 
@@ -789,12 +760,7 @@ void CG_AddPacketEntities(void) {
 	cg.autoAngles[1] = (cg.time & 2047) * 360 / 2048.0;
 	cg.autoAngles[2] = 0;
 
-	cg.autoAnglesFast[0] = 0;
-	cg.autoAnglesFast[1] = (cg.time & 1023) * 360 / 1024.0f;
-	cg.autoAnglesFast[2] = 0;
-
 	AnglesToAxis(cg.autoAngles, cg.autoAxis);
-	AnglesToAxis(cg.autoAnglesFast, cg.autoAxisFast);
 
 	// generate and add the entity from the playerstate
 	ps = &cg.predictedPlayerState;

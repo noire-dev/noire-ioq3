@@ -31,7 +31,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define GAME_VERSION BASEGAME "-1"
 
 #define DEFAULT_GRAVITY 800
-#define ARMOR_PROTECTION 0.66
 
 #define MAX_ITEMS 256
 
@@ -63,7 +62,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 // CS_SERVERINFO and CS_SYSTEMINFO are defined in q_shared.h
 #define CS_MUSIC 2
-#define CS_MESSAGE 3  // from the map worldspawn's message field
 
 #define CS_GAME_VERSION 20
 #define CS_LEVEL_START_TIME 21  // so the timer only shows the current level
@@ -165,14 +163,12 @@ typedef enum {
 } persEnum_t;
 
 // entityState_t->eFlags
-#define EF_DEAD 0x00000001          // don't draw a foe marker over players with EF_DEAD
 #define EF_TELEPORT_BIT 0x00000004  // toggled every time the origin abruptly changes
 #define EF_PLAYER_EVENT 0x00000010
 #define EF_BOUNCE 0x00000010       // for missiles
 #define EF_BOUNCE_HALF 0x00000020  // for missiles
 #define EF_NODRAW 0x00000080       // may have an event, but no model (unspawned items)
 #define EF_FIRING 0x00000100       // for lightning gun
-#define EF_MOVER_STOP 0x00000400   // will push otherwise
 
 #define WP_NONE 0
 #define MAX_WEAPONS 2048
@@ -447,7 +443,6 @@ bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps);
 #define MASK_SOLID (CONTENTS_SOLID)
 #define MASK_SELECT (CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_TRIGGER)
 #define MASK_PLAYERSOLID (CONTENTS_SOLID | CONTENTS_PLAYERCLIP | CONTENTS_BODY)
-#define MASK_DEADSOLID (CONTENTS_SOLID | CONTENTS_PLAYERCLIP)
 #define MASK_WATER (CONTENTS_WATER | CONTENTS_LAVA | CONTENTS_SLIME)
 #define MASK_OPAQUE (CONTENTS_SOLID | CONTENTS_SLIME | CONTENTS_LAVA)
 #define MASK_SHOT (CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE)

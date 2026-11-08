@@ -111,27 +111,6 @@ or generates more localentities along a trail.
 
 /*
 ================
-CG_FragmentBounceMark
-================
-*/
-static void CG_FragmentBounceMark(localEntity_t* le, trace_t* trace) {
-	int radius;
-
-	if(le->leMarkType == LEMT_BLOOD) {
-		radius = 16 + (rand() & 31);
-		CG_ImpactMark(cgs.media.bloodMarkShader, trace->endpos, trace->plane.normal, random() * 360, 1, 1, 1, 1, true, radius, false);
-	} else if(le->leMarkType == LEMT_BURN) {
-		radius = 8 + (rand() & 15);
-		CG_ImpactMark(cgs.media.burnMarkShader, trace->endpos, trace->plane.normal, random() * 360, 1, 1, 1, 1, true, radius, false);
-	}
-
-	// don't allow a fragment to make multiple marks, or they
-	// pile up while settling
-	le->leMarkType = LEMT_NONE;
-}
-
-/*
-================
 CG_ReflectVelocity
 ================
 */
@@ -218,9 +197,6 @@ static void CG_AddFragment(localEntity_t* le) {
 		return;
 	}
 
-	// leave a mark
-	CG_FragmentBounceMark(le, &trace);
-
 	// reflect the velocity on the trace plane
 	CG_ReflectVelocity(le, &trace);
 
@@ -268,121 +244,6 @@ static void CG_AddFadeRGB(localEntity_t* le) {
 	re->shaderRGBA[1] = le->color[1] * c;
 	re->shaderRGBA[2] = le->color[2] * c;
 	re->shaderRGBA[3] = le->color[3] * c;
-
-	trap_R_AddRefEntityToScene(re);
-}
-
-/*
-==================
-CG_AddMoveScaleFade
-==================
-*/
-static void CG_AddMoveScaleFade(localEntity_t* le) {
-	refEntity_t* re;
-	float c;
-	vec3_t delta;
-	float len;
-
-	re = &le->refEntity;
-
-	if(le->fadeInTime > le->startTime && cg.time < le->fadeInTime) {
-		// fade / grow time
-		c = 1.0 - (float)(le->fadeInTime - cg.time) / (le->fadeInTime - le->startTime);
-	} else {
-		// fade / grow time
-		c = (le->endTime - cg.time) * le->lifeRate;
-	}
-
-	re->shaderRGBA[3] = 0xff * c * le->color[3];
-
-	if(!(le->leFlags & LEF_PUFF_DONT_SCALE)) {
-		re->radius = le->radius * (1.0 - c) + 8;
-	}
-
-	BG_EvaluateTrajectory(&le->pos, cg.time, re->origin);
-
-	// if the view would be "inside" the sprite, kill the sprite
-	// so it doesn't add too much overdraw
-	VectorSubtract(re->origin, cg.refdef.vieworg, delta);
-	len = VectorLength(delta);
-	if(len < le->radius) {
-		CG_FreeLocalEntity(le);
-		return;
-	}
-
-	trap_R_AddRefEntityToScene(re);
-}
-
-/*
-===================
-CG_AddScaleFade
-
-For rocket smokes that hang in place, fade out, and are
-removed if the view passes through them.
-There are often many of these, so it needs to be simple.
-===================
-*/
-static void CG_AddScaleFade(localEntity_t* le) {
-	refEntity_t* re;
-	float c;
-	vec3_t delta;
-	float len;
-
-	re = &le->refEntity;
-
-	// fade / grow time
-	c = (le->endTime - cg.time) * le->lifeRate;
-
-	re->shaderRGBA[3] = 0xff * c * le->color[3];
-	re->radius = le->radius * (1.0 - c) + 8;
-
-	// if the view would be "inside" the sprite, kill the sprite
-	// so it doesn't add too much overdraw
-	VectorSubtract(re->origin, cg.refdef.vieworg, delta);
-	len = VectorLength(delta);
-	if(len < le->radius) {
-		CG_FreeLocalEntity(le);
-		return;
-	}
-
-	trap_R_AddRefEntityToScene(re);
-}
-
-/*
-=================
-CG_AddFallScaleFade
-
-This is just an optimized CG_AddMoveScaleFade
-For blood mists that drift down, fade out, and are
-removed if the view passes through them.
-There are often 100+ of these, so it needs to be simple.
-=================
-*/
-static void CG_AddFallScaleFade(localEntity_t* le) {
-	refEntity_t* re;
-	float c;
-	vec3_t delta;
-	float len;
-
-	re = &le->refEntity;
-
-	// fade time
-	c = (le->endTime - cg.time) * le->lifeRate;
-
-	re->shaderRGBA[3] = 0xff * c * le->color[3];
-
-	re->origin[2] = le->pos.trBase[2] - (1.0 - c) * le->pos.trDelta[2];
-
-	re->radius = le->radius * (1.0 - c) + 16;
-
-	// if the view would be "inside" the sprite, kill the sprite
-	// so it doesn't add too much overdraw
-	VectorSubtract(re->origin, cg.refdef.vieworg, delta);
-	len = VectorLength(delta);
-	if(len < le->radius) {
-		CG_FreeLocalEntity(le);
-		return;
-	}
 
 	trap_R_AddRefEntityToScene(re);
 }
@@ -445,20 +306,8 @@ void CG_AddLocalEntities(void) {
 				CG_AddFragment(le);
 				break;
 
-			case LE_MOVE_SCALE_FADE:  // water bubbles
-				CG_AddMoveScaleFade(le);
-				break;
-
 			case LE_FADE_RGB:  // teleporters, railtrails
 				CG_AddFadeRGB(le);
-				break;
-
-			case LE_FALL_SCALE_FADE:  // gib blood trails
-				CG_AddFallScaleFade(le);
-				break;
-
-			case LE_SCALE_FADE:  // rocket trails
-				CG_AddScaleFade(le);
 				break;
 		}
 	}

@@ -272,8 +272,6 @@ Marks the entity as free
 void G_FreeEntity(gentity_t* ed) {
 	trap_UnlinkEntity(ed);  // unlink from world
 
-	if(ed->neverFree) return;
-
 	G_RagdollEntityFreed(ed);  // ragdoll master / bone bookkeeping
 
 	trap_Phys_DeleteObject(ed->s.number);
@@ -428,11 +426,11 @@ gentity_t* FindEntityForPhysgun(gentity_t* ent, int range) {
 
 	if(traceEnt->grabbedEntity == ent) return NULL;
 
-	if(/*traceEnt->npcType <= NT_PLAYER &&*/ traceEnt->s.eType != ET_PHYSICS) return NULL;
+	if(traceEnt->s.eType != ET_PHYSICS) return NULL;
 
 	VectorSubtract(traceEnt->r.currentOrigin, tr.endpos, ent->grabOffset);
 
-	if(traceEnt && tr.entityNum != ENTITYNUM_NONE && tr.entityNum != ENTITYNUM_WORLD) {
+	if(tr.entityNum != ENTITYNUM_NONE && tr.entityNum != ENTITYNUM_WORLD) {
 		return traceEnt;
 	} else {
 		return NULL;
@@ -456,11 +454,11 @@ gentity_t* FindEntityForGravitygun(gentity_t* ent, int range) {
 
 	traceEnt = &g_entities[tr.entityNum];  // entity for return
 
-	if(/*traceEnt->npcType <= NT_PLAYER &&*/ traceEnt->s.eType != ET_PHYSICS) return NULL;
+	if(traceEnt->s.eType != ET_PHYSICS) return NULL;
 
 	VectorSubtract(traceEnt->r.currentOrigin, tr.endpos, ent->grabOffset);
 
-	if(traceEnt && tr.entityNum != ENTITYNUM_NONE && tr.entityNum != ENTITYNUM_WORLD) {
+	if(tr.entityNum != ENTITYNUM_NONE && tr.entityNum != ENTITYNUM_WORLD) {
 		return traceEnt;
 	} else {
 		return NULL;
@@ -468,16 +466,6 @@ gentity_t* FindEntityForGravitygun(gentity_t* ent, int range) {
 }
 
 void CrosshairPointPhys(gentity_t* ent, int range, vec3_t outPoint) {
-	vec3_t end, start, forward, up, right;
-
-	AngleVectors(ent->client->ps.viewangles, forward, right, up);
-	CalcMuzzlePoint(ent, forward, right, up, start);
-	VectorMA(start, range, forward, end);
-
-	VectorCopy(end, outPoint);
-}
-
-void CrosshairPointGravity(gentity_t* ent, int range, vec3_t outPoint) {
 	vec3_t end, start, forward, up, right;
 
 	AngleVectors(ent->client->ps.viewangles, forward, right, up);

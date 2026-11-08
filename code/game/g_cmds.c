@@ -24,10 +24,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 /*
 ==================
-DeathmatchScoreboardMessage
+ScoreboardMessage
 ==================
 */
-void DeathmatchScoreboardMessage(gentity_t* ent) {
+void ScoreboardMessage(gentity_t* ent) {
 	char entry[1024];
 	char string[1000];
 	int stringlength = 0, clientCount = 0, ping = 0;
@@ -117,12 +117,12 @@ void G_SendSpawnSwepWeapons(gentity_t* ent) {
 
 /*
 ==================
-Cmd_Score_f
+Cmd_Scoreboard_f
 
 Request current scoreboard information
 ==================
 */
-void Cmd_Score_f(gentity_t* ent) { DeathmatchScoreboardMessage(ent); }
+void Cmd_Scoreboard_f(gentity_t* ent) { ScoreboardMessage(ent); }
 
 /*
 ==================
@@ -533,7 +533,7 @@ void ClientCommand(int clientNum) {
 		return;
 	}
 	if(Q_stricmp(cmd, "score") == 0) {
-		Cmd_Score_f(ent);
+		Cmd_Scoreboard_f(ent);
 		return;
 	}
 	if(Q_stricmp(cmd, "gesture") == 0) {

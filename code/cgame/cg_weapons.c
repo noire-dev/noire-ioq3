@@ -145,7 +145,6 @@ static void CG_EjectBrass(centity_t* cent) {
 		le->angles.trDelta[2] = fx->brassSpinDelta[2];
 
 		le->leFlags = LEF_TUMBLE;
-		le->leMarkType = LEMT_NONE;
 	}
 }
 
@@ -1043,7 +1042,6 @@ void CG_FireWeapon(centity_t* cent) {
 	}
 	if(ent->weapon >= jsd_weaponCount) {
 		CG_Error("CG_FireWeapon: ent->weapon >= jsd_weaponCount");
-		return;
 	}
 
 	{

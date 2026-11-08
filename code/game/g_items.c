@@ -252,10 +252,7 @@ void G_RunItem(gentity_t* ent) {
 	BG_EvaluateTrajectory(&ent->s.pos, level.time, origin);
 
 	// trace a line from the previous position to the current position
-	if(ent->clipmask)
-		mask = ent->clipmask;
-	else
-		mask = MASK_PLAYERSOLID & ~CONTENTS_BODY;  // MASK_SOLID;
+	mask = MASK_PLAYERSOLID & ~CONTENTS_BODY;
 
 	trap_Trace(&tr, ent->r.currentOrigin, ent->r.mins, ent->r.maxs, origin, ent->r.ownerNum, mask);
 

@@ -169,18 +169,12 @@ typedef struct markPoly_s {
 typedef enum {
 	LE_EXPLOSION,
 	LE_FRAGMENT,
-	LE_MOVE_SCALE_FADE,
-	LE_FALL_SCALE_FADE,
 	LE_FADE_RGB,
-	LE_SCALE_FADE,
 } leType_t;
 
 typedef enum {
-	LEF_PUFF_DONT_SCALE = 0x0001,  // do not scale size over time
-	LEF_TUMBLE = 0x0002,           // tumble over time, used for ejecting shells
+	LEF_TUMBLE = 0x0002,  // tumble over time, used for ejecting shells
 } leFlag_t;
-
-typedef enum { LEMT_NONE, LEMT_BURN, LEMT_BLOOD } leMarkType_t;  // fragment local entities can leave marks on walls
 
 typedef struct localEntity_s {
 	struct localEntity_s *prev, *next;
@@ -189,7 +183,6 @@ typedef struct localEntity_s {
 
 	int startTime;
 	int endTime;
-	int fadeInTime;
 
 	float lifeRate;  // 1.0 / (endTime - startTime)
 
@@ -204,8 +197,6 @@ typedef struct localEntity_s {
 
 	float light;
 	vec3_t lightColor;
-
-	leMarkType_t leMarkType;  // mark to leave on fragment impact
 
 	refEntity_t refEntity;
 } localEntity_t;
@@ -271,8 +262,6 @@ typedef struct {
 
 	int numJiggles;
 	cgJiggle_t jiggles[MAX_PLAYER_JIGGLES];
-
-	char animFile[MAX_QPATH];
 } clientInfo_t;
 
 // Minimal runtime cache for a weapon. All presentational data now lives in
@@ -299,8 +288,6 @@ typedef struct {
 // all cg.stepTime, cg.duckTime, cg.landTime, etc are set to cg.time when the action
 // occurs, and they will have visible effects for #define STEP_TIME or whatever msec after
 
-#define MAX_PREDICTED_EVENTS 16
-
 typedef struct {
 	int clientFrame;  // incremented each frame
 
@@ -309,7 +296,6 @@ typedef struct {
 	bool demoPlayback;
 	bool loading;  // don't defer players at initial startup
 
-	// there are only one or two snapshot_t that are relevant at a time
 	int latestSnapshotNum;   // the number of snapshots the client system has received
 	int latestSnapshotTime;  // the time from latestSnapshotNum, so we don't need to read the snapshot yet
 
@@ -348,7 +334,6 @@ typedef struct {
 	vec3_t predictedError;
 
 	int eventSequence;
-	int predictableEvents[MAX_PREDICTED_EVENTS];
 
 	// input state sent to server
 	int weaponSelect;
@@ -367,8 +352,6 @@ typedef struct {
 	// auto rotating items
 	vec3_t autoAngles;
 	vec3_t autoAxis[3];
-	vec3_t autoAnglesFast;
-	vec3_t autoAxisFast[3];
 
 	// view rendering
 	refdef_t refdef;
@@ -409,10 +392,6 @@ typedef struct {
 
 	qhandle_t smokePuffShader;
 
-	// wall mark shaders
-	qhandle_t bloodMarkShader;
-	qhandle_t burnMarkShader;
-
 	// Assets Noire's Mod
 	qhandle_t errIcon;
 	qhandle_t notifyIcon;
@@ -426,15 +405,6 @@ typedef struct {
 	sfxHandle_t talkSound;
 	sfxHandle_t fallPain;
 
-	sfxHandle_t oneMinuteSound;
-	sfxHandle_t fiveMinuteSound;
-	sfxHandle_t suddenDeathSound;
-
-	sfxHandle_t threeFragSound;
-	sfxHandle_t twoFragSound;
-	sfxHandle_t oneFragSound;
-
-	sfxHandle_t hitSound;
 	sfxHandle_t hgrenb1aSound;
 	sfxHandle_t hgrenb2aSound;
 
@@ -464,8 +434,6 @@ typedef struct {
 
 	int maxclients;
 	char mapname[MAX_QPATH];
-	char redTeam[MAX_QPATH];
-	char blueTeam[MAX_QPATH];
 
 	int levelStartTime;
 
@@ -637,7 +605,6 @@ extern vmCvar_t cg_animSpeed;
 extern vmCvar_t cg_errorDecay;
 extern vmCvar_t cg_noPlayerAnims;
 extern vmCvar_t cg_showmiss;
-extern vmCvar_t cg_addMarks;
 extern vmCvar_t cg_brassTime;
 extern vmCvar_t cg_viewsize;
 extern vmCvar_t cg_fov;

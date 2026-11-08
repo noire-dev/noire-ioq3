@@ -56,7 +56,7 @@ void P_WorldEffects(gentity_t* ent) {
 				// don't play a normal pain sound
 				ent->pain_debounce_time = level.time + 200;
 
-				G_Damage(ent, NULL, NULL, NULL, NULL, ent->damage, DAMAGE_NO_ARMOR, MOD_WATER);
+				G_Damage(ent, NULL, NULL, NULL, NULL, ent->damage, 0, MOD_WATER);
 			}
 		}
 	} else {
@@ -249,7 +249,6 @@ void ClientEvents(gentity_t* ent, int oldEventSequence) {
 	int i;
 	int event;
 	gclient_t* client;
-	int damage;
 
 	client = ent->client;
 
@@ -261,12 +260,8 @@ void ClientEvents(gentity_t* ent, int oldEventSequence) {
 
 		switch(event) {
 			case EV_FALL:
-				if(ent->s.eType != ET_PLAYER) {
-					break;  // not in the player mode
-					damage = 5;
-				}
 				ent->pain_debounce_time = level.time + 200;  // no normal pain sound
-				G_Damage(ent, NULL, NULL, NULL, NULL, damage, 0, MOD_FALLING);
+				G_Damage(ent, NULL, NULL, NULL, NULL, 5, 0, MOD_FALLING);
 				break;
 
 			case EV_FIRE_WEAPON: FireWeapon(ent); break;
@@ -275,8 +270,6 @@ void ClientEvents(gentity_t* ent, int oldEventSequence) {
 		}
 	}
 }
-
-void BotTestSolid(vec3_t origin);
 
 /*
 ==============
@@ -316,7 +309,6 @@ void SendPendingPredictableEvents(playerState_t* ps) {
 static void PhysgunHold(gentity_t* player) {
 	gentity_t* ent = player->grabbedEntity;
 	gentity_t* findent;
-	vec3_t velocity;
 
 	if(jsd_weapon[player->client->ps.weapon].wType != WT_PHYSGUN) return;
 
@@ -325,7 +317,7 @@ static void PhysgunHold(gentity_t* player) {
 			findent = FindEntityForPhysgun(player, jsd_weapon[player->client->ps.weapon].range);
 			if(findent && findent->isGrabbed == false) {
 				if(!G_PlayerIsOwner(player, findent)) return;
-				if(findent) player->grabbedEntity = findent;
+				player->grabbedEntity = findent;
 			}
 			if(player->grabbedEntity) {
 				Phys_HoldSetup(player, true);
@@ -336,8 +328,8 @@ static void PhysgunHold(gentity_t* player) {
 		}
 	} else if(player->grabbedEntity) {
 		ent->isGrabbed = false;
-		if(ent->grabNewPhys == PHYS_STATIC) Phys_HoldDropStatic(player, velocity);
-		if(ent->grabNewPhys == PHYS_DYNAMIC) Phys_HoldDropDynamic(player, velocity, true);
+		if(ent->grabNewPhys == PHYS_STATIC) Phys_HoldDropStatic(player);
+		if(ent->grabNewPhys == PHYS_DYNAMIC) Phys_HoldDropDynamic(player, true);
 		VectorClear(player->grabOffset);
 		player->grabbedEntity = 0;
 		ClientUpdateGrabbedConfigstring(player);
@@ -348,7 +340,6 @@ static void PhysgunHold(gentity_t* player) {
 static void GravitygunHold(gentity_t* player) {
 	gentity_t* ent = player->grabbedEntity;
 	gentity_t* findent;
-	vec3_t velocity;
 
 	if(jsd_weapon[player->client->ps.weapon].wType != WT_GRAVITYGUN) return;
 
@@ -357,7 +348,7 @@ static void GravitygunHold(gentity_t* player) {
 			findent = FindEntityForGravitygun(player, jsd_weapon[player->client->ps.weapon].range);
 			if(findent && findent->isGrabbed == false) {
 				if(!G_PlayerIsOwner(player, findent)) return;
-				if(findent) player->grabbedEntity = findent;
+				player->grabbedEntity = findent;
 			}
 			if(player->grabbedEntity) {
 				Phys_HoldSetup(player, false);
@@ -368,7 +359,7 @@ static void GravitygunHold(gentity_t* player) {
 		}
 	} else if(player->grabbedEntity) {
 		ent->isGrabbed = false;
-		Phys_HoldDropDynamic(player, velocity, false);
+		Phys_HoldDropDynamic(player, false);
 		player->grabbedEntity = 0;
 		ClientUpdateGrabbedConfigstring(player);
 		G_AddEvent(player, EV_GRAVITY_LAUNCH, 0);
@@ -493,14 +484,13 @@ void ClientThink_real(gentity_t* ent) {
 	// check for respawning
 	if(client->ps.stats[STAT_HEALTH] <= 0) {
 		if(level.time > client->respawnTime) {
-			// npcs spawned through the js api are removed once their death
-			// animation has played instead of respawning
-			if(JS_IsJSSpawnedNPC(ent->s.number)) {
-				JS_ClearJSSpawnedNPC(ent->s.number);
+			// js-spawned npcs are removed once their death pose is out,
+			// they never respawn
+			if(client->freeAfterDeath) {
 				trap_DropClient(ent->s.number, "NPC removed");
 				return;
 			}
-			if(ucmd->buttons & BUTTON_ATTACK) ClientRespawn(ent);
+			if(ucmd->buttons & (BUTTON_ATTACK | BUTTON_USE)) ClientRespawn(ent);
 		}
 		return;
 	}

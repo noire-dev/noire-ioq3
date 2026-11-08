@@ -42,13 +42,9 @@ float pm_swimScale = 0.50f;
 float pm_accelerate = 10.0f;
 float pm_airaccelerate = 1.0f;
 float pm_wateraccelerate = 4.0f;
-float pm_flyaccelerate = 8.0f;
 
 float pm_friction = 6.0f;
 float pm_waterfriction = 1.0f;
-float pm_flightfriction = 3.0f;
-
-int c_pmove = 0;
 
 /*
 ===============
@@ -223,7 +219,6 @@ Handles user intended acceleration
 ==============
 */
 static void PM_Accelerate(vec3_t wishdir, float wishspeed, float accel) {
-#if 1
 	// q2 style
 	int i;
 	float addspeed, accelspeed, currentspeed;
@@ -241,24 +236,6 @@ static void PM_Accelerate(vec3_t wishdir, float wishspeed, float accel) {
 	for(i = 0; i < 3; i++) {
 		pm->ps->velocity[i] += accelspeed * wishdir[i];
 	}
-#else
-	// proper way (avoids strafe jump maxspeed bug), but feels bad
-	vec3_t wishVelocity;
-	vec3_t pushDir;
-	float pushLen;
-	float canPush;
-
-	VectorScale(wishdir, wishspeed, wishVelocity);
-	VectorSubtract(wishVelocity, pm->ps->velocity, pushDir);
-	pushLen = VectorNormalize(pushDir);
-
-	canPush = accel * pml.frametime * wishspeed;
-	if(canPush > pushLen) {
-		canPush = pushLen;
-	}
-
-	VectorMA(pm->ps->velocity, canPush, pushDir, pm->ps->velocity);
-#endif
 }
 
 /*
@@ -853,22 +830,6 @@ static void PM_CrashLand(void) {
 
 /*
 =============
-PM_CheckStuck
-=============
-*/
-/*
-void PM_CheckStuck(void) {
-    trace_t trace;
-
-    pm->trace (&trace, pm->ps->origin, pm->mins, pm->maxs, pm->ps->origin, pm->ps->clientNum, pm->tracemask);
-    if (trace.allsolid) {
-        //int shit = true;
-    }
-}
-*/
-
-/*
-=============
 PM_CorrectAllSolid
 =============
 */
@@ -1388,7 +1349,7 @@ void PM_UpdateViewAngles(playerState_t* ps, const usercmd_t* cmd) {
 	short temp;
 	int i;
 
-	if(pm->cmd.buttons & BUTTON_USE && pm->cmd.buttons & BUTTON_ATTACK && jsd_weapon[pm->cmd.weapon].wType == WT_PHYSGUN) {
+	if(cmd->buttons & BUTTON_USE && cmd->buttons & BUTTON_ATTACK && jsd_weapon[cmd->weapon].wType == WT_PHYSGUN) {
 		return;
 	}
 
@@ -1421,10 +1382,6 @@ PmoveSingle
 void PmoveSingle(pmove_t* pmove) {
 	pm = pmove;
 
-	// this counter lets us debug movement problems with a journal
-	// by setting a conditional breakpoint fot the previous frame
-	c_pmove++;
-
 	// clear results
 	pm->numtouch = 0;
 	pm->watertype = 0;
@@ -1447,7 +1404,7 @@ void PmoveSingle(pmove_t* pmove) {
 	}
 
 	// clear the respawned flag if attack and use are cleared
-	if(pm->ps->stats[STAT_HEALTH] > 0 && !(pm->cmd.buttons & BUTTON_ATTACK)) {
+	if(pm->ps->stats[STAT_HEALTH] > 0 && !(pm->cmd.buttons & (BUTTON_ATTACK | BUTTON_USE))) {
 		pm->ps->pm_flags &= ~PMF_RESPAWNED;
 	}
 
@@ -1498,10 +1455,6 @@ void PmoveSingle(pmove_t* pmove) {
 		PM_NoclipMove();
 		PM_DropTimers();
 		return;
-	}
-
-	if(pm->ps->pm_type == PM_FREEZE) {
-		return;  // no movement at all
 	}
 
 	// set watertype, and waterlevel
@@ -1594,6 +1547,4 @@ void Pmove(pmove_t* pmove) {
 			pmove->cmd.upmove = 20;
 		}
 	}
-
-	// PM_CheckStuck();
 }
