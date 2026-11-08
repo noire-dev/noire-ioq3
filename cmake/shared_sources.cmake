@@ -50,6 +50,7 @@ set(SERVER_SOURCES
     ${SOURCE_DIR}/server/sv_init.c
     ${SOURCE_DIR}/server/sv_main.c
     ${SOURCE_DIR}/server/sv_net_chan.c
+    ${SOURCE_DIR}/server/sv_ragdoll.c
     ${SOURCE_DIR}/server/sv_snapshot.c
     ${SOURCE_DIR}/server/sv_world.c
 )

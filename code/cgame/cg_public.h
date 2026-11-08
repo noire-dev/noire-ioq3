@@ -47,6 +47,9 @@ typedef struct {
 	int numEntities;                                   // all of the entities that need to be presented
 	entityState_t entities[MAX_ENTITIES_IN_SNAPSHOT];  // at the time of this snapshot
 
+	int numRagdolls;                                   // ragdoll states of the ET_RAGDOLL entities above
+	ragdollState_t ragdolls[MAX_SNAPSHOT_RAGDOLLS];
+
 	int numServerCommands;      // text based server commands to execute when this
 	int serverCommandSequence;  // snapshot becomes current
 } snapshot_t;

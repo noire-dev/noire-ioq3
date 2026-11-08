@@ -165,6 +165,9 @@ struct gentity_s {
 	// Props
 	gentity_t* lastPlayer;  // for damage and killfeed
 	int sb_phys;
+
+	// Ragdoll
+	bool ragdollBone;  // bone entity of a ragdoll (s.ragdollID / s.boneID say which)
 };
 
 typedef enum { CON_DISCONNECTED, CON_CONNECTING, CON_CONNECTED } clientConnected_t;
@@ -487,6 +490,25 @@ void trap_Phys_FreezeObject(int entityID);
 void trap_Phys_UnfreezeObject(int entityID);
 void trap_Phys_Weld(int entA, int entB, float px, float py, float pz);
 bool trap_Phys_IsSleeping(int entityID);
+void trap_Phys_CreateCapsule(int entityID, const physCapsuleDef_t* def);
+void trap_Phys_CreateConeTwist(const physConeTwistDef_t* def);
+void trap_Phys_IgnoreCollisionGroup(const int* entityIDs, int count);
+void trap_LocateRagdollData(ragdollState_t* states, int numStates);
+bool trap_Ragdoll_LoadSkeleton(const char* modelPath, const char* animPath, int frame, ragdollSkeleton_t* out);
+
+//
+// g_ragdoll.c
+//
+int G_SpawnRagdoll(const vec3_t origin, float yaw, const char* model, int playerid, int type);
+void G_RemoveRagdoll(int id);
+void G_RemoveAllRagdolls(void);
+void G_InitRagdolls(void);
+void G_RunRagdolls(void);
+void G_RagdollBoneUpdate(gentity_t* ent, const vec3_t angles);
+void G_RagdollEntityFreed(gentity_t* ent);
+bool G_RagdollModelOfPlayer(int clientNum, char* out, int outSize);
+void Cmd_Ragdoll_f(gentity_t* ent);
+void Cmd_RagdollClear_f(gentity_t* ent);
 
 int trap_BotLibSetup(void);
 int trap_BotLibShutdown(void);

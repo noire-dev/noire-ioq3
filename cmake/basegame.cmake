@@ -21,6 +21,7 @@ set(CGAME_SOURCES
     ${SOURCE_DIR}/cgame/cg_players.c
     ${SOURCE_DIR}/cgame/cg_playerstate.c
     ${SOURCE_DIR}/cgame/cg_predict.c
+    ${SOURCE_DIR}/cgame/cg_ragdoll.c
     ${SOURCE_DIR}/cgame/cg_scoreboard.c
     ${SOURCE_DIR}/cgame/cg_servercmds.c
     ${SOURCE_DIR}/cgame/cg_snapshot.c
@@ -52,6 +53,7 @@ set(GAME_SOURCES
     ${SOURCE_DIR}/game/g_misc.c
     ${SOURCE_DIR}/game/g_mover.c
     ${SOURCE_DIR}/game/g_physics.c
+    ${SOURCE_DIR}/game/g_ragdoll.c
     ${SOURCE_DIR}/game/g_spawn.c
     ${SOURCE_DIR}/game/g_svcmds.c
     ${SOURCE_DIR}/game/g_trigger.c

@@ -64,6 +64,8 @@ typedef struct {
 
 	int serverCommandNum;  // execute all commands up to this before
 	                       // making the snapshot current
+	int parseRagdollsNum;  // index into cl.parseRagdolls[]
+	int numRagdolls;
 } clSnapshot_t;
 
 /*
@@ -85,6 +87,8 @@ typedef struct {
 // entities, so that when a delta compressed message arives from the server
 // it can be un-deltad from the original
 #define MAX_PARSE_ENTITIES (PACKET_BACKUP * MAX_SNAPSHOT_ENTITIES)
+#define MAX_PARSE_RAGDOLLS 1024                                                           // power of two, >= PACKET_BACKUP * MAX_SNAPSHOT_RAGDOLLS
+void CL_ParsePacketRagdolls(msg_t* msg, clSnapshot_t* oldframe, clSnapshot_t* newframe);  // cl_ragdoll.c
 
 typedef struct {
 	int timeoutcount;   // it requres several frames in a timeout condition
@@ -137,6 +141,9 @@ typedef struct {
 	entityState_t entityBaselines[MAX_GENTITIES];  // for delta compression when not in previous frame
 
 	entityState_t parseEntities[MAX_PARSE_ENTITIES];
+
+	ragdollState_t parseRagdolls[MAX_PARSE_RAGDOLLS];
+	int parseRagdollsNum;  // index (not anded off) into cl.parseRagdolls[]
 } clientActive_t;
 
 extern clientActive_t cl;

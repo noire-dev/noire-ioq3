@@ -1068,6 +1068,11 @@ void SV_Frame(int msec) {
 		Cbuf_AddText(va("map %s\n", Cvar_VariableString("mapname")));
 		return;
 	}
+	if(svs.nextSnapshotRagdolls >= 0x7FFFFFFE - svs.numSnapshotRagdolls) {
+		SV_Shutdown("Restarting server due to numSnapshotRagdolls wrapping");
+		Cbuf_AddText(va("map %s\n", Cvar_VariableString("mapname")));
+		return;
+	}
 
 	if(sv.restartTime && sv.time >= sv.restartTime) {
 		sv.restartTime = 0;

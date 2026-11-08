@@ -69,6 +69,8 @@ typedef struct {
 	void (*AddLightToScene)(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
 	void (*SetBoneScale)(const char* jointName, const vec3_t scale);
 	void (*SetJiggleData)(const char* jointName, float scale, float damping, float stiffness, float gravity);
+	void (*SetBoneAngles)(const char* jointName, const vec3_t angles);
+	int (*GetModelBone)(qhandle_t model, int index, char* name, int size);
 	void (*RenderScene)(const refdef_t* fd);
 
 	void (*SetColor)(const float* rgba);                                                                                    // NULL = 1,1,1,1

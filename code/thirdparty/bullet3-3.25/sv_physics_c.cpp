@@ -20,6 +20,9 @@ struct btRigidBody_s {
 	btRigidBody* m_body;
 	btCollisionShape* m_shape;
 	btDefaultMotionState* m_motionState;
+	bool m_ownsShape;  // true for per-body shapes (ragdoll capsules), freed together with the body
+	bool m_hasAlign;   // ragdoll bone: body frame = joint frame * m_align (capsule axis is Y in the shape)
+	float m_align[4];  // x y z w
 };
 
 typedef struct btConstraint_s {
@@ -67,7 +70,7 @@ static void QuatToAngles(float qx, float qy, float qz, float qw, float* pitch, f
 	}
 }
 
-#define MAX_WELDS 4096
+#define MAX_WELDS 16384  // welds + ragdoll joints (a detailed ragdoll has ~70 joints)
 
 btPhysicsWorld_t* physWorld = NULL;
 static btCollisionShape_t* shapes[MAX_MODELS];
@@ -276,6 +279,8 @@ void SV_PhysicsCreateModel(int entityID, int modelindex, float x, float y, float
 	wrapper->m_body = bulletBody;
 	wrapper->m_shape = shape;
 	wrapper->m_motionState = ms;
+	wrapper->m_ownsShape = false;
+	wrapper->m_hasAlign = false;
 	bodies[entityID] = wrapper;
 
 	SV_PhysicsSetupCCD(entityID);
@@ -307,6 +312,18 @@ void SV_PhysicsDeleteObject(int entityID) {
 		physWorld->m_world->removeRigidBody(bodies[entityID]->m_body);
 		delete bodies[entityID]->m_motionState;
 		delete bodies[entityID]->m_body;
+		if(bodies[entityID]->m_ownsShape && bodies[entityID]->m_shape) {
+			btCollisionShape* owned = bodies[entityID]->m_shape;
+
+			if(owned->getShapeType() == COMPOUND_SHAPE_PROXYTYPE) {
+				btCompoundShape* compound = (btCompoundShape*)owned;
+
+				for(int c = compound->getNumChildShapes() - 1; c >= 0; c--) {
+					delete compound->getChildShape(c);
+				}
+			}
+			delete owned;
+		}
 		delete bodies[entityID];
 		bodies[entityID] = NULL;
 	}
@@ -338,6 +355,11 @@ void SV_PhysicsGetAngles(int entityID, float* pitch, float* yaw, float* roll) {
 	}
 	float qx, qy, qz, qw;
 	btQuaternion rot = bodies[entityID]->m_body->getOrientation();
+	if(bodies[entityID]->m_hasAlign) {
+		// ragdoll bone: report the orientation of the joint frame, not of the capsule frame
+		const float* a = bodies[entityID]->m_align;
+		rot = rot * btQuaternion(a[0], a[1], a[2], a[3]).inverse();
+	}
 	qx = rot.x();
 	qy = rot.y();
 	qz = rot.z();
@@ -351,7 +373,12 @@ void SV_PhysicsSetAngles(int entityID, float pitch, float yaw, float roll) {
 	bodies[entityID]->m_body->activate(true);
 	AnglesToQuat(pitch, yaw, roll, &qx, &qy, &qz, &qw);
 	btTransform& t = bodies[entityID]->m_body->getWorldTransform();
-	t.setRotation(btQuaternion(qx, qy, qz, qw));
+	btQuaternion newRot(qx, qy, qz, qw);
+	if(bodies[entityID]->m_hasAlign) {
+		const float* a = bodies[entityID]->m_align;
+		newRot = newRot * btQuaternion(a[0], a[1], a[2], a[3]);
+	}
+	t.setRotation(newRot);
 	bodies[entityID]->m_body->setWorldTransform(t);
 }
 
@@ -445,6 +472,194 @@ bool SV_PhysicsIsSleeping(int entityID) {
 	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) return false;
 	int state = bodies[entityID]->m_body->getActivationState();
 	return (state == ISLAND_SLEEPING || state == WANTS_DEACTIVATION) ? true : false;
+}
+
+
+// ===========================================================================
+// Server-side ragdoll
+// ===========================================================================
+
+// rotation that turns the Y axis (btCapsuleShape's axis) into the given direction
+static btQuaternion SV_RagdollAlignY(const btVector3& dir) {
+	const btVector3 y(0, 1, 0);
+	btVector3 d = dir;
+
+	if(d.length2() < 1e-8f) return btQuaternion::getIdentity();
+	d.normalize();
+
+	btScalar dot = y.dot(d);
+	if(dot > 0.99999f) return btQuaternion::getIdentity();
+	if(dot < -0.99999f) return btQuaternion(btVector3(1, 0, 0), SIMD_PI);
+
+	btVector3 axis = y.cross(d);
+	axis.normalize();
+	return btQuaternion(axis, btAcos(dot));
+}
+
+/*
+Creates a rigid body with one capsule for a ragdoll bone.
+
+The body origin is the capsule center (= center of mass). The shape is a plain
+btCapsuleShape (axis Y): a compound shape would not do, because Bullet only does
+continuous collision detection for CONVEX shapes, and thin bones tunnel straight
+through the world mesh without it.
+
+So the body frame is the joint frame rotated by m_align (Y -> bone axis).
+SV_PhysicsGet/SetAngles hide that and report the orientation of the JOINT frame,
+which is what the game and the renderer want.
+
+Inertia is set by hand (isotropic, from the real capsule). Bullet's own value for
+a compound is derived from its AABB and is far too small for light, thin bones,
+which is what made them shake.
+*/
+void SV_PhysicsCreateCapsule(int entityID, const physCapsuleDef_t* def) {
+	if(!physWorld || !def || entityID < 0 || entityID >= MAX_GENTITIES) return;
+
+	if(bodies[entityID]) {
+		Com_Error(ERR_DROP, "SV_PhysicsCreateCapsule: attempt to recreate physics object\n");
+		return;
+	}
+
+	btScalar radius = btMax(0.5f, def->radius);
+	btScalar cylLen = btMax(0.01f, def->cylinderLength);
+	btScalar mass = btMax(0.01f, def->mass);
+
+	btCapsuleShape* shape = new btCapsuleShape(radius, cylLen);
+
+	// capsule: cylinder length + two caps; I = m * (L^2 / 12 + r^2 / 4) around a perpendicular axis,
+	// never less than the axial m * r^2 / 2
+	btScalar totalLen = cylLen + 2.0f * radius;
+	btScalar iPerp = mass * (totalLen * totalLen / 12.0f + radius * radius / 4.0f);
+	btScalar iAxial = mass * radius * radius * 0.5f;
+	btScalar iso = btMax(iPerp, iAxial);
+	btVector3 inertia(iso, iso, iso);
+	bodies_mass[entityID] = mass;
+
+	btQuaternion align = SV_RagdollAlignY(btVector3(def->axis[0], def->axis[1], def->axis[2]));
+	btQuaternion joint(def->quat[0], def->quat[1], def->quat[2], def->quat[3]);
+	joint.normalize();
+
+	btTransform trans;
+	trans.setIdentity();
+	trans.setOrigin(btVector3(def->center[0], def->center[1], def->center[2]));
+	trans.setRotation(joint * align);
+
+	btDefaultMotionState* ms = new btDefaultMotionState(trans);
+	btRigidBody::btRigidBodyConstructionInfo info(mass, ms, shape, inertia);
+	info.m_restitution = 0.0f;
+	info.m_friction = 0.8f;
+	info.m_rollingFriction = 0.02f;
+	info.m_spinningFriction = 0.02f;
+
+	btRigidBody* body = new btRigidBody(info);
+	body->setSleepingThresholds(8.0f, 8.0f);
+	body->setDamping(def->linearDamping, def->angularDamping);
+	body->setDeactivationTime(1.0f);
+	body->setUserIndex(entityID);
+
+	// continuous collision for every bone: at -800 gravity a falling bone moves several
+	// units per step, which is more than the radius of a finger
+	body->setCcdMotionThreshold(radius * 0.5f);
+	body->setCcdSweptSphereRadius(radius * 0.5f);
+
+	physWorld->m_world->addRigidBody(body);
+
+	btRigidBody_t* wrapper = new btRigidBody_t();
+	wrapper->m_body = body;
+	wrapper->m_shape = shape;
+	wrapper->m_motionState = ms;
+	wrapper->m_ownsShape = true;
+	wrapper->m_hasAlign = true;
+	wrapper->m_align[0] = align.x();
+	wrapper->m_align[1] = align.y();
+	wrapper->m_align[2] = align.z();
+	wrapper->m_align[3] = align.w();
+	bodies[entityID] = wrapper;
+}
+
+/*
+Cone-twist joint between two bodies. Both joint frames are built from the same
+world space basis (X axis = twist axis), so the pose at creation time is the
+neutral pose of the joint. The pair stops colliding with each other.
+*/
+void SV_PhysicsCreateConeTwist(const physConeTwistDef_t* def) {
+	if(!physWorld || !def) return;
+
+	int entA = def->entityA;
+	int entB = def->entityB;
+
+	if(entA < 0 || entA >= MAX_GENTITIES || !bodies[entA]) return;
+	if(entB < 0 || entB >= MAX_GENTITIES || !bodies[entB]) return;
+
+	int slot = -1;
+	for(int i = 0; i < MAX_WELDS; i++) {
+		if(welds[i] == NULL) {
+			slot = i;
+			break;
+		}
+	}
+	if(slot < 0) {
+		Com_Printf(S_COLOR_YELLOW "SV_PhysicsCreateConeTwist: no free joint slots\n");
+		return;
+	}
+
+	btRigidBody* A = bodies[entA]->m_body;
+	btRigidBody* B = bodies[entB]->m_body;
+
+	btVector3 pivot(def->pivot[0], def->pivot[1], def->pivot[2]);
+	btVector3 x(def->axis[0], def->axis[1], def->axis[2]);
+	if(x.length2() < 1e-8f) x = btVector3(1, 0, 0);
+	x.normalize();
+
+	btVector3 ref = (btFabs(x.z()) < 0.9f) ? btVector3(0, 0, 1) : btVector3(1, 0, 0);
+	btVector3 y = ref.cross(x);
+	y.normalize();
+	btVector3 z = x.cross(y);
+
+	btMatrix3x3 basisW(x.x(), y.x(), z.x(), x.y(), y.y(), z.y(), x.z(), y.z(), z.z());
+
+	btTransform frameA, frameB;
+	frameA.setBasis(A->getWorldTransform().getBasis().transpose() * basisW);
+	frameA.setOrigin(A->getWorldTransform().inverse() * pivot);
+	frameB.setBasis(B->getWorldTransform().getBasis().transpose() * basisW);
+	frameB.setOrigin(B->getWorldTransform().inverse() * pivot);
+
+	// chains of 20+ bodies need more solver iterations than a few props do
+	if(physWorld->m_world->getSolverInfo().m_numIterations < 30) {
+		physWorld->m_world->getSolverInfo().m_numIterations = 30;
+	}
+
+	btConeTwistConstraint* c = new btConeTwistConstraint(*A, *B, frameA, frameB);
+	const btScalar toRad = SIMD_PI / 180.0f;
+	c->setLimit(def->swing1 * toRad, def->swing2 * toRad, def->twist * toRad, 1.0f, 0.3f, 1.0f);
+
+	// true: no collision between the two linked bodies
+	physWorld->m_world->addConstraint(c, true);
+
+	btConstraint_t* con = new btConstraint_t();
+	con->m_constraint = c;
+	welds[slot] = con;
+	weldBodyA[slot] = entA;
+	weldBodyB[slot] = entB;
+	numWelds++;
+}
+
+// no collision between any two of the given bodies (bones of one ragdoll)
+void SV_PhysicsIgnoreCollisionGroup(const int* entityIDs, int count) {
+	if(!physWorld || !entityIDs || count < 2) return;
+
+	for(int i = 0; i < count; i++) {
+		int a = entityIDs[i];
+		if(a < 0 || a >= MAX_GENTITIES || !bodies[a]) continue;
+
+		for(int j = i + 1; j < count; j++) {
+			int b = entityIDs[j];
+			if(b < 0 || b >= MAX_GENTITIES || !bodies[b]) continue;
+
+			bodies[a]->m_body->setIgnoreCollisionCheck(bodies[b]->m_body, true);
+			bodies[b]->m_body->setIgnoreCollisionCheck(bodies[a]->m_body, true);
+		}
+	}
 }
 
 struct PhysicsTraceCallback : public btCollisionWorld::ClosestRayResultCallback {

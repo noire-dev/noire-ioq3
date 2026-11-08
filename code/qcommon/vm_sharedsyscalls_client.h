@@ -34,3 +34,5 @@ int trap_Key_GetKey(const char* binding);
 void trap_ImportOBJ(const char* filename);
 void trap_R_SetBoneScale(const char* jointName, const vec3_t scale);
 void trap_R_SetJiggleData(const char* jointName, float scale, float damping, float stiffness, float gravity);
+void trap_R_SetBoneAngles(const char* jointName, const vec3_t angles);
+int trap_R_GetModelBone(qhandle_t model, int index, char* name, int size);

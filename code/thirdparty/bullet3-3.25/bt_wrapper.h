@@ -64,6 +64,11 @@ void SV_PhysicsFreezeObject(int entityID);
 void SV_PhysicsUnfreezeObject(int entityID);
 void SV_PhysicsWeld(int entA, int entB, float px, float py, float pz);
 bool SV_PhysicsIsSleeping(int entityID);
+
+// server-side ragdoll (capsule per bone, cone-twist joints between bones)
+void SV_PhysicsCreateCapsule(int entityID, const physCapsuleDef_t* def);
+void SV_PhysicsCreateConeTwist(const physConeTwistDef_t* def);
+void SV_PhysicsIgnoreCollisionGroup(const int* entityIDs, int count);
 void BT_PhysicsTrace(const float* start, const float* end, const float* mins, const float* maxs, int skipEntity, physTrace_t* result);
 
 // BSP интеграция

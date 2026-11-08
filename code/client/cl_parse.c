@@ -247,6 +247,9 @@ void CL_ParseSnapshot(msg_t* msg) {
 			Com_Printf("Delta frame too old.\n");
 		} else if(cl.parseEntitiesNum - old->parseEntitiesNum > MAX_PARSE_ENTITIES - MAX_SNAPSHOT_ENTITIES) {
 			Com_Printf("Delta parseEntitiesNum too old.\n");
+		} else if(cl.parseRagdollsNum - old->parseRagdollsNum > MAX_PARSE_RAGDOLLS - MAX_SNAPSHOT_RAGDOLLS * 4) {
+			Com_DPrintf("%s: Delta parseRagdollsNum too old.\n", __func__);
+			old = NULL;  // same handling as the entity check
 		} else {
 			newSnap.valid = true;  // valid delta parse
 		}
@@ -273,6 +276,7 @@ void CL_ParseSnapshot(msg_t* msg) {
 	// read packet entities
 	SHOWNET(msg, "packet entities");
 	CL_ParsePacketEntities(msg, old, &newSnap);
+	CL_ParsePacketRagdolls(msg, old, &newSnap);
 
 	// if not valid, dump the entire thing now that it has
 	// been properly read

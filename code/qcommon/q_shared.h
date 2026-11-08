@@ -210,7 +210,9 @@ typedef enum {
 	TRAP_KEY_GETKEY,
 	TRAP_IMPORTOBJ,
 	TRAP_R_SETBONESCALE,
-	TRAP_R_SETJIGGLEDATA
+	TRAP_R_SETJIGGLEDATA,
+	TRAP_R_SETBONEANGLES,
+	TRAP_R_GETMODELBONE
 } sharedTraps_t;
 
 #include <assert.h>
@@ -1135,6 +1137,67 @@ typedef struct {
 // The messages are delta compressed, so it doesn't really matter if
 // the structure size is fairly large
 
+// ===========================================================================
+// Server-side ragdoll (shared between engine, game and cgame)
+// ===========================================================================
+#define MAX_IQM_BONES 128  // == IQM_MAX_JOINTS (renderercommon/iqm.h)
+#define MAX_RAGDOLLS 96
+#define MAX_SNAPSHOT_RAGDOLLS 32  // ragdolls that can be visible in one client snapshot
+#define MAX_RAGDOLL_BONENAME 64
+
+#define RAGDOLL_NUM_BITS 8  // ragdoll numbers are sent with this many bits
+#define RAGDOLL_NUM_NONE ((1 << RAGDOLL_NUM_BITS) - 1)
+
+typedef enum {
+	RAGDOLL_SIMPLE = 0,  // fixed list of valveBiped bones: torso, head, arms, legs
+	RAGDOLL_DETAILED     // every bone of the IQM, in IQM order (fingers etc.)
+} ragdollType_t;
+
+// Network/render state of one ragdoll. The game writes one entry per bone
+// every frame (angles of the bone's physics body), the engine delta-compresses
+// it per client snapshot, cgame hands it to the renderer with
+// trap_R_SetBoneAngles. Angles are world space (pitch, yaw, roll) quantized
+// with ANGLE2SHORT (16 bit), which is what goes over the wire anyway.
+typedef struct ragdollState_s {
+	int number;    // ragdollID
+	int type;      // ragdollType_t
+	int numBones;  // valid entries in angles[]
+	short angles[MAX_IQM_BONES][3];
+} ragdollState_t;
+
+// skeleton of a model in a given pose, filled by the engine for the game
+// (parsed from the IQM + external animation IQM, see trap_Ragdoll_LoadSkeleton)
+typedef struct ragdollSkeleton_s {
+	int numJoints;
+	char names[MAX_IQM_BONES][MAX_RAGDOLL_BONENAME];
+	int parent[MAX_IQM_BONES];
+	float pos[MAX_IQM_BONES][3];   // model space joint origin in the requested pose
+	float quat[MAX_IQM_BONES][4];  // model space joint rotation (x, y, z, w)
+} ragdollSkeleton_t;
+
+// bullet capsule body of one ragdoll bone (passed by pointer to the engine)
+typedef struct physCapsuleDef_s {
+	float radius;
+	float cylinderLength;  // length of the straight part (without the caps)
+	float axis[3];         // capsule axis in the body's local frame (unit length)
+	float center[3];       // world position of the body (= capsule center)
+	float quat[4];         // world orientation (x, y, z, w)
+	float mass;
+	float linearDamping;
+	float angularDamping;
+} physCapsuleDef_t;
+
+// cone-twist joint between two physics bodies (passed by pointer to the engine)
+typedef struct physConeTwistDef_s {
+	int entityA;  // parent
+	int entityB;  // child
+	float pivot[3];  // world space
+	float axis[3];   // world space twist axis (unit length)
+	float swing1;    // degrees
+	float swing2;    // degrees
+	float twist;     // degrees
+} physConeTwistDef_t;
+
 typedef struct entityState_s {
 	int number;  // entity index
 	int eType;   // entityType_t
@@ -1176,6 +1239,10 @@ typedef struct entityState_s {
 	int torsoAnim;  // mask off ANIM_TOGGLEBIT
 
 	int generic1;
+
+	// ragdoll (ET_RAGDOLL master and ragdoll bone entities)
+	int ragdollID;  // index into ragdollState[]
+	int boneID;     // index into ragdollState[ragdollID].angles[] (bone entities only)
 } entityState_t;
 
 typedef enum {

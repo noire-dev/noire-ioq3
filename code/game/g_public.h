@@ -198,6 +198,16 @@ typedef enum {
 	PHYS_WELD,
 	PHYS_ISSLEEPING,
 
+	// server-side ragdoll
+	PHYS_CREATECAPSULE,        // ( int entityID, const physCapsuleDef_t *def );
+	PHYS_CREATECONETWIST,      // ( const physConeTwistDef_t *def );  joint between two physics bodies
+	PHYS_IGNORECOLLISIONGROUP, // ( const int *entityIDs, int count );  no collision between any two of them
+	G_LOCATE_RAGDOLL_DATA,     // ( ragdollState_t *states, int numStates );
+	// the game tells the server where its ragdollState[] array is, so snapshots can send it
+	G_RAGDOLL_LOADSKELETON,    // bool ( const char *modelPath, const char *animPath, int frame, ragdollSkeleton_t *out );
+	// parses the IQM model (+ external animation IQM) and returns joint names, parents
+	// and the model space pose of the requested animation frame
+
 	BOTLIB_SETUP = 200,  // ( void );
 	BOTLIB_SHUTDOWN,     // ( void );
 	BOTLIB_LIBVAR_SET,

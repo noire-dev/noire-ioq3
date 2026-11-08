@@ -106,6 +106,16 @@ typedef struct {
 	vec3_t scale;
 } boneScaleEntry_t;
 
+// per-entity per-joint absolute orientation (server-side ragdoll), requested from cgame
+// with RE_SetBoneAngles. The angles are the world space angles of the joint's frame.
+#define MAX_RENDER_BONEANGLES 4096  // per frame, over all entities
+
+typedef struct {
+	int entityNum;   // index within the current scene's entity array
+	int jointIndex;  // resolved IQM joint index
+	vec3_t angles;
+} boneAngleEntry_t;
+
 #define MAX_RENDER_JIGGLES 512  // per frame
 #define MAX_ENTITY_JIGGLES 64   // per ref entity
 #define MAX_JIGGLE_STATES 64    // simultaneously simulated entities
@@ -1574,6 +1584,11 @@ typedef struct {
 	int numBoneScaleEntries;
 	boneScaleEntry_t boneScaleEntries[MAX_RENDER_BONESCALES];
 
+	// per-entity ragdoll bone orientations, requested from cgame with
+	// RE_SetBoneAngles and attached to the next added ref entity
+	int numBoneAngleEntries;
+	boneAngleEntry_t boneAngleEntries[MAX_RENDER_BONEANGLES];
+
 	// per-entity jiggle bones, requested from cgame with RE_SetJiggleData
 	// and attached to the next added ref entity (reset once per frame)
 	int numJiggleEntries;
@@ -2085,6 +2100,10 @@ void RE_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts,
 void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
 void RE_SetBoneScale(const char* jointName, const vec3_t scale);
 int R_GetEntityBoneScales(int entityNum, int* joints, vec3_t* scales, int maxCount);
+void RE_SetBoneAngles(const char* jointName, const vec3_t angles);
+int R_GetEntityBoneAngles(int entityNum, int* joints, vec3_t* angles, int maxCount);
+bool R_EntityHasBoneAngles(int entityNum);
+int RE_GetModelBone(qhandle_t model, int index, char* name, int size);
 void RE_SetJiggleData(const char* jointName, float scale, float damping, float stiffness, float gravity);
 int R_GetEntityJiggles(int entityNum, int* joints, quat_t* deltas, int maxCount);
 void R_JiggleUpdateScene(void);

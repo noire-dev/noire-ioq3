@@ -74,7 +74,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CS_LOCATIONS (CS_PLAYERS + MAX_CLIENTS)
 #define CS_PARTICLES (CS_LOCATIONS + MAX_LOCATIONS)
 
-#define CS_MAX (CS_PARTICLES + MAX_LOCATIONS)
+#define CS_RAGDOLLS (CS_PARTICLES + MAX_LOCATIONS)  // [MAX_RAGDOLLS] player model name of every ragdoll
+
+#define CS_MAX (CS_RAGDOLLS + MAX_RAGDOLLS)
 
 #if (CS_MAX) > MAX_CONFIGSTRINGS
 #error overflow: (CS_MAX) > MAX_CONFIGSTRINGS
@@ -461,6 +463,7 @@ typedef enum {
 	ET_SPEAKER,
 	ET_TELEPORT_TRIGGER,
 	ET_INVISIBLE,
+	ET_RAGDOLL,  // master entity of a server-side ragdoll: origin = main bone, ragdollID selects the ragdollState
 
 	ET_EVENTS  // any of the EV_* events can be added freestanding
 	           // by setting eType to ET_EVENTS + eventNum
@@ -476,5 +479,15 @@ void BG_PlayerStateToEntityState(playerState_t* ps, entityState_t* s, bool snap)
 void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s, int time, bool snap);
 
 bool BG_PlayerTouchesItem(playerState_t* ps, entityState_t* item, int atTime);
+
+
+//
+// Server-side ragdoll, simplified skeleton.
+// The simplified ragdoll only simulates and sends these valveBiped bones, in this
+// order. The order is the same on server and client; boneID == index in this list.
+// (The detailed ragdoll uses every bone of the IQM, boneID == IQM joint index.)
+//
+#define RAGDOLL_SIMPLE_NUMBONES 23
+extern const char* const bg_ragdollSimpleBones[RAGDOLL_SIMPLE_NUMBONES];
 
 #endif

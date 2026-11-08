@@ -675,7 +675,7 @@ typedef struct {
 // using the stringizing operator to save typing...
 #define NETF(x) #x, (size_t)&((entityState_t*)0)->x
 
-netField_t entityStateFields[] = {{NETF(pos.trTime), 32}, {NETF(pos.trBase[0]), 0}, {NETF(pos.trBase[1]), 0}, {NETF(pos.trDelta[0]), 0}, {NETF(pos.trDelta[1]), 0}, {NETF(pos.trBase[2]), 0}, {NETF(apos.trBase[1]), 0}, {NETF(pos.trDelta[2]), 0}, {NETF(apos.trBase[0]), 0}, {NETF(event), 10}, {NETF(angles2[1]), 0}, {NETF(eType), 8}, {NETF(torsoAnim), 8}, {NETF(eventParm), 8}, {NETF(legsAnim), 8}, {NETF(groundEntityNum), GENTITYNUM_BITS}, {NETF(pos.trType), 8}, {NETF(eFlags), 19}, {NETF(otherEntityNum), GENTITYNUM_BITS}, {NETF(weapon), 8}, {NETF(clientNum), 8}, {NETF(angles[1]), 0}, {NETF(pos.trDuration), 32}, {NETF(apos.trType), 8}, {NETF(origin[0]), 0}, {NETF(origin[1]), 0}, {NETF(origin[2]), 0}, {NETF(solid), 24}, {NETF(modelindex), 8}, {NETF(otherEntityNum2), GENTITYNUM_BITS}, {NETF(loopSound), 8}, {NETF(generic1), 8}, {NETF(origin2[2]), 0}, {NETF(origin2[0]), 0}, {NETF(origin2[1]), 0}, {NETF(modelindex2), 8}, {NETF(angles[0]), 0}, {NETF(time), 32}, {NETF(apos.trTime), 32}, {NETF(apos.trDuration), 32}, {NETF(apos.trBase[2]), 0}, {NETF(apos.trDelta[0]), 0}, {NETF(apos.trDelta[1]), 0}, {NETF(apos.trDelta[2]), 0}, {NETF(time2), 32}, {NETF(angles[2]), 0}, {NETF(angles2[0]), 0}, {NETF(angles2[2]), 0}, {NETF(constantLight), 32}, {NETF(frame), 16}};
+netField_t entityStateFields[] = {{NETF(pos.trTime), 32}, {NETF(pos.trBase[0]), 0}, {NETF(pos.trBase[1]), 0}, {NETF(pos.trDelta[0]), 0}, {NETF(pos.trDelta[1]), 0}, {NETF(pos.trBase[2]), 0}, {NETF(apos.trBase[1]), 0}, {NETF(pos.trDelta[2]), 0}, {NETF(apos.trBase[0]), 0}, {NETF(event), 10}, {NETF(angles2[1]), 0}, {NETF(eType), 8}, {NETF(torsoAnim), 8}, {NETF(eventParm), 8}, {NETF(legsAnim), 8}, {NETF(groundEntityNum), GENTITYNUM_BITS}, {NETF(pos.trType), 8}, {NETF(eFlags), 19}, {NETF(otherEntityNum), GENTITYNUM_BITS}, {NETF(weapon), 8}, {NETF(clientNum), 8}, {NETF(angles[1]), 0}, {NETF(pos.trDuration), 32}, {NETF(apos.trType), 8}, {NETF(origin[0]), 0}, {NETF(origin[1]), 0}, {NETF(origin[2]), 0}, {NETF(solid), 24}, {NETF(modelindex), 8}, {NETF(otherEntityNum2), GENTITYNUM_BITS}, {NETF(loopSound), 8}, {NETF(generic1), 8}, {NETF(origin2[2]), 0}, {NETF(origin2[0]), 0}, {NETF(origin2[1]), 0}, {NETF(modelindex2), 8}, {NETF(angles[0]), 0}, {NETF(time), 32}, {NETF(apos.trTime), 32}, {NETF(apos.trDuration), 32}, {NETF(apos.trBase[2]), 0}, {NETF(apos.trDelta[0]), 0}, {NETF(apos.trDelta[1]), 0}, {NETF(apos.trDelta[2]), 0}, {NETF(time2), 32}, {NETF(angles[2]), 0}, {NETF(angles2[0]), 0}, {NETF(angles2[2]), 0}, {NETF(constantLight), 32}, {NETF(frame), 16}, {NETF(ragdollID), 8}, {NETF(boneID), 8}};
 
 // if (int)f == f and (int)f + ( 1<<(FLOAT_INT_BITS-1) ) < ( 1 << FLOAT_INT_BITS )
 // the float will be sent with FLOAT_INT_BITS, otherwise all 32 bits will be sent
@@ -1473,5 +1473,207 @@ void MSG_NUinitHuffman() {
     Cbuf_AddText( "condump dump.txt\n" );
 }
 */
+
+
+/*
+=============================================================================
+
+ragdollState_t communication
+
+A ragdollState_t is delta compressed against the ragdoll state of the delta
+base snapshot, exactly like entityState_t. Only bones whose quantized angles
+changed are sent, and of those only the components that changed. A ragdoll
+that is at rest therefore costs nothing at all.
+
+Wire format of one ragdoll update inside a snapshot:
+
+	number           RAGDOLL_NUM_BITS
+	removed          1 bit   (nothing else follows if set)
+	hasDelta         1 bit   (0 = identical to from, only sent when forced)
+	typeChanged      1 bit, type 4 bits
+	numBonesChanged  1 bit, numBones 8 bits
+	for each bone < numBones:
+		boneChanged  1 bit
+		3 x (compChanged 1 bit, value 16 bits)
+
+The list is terminated with RAGDOLL_NUM_NONE as number.
+=============================================================================
+*/
+
+static short MSG_RagdollFromAngle(const ragdollState_t* from, int bone, int comp) {
+	if(bone >= from->numBones) {
+		return 0;  // bones past numBones are always zero on both ends
+	}
+	return from->angles[bone][comp];
+}
+
+/*
+==================
+MSG_WriteDeltaRagdollState
+
+Writes part of a packetragdolls message, including the ragdoll number.
+Can delta from either a previous packet ragdoll or from nothing (NULL from, a
+zeroed state is used). If to is NULL a remove update is sent.
+If force is not set, nothing at all is generated when the ragdoll is unchanged.
+==================
+*/
+void MSG_WriteDeltaRagdollState(msg_t* msg, ragdollState_t* from, ragdollState_t* to, bool force) {
+	ragdollState_t zero;
+	int i, k, numBones;
+	bool typeChanged, countChanged, anyBone;
+	bool boneChanged[MAX_IQM_BONES];
+
+	if(to == NULL) {
+		if(from == NULL) {
+			return;
+		}
+		MSG_WriteBits(msg, from->number, RAGDOLL_NUM_BITS);
+		MSG_WriteBits(msg, 1, 1);  // removed
+		return;
+	}
+
+	if(to->number < 0 || to->number >= MAX_RAGDOLLS) {
+		Com_Error(ERR_FATAL, "MSG_WriteDeltaRagdollState: Bad ragdoll number: %i", to->number);
+	}
+
+	numBones = to->numBones;
+	if(numBones < 0 || numBones > MAX_IQM_BONES) {
+		Com_Error(ERR_FATAL, "MSG_WriteDeltaRagdollState: Bad bone count: %i", numBones);
+	}
+
+	if(from == NULL) {
+		Com_Memset(&zero, 0, sizeof(zero));
+		zero.number = to->number;
+		from = &zero;
+	}
+
+	typeChanged = (from->type != to->type);
+	countChanged = (from->numBones != to->numBones);
+	anyBone = false;
+
+	for(i = 0; i < numBones; i++) {
+		boneChanged[i] = false;
+		for(k = 0; k < 3; k++) {
+			if(MSG_RagdollFromAngle(from, i, k) != to->angles[i][k]) {
+				boneChanged[i] = true;
+			}
+		}
+		if(boneChanged[i]) {
+			anyBone = true;
+		}
+	}
+
+	if(!typeChanged && !countChanged && !anyBone) {
+		// nothing at all changed
+		if(!force) {
+			return;
+		}
+		MSG_WriteBits(msg, to->number, RAGDOLL_NUM_BITS);
+		MSG_WriteBits(msg, 0, 1);  // not removed
+		MSG_WriteBits(msg, 0, 1);  // no delta
+		return;
+	}
+
+	MSG_WriteBits(msg, to->number, RAGDOLL_NUM_BITS);
+	MSG_WriteBits(msg, 0, 1);  // not removed
+	MSG_WriteBits(msg, 1, 1);  // we have a delta
+
+	if(typeChanged) {
+		MSG_WriteBits(msg, 1, 1);
+		MSG_WriteBits(msg, to->type, 4);
+	} else {
+		MSG_WriteBits(msg, 0, 1);
+	}
+
+	if(countChanged) {
+		MSG_WriteBits(msg, 1, 1);
+		MSG_WriteBits(msg, to->numBones, 8);
+	} else {
+		MSG_WriteBits(msg, 0, 1);
+	}
+
+	for(i = 0; i < numBones; i++) {
+		if(!boneChanged[i]) {
+			MSG_WriteBits(msg, 0, 1);
+			continue;
+		}
+		MSG_WriteBits(msg, 1, 1);
+		for(k = 0; k < 3; k++) {
+			if(MSG_RagdollFromAngle(from, i, k) == to->angles[i][k]) {
+				MSG_WriteBits(msg, 0, 1);
+			} else {
+				MSG_WriteBits(msg, 1, 1);
+				MSG_WriteBits(msg, (unsigned short)to->angles[i][k], 16);
+			}
+		}
+	}
+}
+
+/*
+==================
+MSG_ReadDeltaRagdollState
+
+The ragdoll number has already been read from the message, which is how the
+from state is identified. If the delta removes the ragdoll, to->number is set
+to RAGDOLL_NUM_NONE. from may be NULL (new ragdoll).
+==================
+*/
+void MSG_ReadDeltaRagdollState(msg_t* msg, ragdollState_t* from, ragdollState_t* to, int number) {
+	int i, k, numBones;
+	short value;
+
+	if(number < 0 || number >= MAX_RAGDOLLS) {
+		Com_Error(ERR_DROP, "MSG_ReadDeltaRagdollState: Bad delta ragdoll number: %i", number);
+	}
+
+	// check for a remove
+	if(MSG_ReadBits(msg, 1) == 1) {
+		Com_Memset(to, 0, sizeof(*to));
+		to->number = RAGDOLL_NUM_NONE;
+		return;
+	}
+
+	if(from) {
+		*to = *from;
+	} else {
+		Com_Memset(to, 0, sizeof(*to));
+	}
+	to->number = number;
+
+	// check for no delta
+	if(MSG_ReadBits(msg, 1) == 0) {
+		return;
+	}
+
+	if(MSG_ReadBits(msg, 1)) {
+		to->type = MSG_ReadBits(msg, 4);
+	}
+
+	if(MSG_ReadBits(msg, 1)) {
+		to->numBones = MSG_ReadBits(msg, 8);
+	}
+
+	numBones = to->numBones;
+	if(numBones < 0 || numBones > MAX_IQM_BONES) {
+		Com_Error(ERR_DROP, "MSG_ReadDeltaRagdollState: Bad bone count: %i", numBones);
+	}
+
+	for(i = 0; i < numBones; i++) {
+		if(!MSG_ReadBits(msg, 1)) {
+			continue;
+		}
+		for(k = 0; k < 3; k++) {
+			if(MSG_ReadBits(msg, 1)) {
+				value = (short)(unsigned short)MSG_ReadBits(msg, 16);
+				to->angles[i][k] = value;
+			}
+		}
+	}
+
+	// bones past numBones are always zero (keeps both ends bit identical)
+	for(i = numBones; i < MAX_IQM_BONES; i++) {
+		to->angles[i][0] = to->angles[i][1] = to->angles[i][2] = 0;
+	}
+}
 
 //===========================================================================

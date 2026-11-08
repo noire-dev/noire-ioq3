@@ -107,6 +107,49 @@ static void R_ApplyPendingBoneScales(const refEntity_t* ent, int entityNum) {
 	r_numPendingBoneScales = 0;
 }
 
+// pending bone angle overrides set by trap_R_SetBoneAngles since the last
+// RE_AddRefEntityToScene (immediate mode, consumed by the next added entity)
+typedef struct {
+	char name[MAX_QPATH];
+	vec3_t angles;
+} pendingBoneAngle_t;
+
+static pendingBoneAngle_t r_pendingBoneAngles[MAX_IQM_BONES];
+static int r_numPendingBoneAngles;
+
+// attach all pending bone angles to the entity being added. Returns the number of
+// joints that were attached; that entity is then drawn as a ragdoll.
+static int R_ApplyPendingBoneAngles(const refEntity_t* ent, int entityNum) {
+	const model_t* mod;
+	const iqmData_t* data;
+	int i, joint, attached = 0;
+
+	if(r_numPendingBoneAngles <= 0) {
+		return 0;
+	}
+
+	mod = R_GetModelByHandle(ent->hModel);
+	data = (mod && mod->type == MOD_IQM) ? mod->modelData : NULL;
+
+	for(i = 0; i < r_numPendingBoneAngles; i++) {
+		pendingBoneAngle_t* pending = &r_pendingBoneAngles[i];
+
+		joint = -1;
+		R_FindIQMJoint(data, pending->name, &joint);
+
+		if(tr.numBoneAngleEntries < MAX_RENDER_BONEANGLES && joint >= 0) {
+			boneAngleEntry_t* entry = &tr.boneAngleEntries[tr.numBoneAngleEntries++];
+			entry->entityNum = entityNum;
+			entry->jointIndex = joint;
+			VectorCopy(pending->angles, entry->angles);
+			attached++;
+		}
+	}
+
+	r_numPendingBoneAngles = 0;
+	return attached;
+}
+
 typedef struct {
 	char name[MAX_QPATH];
 	float scale;
@@ -205,7 +248,9 @@ void RE_ClearScene(void) {
 	r_firstScenePoly = r_numpolys;
 
 	tr.numBoneScaleEntries = 0;
+	tr.numBoneAngleEntries = 0;
 	r_numPendingBoneScales = 0;
+	r_numPendingBoneAngles = 0;
 	r_numPendingJiggles = 0;
 }
 
@@ -353,7 +398,12 @@ void RE_AddRefEntityToScene(const refEntity_t* ent) {
 	backEndData->entities[r_numentities].mirrored = (DotProduct(ent->axis[2], cross) < 0.f);
 
 	R_ApplyPendingBoneScales(ent, r_numentities - r_firstSceneEntity);
-	R_ApplyPendingJiggles(ent, r_numentities);
+	if(R_ApplyPendingBoneAngles(ent, r_numentities - r_firstSceneEntity) > 0) {
+		// a ragdoll is posed by the physics, hair / cloth jiggle on top of it makes no sense
+		r_numPendingJiggles = 0;
+	} else {
+		R_ApplyPendingJiggles(ent, r_numentities);
+	}
 
 	r_numentities++;
 }
@@ -412,6 +462,106 @@ int R_GetEntityBoneScales(int entityNum, int* joints, vec3_t* scales, int maxCou
 	}
 
 	return n;
+}
+
+/*
+=====================
+RE_SetBoneAngles
+
+Immediate mode like RE_SetBoneScale: queue the absolute (world space) orientation of a
+joint. It is attached to the next ref entity added to the scene (and only to it). An
+entity with bone angles is posed from them instead of from its animation frames:
+the joint named first-driven-in-the-hierarchy is placed at the entity origin, every
+other joint is rebuilt from the model's bind pose bone offsets and the given angles.
+Joints without an entry follow their parent rigidly.
+=====================
+*/
+void RE_SetBoneAngles(const char* jointName, const vec3_t angles) {
+	pendingBoneAngle_t* pending;
+
+	if(!tr.registered) {
+		return;
+	}
+
+	if(r_numPendingBoneAngles >= MAX_IQM_BONES) {
+		static bool warned = false;
+		if(!warned) {
+			ri.Printf(PRINT_WARNING, "RE_SetBoneAngles: too many pending bone angles (max %d)\n", MAX_IQM_BONES);
+			warned = true;
+		}
+		return;
+	}
+
+	pending = &r_pendingBoneAngles[r_numPendingBoneAngles++];
+	Q_strncpyz(pending->name, jointName ? jointName : "", sizeof(pending->name));
+	VectorCopy(angles, pending->angles);
+}
+
+/*
+=====================
+R_GetEntityBoneAngles
+
+Backend/frontend helper: the bone angle overrides recorded for the given scene entity.
+Returns the number of entries written to joints/angles.
+=====================
+*/
+int R_GetEntityBoneAngles(int entityNum, int* joints, vec3_t* angles, int maxCount) {
+	int i, n = 0;
+
+	if(maxCount <= 0) {
+		return 0;
+	}
+
+	for(i = 0; i < tr.numBoneAngleEntries && n < maxCount; i++) {
+		if(tr.boneAngleEntries[i].entityNum == entityNum) {
+			joints[n] = tr.boneAngleEntries[i].jointIndex;
+			VectorCopy(tr.boneAngleEntries[i].angles, angles[n]);
+			n++;
+		}
+	}
+
+	return n;
+}
+
+bool R_EntityHasBoneAngles(int entityNum) {
+	int i;
+
+	for(i = 0; i < tr.numBoneAngleEntries; i++) {
+		if(tr.boneAngleEntries[i].entityNum == entityNum) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+=====================
+RE_GetModelBone
+
+Name of joint 'index' of an IQM model (cgame needs the bone order of the model for
+detailed ragdolls). Returns the number of joints, 0 if the model is not an IQM.
+With index < 0 or name == NULL only the count is returned.
+=====================
+*/
+int RE_GetModelBone(qhandle_t model, int index, char* name, int size) {
+	const model_t* mod = R_GetModelByHandle(model);
+	const iqmData_t* data = (mod && mod->type == MOD_IQM) ? mod->modelData : NULL;
+	const char* names;
+	int i;
+
+	if(!data || !data->jointNames || data->num_joints <= 0) {
+		return 0;
+	}
+
+	if(index >= 0 && index < data->num_joints && name && size > 0) {
+		names = data->jointNames;
+		for(i = 0; i < index; i++) {
+			names += strlen(names) + 1;
+		}
+		Q_strncpyz(name, names, size);
+	}
+
+	return data->num_joints;
 }
 
 /*

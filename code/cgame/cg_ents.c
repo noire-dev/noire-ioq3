@@ -748,6 +748,7 @@ static void CG_AddCEntity(centity_t* cent) {
 		case ET_TELEPORT_TRIGGER: break;
 		case ET_GENERAL: CG_General(cent); break;
 		case ET_PHYSICS: CG_Physics(cent); break;
+		case ET_RAGDOLL: CG_Ragdoll(cent); break;
 		case ET_PLAYER: CG_Player(cent); break;
 		case ET_ITEM: CG_Item(cent); break;
 		case ET_MISSILE: CG_Missile(cent); break;

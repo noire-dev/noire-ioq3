@@ -29,6 +29,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // 3x4 identity matrix
 static float identityMatrix[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 
+#if MAX_IQM_BONES != IQM_MAX_JOINTS
+#error MAX_IQM_BONES (q_shared.h) must equal IQM_MAX_JOINTS (iqm.h)
+#endif
+
 static bool IQM_CheckRange(iqmHeader_t* header, int offset, int count, int size) {
 	// return true if the range specified by offset, count and size
 	// doesn't fit into the file
@@ -1550,7 +1554,12 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 	// cull the entire model if merged bounding box of both frames
 	// is outside the view frustum.
 	//
-	cull = R_CullIQM(data, ent);
+	if(R_EntityHasBoneAngles((int)(ent - tr.refdef.entities))) {
+		// ragdoll: the animation bounds are meaningless, draw it clipped against the frustum
+		cull = CULL_CLIP;
+	} else {
+		cull = R_CullIQM(data, ent);
+	}
 	if(cull == CULL_OUT) {
 		return;
 	}
@@ -1863,6 +1872,110 @@ static void ComputePoseMats(iqmData_t* data, int frame, int oldframe, float back
 		} else {
 			Matrix34Multiply(mat1, invBindMat, poseMat);
 		}
+	}
+}
+
+/*
+=================
+ComputeRagdollPoseMats
+
+Skinning matrices of a ragdoll (RE_SetBoneAngles). The server-side physics gives the
+absolute (world space) orientation of the bodies of some joints; no animation is
+involved.
+
+  * the first driven joint (lowest index, so it has no driven ancestor) is the main
+    joint: it sits at the entity origin
+  * a driven joint takes its rotation from the angles and its position from its
+    parent: parentPos + parentRot * bindLocalTranslate (bone lengths always come
+    from the model, so the proportions can not change however the bodies stretch)
+  * a joint without angles follows its parent rigidly (parentRot * bindLocalRotation),
+    which is what finger / twist / helper bones do in a simplified ragdoll
+  * joints without a parent (other than the main joint) are attached to the main
+    joint with their bind pose offset relative to it
+
+The angles use the Q3 convention (AnglesToAxis): columns of the rotation are
+forward, left, up of the joint frame.
+=================
+*/
+static void ComputeRagdollPoseMats(iqmData_t* data, const int* joints, const vec3_t* angles, int numAngles, float* poseMats) {
+	bool driven[IQM_MAX_JOINTS];
+	vec3_t jointAngles[IQM_MAX_JOINTS];
+	float world[IQM_MAX_JOINTS * 12];
+	int i, main = -1;
+	int numJoints = data->num_joints;
+
+	if(numJoints > IQM_MAX_JOINTS) numJoints = IQM_MAX_JOINTS;
+
+	for(i = 0; i < numJoints; i++) driven[i] = false;
+	for(i = 0; i < numAngles; i++) {
+		int j = joints[i];
+
+		if(j >= 0 && j < numJoints) {
+			driven[j] = true;
+			VectorCopy(angles[i], jointAngles[j]);
+		}
+	}
+	for(i = 0; i < numJoints; i++) {
+		if(driven[i]) {
+			main = i;
+			break;
+		}
+	}
+
+	if(main < 0) {
+		// nothing driven: bind pose
+		for(i = 0; i < numJoints; i++) {
+			float* m = &poseMats[i * 12];
+
+			Com_Memset(m, 0, 12 * sizeof(float));
+			m[0] = m[5] = m[10] = 1.0f;
+		}
+		return;
+	}
+
+	for(i = -1; i < numJoints; i++) {
+		int joint = (i < 0) ? main : i;  // the main joint goes first
+		float* M = &world[joint * 12];
+		vec3_t axis[3];
+		int parent = data->jointParents[joint];
+		float scale[3] = {1.0f, 1.0f, 1.0f};
+
+		if(i >= 0 && joint == main) continue;
+
+		if(joint == main) {
+			Com_Memset(M, 0, 12 * sizeof(float));  // translation 0: the entity origin is the main joint
+			M[0] = M[5] = M[10] = 1.0f;
+		} else if(parent < 0 || parent >= joint) {
+			float rel[12];
+
+			Matrix34Multiply(&data->invBindJoints[main * 12], &data->bindJoints[joint * 12], rel);
+			Matrix34Multiply(&world[main * 12], rel, M);
+		} else {
+			iqmTransform_t bl;
+			float local[12];
+
+			IQM_GetBindLocal(data, joint, &bl);
+			VectorCopy(bl.scale, scale);
+			JointToMatrix(bl.rotate, bl.scale, bl.translate, local);
+			Matrix34Multiply(&world[parent * 12], local, M);
+		}
+
+		if(driven[joint]) {
+			AnglesToAxis(jointAngles[joint], axis);
+			M[0] = axis[0][0] * scale[0];
+			M[1] = axis[1][0] * scale[0];
+			M[2] = axis[2][0] * scale[0];
+			M[4] = axis[0][1] * scale[1];
+			M[5] = axis[1][1] * scale[1];
+			M[6] = axis[2][1] * scale[1];
+			M[8] = axis[0][2] * scale[2];
+			M[9] = axis[1][2] * scale[2];
+			M[10] = axis[2][2] * scale[2];
+		}
+	}
+
+	for(i = 0; i < numJoints; i++) {
+		Matrix34Multiply(&world[i * 12], &data->invBindJoints[i * 12], &poseMats[i * 12]);
 	}
 }
 
@@ -2211,6 +2324,23 @@ static int R_IQMGetBoneScales(int* joints, vec3_t* scales, int maxCount) {
 
 /*
 =================
+R_IQMGetBoneAngles
+
+Ragdoll bone orientations recorded for the entity currently being skinned.
+=================
+*/
+static int R_IQMGetBoneAngles(int* joints, vec3_t* angles, int maxCount) {
+	int entityNum = (int)(backEnd.currentEntity - backEnd.refdef.entities);
+
+	if(entityNum < 0 || entityNum >= MAX_REFENTITIES) {
+		return 0;
+	}
+
+	return R_GetEntityBoneAngles(entityNum, joints, angles, maxCount);
+}
+
+/*
+=================
 R_IQMGetJiggles
 
 Collect the jiggle rotations the frontend simulated for the entity currently
@@ -2249,6 +2379,10 @@ void RB_IQMSurfaceAnim(surfaceType_t* surface) {
 	int jiggleJoints[MAX_ENTITY_JIGGLES];
 	quat_t jiggleDeltas[MAX_ENTITY_JIGGLES];
 	int numJiggle = R_IQMGetJiggles(jiggleJoints, jiggleDeltas, MAX_ENTITY_JIGGLES);
+
+	int ragdollJoints[IQM_MAX_JOINTS];
+	vec3_t ragdollAngles[IQM_MAX_JOINTS];
+	int numRagdollJoints = R_IQMGetBoneAngles(ragdollJoints, ragdollAngles, IQM_MAX_JOINTS);
 
 	float* xyz;
 	float* normal;
@@ -2289,9 +2423,13 @@ void RB_IQMSurfaceAnim(surfaceType_t* surface) {
 	outTexCoord = &tess.texCoords[tess.numVertexes];
 	outColor = tess.color[tess.numVertexes];
 
-	if((data->anim ? data->anim->num_poses : data->num_poses) > 0) {
+	if((data->anim ? data->anim->num_poses : data->num_poses) > 0 || numRagdollJoints > 0) {
 		// compute interpolated joint matrices
-		ComputePoseMats(data, frame, oldframe, backlerp, poseMats, scaleJoints, scaleValues, numScaleJoints, jiggleJoints, jiggleDeltas, numJiggle);
+		if(numRagdollJoints > 0) {
+			ComputeRagdollPoseMats(data, ragdollJoints, ragdollAngles, numRagdollJoints, poseMats);
+		} else {
+			ComputePoseMats(data, frame, oldframe, backlerp, poseMats, scaleJoints, scaleValues, numScaleJoints, jiggleJoints, jiggleDeltas, numJiggle);
+		}
 
 		// compute vertex blend influence matricies
 		for(i = 0; i < surf->num_influences; i++) {
@@ -2470,6 +2608,10 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 	quat_t jiggleDeltas[MAX_ENTITY_JIGGLES];
 	int numJiggle;
 
+	int ragdollJoints[IQM_MAX_JOINTS];
+	vec3_t ragdollAngles[IQM_MAX_JOINTS];
+	int numRagdollJoints;
+
 	if(ShaderRequiresCPUDeforms(tess.shader)) {
 		RB_IQMSurfaceAnim((surfaceType_t*)surface->iqmSurface);
 		return;
@@ -2493,15 +2635,20 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t* surface) {
 
 	numScaleJoints = R_IQMGetBoneScales(scaleJoints, scaleValues, MAX_RENDER_BONESCALES);
 	numJiggle = R_IQMGetJiggles(jiggleJoints, jiggleDeltas, MAX_ENTITY_JIGGLES);
+	numRagdollJoints = R_IQMGetBoneAngles(ragdollJoints, ragdollAngles, IQM_MAX_JOINTS);
 
-	if(activePoses) {
+	if(activePoses || numRagdollJoints > 0) {
 		float jointMats[IQM_MAX_JOINTS * 12];
 		int nframes = data->anim ? data->anim->num_frames : data->num_frames;
 		int frame = nframes ? backEnd.currentEntity->e.frame % nframes : 0;
 		int oldframe = nframes ? backEnd.currentEntity->e.oldframe % nframes : 0;
 		float backlerp = backEnd.currentEntity->e.backlerp;
 
-		ComputePoseMats(surface->iqmData, frame, oldframe, backlerp, jointMats, scaleJoints, scaleValues, numScaleJoints, jiggleJoints, jiggleDeltas, numJiggle);
+		if(numRagdollJoints > 0) {
+			ComputeRagdollPoseMats(surface->iqmData, ragdollJoints, ragdollAngles, numRagdollJoints, jointMats);
+		} else {
+			ComputePoseMats(surface->iqmData, frame, oldframe, backlerp, jointMats, scaleJoints, scaleValues, numScaleJoints, jiggleJoints, jiggleDeltas, numJiggle);
+		}
 
 		for(i = 0; i < data->num_joints; i++) {
 			glState.boneMatrix[i][0] = jointMats[i * 12 + 0];

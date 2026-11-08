@@ -1144,6 +1144,8 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t* rimp) {
 	re.AddLightToScene = RE_AddLightToScene;
 	re.SetBoneScale = RE_SetBoneScale;
 	re.SetJiggleData = RE_SetJiggleData;
+	re.SetBoneAngles = RE_SetBoneAngles;
+	re.GetModelBone = RE_GetModelBone;
 	re.RenderScene = RE_RenderScene;
 
 	re.SetColor = RE_SetColor;

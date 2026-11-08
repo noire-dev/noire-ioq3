@@ -559,6 +559,10 @@ void ClientCommand(int clientNum) {
 		Cmd_Altfire_Physgun_f(ent);
 	else if(Q_stricmp(cmd, "physgun_dist") == 0)
 		Cmd_PhysgunDist_f(ent);
+	else if(Q_stricmp(cmd, "ragdoll") == 0)
+		Cmd_Ragdoll_f(ent);
+	else if(Q_stricmp(cmd, "ragdoll_clear") == 0)
+		Cmd_RagdollClear_f(ent);
 	else if(JS_CommandRun(clientNum) != -1)
 		return;
 	else

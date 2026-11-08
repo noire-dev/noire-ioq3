@@ -13,6 +13,9 @@ struct btRigidBody_s {
 	btRigidBody* m_body;
 	btCollisionShape* m_shape;            // храним чтобы удалить
 	btDefaultMotionState* m_motionState;  // храним чтобы удалить
+	bool m_ownsShape;                     // ragdoll capsules own their shape
+	bool m_hasAlign;                      // ragdoll bone, see sv_physics_c.cpp
+	float m_align[4];
 };
 
 struct btCollisionShape_s {

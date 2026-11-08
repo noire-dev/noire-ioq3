@@ -111,6 +111,16 @@ void trap_Phys_Weld(int entA, int entB, float px, float py, float pz) { syscall(
 
 bool trap_Phys_IsSleeping(int entityID) { return syscall(PHYS_ISSLEEPING, entityID) != 0; }
 
+void trap_Phys_CreateCapsule(int entityID, const physCapsuleDef_t* def) { syscall(PHYS_CREATECAPSULE, entityID, def); }
+
+void trap_Phys_CreateConeTwist(const physConeTwistDef_t* def) { syscall(PHYS_CREATECONETWIST, def); }
+
+void trap_Phys_IgnoreCollisionGroup(const int* entityIDs, int count) { syscall(PHYS_IGNORECOLLISIONGROUP, entityIDs, count); }
+
+void trap_LocateRagdollData(ragdollState_t* states, int numStates) { syscall(G_LOCATE_RAGDOLL_DATA, states, numStates); }
+
+bool trap_Ragdoll_LoadSkeleton(const char* modelPath, const char* animPath, int frame, ragdollSkeleton_t* out) { return syscall(G_RAGDOLL_LOADSKELETON, modelPath, animPath, frame, out) != 0; }
+
 // BotLib traps start here
 int trap_BotLibSetup(void) { return syscall(BOTLIB_SETUP); }
 

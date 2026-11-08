@@ -246,6 +246,22 @@ void SV_LocateGameData(sharedEntity_t* gEnts, int numGEntities, int sizeofGEntit
 
 /*
 ===============
+SV_LocateRagdollData
+
+The game tells us where its ragdollState_t array is (one entry per ragdollID),
+so the snapshot code can send it to the clients that see the ET_RAGDOLL entity.
+===============
+*/
+void SV_LocateRagdollData(ragdollState_t* states, int numStates) {
+	if(numStates < 0 || numStates > MAX_RAGDOLLS) {
+		Com_Error(ERR_DROP, "SV_LocateRagdollData: bad numStates %i", numStates);
+	}
+	sv.gameRagdolls = states;
+	sv.numGameRagdolls = numStates;
+}
+
+/*
+===============
 SV_GetUsercmd
 
 ===============
@@ -330,6 +346,11 @@ intptr_t SV_GameSystemCalls(intptr_t* args) {
 		case PHYS_UNFREEZEOBJECT: SV_PhysicsUnfreezeObject(args[1]); return 0;
 		case PHYS_WELD: SV_PhysicsWeld(args[1], args[2], VMF(3), VMF(4), VMF(5)); return 0;
 		case PHYS_ISSLEEPING: return SV_PhysicsIsSleeping(args[1]);
+		case PHYS_CREATECAPSULE: SV_PhysicsCreateCapsule(args[1], VMA(2)); return 0;
+		case PHYS_CREATECONETWIST: SV_PhysicsCreateConeTwist(VMA(1)); return 0;
+		case PHYS_IGNORECOLLISIONGROUP: SV_PhysicsIgnoreCollisionGroup(VMA(1), args[2]); return 0;
+		case G_LOCATE_RAGDOLL_DATA: SV_LocateRagdollData(VMA(1), args[2]); return 0;
+		case G_RAGDOLL_LOADSKELETON: return SV_RagdollLoadSkeleton(VMA(1), VMA(2), args[3], VMA(4));
 
 		case BOTLIB_SETUP: return SV_BotLibSetup();
 		case BOTLIB_SHUTDOWN: return SV_BotLibShutdown();

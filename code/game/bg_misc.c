@@ -315,3 +315,37 @@ void BG_PlayerStateToEntityStateExtraPolate(playerState_t* ps, entityState_t* s,
 	s->loopSound = ps->loopSound;
 	s->generic1 = ps->generic1;
 }
+
+/*
+===============
+bg_ragdollSimpleBones
+
+Bones of the simplified ragdoll (torso, head, arms, legs). Names are the stock
+valveBiped names (Garry's Mod / Half-Life 2). Shared by game and cgame.
+===============
+*/
+const char* const bg_ragdollSimpleBones[RAGDOLL_SIMPLE_NUMBONES] = {
+	"ValveBiped.Bip01_Pelvis",      // 0  main bone
+	"ValveBiped.Bip01_Spine",       // 1
+	"ValveBiped.Bip01_Spine1",      // 2
+	"ValveBiped.Bip01_Spine2",      // 3
+	"ValveBiped.Bip01_Spine4",      // 4
+	"ValveBiped.Bip01_Neck1",       // 5
+	"ValveBiped.Bip01_Head1",       // 6
+	"ValveBiped.Bip01_L_Clavicle",  // 7
+	"ValveBiped.Bip01_L_UpperArm",  // 8
+	"ValveBiped.Bip01_L_Forearm",   // 9
+	"ValveBiped.Bip01_L_Hand",      // 10
+	"ValveBiped.Bip01_R_Clavicle",  // 11
+	"ValveBiped.Bip01_R_UpperArm",  // 12
+	"ValveBiped.Bip01_R_Forearm",   // 13
+	"ValveBiped.Bip01_R_Hand",      // 14
+	"ValveBiped.Bip01_L_Thigh",     // 15
+	"ValveBiped.Bip01_L_Calf",      // 16
+	"ValveBiped.Bip01_L_Foot",      // 17
+	"ValveBiped.Bip01_L_Toe0",      // 18
+	"ValveBiped.Bip01_R_Thigh",     // 19
+	"ValveBiped.Bip01_R_Calf",      // 20
+	"ValveBiped.Bip01_R_Foot",      // 21
+	"ValveBiped.Bip01_R_Toe0"       // 22
+};

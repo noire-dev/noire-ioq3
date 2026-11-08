@@ -274,6 +274,8 @@ void G_FreeEntity(gentity_t* ed) {
 
 	if(ed->neverFree) return;
 
+	G_RagdollEntityFreed(ed);  // ragdoll master / bone bookkeeping
+
 	trap_Phys_DeleteObject(ed->s.number);
 
 	memset(ed, 0, sizeof(*ed));

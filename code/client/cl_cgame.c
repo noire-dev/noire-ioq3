@@ -152,6 +152,20 @@ bool CL_GetSnapshot(int snapshotNumber, snapshot_t* snapshot) {
 		snapshot->entities[i] = cl.parseEntities[(clSnap->parseEntitiesNum + i) & (MAX_PARSE_ENTITIES - 1)];
 	}
 
+	// ragdoll states of the ET_RAGDOLL entities in this snapshot
+	if(cl.parseRagdollsNum - clSnap->parseRagdollsNum >= MAX_PARSE_RAGDOLLS) {
+		snapshot->numRagdolls = 0;
+	} else {
+		count = clSnap->numRagdolls;
+		if(count > MAX_SNAPSHOT_RAGDOLLS) {
+			count = MAX_SNAPSHOT_RAGDOLLS;
+		}
+		snapshot->numRagdolls = count;
+		for(i = 0; i < count; i++) {
+			snapshot->ragdolls[i] = cl.parseRagdolls[(clSnap->parseRagdollsNum + i) & (MAX_PARSE_RAGDOLLS - 1)];
+		}
+	}
+
 	// FIXME: configstring changes and server commands!!!
 
 	return true;

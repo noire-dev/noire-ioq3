@@ -249,6 +249,8 @@ void G_RunPhysics(gentity_t* ent) {
 			trap_Phys_GetAngles(ent->s.number, &angles[0], &angles[1], &angles[2]);
 		}
 
+		if(ent->ragdollBone) G_RagdollBoneUpdate(ent, angles);  // ragdollState[ragdollID].angles[boneID]
+
 		ent->s.pos.trType = TR_INTERPOLATE;
 		ent->s.apos.trType = TR_INTERPOLATE;
 		VectorCopy(origin, ent->s.pos.trBase);

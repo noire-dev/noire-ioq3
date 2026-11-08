@@ -243,6 +243,9 @@ void G_InitGame(int levelTime, int randomSeed, int restart) {
 	// let the server system know where the entites are
 	trap_LocateGameData(level.gentities, level.num_entities, sizeof(gentity_t), &level.clients[0].ps, sizeof(level.clients[0]));
 
+	// ragdoll states (sent to clients by the server) and ragdoll slots
+	G_InitRagdolls();
+
 	// reserve some spots for dead player bodies
 	InitBodyQue();
 
@@ -418,6 +421,10 @@ void G_RunFrame(int levelTime) {
 			continue;
 		}
 
+		if(ent->s.eType == ET_RAGDOLL) {
+			continue;  // moved by G_RunRagdolls after all bones have been run
+		}
+
 		if(i < MAX_CLIENTS) {
 			G_RunClient(ent);
 			continue;
@@ -425,6 +432,9 @@ void G_RunFrame(int levelTime) {
 
 		G_RunThink(ent);
 	}
+
+	// ragdoll master entities follow their main bone
+	G_RunRagdolls();
 
 	// perform final fixups on the players
 	ent = &g_entities[0];

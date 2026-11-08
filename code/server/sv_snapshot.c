@@ -125,6 +125,128 @@ static void SV_EmitPacketEntities(clientSnapshot_t* from, clientSnapshot_t* to, 
 }
 
 /*
+=============
+SV_AddSnapshotRagdolls
+
+Collects the ragdoll states of all ET_RAGDOLL entities that were just published
+in this client's snapshot and stores them (sorted by ragdoll number) in the
+circular svs.snapshotRagdolls buffer.
+=============
+*/
+static void SV_AddSnapshotRagdolls(clientSnapshot_t* frame) {
+	int ids[MAX_SNAPSHOT_RAGDOLLS];
+	int numIds = 0;
+	int i, j, id;
+
+	frame->num_ragdolls = 0;
+	frame->first_ragdoll = svs.nextSnapshotRagdolls;
+
+	if(!sv.gameRagdolls) {
+		return;
+	}
+
+	for(i = 0; i < frame->num_entities && numIds < MAX_SNAPSHOT_RAGDOLLS; i++) {
+		entityState_t* es = &svs.snapshotEntities[(frame->first_entity + i) % svs.numSnapshotEntities];
+
+		if(es->eType != ET_RAGDOLL) {
+			continue;
+		}
+		id = es->ragdollID;
+		if(id < 0 || id >= sv.numGameRagdolls) {
+			continue;
+		}
+		// insertion sort, ignoring duplicates
+		for(j = 0; j < numIds && ids[j] < id; j++) {
+		}
+		if(j < numIds && ids[j] == id) {
+			continue;
+		}
+		memmove(&ids[j + 1], &ids[j], (numIds - j) * sizeof(ids[0]));
+		ids[j] = id;
+		numIds++;
+	}
+
+	for(i = 0; i < numIds; i++) {
+		ragdollState_t* dst = &svs.snapshotRagdolls[svs.nextSnapshotRagdolls % svs.numSnapshotRagdolls];
+		ragdollState_t* src = &sv.gameRagdolls[ids[i]];
+		int k;
+
+		*dst = *src;
+		dst->number = ids[i];
+		if(dst->numBones < 0) dst->numBones = 0;
+		if(dst->numBones > MAX_IQM_BONES) dst->numBones = MAX_IQM_BONES;
+		// bones past numBones are zero on the wire, keep our delta base identical
+		for(k = dst->numBones; k < MAX_IQM_BONES; k++) {
+			dst->angles[k][0] = dst->angles[k][1] = dst->angles[k][2] = 0;
+		}
+
+		svs.nextSnapshotRagdolls++;
+		if(svs.nextSnapshotRagdolls >= 0x7FFFFFFE) {
+			Com_Error(ERR_FATAL, "svs.nextSnapshotRagdolls wrapped");
+		}
+		frame->num_ragdolls++;
+	}
+}
+
+/*
+=============
+SV_EmitPacketRagdolls
+
+Writes a delta update of the ragdollState_t list to the message. Same merge
+walk as SV_EmitPacketEntities; both lists are sorted by ragdoll number.
+=============
+*/
+static void SV_EmitPacketRagdolls(clientSnapshot_t* from, clientSnapshot_t* to, msg_t* msg) {
+	ragdollState_t *oldrs, *newrs;
+	int oldindex, newindex;
+	int oldnum, newnum;
+	int from_num;
+
+	from_num = from ? from->num_ragdolls : 0;
+
+	newrs = NULL;
+	oldrs = NULL;
+	newindex = 0;
+	oldindex = 0;
+	while(newindex < to->num_ragdolls || oldindex < from_num) {
+		if(newindex >= to->num_ragdolls) {
+			newnum = 9999;
+		} else {
+			newrs = &svs.snapshotRagdolls[(to->first_ragdoll + newindex) % svs.numSnapshotRagdolls];
+			newnum = newrs->number;
+		}
+
+		if(oldindex >= from_num) {
+			oldnum = 9999;
+		} else {
+			oldrs = &svs.snapshotRagdolls[(from->first_ragdoll + oldindex) % svs.numSnapshotRagdolls];
+			oldnum = oldrs->number;
+		}
+
+		if(newnum == oldnum) {
+			// writes nothing if the ragdoll did not change (e.g. it is lying still)
+			MSG_WriteDeltaRagdollState(msg, oldrs, newrs, false);
+			oldindex++;
+			newindex++;
+			continue;
+		}
+
+		if(newnum < oldnum) {
+			// new ragdoll: delta from an empty state
+			MSG_WriteDeltaRagdollState(msg, NULL, newrs, true);
+			newindex++;
+			continue;
+		}
+
+		// the old ragdoll isn't present in the new message
+		MSG_WriteDeltaRagdollState(msg, oldrs, NULL, true);
+		oldindex++;
+	}
+
+	MSG_WriteBits(msg, RAGDOLL_NUM_NONE, RAGDOLL_NUM_BITS);  // end of packetragdolls
+}
+
+/*
 ====================
 SV_GetSnapshotDeltaFrame
 
@@ -133,7 +255,7 @@ The projected entity count is used to make sure the base will not roll out
 of the circular entity buffer while the new snapshot is being built.
 ====================
 */
-static clientSnapshot_t* SV_GetSnapshotDeltaFrame(client_t* client, int projectedEntityCount, int* deltaMessageNum) {
+static clientSnapshot_t* SV_GetSnapshotDeltaFrame(client_t* client, int projectedEntityCount, int projectedRagdollCount, int* deltaMessageNum) {
 	clientSnapshot_t* oldframe;
 
 	*deltaMessageNum = 0;
@@ -154,6 +276,12 @@ static clientSnapshot_t* SV_GetSnapshotDeltaFrame(client_t* client, int projecte
 	// fall back to a full snapshot now rather than changing bases afterwards.
 	if(oldframe->first_entity <= svs.nextSnapshotEntities + projectedEntityCount - svs.numSnapshotEntities) {
 		Com_DPrintf("%s: Delta request from out of date entities.\n", client->name);
+		return NULL;
+	}
+
+	// same check for the ragdoll states retained by the old frame
+	if(oldframe->num_ragdolls > 0 && oldframe->first_ragdoll <= svs.nextSnapshotRagdolls + projectedRagdollCount - svs.numSnapshotRagdolls) {
+		Com_DPrintf("%s: Delta request from out of date ragdolls.\n", client->name);
 		return NULL;
 	}
 
@@ -232,6 +360,9 @@ static void SV_WriteSnapshotToClient(client_t* client, msg_t* msg) {
 
 	// delta encode the entities
 	SV_EmitPacketEntities(oldframe, frame, msg);
+
+	// delta encode the ragdoll states of the visible ET_RAGDOLL entities
+	SV_EmitPacketRagdolls(oldframe, frame, msg);
 
 	// padding for rate debugging
 	if(sv_padPackets->integer) {
@@ -567,6 +698,8 @@ static void SV_BuildClientSnapshot(client_t* client) {
 
 	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=62
 	frame->num_entities = 0;
+	frame->num_ragdolls = 0;
+	frame->first_ragdoll = svs.nextSnapshotRagdolls;
 
 	clent = client->gentity;
 	if(!clent || client->state == CS_ZOMBIE) {
@@ -626,8 +759,14 @@ static void SV_BuildClientSnapshot(client_t* client) {
 		int lastSelected;
 		int pass;
 		int entityNum;
+		int projectedRagdolls = 0;
 
-		oldframe = SV_GetSnapshotDeltaFrame(client, entityNumbers.numSnapshotEntities, &deltaMessageNum);
+		for(i = 0; i < entityNumbers.numSnapshotEntities; i++) {
+			if(SV_GentityNum(entityNumbers.snapshotEntities[i])->s.eType == ET_RAGDOLL) projectedRagdolls++;
+		}
+		if(projectedRagdolls > MAX_SNAPSHOT_RAGDOLLS) projectedRagdolls = MAX_SNAPSHOT_RAGDOLLS;
+
+		oldframe = SV_GetSnapshotDeltaFrame(client, entityNumbers.numSnapshotEntities, projectedRagdolls, &deltaMessageNum);
 		frame->snapshotDeltaMessage = deltaMessageNum;
 
 		Com_Memset(svSnapshotOldStateValid, 0, sizeof(svSnapshotOldStateValid));
@@ -718,6 +857,8 @@ static void SV_BuildClientSnapshot(client_t* client) {
 			}
 			frame->num_entities++;
 		}
+
+		SV_AddSnapshotRagdolls(frame);
 	}
 }
 

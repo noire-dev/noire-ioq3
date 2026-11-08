@@ -86,6 +86,8 @@ typedef struct {
 
 	// the game virtual machine will update these on init and changes
 	sharedEntity_t* gentities;
+	ragdollState_t* gameRagdolls;  // [numGameRagdolls], owned by the game, see SV_LocateRagdollData
+	int numGameRagdolls;
 	int gentitySize;
 	int num_entities;  // current number, <= MAX_GENTITIES
 
@@ -105,6 +107,9 @@ typedef struct {
 	int first_entity;  // into the circular sv_packet_entities[]
 	                   // the entities MUST be in increasing state number
 	                   // order, otherwise the delta compression will fail
+	int num_ragdolls;  // ragdoll states of the ET_RAGDOLL entities in this snapshot
+	int first_ragdoll; // into the circular svs.snapshotRagdolls[]
+	                   // the ragdolls MUST be in increasing ragdoll number order
 	int snapshotDeltaMessage; // delta base selected while this snapshot was built; 0 means full snapshot
 	int messageSent;   // time the message was transmitted
 	int messageAcked;  // time the message was acked
@@ -241,6 +246,9 @@ typedef struct {
 	int numSnapshotEntities;          // sv_maxclients->integer*PACKET_BACKUP*MAX_SNAPSHOT_ENTITIES
 	int nextSnapshotEntities;         // next snapshotEntities to use
 	entityState_t* snapshotEntities;  // [numSnapshotEntities]
+	int numSnapshotRagdolls;          // sv_maxclients->integer*PACKET_BACKUP*MAX_SNAPSHOT_RAGDOLLS
+	int nextSnapshotRagdolls;         // next snapshotRagdolls to use
+	ragdollState_t* snapshotRagdolls; // [numSnapshotRagdolls]
 	int nextHeartbeatTime;
 	challenge_t challenges[MAX_CHALLENGES];  // to prevent invalid IPs from connecting
 	netadr_t redirectAddress;                // for rcon return messages
@@ -393,6 +401,12 @@ void SV_WriteFrameToClient(client_t* client, msg_t* msg);
 void SV_SendMessageToClient(msg_t* msg, client_t* client);
 void SV_SendClientMessages(void);
 void SV_SendClientSnapshot(client_t* client);
+
+//
+// sv_ragdoll.c
+//
+int SV_RagdollLoadSkeleton(const char* modelPath, const char* animPath, int frame, ragdollSkeleton_t* out);
+void SV_LocateRagdollData(ragdollState_t* states, int numStates);
 
 //
 // sv_game.c

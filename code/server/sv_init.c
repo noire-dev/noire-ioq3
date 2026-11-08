@@ -254,9 +254,11 @@ static void SV_Startup(void) {
 	svs.clients = Z_Malloc(sizeof(client_t) * sv_maxclients->integer);
 	if(com_dedicated->integer) {
 		svs.numSnapshotEntities = sv_maxclients->integer * PACKET_BACKUP * MAX_SNAPSHOT_ENTITIES;
+		svs.numSnapshotRagdolls = sv_maxclients->integer * PACKET_BACKUP * MAX_SNAPSHOT_RAGDOLLS;
 	} else {
 		// we don't need nearly as many when playing locally
 		svs.numSnapshotEntities = sv_maxclients->integer * 4 * MAX_SNAPSHOT_ENTITIES;
+		svs.numSnapshotRagdolls = sv_maxclients->integer * 4 * MAX_SNAPSHOT_RAGDOLLS;
 	}
 	svs.initialized = true;
 
@@ -329,9 +331,11 @@ void SV_ChangeMaxClients(void) {
 	// allocate new snapshot entities
 	if(com_dedicated->integer) {
 		svs.numSnapshotEntities = sv_maxclients->integer * PACKET_BACKUP * MAX_SNAPSHOT_ENTITIES;
+		svs.numSnapshotRagdolls = sv_maxclients->integer * PACKET_BACKUP * MAX_SNAPSHOT_RAGDOLLS;
 	} else {
 		// we don't need nearly as many when playing locally
 		svs.numSnapshotEntities = sv_maxclients->integer * 4 * MAX_SNAPSHOT_ENTITIES;
+		svs.numSnapshotRagdolls = sv_maxclients->integer * 4 * MAX_SNAPSHOT_RAGDOLLS;
 	}
 }
 
@@ -403,6 +407,8 @@ void SV_SpawnServer(char* server, bool killBots) {
 	// allocate the snapshot entities on the hunk
 	svs.snapshotEntities = Hunk_Alloc(sizeof(entityState_t) * svs.numSnapshotEntities, h_high);
 	svs.nextSnapshotEntities = 0;
+	svs.snapshotRagdolls = Hunk_Alloc(sizeof(ragdollState_t) * svs.numSnapshotRagdolls, h_high);
+	svs.nextSnapshotRagdolls = 0;
 
 	// toggle the server bit so clients can detect that a
 	// server has changed
