@@ -65,6 +65,7 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 	int killer;
 	int hookKiller;
 	int i;
+	char model[MAX_QPATH];
 
 	if(self->client->ps.pm_type == PM_DEAD) return;
 	self->client->ps.pm_type = PM_DEAD;
@@ -91,41 +92,34 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 	TossClientItems(self);
 
 	Cmd_Score_f(self);  // show scores
-	// send updated scores to any clients that are following this one,
-	// or they would get stale scoreboards
-	for(i = 0; i < level.maxclients; i++) {
-		gclient_t* client;
 
-		client = &level.clients[i];
-		if(client->pers.connected != CON_CONNECTED) continue;
+	self->takedamage = true;
 
-		self->takedamage = true;
+	self->s.weapon = WP_NONE;
+	self->r.contents = CONTENTS_CORPSE;
 
-		self->s.weapon = WP_NONE;
-		self->r.contents = CONTENTS_CORPSE;
+	self->s.angles[0] = 0;
+	self->s.angles[2] = 0;
 
-		self->s.angles[0] = 0;
-		self->s.angles[2] = 0;
+	VectorCopy(self->s.angles, self->client->ps.viewangles);
 
-		VectorCopy(self->s.angles, self->client->ps.viewangles);
+	self->s.loopSound = 0;
 
-		self->s.loopSound = 0;
+	self->r.maxs[2] = DEAD_HEIGHT;
 
-		self->r.maxs[2] = DEAD_HEIGHT;
+	self->client->respawnTime = level.time + 1700;
 
-		self->client->respawnTime = level.time + 1700;
+	self->die = body_die;
 
-		// static int lastDeath;
-		// if(lastDeath < 0 || lastDeath >= 4) lastDeath = 0;
-		// anim = AM_DEATH1 + lastDeath;
-		// self->client->ps.legsAnim = ((self->client->ps.legsAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
-		// self->client->ps.torsoAnim = ((self->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
-		// lastDeath = (lastDeath + 1) % 4;
-
-		self->die = body_die;
-
-		trap_LinkEntity(self);
+	if(G_RagdollModelOfPlayer(self->s.number, model, sizeof(model))) {
+		vec3_t origin;
+		VectorCopy(self->client->ps.origin, origin);
+		origin[2] += MINS_Z;
+		G_SpawnRagdoll(origin, self->client->ps.viewangles[YAW], model, self->s.number, RAGDOLL_SIMPLE, 30000);
+		self->client->ps.eFlags |= EF_NODRAW;
 	}
+
+	trap_LinkEntity(self);
 }
 
 /*

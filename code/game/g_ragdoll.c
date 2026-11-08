@@ -25,9 +25,9 @@
 
 bool CheatsOk(gentity_t* ent);  // g_cmds.c
 
-#define RAGDOLL_DENSITY 0.02f
-#define RAGDOLL_MIN_MASS 1.00f   // light bones next to a heavy torso make the solver shake
-#define RAGDOLL_MIN_RADIUS 1.5f  // thinner capsules tunnel through the world mesh
+#define RAGDOLL_DENSITY 0.01f
+#define RAGDOLL_MIN_MASS 1.00f    // light bones next to a heavy torso make the solver shake
+#define RAGDOLL_MIN_RADIUS 0.96f  // thinner capsules tunnel through the world mesh
 #define RAGDOLL_MAX_MASS 16.0f
 
 typedef struct {
@@ -309,12 +309,12 @@ static const rdClassInfo_t rdClassInfo[] = {/* RDC_OTHER    */ {0.8f, 2.0f, 15.0
                                             /* RDC_CLAVICLE */ {2.0f, 4.0f, 12.0f, 5.0f},
                                             /* RDC_UPPERARM */ {2.2f, 10.0f, 70.0f, 40.0f},
                                             /* RDC_FOREARM  */ {1.8f, 10.0f, 40.0f, 10.0f},
-                                            /* RDC_HAND     */ {1.6f, 4.0f, 30.0f, 18.0f},
-                                            /* RDC_FINGER   */ {0.7f, 1.5f, 30.0f, 5.0f},
+                                            /* RDC_HAND     */ {1.6f, 4.0f, 40.0f, 25.0f},
+                                            /* RDC_FINGER   */ {0.7f, 1.5f, 40.0f, 8.0f},
                                             /* RDC_THIGH    */ {3.8f, 16.0f, 55.0f, 25.0f},
                                             /* RDC_CALF     */ {2.8f, 16.0f, 35.0f, 8.0f},
-                                            /* RDC_FOOT     */ {2.0f, 4.0f, 20.0f, 8.0f},
-                                            /* RDC_TOE      */ {1.2f, 2.5f, 15.0f, 3.0f}};
+                                            /* RDC_FOOT     */ {2.0f, 4.0f, 30.0f, 12.0f},
+                                            /* RDC_TOE      */ {1.2f, 2.5f, 25.0f, 5.0f}};
 
 static bool RD_Has(const char* lowerName, const char* part) { return strstr(lowerName, part) != NULL; }
 
@@ -728,6 +728,7 @@ int G_SpawnRagdoll(const vec3_t origin, float yaw, const char* model, int player
 		e->s.boneID = b;
 		e->ragdollBone = true;
 		e->sb_phys = PHYS_DYNAMIC;
+		e->sb_mass = def.mass;
 		e->health = -1;  // knockback works, damage does not
 		e->r.contents = CONTENTS_CORPSE;
 		e->takedamage = true;

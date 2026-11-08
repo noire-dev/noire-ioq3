@@ -211,10 +211,11 @@ static int GAPI_EntitySpawn(float x, float y, float z, float ax, float ay, float
 	entity->s.eType = ET_PHYSICS;
 	entity->takedamage = true;
 	entity->s.pos.trType = TR_INTERPOLATE;
+	entity->sb_mass = 10.0f;
 	GAPI_SetEntityModel(entity, modelName);
 	GAPI_SetEntityPosition(entity, x, y, z);
 	GAPI_SetEntityAngles(entity, ax, ay, az);
-	trap_Phys_CreateModel(entity->s.number, entity->s.modelindex, entity->s.origin[0], entity->s.origin[1], entity->s.origin[2], 10);
+	trap_Phys_CreateModel(entity->s.number, entity->s.modelindex, entity->s.origin[0], entity->s.origin[1], entity->s.origin[2], entity->sb_mass);
 	trap_Phys_SetAngles(entity->s.number, entity->s.angles[0], entity->s.angles[1], entity->s.angles[2]);
 	trap_Phys_UnfreezeObject(entity->s.number);
 

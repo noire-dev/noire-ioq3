@@ -59,6 +59,10 @@ void Phys_HoldSetup(gentity_t* player, bool isPhysgun) {
 		ent->grabAccumPitch = angles[0];
 		ent->grabAccumYaw = angles[1];
 		ent->grabAccumRoll = angles[2];
+		if(ent->ragdollBone) {
+			ent->r.svFlags &= ~SVF_NOCLIENT;
+			trap_LinkEntity(ent);
+		}
 	} else {
 		VectorClear(ent->grabOrigin);
 		ent->grabAccumPitch = 0.0f;
@@ -82,7 +86,6 @@ void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun) {
 	vec3_t target, currentPos, currentVel, desiredCenter, delta, force;
 	vec3_t propAngles, grabWorldOffset, newGrabWorldOffset, fwd, right, up;
 	vec3_t oldGrabWorld;
-	float mass;
 	float Kp, Kd;
 	int i;
 
@@ -185,7 +188,6 @@ void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun) {
 	// Desired center so grab point ends up at crosshair target
 	VectorSubtract(target, grabWorldOffset, desiredCenter);
 
-	mass = 10.0f;
 	VectorSubtract(desiredCenter, currentPos, delta);
 
 	Kp = 128.0f;
@@ -193,10 +195,10 @@ void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun) {
 
 	for(i = 0; i < 3; i++) {
 		float desiredAccel = Kp * delta[i] - Kd * currentVel[i];
-		force[i] = mass * desiredAccel;
+		force[i] = ent->sb_mass * desiredAccel;
 	}
 
-	force[2] += mass * fabs(-800.0);
+	force[2] += ent->sb_mass * fabs(-800.0);
 
 	trap_Phys_ApplyCentralForce(ent->s.number, force[0], force[1], force[2]);
 

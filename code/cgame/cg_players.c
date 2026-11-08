@@ -776,17 +776,10 @@ void CG_Player(centity_t* cent) {
 	int renderfx;
 
 	clientNum = cent->currentState.clientNum;
-	if(clientNum < 0 || clientNum >= MAX_CLIENTS) {
-		CG_Error("Bad clientNum on player entity");
-	}
+	if(clientNum < 0 || clientNum >= MAX_CLIENTS) CG_Error("Bad clientNum on player entity");
 	ci = &cgs.clientinfo[clientNum];
-	if(!ci->infoValid) {
-		return;
-	}
-	// the server hides the corpse model when a ragdoll took its place
-	if(cent->currentState.eFlags & EF_NODRAW) {
-		return;
-	}
+	if(!ci->infoValid) return;
+	if(cent->currentState.eFlags & EF_NODRAW) return;
 
 	renderfx = 0;
 

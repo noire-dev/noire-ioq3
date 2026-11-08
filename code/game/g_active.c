@@ -341,6 +341,7 @@ static void PhysgunHold(gentity_t* player) {
 		VectorClear(player->grabOffset);
 		player->grabbedEntity = 0;
 		ClientUpdateGrabbedConfigstring(player);
+		if(ent->ragdollBone) ent->r.svFlags |= SVF_NOCLIENT;
 	}
 }
 
@@ -371,6 +372,7 @@ static void GravitygunHold(gentity_t* player) {
 		player->grabbedEntity = 0;
 		ClientUpdateGrabbedConfigstring(player);
 		G_AddEvent(player, EV_GRAVITY_LAUNCH, 0);
+		if(ent->ragdollBone) ent->r.svFlags |= SVF_NOCLIENT;
 	}
 }
 

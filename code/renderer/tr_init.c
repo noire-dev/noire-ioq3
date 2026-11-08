@@ -862,7 +862,7 @@ void R_Register(void) {
 	r_jiggleGravity = ri.Cvar_Get("r_jiggleGravity", "-800", CVAR_ARCHIVE);
 	r_jiggleStiffness = ri.Cvar_Get("r_jiggleStiffness", "192", CVAR_ARCHIVE);
 	r_jiggleDamping = ri.Cvar_Get("r_jiggleDamping", "38", CVAR_ARCHIVE);
-	r_jiggleMaxSpeed = ri.Cvar_Get("r_jiggleMaxSpeed", "128", CVAR_ARCHIVE);
+	r_jiggleMaxSpeed = ri.Cvar_Get("r_jiggleMaxSpeed", "64", CVAR_ARCHIVE);
 
 	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.25", CVAR_ARCHIVE | CVAR_LATCH);
 

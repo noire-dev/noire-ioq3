@@ -165,6 +165,7 @@ struct gentity_s {
 	// Props
 	gentity_t* lastPlayer;  // for damage and killfeed
 	int sb_phys;
+	float sb_mass;
 
 	// Ragdoll
 	bool ragdollBone;  // bone entity of a ragdoll (s.ragdollID / s.boneID say which)
