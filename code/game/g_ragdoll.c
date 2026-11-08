@@ -25,10 +25,10 @@
 
 bool CheatsOk(gentity_t* ent);  // g_cmds.c
 
-#define RAGDOLL_DENSITY 0.01f
-#define RAGDOLL_MIN_MASS 1.0f    // light bones next to a heavy torso make the solver shake
+#define RAGDOLL_DENSITY 0.02f
+#define RAGDOLL_MIN_MASS 1.00f   // light bones next to a heavy torso make the solver shake
 #define RAGDOLL_MIN_RADIUS 1.5f  // thinner capsules tunnel through the world mesh
-#define RAGDOLL_MAX_MASS 40.0f
+#define RAGDOLL_MAX_MASS 16.0f
 
 typedef struct {
 	bool inuse;
@@ -261,17 +261,28 @@ static bool RD_ParseAnimationFile(const char* filename, char* animFile, int anim
 	return true;
 }
 
-// Animation number of a player, resolved like CG_PlayerAnimationNumber() but
-// always in the weapon-independent block: the weapon animType lives in cgame data
-// only. (animation.cfg usually maps every weapon block to the same clips anyway.)
+// Animation number of a player, resolved like CG_PlayerAnimationNumber() on the
+// cgame side: the locomotion part is moved into the block of the animType of the
+// weapon the player holds (jsd_weapon[].animType), so the ragdoll pose matches
+// the animation the client was rendering.
 static int RD_PlayerAnimationNumber(const gentity_t* pl) {
 	int action = pl->client->ps.torsoAnim & ~ANIM_TOGGLEBIT;
 	int move = pl->client->ps.legsAnim & ~ANIM_TOGGLEBIT;
+	int weapon = pl->client->ps.weapon;
+	animType_t animType;
+	int movementOffset;
 
 	if(action >= 0 && action < AM_IDLE) return action;  // death, gestures, taunts, ...
 	if(move >= 0 && move < AM_IDLE) return move;
+
 	if(move < AM_IDLE || move > AM_JUMP) move = AM_IDLE;
-	return move;
+	movementOffset = move - AM_IDLE;
+
+	if(weapon < WP_NONE || weapon >= jsd_weaponCount) weapon = WP_NONE;
+	animType = jsd_weapon[weapon].animType;
+	if(animType < AMTYPE_ALL || animType >= AMTYPE_COUNT) animType = AMTYPE_ALL;
+
+	return AM_IDLE + movementOffset + AM_MOVE_ANIMATION_COUNT * animType;
 }
 
 // ---------------------------------------------------------------------------
@@ -298,12 +309,12 @@ static const rdClassInfo_t rdClassInfo[] = {/* RDC_OTHER    */ {0.8f, 2.0f, 15.0
                                             /* RDC_CLAVICLE */ {2.0f, 4.0f, 12.0f, 5.0f},
                                             /* RDC_UPPERARM */ {2.2f, 10.0f, 70.0f, 40.0f},
                                             /* RDC_FOREARM  */ {1.8f, 10.0f, 40.0f, 10.0f},
-                                            /* RDC_HAND     */ {1.6f, 4.0f, 40.0f, 25.0f},
-                                            /* RDC_FINGER   */ {0.7f, 1.5f, 40.0f, 8.0f},
+                                            /* RDC_HAND     */ {1.6f, 4.0f, 30.0f, 18.0f},
+                                            /* RDC_FINGER   */ {0.7f, 1.5f, 30.0f, 5.0f},
                                             /* RDC_THIGH    */ {3.8f, 16.0f, 55.0f, 25.0f},
                                             /* RDC_CALF     */ {2.8f, 16.0f, 35.0f, 8.0f},
-                                            /* RDC_FOOT     */ {2.0f, 4.0f, 30.0f, 12.0f},
-                                            /* RDC_TOE      */ {1.2f, 2.5f, 25.0f, 5.0f}};
+                                            /* RDC_FOOT     */ {2.0f, 4.0f, 20.0f, 8.0f},
+                                            /* RDC_TOE      */ {1.2f, 2.5f, 15.0f, 3.0f}};
 
 static bool RD_Has(const char* lowerName, const char* part) { return strstr(lowerName, part) != NULL; }
 
@@ -461,6 +472,13 @@ void G_RagdollEntityFreed(gentity_t* ent) {
 
 /*
 ===============
+G_RagdollRemoveThink
+===============
+*/
+static void G_RagdollRemoveThink(gentity_t* master) { G_RemoveRagdoll(master->s.ragdollID); }
+
+/*
+===============
 G_SpawnRagdoll
 
 origin:   model origin (where the player model's refEntity origin would be, i.e. the
@@ -474,7 +492,7 @@ type:     RAGDOLL_SIMPLE or RAGDOLL_DETAILED
 Returns the ragdollID, or -1 on failure.
 ===============
 */
-int G_SpawnRagdoll(const vec3_t origin, float yaw, const char* model, int playerid, int type) {
+int G_SpawnRagdoll(const vec3_t origin, float yaw, const char* model, int playerid, int type, int lifetime) {
 	char path[MAX_QPATH];
 	char cfgPath[MAX_QPATH];
 	char animFile[MAX_QPATH];
@@ -786,6 +804,10 @@ int G_SpawnRagdoll(const vec3_t origin, float yaw, const char* model, int player
 	VectorCopy(rdBones[mainBone].jointPos, master->s.pos.trBase);
 	VectorCopy(rdBones[mainBone].jointPos, master->s.origin);
 	VectorCopy(rdBones[mainBone].jointPos, master->r.currentOrigin);
+	if(lifetime) {
+		master->think = G_RagdollRemoveThink;
+		master->nextthink = level.time + lifetime;
+	}
 	rd->masterEnt = master->s.number;
 	trap_LinkEntity(master);
 
@@ -914,7 +936,7 @@ void Cmd_Ragdoll_f(gentity_t* ent) {
 	VectorCopy(tr.endpos, origin);
 	origin[2] += 2.0f;  // feet capsules must not start inside the floor
 
-	id = G_SpawnRagdoll(origin, ent->client->ps.viewangles[YAW], model, playerid, type);
+	id = G_SpawnRagdoll(origin, ent->client->ps.viewangles[YAW], model, playerid, type, 0);
 	trap_SendServerCommand(ent - g_entities, va("print \"ragdoll %s (%s): %s %d\n\"", model, type == RAGDOLL_DETAILED ? "detailed" : "simple", id >= 0 ? "id" : "failed", id));
 }
 

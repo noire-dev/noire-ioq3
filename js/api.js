@@ -22,6 +22,7 @@ apiField = -1;
 apiFields.weapon = {
     "wType": apiField += 1,
     "wAnimType": apiField += 1,
+    "animType": apiField += 1,
     "classname": apiField += 1,
     "delay": apiField += 1,
     "count": apiField += 1,
@@ -44,7 +45,6 @@ apiFields.weapon = {
 // cgame.vm only (jsd_weaponFx), colors/vectors are per-component with i1
 apiField = -1;
 apiFields.weaponFx = {
-    "animType": apiField += 1,
     "weaponSection": apiField += 1,
     "sectionOrder": apiField += 1,
     "colorizeItemIcon": apiField += 1,

@@ -201,9 +201,14 @@ typedef enum {
 	WEAPONANIMTYPES_NUM
 } weaponAnimType_t;
 
+// Selects the 36-entry IQM locomotion block (AM_IDLE .. AM_JUMP) a weapon uses;
+// shared by game (ragdoll pose) and cgame (player animation).
+typedef enum { AMTYPE_ALL = 0, AMTYPE_AR2, AMTYPE_CAMERA, AMTYPE_CROSSBOW, AMTYPE_DUAL, AMTYPE_FIST, AMTYPE_GRENADE, AMTYPE_KNIFE, AMTYPE_MAGIC, AMTYPE_MELEE, AMTYPE_MELEE2, AMTYPE_PASSIVE, AMTYPE_PHYSGUN, AMTYPE_PISTOL, AMTYPE_REVOLVER, AMTYPE_RPG, AMTYPE_SHOTGUN, AMTYPE_SLAM, AMTYPE_SMG1, AMTYPE_COUNT } animType_t;
+
 typedef struct weaponPropeties_s {
 	weaponType_t wType;
 	weaponAnimType_t wAnimType;
+	animType_t animType;
 	char classname[MAX_JS_STRINGSIZE];
 	int delay;
 	int count;
@@ -377,8 +382,6 @@ typedef enum {
 	AM_WEAPON_TYPE_COUNT = 19,
 	MAX_TOTALANIMATIONS = AM_IDLE + AM_MOVE_ANIMATION_COUNT * AM_WEAPON_TYPE_COUNT
 } animNumber_t;
-
-typedef enum { AMTYPE_ALL = 0, AMTYPE_AR2, AMTYPE_CAMERA, AMTYPE_CROSSBOW, AMTYPE_DUAL, AMTYPE_FIST, AMTYPE_GRENADE, AMTYPE_KNIFE, AMTYPE_MAGIC, AMTYPE_MELEE, AMTYPE_MELEE2, AMTYPE_PASSIVE, AMTYPE_PHYSGUN, AMTYPE_PISTOL, AMTYPE_REVOLVER, AMTYPE_RPG, AMTYPE_SHOTGUN, AMTYPE_SLAM, AMTYPE_SMG1, AMTYPE_COUNT } animType_t;
 
 typedef struct animation_s {
 	int firstFrame;

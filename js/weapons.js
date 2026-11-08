@@ -21,7 +21,7 @@ const WAT = {
     GRENADE: 2,
 };
 
-// animType_t (game/bg_public.h) — for weaponFx "animType"
+// animType_t (game/bg_public.h) — for jsd_weapon "animType" (locomotion block)
 const AMTYPE = {
     ALL: 0,
     AR2: 1,
@@ -79,6 +79,11 @@ weapon.register = function (wType, wAnimType, classname, delay, count, damage, s
 weapon.fx = function (weaponID, fieldName, value, i1, i2, i3, i4) {
     if (weapon.vmIndex !== qvm.cgame) return false;
     return api.weaponFx(weaponID, fieldName, value, i1, i2, i3, i4);
+}
+
+// jsd_weapon exists in every VM, so the write happens in game.vm, cgame.vm and ui.vm
+weapon.set = function (weaponID, fieldName, value, i1, i2, i3, i4) {
+    return api.weapon(weapon.vmIndex, weaponID, fieldName, value, i1, i2, i3, i4);
 }
 
 // Vector/color shortcut: writes x,y,z (and optional w) components via i1

@@ -201,6 +201,8 @@ struct gclient_s {
 	int airOutTime;
 
 	int timeResidual;
+
+	bool ragdollDeath;  // a ragdoll was spawned at death and replaces the body-que corpse
 };
 
 //
@@ -499,7 +501,7 @@ bool trap_Ragdoll_LoadSkeleton(const char* modelPath, const char* animPath, int 
 //
 // g_ragdoll.c
 //
-int G_SpawnRagdoll(const vec3_t origin, float yaw, const char* model, int playerid, int type);
+int G_SpawnRagdoll(const vec3_t origin, float yaw, const char* model, int playerid, int type, int lifetime);
 void G_RemoveRagdoll(int id);
 void G_RemoveAllRagdolls(void);
 void G_InitRagdolls(void);

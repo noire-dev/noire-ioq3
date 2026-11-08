@@ -474,7 +474,6 @@ bool SV_PhysicsIsSleeping(int entityID) {
 	return (state == ISLAND_SLEEPING || state == WANTS_DEACTIVATION) ? true : false;
 }
 
-
 // ===========================================================================
 // Server-side ragdoll
 // ===========================================================================
@@ -623,11 +622,6 @@ void SV_PhysicsCreateConeTwist(const physConeTwistDef_t* def) {
 	frameA.setOrigin(A->getWorldTransform().inverse() * pivot);
 	frameB.setBasis(B->getWorldTransform().getBasis().transpose() * basisW);
 	frameB.setOrigin(B->getWorldTransform().inverse() * pivot);
-
-	// chains of 20+ bodies need more solver iterations than a few props do
-	if(physWorld->m_world->getSolverInfo().m_numIterations < 30) {
-		physWorld->m_world->getSolverInfo().m_numIterations = 30;
-	}
 
 	btConeTwistConstraint* c = new btConeTwistConstraint(*A, *B, frameA, frameB);
 	const btScalar toRad = SIMD_PI / 180.0f;

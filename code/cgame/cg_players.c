@@ -683,7 +683,7 @@ static int CG_PlayerAnimationNumber(const centity_t* cent) {
 	if(weapon < WP_NONE || weapon >= jsd_weaponCount) {
 		weapon = WP_NONE;
 	}
-	animType = jsd_weaponFx[weapon].animType;
+	animType = jsd_weapon[weapon].animType;
 	if(animType < AMTYPE_ALL || animType >= AMTYPE_COUNT) {
 		animType = AMTYPE_ALL;
 	}
@@ -781,6 +781,10 @@ void CG_Player(centity_t* cent) {
 	}
 	ci = &cgs.clientinfo[clientNum];
 	if(!ci->infoValid) {
+		return;
+	}
+	// the server hides the corpse model when a ragdoll took its place
+	if(cent->currentState.eFlags & EF_NODRAW) {
 		return;
 	}
 

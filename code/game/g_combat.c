@@ -115,19 +115,14 @@ void player_die(gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int 
 
 		self->client->respawnTime = level.time + 1700;
 
-		// normal death
-		static int lastDeath;
-
-		if(lastDeath < 0 || lastDeath >= 4) lastDeath = 0;
-		anim = AM_DEATH1 + lastDeath;
-
-		self->client->ps.legsAnim = ((self->client->ps.legsAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
-		self->client->ps.torsoAnim = ((self->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
+		// static int lastDeath;
+		// if(lastDeath < 0 || lastDeath >= 4) lastDeath = 0;
+		// anim = AM_DEATH1 + lastDeath;
+		// self->client->ps.legsAnim = ((self->client->ps.legsAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
+		// self->client->ps.torsoAnim = ((self->client->ps.torsoAnim & ANIM_TOGGLEBIT) ^ ANIM_TOGGLEBIT) | anim;
+		// lastDeath = (lastDeath + 1) % 4;
 
 		self->die = body_die;
-
-		// globally cycle through the different death animations
-		lastDeath = (lastDeath + 1) % 4;
 
 		trap_LinkEntity(self);
 	}

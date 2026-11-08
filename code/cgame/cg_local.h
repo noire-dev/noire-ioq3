@@ -493,8 +493,6 @@ typedef struct {
 // Data-driven weapon effects table (see cg_weapons.c)
 // String paths are fixed buffers (MAX_QPATH) so they can be written from JS through VM_APIWEAPONFX
 typedef struct {
-	animType_t animType;  // Selects the weapon-specific IQM locomotion block.
-
 	// Garry's Mod-style weapon selector metadata.
 	// Sections are laid out left-to-right (1..6); sectionOrder controls
 	// the top-to-bottom order inside each section.

@@ -422,7 +422,10 @@ void G_RunFrame(int levelTime) {
 		}
 
 		if(ent->s.eType == ET_RAGDOLL) {
-			continue;  // moved by G_RunRagdolls after all bones have been run
+			// movement is done by G_RunRagdolls after all bones have been run,
+			// but the master still thinks (removes the ragdoll after its lifetime)
+			G_RunThink(ent);
+			continue;
 		}
 
 		if(i < MAX_CLIENTS) {
