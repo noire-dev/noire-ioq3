@@ -92,7 +92,7 @@ varying vec4   var_LightDir;
 varying vec4   var_PrimaryLightDir;
 #endif
 
-#if defined(USE_DLIGHT_SHADOWMAP)
+#if defined(USE_DLIGHT_SHADOWMAP) || defined(USE_DLIGHT_PROJECTOR)
 varying vec3 var_WorldPosition;
 #endif
 
@@ -206,7 +206,7 @@ void main()
   #endif
 #endif
 
-#if defined(USE_DLIGHT_SHADOWMAP)
+#if defined(USE_DLIGHT_SHADOWMAP) || defined(USE_DLIGHT_PROJECTOR)
     var_WorldPosition = position;
 #endif
 

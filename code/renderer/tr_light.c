@@ -51,6 +51,68 @@ void R_TransformDlights(int count, dlight_t* dl, orientationr_t* or) {
 }
 
 /*
+=================
+R_DlightEntityMask
+
+Return the bit mask of lights whose bounding spheres intersect an entity's
+local-space bounds.  The mask is consumed by the regular additive dlight pass,
+so it is also what enables per-pixel shadows on MD3/IQM entities.
+=================
+*/
+dlightMask_t R_DlightEntityMask(const vec3_t bounds[2]) {
+	int i, j;
+	dlightMask_t mask;
+	dlight_t* dl;
+
+	DlightMask_Clear(&mask);
+	if(!tr.refdef.num_dlights || !bounds) return mask;
+
+	R_TransformDlights(tr.refdef.num_dlights, tr.refdef.dlights, &tr.or);
+
+	for(i = 0; i < tr.refdef.num_dlights && i < MAX_DLIGHTS; i++) {
+		vec3_t localForward;
+		dl = &tr.refdef.dlights[i];
+
+		if(r_dynamicLightCull->integer) {
+			for(j = 0; j < 3; j++) {
+				if(dl->transformed[j] - bounds[1][j] > dl->radius) break;
+				if(bounds[0][j] - dl->transformed[j] > dl->radius) break;
+			}
+			if(j != 3) continue;
+
+			// For projectors, also reject entity bounds that are wholly outside
+			// the cone. Transform the direction into the same local space as the
+			// transformed light origin before testing the entity's local bounds.
+			if(dl->type == DLIGHT_PROJECTOR) {
+				vec3_t center, halfSize, toCenter;
+				float boundRadius, forwardDistance, radialSq, coneRadius;
+				VectorSet(center,
+				           (bounds[0][0] + bounds[1][0]) * 0.5f,
+				           (bounds[0][1] + bounds[1][1]) * 0.5f,
+				           (bounds[0][2] + bounds[1][2]) * 0.5f);
+				VectorSet(halfSize,
+				           (bounds[1][0] - bounds[0][0]) * 0.5f,
+				           (bounds[1][1] - bounds[0][1]) * 0.5f,
+				           (bounds[1][2] - bounds[0][2]) * 0.5f);
+				boundRadius = VectorLength(halfSize);
+				VectorSubtract(center, dl->transformed, toCenter);
+				for(j = 0; j < 3; j++) localForward[j] = DotProduct(dl->forward, tr.or.axis[j]);
+				VectorNormalize(localForward);
+				forwardDistance = DotProduct(toCenter, localForward);
+				if(forwardDistance + boundRadius <= 0.0f || forwardDistance - boundRadius >= dl->radius) continue;
+				radialSq = VectorLengthSquared(toCenter) - forwardDistance * forwardDistance;
+				coneRadius = Com_Clamp(0.0f, dl->radius, forwardDistance) * dl->coneTangent + boundRadius;
+				if(radialSq > coneRadius * coneRadius) continue;
+			}
+		}
+
+		DlightMask_Set(&mask, i);
+	}
+
+	return mask;
+}
+
+/*
 =============
 R_DlightBmodel
 
@@ -58,46 +120,21 @@ Determine which dynamic lights may effect this bmodel
 =============
 */
 void R_DlightBmodel(bmodel_t* bmodel) {
-	int i, j;
-	dlight_t* dl;
-	int mask;
+	int i;
+	dlightMask_t mask;
 	msurface_t* surf;
 
-	// transform all the lights
-	R_TransformDlights(tr.refdef.num_dlights, tr.refdef.dlights, &tr.or);
+	mask = R_DlightEntityMask(bmodel->bounds);
+	DlightMask_Copy(&tr.currentEntity->needDlights, &mask);
 
-	mask = 0;
-	for(i = 0; i < tr.refdef.num_dlights; i++) {
-		dl = &tr.refdef.dlights[i];
-
-		// see if the point is close enough to the bounds to matter
-		for(j = 0; j < 3; j++) {
-			if(dl->transformed[j] - bmodel->bounds[1][j] > dl->radius) {
-				break;
-			}
-			if(bmodel->bounds[0][j] - dl->transformed[j] > dl->radius) {
-				break;
-			}
-		}
-		if(j < 3) {
-			continue;
-		}
-
-		// we need to check this light
-		mask |= 1 << i;
-	}
-
-	tr.currentEntity->needDlights = (mask != 0);
-
-	// set the dlight bits in all the surfaces
+	// Set the light mask on all the surfaces in this inline model.
 	for(i = 0; i < bmodel->numSurfaces; i++) {
 		surf = tr.world->surfaces + bmodel->firstSurface + i;
 
 		switch(*surf->data) {
 			case SF_FACE:
 			case SF_GRID:
-			case SF_TRIANGLES: ((srfBspSurface_t*)surf->data)->dlightBits = mask; break;
-
+			case SF_TRIANGLES: DlightMask_Copy(&((srfBspSurface_t*)surf->data)->dlightBits, &mask); break;
 			default: break;
 		}
 	}
@@ -264,7 +301,7 @@ static void R_SetupEntityLightingGrid(trRefEntity_t* ent, world_t* world) {
 	}
 
 	VectorScale(ent->ambientLight, r_ambientScale->value, ent->ambientLight);
-	VectorScale(ent->directedLight, r_directedScale->value, ent->directedLight);
+	VectorScale(ent->directedLight, r_directedScale->value * r_ambientScale->value, ent->directedLight);
 
 	VectorNormalize2(direction, ent->lightDir);
 }
@@ -278,13 +315,8 @@ by the Calc_* functions
 =================
 */
 void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
-	int i;
-	dlight_t* dl;
-	float power;
-	vec3_t dir;
 	float d;
 	vec3_t lightDir;
-	vec3_t lightOrigin;
 
 	// lighting calculations
 	if(ent->lightingCalculated) {
@@ -292,48 +324,25 @@ void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent) {
 	}
 	ent->lightingCalculated = true;
 
-	//
-	// trace a sample point down to find ambient light
-	//
-	if(ent->e.renderfx & RF_LIGHTING_ORIGIN) {
-		// separate lightOrigins are needed so an object that is
-		// sinking into the ground can still be lit, and so
-		// multi-part models can be lit identically
-		VectorCopy(ent->e.lightingOrigin, lightOrigin);
-	} else {
-		VectorCopy(ent->e.origin, lightOrigin);
-	}
-
-	// if NOWORLDMODEL, only use dynamic lights (menu system, etc)
-	if(!(refdef->rdflags & RDF_NOWORLDMODEL) && tr.world->lightGridData) {
+	// Sample baked world lighting. A missing lightgrid in a real world means
+	// there is no baked illumination; do not make entities self-lit in darkness.
+	if(!(refdef->rdflags & RDF_NOWORLDMODEL) && tr.world && tr.world->lightGridData) {
 		R_SetupEntityLightingGrid(ent, tr.world);
-	} else {
+	} else if(refdef->rdflags & RDF_NOWORLDMODEL) {
+		// Keep the legacy preview/menu fallback for standalone model scenes.
 		ent->ambientLight[0] = ent->ambientLight[1] = ent->ambientLight[2] = tr.identityLight * 150;
 		ent->directedLight[0] = ent->directedLight[1] = ent->directedLight[2] = tr.identityLight * 150;
 		VectorCopy(tr.sunDirection, ent->lightDir);
+	} else {
+		VectorClear(ent->ambientLight);
+		VectorClear(ent->directedLight);
+		VectorCopy(tr.sunDirection, ent->lightDir);
 	}
 
-	//
-	// modify the light by dynamic lights
-	//
+	// Dynamic lights are added in the additive per-pixel pass. Keeping them
+	// out of this single-point entity sample prevents unshadowed model glow.
 	d = VectorLength(ent->directedLight);
 	VectorScale(ent->lightDir, d, lightDir);
-
-	for(i = 0; i < refdef->num_dlights; i++) {
-		dl = &refdef->dlights[i];
-		VectorSubtract(dl->origin, lightOrigin, dir);
-		d = VectorNormalize(dir);
-
-		power = DLIGHT_AT_RADIUS * (dl->radius * dl->radius);
-		if(d < DLIGHT_MINIMUM_RADIUS) {
-			d = DLIGHT_MINIMUM_RADIUS;
-		}
-		d = power / (d * d);
-		d *= r_dlightScale->value;
-
-		VectorMA(ent->directedLight, d, dl->color, ent->directedLight);
-		VectorMA(lightDir, d, dir, lightDir);
-	}
 
 	// clamp lights
 	// FIXME: old renderer clamps (ambient + NL * directed) per vertex

@@ -761,32 +761,51 @@ void R_JiggleUpdateScene(void) {
 
 /*
 =====================
-RE_AddDynamicLightToScene
+RE_AddPointLightToScene / RE_AddProjectorToScene
 =====================
 */
-void RE_AddDynamicLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, int flags, qhandle_t hShader) {
+static dlight_t* RE_AllocDynamicLight(const vec3_t origin, float radius, const vec3_t color, float intensity, qhandle_t shader, bool shadows) {
 	dlight_t* dl;
 
-	// early out
-	if(!tr.registered || r_numdlights >= MAX_DLIGHTS || radius <= 0 || intensity <= 0) {
-		return;
-	}
+	if(!tr.registered || (r_numdlights - r_firstSceneDlight) >= MAX_DLIGHTS || r_numdlights >= MAX_RENDER_DLIGHTS || radius <= 0.0f || intensity <= 0.0f || !origin || !color) return NULL;
+	if(r_dynamicLight->integer <= 0) return NULL;
 
-	if(r_dynamiclight->integer == 0) return;
-
-	// set up a new dlight
 	dl = &backEndData->dlights[r_numdlights++];
-	VectorCopy(org, dl->origin);
-	VectorCopy(org, dl->transformed);
+	Com_Memset(dl, 0, sizeof(*dl));
+	VectorCopy(origin, dl->origin);
+	VectorCopy(origin, dl->transformed);
+	VectorCopy(color, dl->color);
 	dl->radius = radius;
 	dl->intensity = intensity;
-	dl->color[0] = r;
-	dl->color[1] = g;
-	dl->color[2] = b;
-	dl->flags = flags;
+	dl->shader = shader;
+	dl->shadows = shadows;
+	dl->flags = REF_SURFACE_DLIGHT;
+	return dl;
 }
 
-void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader) { RE_AddDynamicLightToScene(org, radius, intensity, r, g, b, REF_SURFACE_DLIGHT, hShader); }
+void RE_AddPointLightToScene(const vec3_t origin, float radius, const vec3_t color, float intensity, qhandle_t hShader, bool shadows) {
+	dlight_t* dl = RE_AllocDynamicLight(origin, radius, color, intensity, hShader, shadows);
+	if(!dl) return;
+	dl->type = DLIGHT_POINT;
+}
+
+void RE_AddProjectorToScene(const vec3_t origin, const vec3_t angles, float fov, float radius, const vec3_t color, float intensity, qhandle_t cookieShader, bool shadows) {
+	dlight_t* dl;
+	float clampedFov;
+
+	if(!angles) return;
+	dl = RE_AllocDynamicLight(origin, radius, color, intensity, cookieShader, shadows);
+	if(!dl) return;
+
+	clampedFov = Com_Clamp(1.0f, 170.0f, fov);
+	dl->type = DLIGHT_PROJECTOR;
+	dl->coneTangent = tanf(DEG2RAD(clampedFov * 0.5f));
+	VectorCopy(angles, dl->angles);
+	AngleVectors(dl->angles, dl->forward, dl->right, dl->up);
+	VectorNormalize(dl->forward);
+	VectorNormalize(dl->right);
+	VectorNormalize(dl->up);
+}
 
 void RE_BeginScene(const refdef_t* fd) {
 	Com_Memcpy(tr.refdef.text, fd->text, sizeof(tr.refdef.text));
@@ -888,7 +907,7 @@ void RE_BeginScene(const refdef_t* fd) {
 
 	// turn off dynamic lighting globally by clearing all the
 	// dlights if it needs to be disabled or if vertex lighting is enabled
-	if(r_dynamiclight->integer == 0) {
+	if(r_dynamicLight->integer == 0) {
 		tr.refdef.num_dlights = 0;
 	}
 
@@ -938,7 +957,7 @@ void RE_RenderScene(const refdef_t* fd) {
 	R_JiggleUpdateScene();
 
 	// SmileTheory: playing with shadow mapping
-	if(!(fd->rdflags & RDF_NOWORLDMODEL) && tr.refdef.num_dlights && r_dynamiclight->integer >= 2) {
+	if(!(fd->rdflags & RDF_NOWORLDMODEL) && tr.refdef.num_dlights && r_dynamicLight->integer >= 2) {
 		R_RenderDlightCubemaps(fd);
 	}
 

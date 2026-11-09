@@ -1564,6 +1564,21 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 		return;
 	}
 
+	// Include all animated bounds in the per-entity dynamic-light mask.
+	{
+		const float defaultBounds[6] = {-8, -8, -8, 8, 8, 8};
+		const float* allBounds = data->anim ? data->anim->bounds : data->bounds;
+		const float* oldBounds = allBounds ? allBounds + 6 * ent->e.oldframe : defaultBounds;
+		const float* newBounds = allBounds ? allBounds + 6 * ent->e.frame : defaultBounds;
+		vec3_t bounds[2];
+		int axis;
+		for(axis = 0; axis < 3; axis++) {
+			bounds[0][axis] = MIN(oldBounds[axis], newBounds[axis]);
+			bounds[1][axis] = MAX(oldBounds[axis + 3], newBounds[axis + 3]);
+		}
+		ent->needDlights = R_DlightEntityMask(bounds);
+	}
+
 	//
 	// set up lighting now that we know we aren't culled
 	//
@@ -1600,7 +1615,7 @@ void R_AddIQMSurfaces(trRefEntity_t* ent) {
 		if(r_reflectionsEntities->integer) useCubemap = R_ShaderRequiresCubemap(shader);
 
 		if(!personalModel) {
-			R_AddDrawSurf(drawSurf, shader, fogNum, 0, useCubemap, vec3_origin, 0.0f);
+			R_AddDrawSurf(drawSurf, shader, fogNum, DlightMask_Any(&ent->needDlights), useCubemap, vec3_origin, 0.0f);
 		}
 
 		surface++;

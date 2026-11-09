@@ -1356,7 +1356,7 @@ static void R_AddEntitySurface(int entityNum) {
 
 	ent = tr.currentEntity = &tr.refdef.entities[tr.currentEntityNum];
 
-	ent->needDlights = false;
+	DlightMask_Clear(&ent->needDlights);
 
 	// preshift the value we are going to OR into the drawsurf sort
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
@@ -1520,97 +1520,142 @@ void R_RenderView(viewParms_t* parms) {
 	R_SortDrawSurfs(tr.refdef.drawSurfs + firstDrawSurf, numDrawSurfs - firstDrawSurf);
 }
 
-void R_RenderDlightCubemaps(const refdef_t* fd) {
-	int i;
-	int savedNumDrawSurfs;
+static void R_RenderOneDlightCubemap(const refdef_t* fd, int lightIndex, int face, int savedNumDrawSurfs) {
+	viewParms_t shadowParms;
+	(void)fd;
+	int j, jStart, jEnd;
 
+	Com_Memset(&shadowParms, 0, sizeof(shadowParms));
+	shadowParms.viewportX = 0;
+	shadowParms.viewportY = 0;
+	shadowParms.viewportWidth = r_dynamicLightResolution->integer;
+	shadowParms.viewportHeight = r_dynamicLightResolution->integer;
+	shadowParms.isPortal = false;
+	shadowParms.isMirror = true;
+	shadowParms.fovX = 90;
+	shadowParms.fovY = 90;
+	shadowParms.targetFbo = tr.dlightShadowFbo;
+	shadowParms.flags = VPF_SHADOWMAP | VPF_DEPTHSHADOW | VPF_DLIGHTSHADOW | VPF_NOVIEWMODEL;
+	shadowParms.zFar = tr.refdef.dlights[lightIndex].radius;
+	VectorCopy(tr.refdef.dlights[lightIndex].origin, shadowParms.or.origin);
+	VectorCopy(tr.refdef.dlights[lightIndex].origin, shadowParms.pvsOrigin);
+
+	if(face >= 0 && face < 6) {
+		jStart = face;
+		jEnd = face + 1;
+	} else {
+		jStart = 0;
+		jEnd = 6;
+	}
+
+	for(j = jStart; j < jEnd; j++) {
+		switch(j) {
+			case 0:
+				VectorSet(shadowParms.or.axis[0], -1, 0, 0);
+				VectorSet(shadowParms.or.axis[1], 0, 0, -1);
+				VectorSet(shadowParms.or.axis[2], 0, 1, 0);
+				break;
+			case 1:
+				VectorSet(shadowParms.or.axis[0], 1, 0, 0);
+				VectorSet(shadowParms.or.axis[1], 0, 0, 1);
+				VectorSet(shadowParms.or.axis[2], 0, 1, 0);
+				break;
+			case 2:
+				VectorSet(shadowParms.or.axis[0], 0, -1, 0);
+				VectorSet(shadowParms.or.axis[1], 1, 0, 0);
+				VectorSet(shadowParms.or.axis[2], 0, 0, -1);
+				break;
+			case 3:
+				VectorSet(shadowParms.or.axis[0], 0, 1, 0);
+				VectorSet(shadowParms.or.axis[1], 1, 0, 0);
+				VectorSet(shadowParms.or.axis[2], 0, 0, 1);
+				break;
+			case 4:
+				VectorSet(shadowParms.or.axis[0], 0, 0, -1);
+				VectorSet(shadowParms.or.axis[1], 1, 0, 0);
+				VectorSet(shadowParms.or.axis[2], 0, 1, 0);
+				break;
+			case 5:
+				VectorSet(shadowParms.or.axis[0], 0, 0, 1);
+				VectorSet(shadowParms.or.axis[1], -1, 0, 0);
+				VectorSet(shadowParms.or.axis[2], 0, 1, 0);
+				break;
+		}
+
+		shadowParms.targetFboLayer = j;
+		shadowParms.targetFboCubemapIndex = lightIndex;
+		tr.refdef.numDrawSurfs = savedNumDrawSurfs;
+		R_RenderView(&shadowParms);
+		R_IssuePendingRenderCommands();
+		tr.refdef.numDrawSurfs = savedNumDrawSurfs;
+	}
+}
+
+void R_RenderDlightCubemaps(const refdef_t* fd) {
+	static int nextLightToUpdate;
+	static int nextFaceToUpdate;
+	static int lastUpdateFrame = -1;
+	int i, mode, savedNumDrawSurfs, numLights;
+
+	(void)fd;
 	R_IssuePendingRenderCommands();
 
+	// Dynamic shadow cubemaps require FBO support. Dynamic light contribution
+	// itself remains enabled when this path is unavailable.
+	if(!glRefConfig.framebufferObject || !tr.dlightShadowFbo) return;
+
 	savedNumDrawSurfs = tr.refdef.numDrawSurfs;
+	mode = Com_Clamp(0, 3, r_dynamicLightUpdate->integer);
+	numLights = tr.refdef.num_dlights;
 
-	for(i = 0; i < tr.refdef.num_dlights; i++) {
-		viewParms_t shadowParms;
-		int j;
+	if(mode == 0) {
+		if(lastUpdateFrame >= 0 && tr.frameCount - lastUpdateFrame < 2) return;
+	} else if(lastUpdateFrame == tr.frameCount) {
+		return;
+	}
 
-		if(!tr.shadowCubemaps[i]) continue;
+	if(numLights <= 0) {
+		lastUpdateFrame = tr.frameCount;
+		return;
+	}
 
-		if(tr.refdef.dlightMask & (1 << i)) continue;
+	if(mode == 3) {
+		for(i = 0; i < numLights; i++) {
+			if(!tr.refdef.dlights[i].shadows || !tr.shadowCubemaps[i]) continue;
+			R_RenderOneDlightCubemap(fd, i, -1, savedNumDrawSurfs);
+		}
+	} else if(mode == 2) {
+		for(i = 0; i < numLights; i++) {
+			int candidate = (nextLightToUpdate + i) % numLights;
+			if(!tr.refdef.dlights[candidate].shadows || !tr.shadowCubemaps[candidate]) continue;
 
-		Com_Memset(&shadowParms, 0, sizeof(shadowParms));
+			R_RenderOneDlightCubemap(fd, candidate, -1, savedNumDrawSurfs);
+			nextLightToUpdate = (candidate + 1) % numLights;
+			lastUpdateFrame = tr.frameCount;
+			tr.refdef.numDrawSurfs = savedNumDrawSurfs;
+			return;
+		}
+	} else {
+		for(i = 0; i < numLights; i++) {
+			int candidate = (nextLightToUpdate + i) % numLights;
+			if(!tr.refdef.dlights[candidate].shadows || !tr.shadowCubemaps[candidate]) continue;
 
-		shadowParms.viewportX = 0;
-		shadowParms.viewportY = 0;
-		shadowParms.viewportWidth = DLIGHT_SHADOW_SIZE;
-		shadowParms.viewportHeight = DLIGHT_SHADOW_SIZE;
+			R_RenderOneDlightCubemap(fd, candidate, nextFaceToUpdate, savedNumDrawSurfs);
 
-		shadowParms.isPortal = false;
-		shadowParms.isMirror = true;
-
-		shadowParms.fovX = 90;
-		shadowParms.fovY = 90;
-
-		shadowParms.targetFbo = tr.dlightShadowFbo;
-
-		shadowParms.flags = VPF_SHADOWMAP | VPF_DEPTHSHADOW | VPF_DLIGHTSHADOW | VPF_NOVIEWMODEL;
-
-		shadowParms.zFar = tr.refdef.dlights[i].radius;
-
-		VectorCopy(tr.refdef.dlights[i].origin, shadowParms.or.origin);
-
-		VectorCopy(tr.refdef.dlights[i].origin, shadowParms.pvsOrigin);
-
-		for(j = 0; j < 6; j++) {
-			switch(j) {
-				case 0:
-					VectorSet(shadowParms.or.axis[0], -1, 0, 0);
-					VectorSet(shadowParms.or.axis[1], 0, 0, -1);
-					VectorSet(shadowParms.or.axis[2], 0, 1, 0);
-					break;
-
-				case 1:
-					VectorSet(shadowParms.or.axis[0], 1, 0, 0);
-					VectorSet(shadowParms.or.axis[1], 0, 0, 1);
-					VectorSet(shadowParms.or.axis[2], 0, 1, 0);
-					break;
-
-				case 2:
-					VectorSet(shadowParms.or.axis[0], 0, -1, 0);
-					VectorSet(shadowParms.or.axis[1], 1, 0, 0);
-					VectorSet(shadowParms.or.axis[2], 0, 0, -1);
-					break;
-
-				case 3:
-					VectorSet(shadowParms.or.axis[0], 0, 1, 0);
-					VectorSet(shadowParms.or.axis[1], 1, 0, 0);
-					VectorSet(shadowParms.or.axis[2], 0, 0, 1);
-					break;
-
-				case 4:
-					VectorSet(shadowParms.or.axis[0], 0, 0, -1);
-					VectorSet(shadowParms.or.axis[1], 1, 0, 0);
-					VectorSet(shadowParms.or.axis[2], 0, 1, 0);
-					break;
-
-				case 5:
-					VectorSet(shadowParms.or.axis[0], 0, 0, 1);
-					VectorSet(shadowParms.or.axis[1], -1, 0, 0);
-					VectorSet(shadowParms.or.axis[2], 0, 1, 0);
-					break;
+			if(++nextFaceToUpdate >= 6) {
+				nextFaceToUpdate = 0;
+				nextLightToUpdate = (candidate + 1) % numLights;
+			} else {
+				nextLightToUpdate = candidate;
 			}
 
-			shadowParms.targetFboLayer = j;
-			shadowParms.targetFboCubemapIndex = i;
-
+			lastUpdateFrame = tr.frameCount;
 			tr.refdef.numDrawSurfs = savedNumDrawSurfs;
-
-			R_RenderView(&shadowParms);
-
-			R_IssuePendingRenderCommands();
-
-			tr.refdef.numDrawSurfs = savedNumDrawSurfs;
+			return;
 		}
 	}
 
+	lastUpdateFrame = tr.frameCount;
 	tr.refdef.numDrawSurfs = savedNumDrawSurfs;
 }
 

@@ -259,6 +259,12 @@ void FBO_Init(void) {
 		R_CheckFBO(tr.screenScratchFbo);
 	}
 
+	if(tr.screenmapImage) {
+		tr.screenmapFbo = FBO_Create("_screenmap", tr.screenmapImage->width, tr.screenmapImage->height);
+		FBO_AttachImage(tr.screenmapFbo, tr.screenmapImage, GL_COLOR_ATTACHMENT0, 0);
+		R_CheckFBO(tr.screenmapFbo);
+	}
+
 	if(tr.sunRaysImage) {
 		tr.sunRaysFbo = FBO_Create("_sunRays", tr.renderDepthImage->width, tr.renderDepthImage->height);
 		FBO_AttachImage(tr.sunRaysFbo, tr.sunRaysImage, GL_COLOR_ATTACHMENT0, 0);
@@ -267,7 +273,7 @@ void FBO_Init(void) {
 	}
 
 	if(tr.shadowCubemaps[0]) {
-		tr.dlightShadowFbo = FBO_Create("_dlightShadow", DLIGHT_SHADOW_SIZE, DLIGHT_SHADOW_SIZE);
+		tr.dlightShadowFbo = FBO_Create("_dlightShadow", r_dynamicLightResolution->integer, r_dynamicLightResolution->integer);
 		FBO_CreateBuffer(tr.dlightShadowFbo, GL_RGBA8, 0, 0);
 		R_CheckFBO(tr.dlightShadowFbo);
 	}

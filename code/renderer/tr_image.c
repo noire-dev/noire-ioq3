@@ -1390,9 +1390,9 @@ void R_CreateBuiltinImages(void) {
 	Com_Memset(data, 255, sizeof(data));
 	tr.whiteImage = R_CreateImage("*white", (byte*)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0);
 
-	if(r_dynamiclight->integer >= 2) {
+	if(r_dynamicLight->integer >= 2) {
 		for(x = 0; x < MAX_DLIGHTS; x++) {
-			tr.shadowCubemaps[x] = R_CreateImage(va("*shadowcubemap%i", x), NULL, DLIGHT_SHADOW_SIZE, DLIGHT_SHADOW_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_CUBEMAP, GL_DEPTH_COMPONENT24);
+			tr.shadowCubemaps[x] = R_CreateImage(va("*shadowcubemap%i", x), NULL, r_dynamicLightResolution->integer, r_dynamicLightResolution->integer, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_CUBEMAP, GL_DEPTH_COMPONENT24);
 			qglTextureParameterfEXT(tr.shadowCubemaps[x]->texnum, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 		}
 	}
@@ -1430,6 +1430,7 @@ void R_CreateBuiltinImages(void) {
 		if(r_sunRays->integer) tr.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
 
 		tr.screenScratchImage = R_CreateImage("screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
+		tr.screenmapImage = R_CreateImage("*screenmap", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
 
 		tr.renderDepthImage = R_CreateImage("*renderdepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24);
 		{

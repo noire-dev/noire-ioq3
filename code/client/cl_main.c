@@ -150,10 +150,6 @@ typedef struct serverStatus_s {
 
 serverStatus_t cl_serverStatusList[MAX_SERVERSTATUSREQUESTS];
 
-#if defined __USEA3D && defined __A3D_GEOM
-void hA3Dg_ExportRenderGeom(refexport_t* incoming_re);
-#endif
-
 static int noGameRestart = false;
 
 extern void SV_BotFrame(int time);
@@ -3091,10 +3087,6 @@ void CL_InitRef(void) {
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
 
 	ret = GetRefAPI(REF_API_VERSION, &ri);
-
-#if defined __USEA3D && defined __A3D_GEOM
-	hA3Dg_ExportRenderGeom(ret);
-#endif
 
 	Com_Printf("-------------------------------\n");
 

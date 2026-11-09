@@ -31,7 +31,7 @@ static void CG_SpawnWeaponLight(vec3_t origin, float radius, int duration, const
 	localEntity_t* le;
 	if(radius <= 0.0f) return;
 	if(duration <= 0) {
-		trap_R_AddLightToScene(origin, radius, 1.00f, color[0], color[1], color[2], 0);
+		trap_R_AddPointLightToScene(origin, radius, color, 1.00f, 0, false);
 		return;
 	}
 	le = CG_AllocLocalEntity();
@@ -867,6 +867,25 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 
 		trap_R_AddRefEntityToScene(&gun);
 
+		if(cent->currentState.number == cg.snap->ps.clientNum) {
+			vec3_t muzzleOrigin;
+			vec3_t projectorColor = {1.0f, 0.95f, 0.80f};
+			orientation_t muzzleTag;
+			int k;
+
+			memset(&muzzleTag, 0, sizeof(muzzleTag));
+			AxisClear(muzzleTag.axis);
+
+			trap_CM_LerpTag(&muzzleTag, gun.hModel, 0, 0, 0.0f, fx->muzzleBone);
+
+			VectorCopy(gun.origin, muzzleOrigin);
+			for(k = 0; k < 3; k++) {
+				VectorMA(muzzleOrigin, muzzleTag.origin[k], gun.axis[k], muzzleOrigin);
+			}
+
+			trap_R_AddProjectorToScene(muzzleOrigin, cg.refdefViewAngles, 30.0f, 1024.0f, projectorColor, 0.5f, trap_R_RegisterShader("$screenmap"), true);
+		}
+
 		// make sure we aren't looking at cg.predictedPlayerEntity for LG
 		nonPredictedCent = &cg_entities[cent->currentState.number];
 
@@ -908,7 +927,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 			// particles are throttled to avoid overspawning the pool.
 			if(nonPredictedCent->currentState.eFlags & EF_FIRING) {
 				if(fx->fireLightRadius > 0.0f) {
-					trap_R_AddLightToScene(flash.origin, fx->fireLightRadius, 1.00f, fx->fireLightColor[0], fx->fireLightColor[1], fx->fireLightColor[2], 0);
+					trap_R_AddPointLightToScene(flash.origin, fx->fireLightRadius, fx->fireLightColor, 1.00f, 0, false);
 				}
 				if(fx->fireParticleCount > 0 && (cg.time - cent->pe.lastFireFxTime) >= 30) {
 					CG_AddParticles(flash.origin, fx->fireParticleColor, fx->fireParticleCount, fx->fireParticleSpeed, fx->fireParticleFlags, fx->fireParticleGravity, fx->fireParticleHandle, fx->fireParticleSize, fx->fireParticleLifetime);

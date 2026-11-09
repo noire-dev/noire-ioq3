@@ -66,7 +66,6 @@ typedef struct {
 	void (*AddRefEntityToScene)(const refEntity_t* re);
 	void (*AddPolyToScene)(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num);
 	int (*LightForPoint)(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir);
-	void (*AddLightToScene)(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
 	void (*SetBoneScale)(const char* jointName, const vec3_t scale);
 	void (*SetJiggleData)(const char* jointName, float scale, float damping, float stiffness, float gravity);
 	void (*SetBoneAngles)(const char* jointName, const vec3_t angles);
@@ -90,14 +89,13 @@ typedef struct {
 	bool (*LerpTag)(orientation_t* tag, qhandle_t model, int startFrame, int endFrame, float frac, const char* tagName);
 	void (*ModelBounds)(qhandle_t model, vec3_t mins, vec3_t maxs);
 
-#ifdef __USEA3D
-	void (*A3D_RenderGeometry)(void* pVoidA3D, void* pVoidGeom, void* pVoidMat, void* pVoidGeomStatus);
-#endif
 	void (*RemapShader)(const char* oldShader, const char* newShader, const char* offsetTime);
 	bool (*GetEntityToken)(char* buffer, int size);
 	bool (*inPVS)(const vec3_t p1, const vec3_t p2);
 
 	void (*TakeVideoFrame)(int h, int w, byte* captureBuffer, byte* encodeBuffer, bool motionJpeg);
+	void (*AddPointLightToScene)(const vec3_t origin, float radius, const vec3_t color, float intensity, qhandle_t hShader, bool shadows);
+	void (*AddProjectorToScene)(const vec3_t origin, const vec3_t angles, float fov, float radius, const vec3_t color, float intensity, qhandle_t cookieShader, bool shadows);
 } refexport_t;
 
 //

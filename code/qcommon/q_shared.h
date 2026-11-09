@@ -188,8 +188,6 @@ typedef enum {
 	TRAP_R_CLEARSCENE,
 	TRAP_R_ADDREFENTITYTOSCENE,
 	TRAP_R_ADDPOLYTOSCENE,
-	TRAP_R_ADDLIGHTTOSCENE,
-	TRAP_R_ADDLINEARLIGHTTOSCENE,
 	TRAP_R_RENDERSCENE,
 	TRAP_R_SETCOLOR,
 	TRAP_R_DRAWSTRETCHPIC,
@@ -212,7 +210,9 @@ typedef enum {
 	TRAP_R_SETBONESCALE,
 	TRAP_R_SETJIGGLEDATA,
 	TRAP_R_SETBONEANGLES,
-	TRAP_R_GETMODELBONE
+	TRAP_R_GETMODELBONE,
+	TRAP_R_ADDPOINTLIGHTTOSCENE,
+	TRAP_R_ADDPROJECTORTOSCENE
 } sharedTraps_t;
 
 #include <assert.h>
@@ -1189,8 +1189,8 @@ typedef struct physCapsuleDef_s {
 
 // cone-twist joint between two physics bodies (passed by pointer to the engine)
 typedef struct physConeTwistDef_s {
-	int entityA;  // parent
-	int entityB;  // child
+	int entityA;     // parent
+	int entityB;     // child
 	float pivot[3];  // world space
 	float axis[3];   // world space twist axis (unit length)
 	float swing1;    // degrees

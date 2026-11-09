@@ -9,7 +9,8 @@ qhandle_t trap_R_RegisterShaderNoMip(const char* name) { return syscall(TRAP_R_R
 void trap_R_ClearScene(void) { syscall(TRAP_R_CLEARSCENE); }
 void trap_R_AddRefEntityToScene(const refEntity_t* re) { syscall(TRAP_R_ADDREFENTITYTOSCENE, re); }
 void trap_R_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts) { syscall(TRAP_R_ADDPOLYTOSCENE, hShader, numVerts, verts); }
-void trap_R_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t shader) { syscall(TRAP_R_ADDLIGHTTOSCENE, org, PASSFLOAT(radius), PASSFLOAT(intensity), PASSFLOAT(r), PASSFLOAT(g), PASSFLOAT(b), shader); }
+void trap_R_AddPointLightToScene(const vec3_t origin, float radius, const vec3_t color, float intensity, qhandle_t shader, bool shadows) { syscall(TRAP_R_ADDPOINTLIGHTTOSCENE, origin, PASSFLOAT(radius), color, PASSFLOAT(intensity), shader, shadows); }
+void trap_R_AddProjectorToScene(const vec3_t origin, const vec3_t angles, float fov, float radius, const vec3_t color, float intensity, qhandle_t cookieShader, bool shadows) { syscall(TRAP_R_ADDPROJECTORTOSCENE, origin, angles, PASSFLOAT(fov), PASSFLOAT(radius), color, PASSFLOAT(intensity), cookieShader, shadows); }
 void trap_R_RenderScene(const refdef_t* fd) { syscall(TRAP_R_RENDERSCENE, fd); }
 void trap_R_SetColor(const float* rgba) { syscall(TRAP_R_SETCOLOR, rgba); }
 void trap_R_DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader) { syscall(TRAP_R_DRAWSTRETCHPIC, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(w), PASSFLOAT(h), PASSFLOAT(s1), PASSFLOAT(t1), PASSFLOAT(s2), PASSFLOAT(t2), hShader); }

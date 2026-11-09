@@ -257,6 +257,20 @@ void R_AddMD3Surfaces(trRefEntity_t* ent) {
 		return;
 	}
 
+	// Per-entity dlight bits are required for the additive pass and its
+	// shadow lookup. Use both interpolation frames to avoid popping.
+	{
+		mdvFrame_t* oldFrame = model->frames + ent->e.oldframe;
+		mdvFrame_t* newFrame = model->frames + ent->e.frame;
+		vec3_t bounds[2];
+		int axis;
+		for(axis = 0; axis < 3; axis++) {
+			bounds[0][axis] = MIN(oldFrame->bounds[0][axis], newFrame->bounds[0][axis]);
+			bounds[1][axis] = MAX(oldFrame->bounds[1][axis], newFrame->bounds[1][axis]);
+		}
+		ent->needDlights = R_DlightEntityMask(bounds);
+	}
+
 	//
 	// set up lighting now that we know we aren't culled
 	//
@@ -310,7 +324,7 @@ void R_AddMD3Surfaces(trRefEntity_t* ent) {
 
 		// don't add third_person objects if not viewing through a portal
 		if(!personalModel) {
-			R_AddDrawSurf(drawSurf, shader, fogNum, false, useCubemap, vec3_origin, 0.0f);
+			R_AddDrawSurf(drawSurf, shader, fogNum, DlightMask_Any(&ent->needDlights), useCubemap, vec3_origin, 0.0f);
 		}
 
 		surface++;

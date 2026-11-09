@@ -101,13 +101,15 @@ static void CG_EntityEffects(centity_t* cent) {
 	if(cent->currentState.constantLight) {
 		int cl;
 		float i, r, g, b;
+		vec3_t color;
 
 		cl = cent->currentState.constantLight;
 		r = (float)(cl & 0xFF) / 255.0;
 		g = (float)((cl >> 8) & 0xFF) / 255.0;
 		b = (float)((cl >> 16) & 0xFF) / 255.0;
 		i = (float)((cl >> 24) & 0xFF) * 4.0;
-		trap_R_AddLightToScene(cent->lerpOrigin, i, 1.00f, r, g, b, 0);
+		VectorSet(color, r, g, b);
+		trap_R_AddPointLightToScene(cent->lerpOrigin, i, color, 1.00f, 0, false);
 	}
 }
 
@@ -364,7 +366,7 @@ static void CG_Missile(centity_t* cent) {
 
 	// data-driven missile light
 	if(fx->missileLightRadius > 0.0f) {
-		trap_R_AddLightToScene(cent->lerpOrigin, fx->missileLightRadius, 1.00f, fx->missileLightColor[0], fx->missileLightColor[1], fx->missileLightColor[2], 0);
+		trap_R_AddPointLightToScene(cent->lerpOrigin, fx->missileLightRadius, fx->missileLightColor, 1.00f, 0, false);
 	}
 
 	// add missile sound (fully data-driven)

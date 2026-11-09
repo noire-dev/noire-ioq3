@@ -144,7 +144,7 @@ void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t
 	tess.useCubemap = useCubemap;
 	VectorCopy(cubemapOrigin, tess.cubemapOrigin);
 	tess.cubemapBound = cubemapBound;
-	tess.dlightBits = 0;  // will be OR'd in by surface functions
+	DlightMask_Clear(&tess.dlightBits);  // will be OR'd in by surface functions
 	tess.xstages = state->stages;
 	tess.numPasses = state->numUnfoggedPasses;
 	tess.currentStageIteratorFunc = state->optimalStageIteratorFunc;
@@ -156,8 +156,8 @@ void RB_BeginSurface(shader_t* shader, int fogNum, bool useCubemap, const vec3_t
 		tess.shaderTime = tess.shader->clampTime;
 	}
 
-	if(backEnd.currentEntity && backEnd.currentEntity != &tr.worldEntity && backEnd.currentEntity->needDlights) {
-		tess.dlightBits |= backEnd.currentEntity->needDlights;
+	if(backEnd.currentEntity && backEnd.currentEntity != &tr.worldEntity && DlightMask_Any(&backEnd.currentEntity->needDlights)) {
+		DlightMask_Or(&tess.dlightBits, &backEnd.currentEntity->needDlights);
 	}
 
 	if(backEnd.viewParms.flags & VPF_SHADOWMAP) {
@@ -520,14 +520,14 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 		vec4_t texMatrix[8];
 		int index;
 
-		if(!(tess.dlightBits & (1 << l))) {
+		if(!DlightMask_Test(&tess.dlightBits, l)) {
 			continue;
 		}
 
 		dl = &backEnd.refdef.dlights[l];
 
 		radius = dl->radius;
-		intensity = Com_Clamp(0.0f, 1.0f, dl->intensity);
+		intensity = Com_Clamp(0.0f, 16.0f, dl->intensity);
 
 		if(pStage->glslShaderGroup == tr.lightallShader) {
 			index = pStage->glslShaderIndex;
@@ -540,6 +540,10 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 			if(pStage->bundle[0].tcGen != TCGEN_TEXTURE || pStage->bundle[0].numTexMods != 0) {
 				index |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
 			}
+		}
+
+		if(dl->type == DLIGHT_PROJECTOR) {
+			index |= LIGHTDEF_USE_DLIGHT_PROJECTOR;
 		}
 
 		/*
@@ -620,6 +624,17 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 		GLSL_SetUniformVec4(sp, UNIFORM_LIGHTORIGIN, vector);
 
 		GLSL_SetUniformFloat(sp, UNIFORM_LIGHTRADIUS, radius);
+		GLSL_SetUniformFloat(sp, UNIFORM_LIGHTCONE, dl->coneTangent);
+		GLSL_SetUniformInt(sp, UNIFORM_DLIGHTSHADOWS,
+		                    (r_dynamicLight->integer >= 2 && glRefConfig.framebufferObject &&
+		                     tr.dlightShadowFbo && tr.shadowCubemaps[l] && dl->shadows &&
+		                     !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) ? 1 : 0);
+
+		if(dl->type == DLIGHT_PROJECTOR) {
+			GLSL_SetUniformVec3(sp, UNIFORM_LIGHTFORWARD, dl->forward);
+			GLSL_SetUniformVec3(sp, UNIFORM_LIGHTRIGHT, dl->right);
+			GLSL_SetUniformVec3(sp, UNIFORM_LIGHTUP, dl->up);
+		}
 
 		GLSL_SetUniformVec4(sp, UNIFORM_NORMALSCALE, pStage->normalScale);
 
@@ -663,7 +678,36 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 			GLSL_SetUniformVec4(sp, UNIFORM_ENABLETEXTURES, enableTextures);
 		}
 
-		if(r_dynamiclight->integer >= 2) GL_BindToTMU(tr.shadowCubemaps[l], TB_SHADOWMAP4);
+		// The shader declares this unit as samplerCube. Keep a cubemap bound
+		// even when per-light shadows are disabled; the uniform gates sampling.
+		if(r_dynamicLight->integer >= 2 && tr.shadowCubemaps[l]) {
+			GL_BindToTMU(tr.shadowCubemaps[l], TB_SHADOWMAP4);
+		}
+
+		if(dl->type == DLIGHT_PROJECTOR) {
+			textureBundle_t* cookieBundle = NULL;
+			shader_t* cookieShader = dl->shader ? R_GetShaderByHandle(dl->shader) : NULL;
+			int cookieStage;
+
+			if(cookieShader && cookieShader->remappedShader) {
+				cookieShader = cookieShader->remappedShader;
+			}
+
+			if(cookieShader) {
+				for(cookieStage = 0; cookieStage < MAX_SHADER_STAGES; cookieStage++) {
+					shaderStage_t* stage = cookieShader->stages[cookieStage];
+					if(stage && stage->bundle[TB_DIFFUSEMAP].image[0]) {
+						cookieBundle = &stage->bundle[TB_DIFFUSEMAP];
+						break;
+					}
+				}
+			}
+			if(cookieBundle) {
+				R_BindAnimatedImageToTMU(cookieBundle, TB_LIGHTMAP);
+			} else {
+				GL_BindToTMU(tr.whiteImage, TB_LIGHTMAP);
+			}
+		}
 
 		ComputeTexMods(pStage, TB_DIFFUSEMAP, texMatrix);
 
@@ -1198,7 +1242,7 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 		//
 		R_DrawElements(input->numIndexes, input->firstIndex);
 
-		if(tess.dlightBits && tess.shader->sort <= SS_OPAQUE && !(tess.shader->surfaceFlags & SURF_SKY)) {
+		if(DlightMask_Any(&tess.dlightBits) && tess.shader->sort <= SS_OPAQUE && !(tess.shader->surfaceFlags & SURF_SKY)) {
 			ForwardDlightEnt(pStage);
 		}
 

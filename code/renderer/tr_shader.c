@@ -524,6 +524,9 @@ static bool ParseStage(shaderStage_t* stage, char** text) {
 			if(!Q_stricmp(token, "$whiteimage")) {
 				stage->bundle[0].image[0] = tr.whiteImage;
 				continue;
+			} else if(!Q_stricmp(token, "$screenmap")) {
+				stage->bundle[0].image[0] = tr.screenmapImage ? tr.screenmapImage : tr.whiteImage;
+				continue;
 			} else if(!Q_stricmp(token, "$lightmap")) {
 				stage->bundle[0].isLightmap = true;
 				if(shader.lightmapIndex < 0 || !tr.lightmaps) {
@@ -3250,6 +3253,18 @@ static void CreateInternalShaders(void) {
 	tr.defaultShader = FinishShader();
 }
 
+static void CreateScreenMapShader(void) {
+	InitShader("$screenmap", LIGHTMAP_2D);
+
+	stages[0].bundle[0].image[0] = tr.screenmapImage ? tr.screenmapImage : tr.whiteImage;
+	stages[0].active = true;
+	stages[0].rgbGen = CGEN_IDENTITY_LIGHTING;
+	stages[0].alphaGen = AGEN_SKIP;
+	stages[0].stateBits = GLS_DEFAULT;
+
+	FinishShader();
+}
+
 static void CreateExternalShaders(void) { tr.sunShader = R_FindShader("sun", LIGHTMAP_NONE, true); }
 
 /*
@@ -3263,6 +3278,8 @@ void R_InitShaders(void) {
 	Com_Memset(hashTable, 0, sizeof(hashTable));
 
 	CreateInternalShaders();
+
+	CreateScreenMapShader();
 
 	ScanAndLoadShaderFiles();
 

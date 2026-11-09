@@ -272,7 +272,7 @@ static void CG_AddExplosion(localEntity_t* ex) {
 			light = 1.0 - (light - 0.5) * 2;
 		}
 		light = ex->light * light;
-		trap_R_AddLightToScene(ent->origin, light, 1.00f, ex->lightColor[0], ex->lightColor[1], ex->lightColor[2], 0);
+		trap_R_AddPointLightToScene(ent->origin, light, ex->lightColor, 1.00f, 0, false);
 	}
 }
 

@@ -43,7 +43,11 @@ cvar_t* com_altivec;
 
 cvar_t* r_ignore;
 
-cvar_t* r_dynamiclight;
+cvar_t* r_dynamicLight;
+cvar_t* r_dynamicLightSkybox;
+cvar_t* r_dynamicLightUpdate;
+cvar_t* r_dynamicLightResolution;
+cvar_t* r_dynamicLightCull;
 
 cvar_t* r_lodbias;
 
@@ -907,12 +911,15 @@ void R_Register(void) {
 	// archived variables that can change at any time
 	//
 	r_lodbias = ri.Cvar_Get("r_lodbias", "0", CVAR_ARCHIVE);
-	r_dynamiclight = ri.Cvar_Get("r_dynamiclight", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_dynamicLight = ri.Cvar_Get("r_dynamicLight", "2", CVAR_ARCHIVE | CVAR_LATCH);
+	r_dynamicLightSkybox = ri.Cvar_Get("r_dynamicLightSkybox", "0", CVAR_ARCHIVE);
+	r_dynamicLightUpdate = ri.Cvar_Get("r_dynamicLightUpdate", "1", CVAR_ARCHIVE);
+	r_dynamicLightCull = ri.Cvar_Get("r_dynamicLightCull", "1", CVAR_ARCHIVE);
+	r_dynamicLightResolution = ri.Cvar_Get("r_dynamicLightResolution", "128", CVAR_ARCHIVE | CVAR_LATCH);
 	r_textureMode = ri.Cvar_Get("r_textureMode", "GL_LINEAR_MIPMAP_LINEAR", CVAR_ARCHIVE);
 	r_swapInterval = ri.Cvar_Get("r_swapInterval", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_gamma = ri.Cvar_Get("r_gamma", "1", CVAR_ARCHIVE);
 	r_renderScale = ri.Cvar_Get("r_renderScale", "100", CVAR_ARCHIVE);
-	ri.Cvar_CheckRange(r_renderScale, 25, 100, true);
 
 	r_ambientScale = ri.Cvar_Get("r_ambientScale", "2.64", CVAR_CHEAT);
 	r_directedScale = ri.Cvar_Get("r_directedScale", "1.48", CVAR_CHEAT);
@@ -1141,7 +1148,8 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t* rimp) {
 	re.AddRefEntityToScene = RE_AddRefEntityToScene;
 	re.AddPolyToScene = RE_AddPolyToScene;
 	re.LightForPoint = R_LightForPoint;
-	re.AddLightToScene = RE_AddLightToScene;
+	re.AddPointLightToScene = RE_AddPointLightToScene;
+	re.AddProjectorToScene = RE_AddProjectorToScene;
 	re.SetBoneScale = RE_SetBoneScale;
 	re.SetJiggleData = RE_SetJiggleData;
 	re.SetBoneAngles = RE_SetBoneAngles;

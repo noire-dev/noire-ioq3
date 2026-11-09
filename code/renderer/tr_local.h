@@ -62,6 +62,7 @@ typedef unsigned int vaoCacheGlIndex_t;
 #define MAX_SHADERS (1 << SHADERNUM_BITS)
 
 #define MAX_FBOS 64
+#define MAX_RENDER_DLIGHTS (MAX_DLIGHTS * 8)  // aggregate backing storage for multiple views per frame
 #define MAX_VISCOUNTS 5
 #define MAX_VAOS 4096
 
@@ -71,15 +72,60 @@ typedef struct cubemap_s {
 	int gridX[6], gridY[6], gridZ[6];
 } cubemap_t;
 
-#define DLIGHT_SHADOW_SIZE 512
+typedef enum { DLIGHT_POINT, DLIGHT_PROJECTOR } dlightType_t;
+
+typedef struct {
+	uint32_t words[MAX_DLIGHT_MASK_WORDS];
+} dlightMask_t;
+
+static ID_INLINE void DlightMask_Clear(dlightMask_t* mask) {
+	int i;
+	for(i = 0; i < MAX_DLIGHT_MASK_WORDS; i++) mask->words[i] = 0;
+}
+
+static ID_INLINE void DlightMask_Set(dlightMask_t* mask, int index) { mask->words[index >> 5] |= (1u << (index & 31)); }
+
+static ID_INLINE void DlightMask_ClearBit(dlightMask_t* mask, int index) { mask->words[index >> 5] &= ~(1u << (index & 31)); }
+
+static ID_INLINE bool DlightMask_Test(const dlightMask_t* mask, int index) { return (mask->words[index >> 5] & (1u << (index & 31))) != 0; }
+
+static ID_INLINE bool DlightMask_Any(const dlightMask_t* mask) {
+	int i;
+	for(i = 0; i < MAX_DLIGHT_MASK_WORDS; i++)
+		if(mask->words[i]) return true;
+	return false;
+}
+
+static ID_INLINE void DlightMask_Copy(dlightMask_t* dst, const dlightMask_t* src) {
+	int i;
+	for(i = 0; i < MAX_DLIGHT_MASK_WORDS; i++) dst->words[i] = src->words[i];
+}
+
+static ID_INLINE void DlightMask_Or(dlightMask_t* dst, const dlightMask_t* src) {
+	int i;
+	for(i = 0; i < MAX_DLIGHT_MASK_WORDS; i++) dst->words[i] |= src->words[i];
+}
+
+static ID_INLINE void DlightMask_Not(dlightMask_t* mask) {
+	int i;
+	for(i = 0; i < MAX_DLIGHT_MASK_WORDS; i++) mask->words[i] = ~mask->words[i];
+}
 
 typedef struct dlight_s {
 	vec3_t origin;
 	vec3_t color;  // range from 0.0 to 1.0, should be color normalized
 	float radius;
-	float intensity;  // 1.0 = fullbright, > 1.0 = overbright
+	float intensity;    // 1.0 = fullbright, > 1.0 = overbright
+	float coneTangent;  // tan(projector FOV / 2); unused for point lights
 	int flags;
+	dlightType_t type;
+	bool shadows;
+	qhandle_t shader;  // cookie texture for projectors
 
+	vec3_t angles;
+	vec3_t forward;
+	vec3_t right;
+	vec3_t up;
 	vec3_t transformed;  // origin in local coordinate system
 } dlight_t;
 
@@ -88,7 +134,7 @@ typedef struct dlight_s {
 typedef struct {
 	refEntity_t e;
 
-	bool needDlights;  // true for bmodels that touch a dlight
+	dlightMask_t needDlights;  // 256-bit mask of dynamic lights affecting this entity
 	bool lightingCalculated;
 	bool mirrored;         // mirrored matrix, needs reversed culling
 	vec3_t lightDir;       // normalized direction towards light, in world space
@@ -531,7 +577,7 @@ enum {
 	DLIGHTDEF_COUNT = 0x0002,
 };
 
-enum { LIGHTDEF_USE_LIGHTMAP = 0x0001, LIGHTDEF_USE_LIGHT_VECTOR = 0x0002, LIGHTDEF_USE_LIGHT_VERTEX = 0x0003, LIGHTDEF_LIGHTTYPE_MASK = 0x0003, LIGHTDEF_ENTITY_VERTEX_ANIMATION = 0x0004, LIGHTDEF_USE_TCGEN_AND_TCMOD = 0x0008, LIGHTDEF_USE_PARALLAXMAP = 0x0010, LIGHTDEF_USE_SHADOWMAP = 0x0020, LIGHTDEF_ENTITY_BONE_ANIMATION = 0x0040, LIGHTDEF_ALL = 0x007F, LIGHTDEF_COUNT = 0x0080 };
+enum { LIGHTDEF_USE_LIGHTMAP = 0x0001, LIGHTDEF_USE_LIGHT_VECTOR = 0x0002, LIGHTDEF_USE_LIGHT_VERTEX = 0x0003, LIGHTDEF_LIGHTTYPE_MASK = 0x0003, LIGHTDEF_ENTITY_VERTEX_ANIMATION = 0x0004, LIGHTDEF_USE_TCGEN_AND_TCMOD = 0x0008, LIGHTDEF_USE_PARALLAXMAP = 0x0010, LIGHTDEF_USE_SHADOWMAP = 0x0020, LIGHTDEF_ENTITY_BONE_ANIMATION = 0x0040, LIGHTDEF_USE_DLIGHT_PROJECTOR = 0x0080, LIGHTDEF_ALL = 0x00FF, LIGHTDEF_COUNT = 0x0100 };
 
 enum { SHADOWMAPDEF_USE_VERTEX_ANIMATION = 0x0001, SHADOWMAPDEF_USE_BONE_ANIMATION = 0x0002, SHADOWMAPDEF_ALL = 0x0003, SHADOWMAPDEF_COUNT = 0x0004 };
 
@@ -562,6 +608,8 @@ typedef enum {
 	UNIFORM_SHADOWMVP4,
 
 	UNIFORM_DLIGHTSHADOWMAP,
+	UNIFORM_DLIGHTCOOKIE,
+	UNIFORM_DLIGHTSHADOWS,
 
 	UNIFORM_ENABLETEXTURES,
 
@@ -594,6 +642,7 @@ typedef enum {
 	UNIFORM_LIGHTORIGIN,
 	UNIFORM_MODELLIGHTDIR,
 	UNIFORM_LIGHTRADIUS,
+	UNIFORM_LIGHTCONE,
 	UNIFORM_AMBIENTLIGHT,
 	UNIFORM_DIRECTEDLIGHT,
 
@@ -720,7 +769,7 @@ typedef struct {
 	int numDrawSurfs;
 	struct drawSurf_s* drawSurfs;
 
-	unsigned int dlightMask;
+	dlightMask_t dlightMask;
 
 	float sunShadowMvp[4][16];
 	float sunDir[4];
@@ -866,7 +915,7 @@ typedef struct srfBspSurface_s {
 	surfaceType_t surfaceType;
 
 	// dynamic lighting information
-	int dlightBits;
+	dlightMask_t dlightBits;
 
 	// culling information
 	vec3_t cullBounds[2];
@@ -1057,6 +1106,7 @@ typedef struct cullinfo_s {
 	vec3_t bounds[2];
 	vec3_t localOrigin;
 	float radius;
+	float fogDistance;  // кэш дистанции от камеры до ближайшей точки поверхности, вычисляется в R_FogCullSurface
 	cplane_t plane;
 } cullinfo_t;
 
@@ -1128,7 +1178,7 @@ typedef struct {
 	int numsurfaces;
 	msurface_t* surfaces;
 	int* surfacesViewCount;
-	int* surfacesDlightBits;
+	dlightMask_t* surfacesDlightBits;
 
 	int nummarksurfaces;
 	int* marksurfaces;
@@ -1456,6 +1506,7 @@ typedef struct {
 	image_t* sunRaysImage;
 	image_t* renderDepthImage;
 	image_t* screenScratchImage;
+	image_t* screenmapImage;
 	image_t* textureScratchImage[2];
 	image_t* quarterImage[2];
 	image_t* bloomImage[2];
@@ -1473,6 +1524,7 @@ typedef struct {
 	FBO_t* sunRaysFbo;
 	FBO_t* dlightShadowFbo;
 	FBO_t* screenScratchFbo;
+	FBO_t* screenmapFbo;
 	FBO_t* textureScratchFbo[2];
 	FBO_t* quarterFbo[2];
 	FBO_t* bloomFbo[2];
@@ -1612,7 +1664,11 @@ extern cvar_t* r_ignore;  // used for debugging anything
 
 extern cvar_t* r_lodbias;  // push/pull LOD transitions
 
-extern cvar_t* r_dynamiclight;  // dynamic lights enabled/disabled
+extern cvar_t* r_dynamicLight;
+extern cvar_t* r_dynamicLightSkybox;
+extern cvar_t* r_dynamicLightUpdate;
+extern cvar_t* r_dynamicLightResolution;
+extern cvar_t* r_dynamicLightCull;
 
 extern cvar_t* r_speeds;  // various levels of information display
 
@@ -1921,7 +1977,7 @@ typedef struct shaderCommands_s {
 	vec3_t cubemapOrigin;
 	float cubemapBound;
 
-	int dlightBits;  // or together of all vertexDlightBits
+	dlightMask_t dlightBits;  // union of dynamic-light masks in this batch
 
 	int firstIndex;
 	int numIndexes;
@@ -1978,6 +2034,7 @@ LIGHTS
 void R_DlightBmodel(bmodel_t* bmodel);
 void R_SetupEntityLighting(const trRefdef_t* refdef, trRefEntity_t* ent);
 void R_TransformDlights(int count, dlight_t* dl, orientationr_t* or);
+dlightMask_t R_DlightEntityMask(const vec3_t bounds[2]);
 int R_LightForPoint(vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir);
 int R_LightDirForPoint(vec3_t point, vec3_t lightDir, vec3_t normal, world_t* world);
 bool R_CubemapForShader(bool applyCubemap);
@@ -2097,7 +2154,8 @@ void R_InitNextFrame(void);
 void RE_ClearScene(void);
 void RE_AddRefEntityToScene(const refEntity_t* ent);
 void RE_AddPolyToScene(qhandle_t hShader, int numVerts, const polyVert_t* verts, int num);
-void RE_AddLightToScene(const vec3_t org, float radius, float intensity, float r, float g, float b, qhandle_t hShader);
+void RE_AddPointLightToScene(const vec3_t origin, float radius, const vec3_t color, float intensity, qhandle_t hShader, bool shadows);
+void RE_AddProjectorToScene(const vec3_t origin, const vec3_t angles, float fov, float radius, const vec3_t color, float intensity, qhandle_t cookieShader, bool shadows);
 void RE_SetBoneScale(const char* jointName, const vec3_t scale);
 int R_GetEntityBoneScales(int entityNum, int* joints, vec3_t* scales, int maxCount);
 void RE_SetBoneAngles(const char* jointName, const vec3_t angles);
@@ -2281,7 +2339,7 @@ typedef enum { RC_END_OF_LIST, RC_SET_COLOR, RC_STRETCH_PIC, RC_DRAW_SURFS, RC_D
 // contained in a backEndData_t
 typedef struct {
 	drawSurf_t drawSurfs[MAX_DRAWSURFS];
-	dlight_t dlights[MAX_DLIGHTS];
+	dlight_t dlights[MAX_RENDER_DLIGHTS];
 	trRefEntity_t entities[MAX_REFENTITIES];
 	srfPoly_t* polys;       //[MAX_POLYS];
 	polyVert_t* polyVerts;  //[MAX_POLYVERTS];

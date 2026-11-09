@@ -86,6 +86,8 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_ShadowMvp4", GLSL_MAT16},
 
     {"u_DlightShadowMap", GLSL_INT},
+    {"u_DlightCookieMap", GLSL_INT},
+    {"u_DlightShadowsEnabled", GLSL_INT},
 
     {"u_EnableTextures", GLSL_VEC4},
 
@@ -118,6 +120,7 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_LightOrigin", GLSL_VEC4},
     {"u_ModelLightDir", GLSL_VEC3},
     {"u_LightRadius", GLSL_FLOAT},
+    {"u_LightCone", GLSL_FLOAT},
     {"u_AmbientLight", GLSL_VEC3},
     {"u_DirectedLight", GLSL_VEC3},
 
@@ -971,8 +974,13 @@ void GLSL_InitGPUShaders(void) {
 
 		extradefines[0] = '\0';
 
-		if(r_dynamiclight->integer >= 2 && lightType == LIGHTDEF_USE_LIGHT_VECTOR) {
+		if(r_dynamicLight->integer >= 2 && lightType == LIGHTDEF_USE_LIGHT_VECTOR) {
 			Q_strcat(extradefines, 1024, "#define USE_DLIGHT_SHADOWMAP\n");
+		}
+
+		if(i & LIGHTDEF_USE_DLIGHT_PROJECTOR) {
+			if(lightType != LIGHTDEF_USE_LIGHT_VECTOR) continue;
+			Q_strcat(extradefines, 1024, "#define USE_DLIGHT_PROJECTOR\n");
 		}
 
 		if(glRefConfig.swizzleNormalmap) Q_strcat(extradefines, 1024, "#define SWIZZLE_NORMALMAP\n");
@@ -1001,7 +1009,9 @@ void GLSL_InitGPUShaders(void) {
 				if(r_parallaxMapShadows->integer) Q_strcat(extradefines, 1024, "#define USE_PARALLAXMAP_SHADOWS\n");
 			}
 
-			if(r_reflections->integer) {
+			// The forward dynamic-light pass uses texture unit 6 for its shadow cubemap.
+			// Do not compile reflection sampling into that pass (same sampler unit).
+			if(r_reflections->integer && lightType != LIGHTDEF_USE_LIGHT_VECTOR) {
 				Q_strcat(extradefines, 1024, "#define USE_CUBEMAP\n");
 			}
 			if(r_deluxeSpecular->value > 0.000001f) {
@@ -1043,6 +1053,7 @@ void GLSL_InitGPUShaders(void) {
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_SHADOWMAP, TB_SHADOWMAP);
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_CUBEMAP, TB_CUBEMAP);
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_DLIGHTSHADOWMAP, TB_SHADOWMAP4);
+		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_DLIGHTCOOKIE, TB_LIGHTMAP);
 
 		GLSL_FinishGPUShader(&tr.lightallShader[i]);
 

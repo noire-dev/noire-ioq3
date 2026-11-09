@@ -14,6 +14,7 @@ uniform sampler2D u_ShadowMap;
 
 #if defined(USE_DLIGHT_SHADOWMAP)
 uniform samplerCube u_DlightShadowMap;
+uniform int u_DlightShadowsEnabled;
 #endif
 
 #if defined(USE_CUBEMAP)
@@ -63,10 +64,45 @@ varying vec4      var_LightDir;
 varying vec4      var_PrimaryLightDir;
 #endif
 
-#if defined(USE_DLIGHT_SHADOWMAP)
+#if defined(USE_DLIGHT_SHADOWMAP) || defined(USE_DLIGHT_PROJECTOR)
 varying vec3      var_WorldPosition;
 uniform vec4      u_LightOrigin;
 uniform float     u_LightRadius;
+#endif
+
+#if defined(USE_DLIGHT_PROJECTOR)
+uniform sampler2D u_DlightCookieMap;
+uniform vec3      u_LightForward;
+uniform vec3      u_LightRight;
+uniform vec3      u_LightUp;
+uniform float     u_LightCone; // tan(full FOV / 2)
+
+// Source-style flashlight projection. The cone angle is configured per projector;
+// radius controls the maximum range. The cookie is sampled in world space.
+vec4 SampleDlightCookie(vec3 worldPosition)
+{
+    vec3 fromLight = worldPosition - u_LightOrigin.xyz;
+    float forwardDistance = dot(fromLight, u_LightForward);
+
+    if(forwardDistance <= 0.001 || forwardDistance >= u_LightRadius)
+        return vec4(0.0);
+
+    vec2 projected;
+    projected.x = dot(fromLight, u_LightRight);
+    projected.y = -dot(fromLight, u_LightUp);
+    projected /= (2.0 * forwardDistance * max(u_LightCone, 0.0001));
+    projected += vec2(0.5);
+
+    if(projected.x < 0.0 || projected.x > 1.0 ||
+       projected.y < 0.0 || projected.y > 1.0)
+        return vec4(0.0);
+
+    vec4 cookie = texture2D(u_DlightCookieMap, projected);
+    float edge = min(min(projected.x, 1.0 - projected.x),
+                     min(projected.y, 1.0 - projected.y));
+    cookie *= smoothstep(0.0, 0.025, edge);
+    return cookie;
+}
 #endif
 
 
@@ -420,7 +456,8 @@ void main()
 	float dlightShadow = 1.0;
 
 #if defined(USE_DLIGHT_SHADOWMAP)
-	dlightShadow = CalcDlightShadow();
+	if(u_DlightShadowsEnabled != 0)
+		dlightShadow = CalcDlightShadow();
 #endif
 
   #if defined(USE_SHADOWMAP) 
@@ -488,6 +525,10 @@ void main()
     #endif
   #endif
 
+#if defined(USE_DLIGHT_PROJECTOR)
+	vec4 dlightCookie = SampleDlightCookie(var_WorldPosition);
+	lightColor *= dlightCookie.rgb * dlightCookie.a;
+#endif
 	gl_FragColor.rgb = lightColor * reflectance * (attenuation * NL) * dlightShadow;
 	gl_FragColor.rgb += ambientColor * diffuse.rgb;
     
