@@ -1,6 +1,10 @@
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <vector>
 #include <cmath>
+#include <algorithm>
+#include <limits>
 
 #include "bt_wrapper.h"
 
@@ -14,6 +18,7 @@ struct btPhysicsWorld_s {
 
 struct btCollisionShape_s {
 	btCollisionShape* m_shape;
+	btVector3 m_centerOffset;  // local AABB center relative to the model origin (MD3/IQM)
 };
 
 struct btRigidBody_s {
@@ -81,6 +86,13 @@ static int weldBodyA[MAX_WELDS];
 static int weldBodyB[MAX_WELDS];
 static int numWelds = 0;
 static btTriangleMesh* bspPatchMesh = nullptr;
+static btRigidBody* playerBodies[MAX_CLIENTS];
+static btCollisionShape* playerShapes[MAX_CLIENTS];
+static btDefaultMotionState* playerMotionStates[MAX_CLIENTS];
+static btVector3 playerHalfExtents[MAX_CLIENTS];
+static btVector3 playerCenterOffsets[MAX_CLIENTS];
+static int collisionDebounce[MAX_GENTITIES];
+static int physicsClockMs = 0;
 
 void SV_PhysicsInit(void) {
 	if(physWorld) return;
@@ -91,6 +103,15 @@ void SV_PhysicsInit(void) {
 	for(int i = 0; i < MAX_GENTITIES; i++) bodies[i] = NULL;
 	for(int i = 0; i < MAX_GENTITIES; i++) bodies_mass[i] = 0.0f;
 	for(int i = 0; i < MAX_MODELS; i++) shapes[i] = NULL;
+	for(int i = 0; i < MAX_CLIENTS; i++) {
+		playerBodies[i] = NULL;
+		playerShapes[i] = NULL;
+		playerMotionStates[i] = NULL;
+		playerHalfExtents[i] = btVector3(0, 0, 0);
+		playerCenterOffsets[i] = btVector3(0, 0, 0);
+	}
+	for(int i = 0; i < MAX_GENTITIES; i++) collisionDebounce[i] = 0;
+	physicsClockMs = 0;
 	for(int i = 0; i < MAX_WELDS; i++) {
 		welds[i] = NULL;
 		weldBodyA[i] = -1;
@@ -101,118 +122,336 @@ void SV_PhysicsInit(void) {
 	BT_LoadBSPToWorld(&cm);
 }
 
-void SV_CreateShape(int modelindex, const char* md3Path) {
-	if(!physWorld || modelindex < 0 || modelindex >= MAX_MODELS || !md3Path) return;
-	if(shapes[modelindex]) return;
+namespace {
 
-	void* buffer = NULL;
-	int length = FS_ReadFile(md3Path, &buffer);
+struct IQMHeader {
+	char magic[16];
+	uint32_t version, filesize, flags;
+	uint32_t num_text, ofs_text;
+	uint32_t num_meshes, ofs_meshes;
+	uint32_t num_vertexarrays, num_vertexes, ofs_vertexarrays;
+	uint32_t num_triangles, ofs_triangles, ofs_adjacency;
+	uint32_t num_joints, ofs_joints;
+	uint32_t num_poses, ofs_poses;
+	uint32_t num_anims, ofs_anims;
+	uint32_t num_frames, num_framechannels, ofs_frames, ofs_bounds;
+	uint32_t num_comment, ofs_comment;
+	uint32_t num_extensions, ofs_extensions;
+};
 
-	if(length <= 0 || !buffer) {
-		Com_Printf(S_COLOR_YELLOW "SV_CreateShape: cannot open %s\n", md3Path);
-		return;
+struct IQMMesh {
+	uint32_t name, material;
+	uint32_t first_vertex, num_vertexes;
+	uint32_t first_triangle, num_triangles;
+};
+
+struct IQMTriangle {
+	uint32_t vertex[3];
+};
+struct IQMVertexArray {
+	uint32_t type, flags, format, size, offset;
+};
+
+static_assert(sizeof(IQMHeader) == 124, "IQM header layout mismatch");
+static_assert(sizeof(IQMMesh) == 24, "IQM mesh layout mismatch");
+static_assert(sizeof(IQMTriangle) == 12, "IQM triangle layout mismatch");
+static_assert(sizeof(IQMVertexArray) == 20, "IQM vertex-array layout mismatch");
+
+static bool SV_ValidFileRange(size_t fileSize, uint64_t offset, uint64_t byteCount) { return offset <= (uint64_t)fileSize && byteCount <= (uint64_t)fileSize - offset; }
+
+static size_t SV_IQMFormatSize(uint32_t format) {
+	switch(format) {
+		case 0:  // IQM_BYTE
+		case 1:  // IQM_UBYTE
+			return 1;
+		case 2:  // IQM_SHORT
+		case 3:  // IQM_USHORT
+		case 6:  // IQM_HALF
+			return 2;
+		case 4:  // IQM_INT
+		case 5:  // IQM_UINT
+		case 7:  // IQM_FLOAT
+			return 4;
+		case 8:  // IQM_DOUBLE
+			return 8;
+		default: return 0;
 	}
+}
 
-	if(length < (int)sizeof(md3Header_t)) {
-		Com_Printf(S_COLOR_YELLOW "SV_CreateShape: file too small %s\n", md3Path);
-		FS_FreeFile(buffer);
-		return;
+static float SV_IQMHalfToFloat(uint16_t half) {
+	const bool negative = (half & 0x8000u) != 0;
+	const uint16_t exponent = (half >> 10) & 0x1fu;
+	const uint16_t mantissa = half & 0x03ffu;
+	float value;
+	if(exponent == 0) {
+		value = mantissa ? std::ldexp((float)mantissa, -24) : 0.0f;
+	} else if(exponent == 31) {
+		value = mantissa ? std::numeric_limits<float>::quiet_NaN() : std::numeric_limits<float>::infinity();
+	} else {
+		value = std::ldexp(1.0f + (float)mantissa / 1024.0f, (int)exponent - 15);
 	}
+	return negative ? -value : value;
+}
 
-	const md3Header_t* header = (const md3Header_t*)buffer;
-	if(header->ident != MD3_IDENT || header->version != MD3_VERSION) {
-		Com_Printf(S_COLOR_YELLOW "SV_CreateShape: invalid MD3 in %s\n", md3Path);
-		FS_FreeFile(buffer);
-		return;
+static bool SV_IQMReadPositionComponent(const byte* source, uint32_t format, bool normalized, float& output) {
+	switch(format) {
+		case 0: {
+			int8_t v;
+			std::memcpy(&v, source, sizeof(v));
+			output = normalized ? btMax(-1.0f, (float)v / 127.0f) : (float)v;
+			return true;
+		}
+		case 1: {
+			uint8_t v;
+			std::memcpy(&v, source, sizeof(v));
+			output = normalized ? (float)v / 255.0f : (float)v;
+			return true;
+		}
+		case 2: {
+			int16_t v;
+			std::memcpy(&v, source, sizeof(v));
+			output = normalized ? btMax(-1.0f, (float)v / 32767.0f) : (float)v;
+			return true;
+		}
+		case 3: {
+			uint16_t v;
+			std::memcpy(&v, source, sizeof(v));
+			output = normalized ? (float)v / 65535.0f : (float)v;
+			return true;
+		}
+		case 4: {
+			int32_t v;
+			std::memcpy(&v, source, sizeof(v));
+			output = normalized ? btMax(-1.0f, (float)((double)v / 2147483647.0)) : (float)v;
+			return true;
+		}
+		case 5: {
+			uint32_t v;
+			std::memcpy(&v, source, sizeof(v));
+			output = normalized ? (float)((double)v / 4294967295.0) : (float)v;
+			return true;
+		}
+		case 6: {
+			uint16_t v;
+			std::memcpy(&v, source, sizeof(v));
+			output = SV_IQMHalfToFloat(v);
+			return true;
+		}
+		case 7: std::memcpy(&output, source, sizeof(output)); return true;
+		case 8: {
+			double v;
+			std::memcpy(&v, source, sizeof(v));
+			output = (float)v;
+			return true;
+		}
+		default: return false;
 	}
+}
 
-	// Для Convex Hull собираем УНИКАЛЬНЫЕ вершины
-	std::vector<btVector3> convexPoints;
+static bool SV_ParseMD3Vertices(const byte* file, size_t length, std::vector<btVector3>& points, int& totalVertices, int& totalTriangles) {
+	if(length < sizeof(md3Header_t)) return false;
+	const md3Header_t* header = reinterpret_cast<const md3Header_t*>(file);
+	if(header->ident != MD3_IDENT || header->version != MD3_VERSION) return false;
+	if(header->numFrames <= 0 || header->numFrames > 4096 || header->numSurfaces <= 0 || header->numSurfaces > MD3_MAX_SURFACES) return false;
+	if(header->ofsEnd < (int)sizeof(md3Header_t) || !SV_ValidFileRange(length, 0, (uint32_t)header->ofsEnd) || header->ofsSurfaces < (int)sizeof(md3Header_t) || header->ofsSurfaces >= header->ofsEnd) return false;
 
-	int totalTris = 0;
-	int totalVerts = 0;
+	uint64_t surfaceOffset = (uint32_t)header->ofsSurfaces;
+	for(int surfaceIndex = 0; surfaceIndex < header->numSurfaces; ++surfaceIndex) {
+		if(surfaceOffset + sizeof(md3Surface_t) > (uint32_t)header->ofsEnd) return false;
+		const md3Surface_t* surf = reinterpret_cast<const md3Surface_t*>(file + surfaceOffset);
+		if(surf->ident != MD3_IDENT || surf->ofsEnd < (int)sizeof(md3Surface_t) || surf->numFrames <= 0 || surf->numFrames > header->numFrames || surf->numVerts < 0 || surf->numVerts > 1000000 || surf->numTriangles < 0 || surf->numTriangles > 2000000) return false;
+		if(surfaceOffset + (uint32_t)surf->ofsEnd > (uint32_t)header->ofsEnd || !SV_ValidFileRange(length, surfaceOffset, (uint32_t)surf->ofsEnd)) return false;
+		if((uint64_t)totalVertices + (uint32_t)surf->numVerts > 1000000u || (uint64_t)totalTriangles + (uint32_t)surf->numTriangles > 2000000u) return false;
 
-	const char* surfacePtr = (const char*)buffer + header->ofsSurfaces;
-	const char* bufferEnd = (const char*)buffer + length;
-
-	for(int s = 0; s < header->numSurfaces; s++) {
-		if(surfacePtr + sizeof(md3Surface_t) > bufferEnd) break;
-		const md3Surface_t* surf = (const md3Surface_t*)surfacePtr;
-		if(surf->ident != MD3_IDENT) break;
-		if(surf->ofsTriangles == 0 || surf->ofsXyzNormals == 0 || surf->ofsEnd == 0) {
-			if(surf->ofsEnd == 0) break;
-			surfacePtr += surf->ofsEnd;
-			continue;
+		if(surf->numTriangles > 0) {
+			uint64_t triangleBytes = (uint64_t)surf->numTriangles * sizeof(md3Triangle_t);
+			if(surf->ofsTriangles < (int)sizeof(md3Surface_t) || !SV_ValidFileRange((size_t)surf->ofsEnd, (uint32_t)surf->ofsTriangles, triangleBytes)) return false;
+			const md3Triangle_t* triangles = reinterpret_cast<const md3Triangle_t*>(file + surfaceOffset + (uint32_t)surf->ofsTriangles);
+			for(int tri = 0; tri < surf->numTriangles; ++tri) {
+				for(int corner = 0; corner < 3; ++corner) {
+					if(triangles[tri].indexes[corner] < 0 || triangles[tri].indexes[corner] >= surf->numVerts) return false;
+				}
+			}
 		}
 
-		const md3XyzNormal_t* verts = (const md3XyzNormal_t*)(surfacePtr + surf->ofsXyzNormals);
-
-		// Сначала собираем ВСЕ вершины поверхности (для Convex Hull)
-		for(int i = 0; i < surf->numVerts; i++) {
-			btVector3 p(verts[i].xyz[0] * MD3_XYZ_SCALE, verts[i].xyz[1] * MD3_XYZ_SCALE, verts[i].xyz[2] * MD3_XYZ_SCALE);
-			convexPoints.push_back(p);
+		if(surf->numVerts > 0) {
+			uint64_t vertexCount = (uint64_t)surf->numVerts * (uint32_t)surf->numFrames;
+			uint64_t vertexBytes = vertexCount * sizeof(md3XyzNormal_t);
+			if(surf->ofsXyzNormals < (int)sizeof(md3Surface_t) || !SV_ValidFileRange((size_t)surf->ofsEnd, (uint32_t)surf->ofsXyzNormals, vertexBytes)) return false;
+			const md3XyzNormal_t* verts = reinterpret_cast<const md3XyzNormal_t*>(file + surfaceOffset + (uint32_t)surf->ofsXyzNormals);
+			// Collision uses frame 0; validate the complete animated vertex block above.
+			for(int v = 0; v < surf->numVerts; ++v) {
+				btVector3 point(verts[v].xyz[0] * MD3_XYZ_SCALE, verts[v].xyz[1] * MD3_XYZ_SCALE, verts[v].xyz[2] * MD3_XYZ_SCALE);
+				points.push_back(point);
+			}
+			totalVertices += surf->numVerts;
 		}
+		totalTriangles += surf->numTriangles;
+		surfaceOffset += (uint32_t)surf->ofsEnd;
+	}
+	return totalVertices > 0 && totalTriangles > 0 && !points.empty();
+}
 
-		totalTris += surf->numTriangles;
+static bool SV_ParseIQMVertices(const byte* file, size_t length, std::vector<btVector3>& points, int& totalVertices, int& totalTriangles) {
+	if(length < sizeof(IQMHeader) || std::memcmp(file, "INTERQUAKEMODEL", 16) != 0) return false;
+	const IQMHeader* header = reinterpret_cast<const IQMHeader*>(file);
+	if(header->version != 2 || header->filesize < sizeof(IQMHeader) || header->filesize > length) return false;
+	if(header->num_meshes > 65536u || header->num_vertexarrays == 0 || header->num_vertexarrays > 1024u || header->num_vertexes == 0 || header->num_vertexes > 1000000u || header->num_triangles == 0 || header->num_triangles > 2000000u) return false;
+	if(header->ofs_vertexarrays < sizeof(IQMHeader) || header->ofs_triangles < sizeof(IQMHeader) || (header->ofs_vertexarrays & 3u) || (header->ofs_triangles & 3u)) return false;
+	if(!SV_ValidFileRange(header->filesize, header->ofs_vertexarrays, (uint64_t)header->num_vertexarrays * sizeof(IQMVertexArray)) || !SV_ValidFileRange(header->filesize, header->ofs_triangles, (uint64_t)header->num_triangles * sizeof(IQMTriangle))) return false;
+	if(header->num_meshes && (header->ofs_meshes < sizeof(IQMHeader) || (header->ofs_meshes & 3u) || !SV_ValidFileRange(header->filesize, header->ofs_meshes, (uint64_t)header->num_meshes * sizeof(IQMMesh)))) return false;
 
-		totalVerts += surf->numVerts;
-		if(surf->ofsEnd == 0) break;
-		surfacePtr += surf->ofsEnd;
+	const IQMVertexArray* arrays = reinterpret_cast<const IQMVertexArray*>(file + header->ofs_vertexarrays);
+	const IQMVertexArray* positionArray = nullptr;
+	for(uint32_t i = 0; i < header->num_vertexarrays; ++i) {
+		if(arrays[i].type == 0 /* IQM_POSITION */) {
+			positionArray = &arrays[i];
+			break;
+		}
+	}
+	// IQM_POSITION is three components per vertex. Support all scalar formats
+	// from IQM v2, including normalized integer attributes and half floats.
+	if(!positionArray || positionArray->size != 3 || positionArray->offset < sizeof(IQMHeader)) return false;
+	const size_t componentSize = SV_IQMFormatSize(positionArray->format);
+	if(!componentSize || (positionArray->offset % componentSize) != 0) return false;
+	if(!SV_ValidFileRange(header->filesize, positionArray->offset, (uint64_t)header->num_vertexes * 3u * componentSize)) return false;
+
+	const byte* positions = file + positionArray->offset;
+	const bool normalized = (positionArray->flags & 1u) != 0;
+	const IQMTriangle* triangles = reinterpret_cast<const IQMTriangle*>(file + header->ofs_triangles);
+	std::vector<unsigned char> used(header->num_vertexes, 0);
+	for(uint32_t tri = 0; tri < header->num_triangles; ++tri) {
+		for(int corner = 0; corner < 3; ++corner) {
+			uint32_t index = triangles[tri].vertex[corner];
+			if(index >= header->num_vertexes) return false;
+			used[index] = 1;
+		}
 	}
 
-	FS_FreeFile(buffer);
-
-	Com_Printf("SV_CreateShape: %s -> %d verts, %d tris (mode: %s)\n", md3Path, totalVerts, totalTris, "ConvexHull");
-
-	if(totalVerts == 0) {
-		Com_Printf(S_COLOR_YELLOW "  FAILED, no geometry in %s\n", md3Path);
-		return;
+	// Validate every mesh range and ensure its triangles refer to its vertex range.
+	if(header->num_meshes) {
+		const IQMMesh* meshes = reinterpret_cast<const IQMMesh*>(file + header->ofs_meshes);
+		for(uint32_t m = 0; m < header->num_meshes; ++m) {
+			const IQMMesh& mesh = meshes[m];
+			if(mesh.first_vertex > header->num_vertexes || mesh.num_vertexes > header->num_vertexes - mesh.first_vertex || mesh.first_triangle > header->num_triangles || mesh.num_triangles > header->num_triangles - mesh.first_triangle) return false;
+			for(uint32_t tri = mesh.first_triangle; tri < mesh.first_triangle + mesh.num_triangles; ++tri) {
+				for(int corner = 0; corner < 3; ++corner) {
+					uint32_t index = triangles[tri].vertex[corner];
+					if(index < mesh.first_vertex || index >= mesh.first_vertex + mesh.num_vertexes) return false;
+				}
+			}
+		}
 	}
 
-	// ConvexHull для простых объектов
+	points.reserve(header->num_vertexes);
+	for(uint32_t i = 0; i < header->num_vertexes; ++i) {
+		if(!used[i]) continue;
+		float xyz[3];
+		for(int axis = 0; axis < 3; ++axis) {
+			const byte* component = positions + ((uint64_t)i * 3u + (uint32_t)axis) * componentSize;
+			if(!SV_IQMReadPositionComponent(component, positionArray->format, normalized, xyz[axis])) return false;
+		}
+		if(!std::isfinite((double)xyz[0]) || !std::isfinite((double)xyz[1]) || !std::isfinite((double)xyz[2]) || std::fabs(xyz[0]) > 1000000.0f || std::fabs(xyz[1]) > 1000000.0f || std::fabs(xyz[2]) > 1000000.0f) return false;
+		points.push_back(btVector3(xyz[0], xyz[1], xyz[2]));
+	}
+	totalVertices = (int)points.size();
+	totalTriangles = (int)header->num_triangles;
+	return !points.empty();
+}
+
+static btCollisionShape* SV_BuildConvexShape(const std::vector<btVector3>& points) {
+	if(points.empty()) return nullptr;
 	btConvexHullShape* rawHull = new btConvexHullShape();
-	for(const auto& p : convexPoints) rawHull->addPoint(p, false);
+	for(const btVector3& point : points) rawHull->addPoint(point, false);
 	rawHull->recalcLocalAabb();
 
-	// Уменьшаем оболочку до ~42 вершин
 	btShapeHull hullBuilder(rawHull);
-	hullBuilder.buildHull(rawHull->getMargin());
-
-	btCollisionShape* finalShape = nullptr;
-	if(hullBuilder.numVertices() > 0 && hullBuilder.numVertices() < rawHull->getNumPoints()) {
+	if(hullBuilder.buildHull(rawHull->getMargin()) && hullBuilder.numVertices() > 0 && hullBuilder.numVertices() < rawHull->getNumPoints()) {
 		btConvexHullShape* simplified = new btConvexHullShape();
-		for(int i = 0; i < hullBuilder.numVertices(); i++) {
-			simplified->addPoint(hullBuilder.getVertexPointer()[i], false);
-		}
+		for(int i = 0; i < hullBuilder.numVertices(); ++i) simplified->addPoint(hullBuilder.getVertexPointer()[i], false);
 		simplified->recalcLocalAabb();
-		finalShape = simplified;
 		Com_Printf("  Hull simplified: %d -> %d verts\n", rawHull->getNumPoints(), hullBuilder.numVertices());
 		delete rawHull;
-	} else {
-		finalShape = rawHull;
+		return simplified;
 	}
+	return rawHull;
+}
+
+static void SV_DeleteShapeAndChildren(btCollisionShape* shape) {
+	if(!shape) return;
+	if(shape->getShapeType() == COMPOUND_SHAPE_PROXYTYPE) {
+		btCompoundShape* compound = static_cast<btCompoundShape*>(shape);
+		for(int i = compound->getNumChildShapes() - 1; i >= 0; --i) delete compound->getChildShape(i);
+	}
+	delete shape;
+}
+
+}  // namespace
+
+bool SV_CreateShape(int modelindex, const char* objPath, bool centerByAABB) {
+	if(!physWorld || modelindex < 0 || modelindex >= MAX_MODELS || !objPath || !objPath[0]) return false;
+	if(shapes[modelindex]) return true;
+
+	void* buffer = nullptr;
+	int length = FS_ReadFile(objPath, &buffer);
+	if(length <= 0 || !buffer) {
+		Com_Printf(S_COLOR_YELLOW "SV_CreateShape: cannot open %s\n", objPath);
+		return false;
+	}
+
+	const byte* file = static_cast<const byte*>(buffer);
+	std::vector<btVector3> points;
+	int totalVertices = 0;
+	int totalTriangles = 0;
+	const bool isIQM = length >= 16 && std::memcmp(file, "INTERQUAKEMODEL", 16) == 0;
+	bool parsed = false;
+	if(isIQM) {
+		parsed = SV_ParseIQMVertices(file, (size_t)length, points, totalVertices, totalTriangles);
+	} else {
+		parsed = SV_ParseMD3Vertices(file, (size_t)length, points, totalVertices, totalTriangles);
+	}
+	FS_FreeFile(buffer);
+	if(!parsed || points.empty()) {
+		Com_Printf(S_COLOR_YELLOW "SV_CreateShape: invalid or unsupported %s model: %s\n", isIQM ? "IQM" : "MD3", objPath);
+		return false;
+	}
+
+	btVector3 centerOffset(0, 0, 0);
+	btCollisionShape* meshShape = SV_BuildConvexShape(points);
+	if(!meshShape) return false;
+
+	btCollisionShape* finalShape = meshShape;
+	if(centerByAABB) {
+		// Keep all vertices at their original model-space coordinates. The
+		// rigid body's origin is the AABB center of mass; the child transform
+		// compensates locally so the world-space collision stays exactly put.
+		btVector3 aabbMin, aabbMax;
+		meshShape->getAabb(btTransform::getIdentity(), aabbMin, aabbMax);
+		centerOffset = (aabbMin + aabbMax) * btScalar(0.5f);
+		btCompoundShape* centered = new btCompoundShape(true);
+		btTransform child;
+		child.setIdentity();
+		child.setOrigin(-centerOffset);
+		centered->addChildShape(child, meshShape);
+		finalShape = centered;
+	}
+
+	Com_Printf("SV_CreateShape: %s -> %d verts, %d tris (format: %s, mode: ConvexHull, COM: %s)\n", objPath, totalVertices, totalTriangles, isIQM ? "IQM v2" : "MD3", centerByAABB ? "AABB" : "origin");
 
 	btCollisionShape_t* wrappedShape = new btCollisionShape_t();
 	wrappedShape->m_shape = finalShape;
+	wrappedShape->m_centerOffset = centerOffset;
 	shapes[modelindex] = wrappedShape;
-
-	btVector3 aabbMin, aabbMax;
-	finalShape->getAabb(btTransform::getIdentity(), aabbMin, aabbMax);
-	btVector3 size = aabbMax - aabbMin;
+	return true;
 }
-
-static const btScalar SV_CCD_MOTION_THRESHOLD = btScalar(12.0f);
-static const btScalar SV_CCD_RADIUS_FRACTION = btScalar(0.45f);
-static const btScalar SV_CCD_MIN_RADIUS = btScalar(0.01f);
+static const btScalar SV_CCD_RADIUS_FRACTION = btScalar(0.42f);
+static const btScalar SV_CCD_MIN_RADIUS = btScalar(0.001f);
+static const btScalar SV_CCD_MIN_THRESHOLD = btScalar(0.0005f);
 
 static void SV_PhysicsSetupCCD(int entityID) {
 	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) return;
-
 	btRigidBody* body = bodies[entityID]->m_body;
-
-	// CCD is only useful for bodies that are currently dynamic.
 	if(body->getInvMass() <= 0.0f) return;
-
 	btCollisionShape* shape = bodies[entityID]->m_shape;
 	if(!shape) return;
 
@@ -220,16 +459,15 @@ static void SV_PhysicsSetupCCD(int entityID) {
 	shape->getAabb(btTransform::getIdentity(), aabbMin, aabbMax);
 	btVector3 size = aabbMax - aabbMin;
 	btScalar minDim = btMin(size.x(), btMin(size.y(), size.z()));
+	if(!std::isfinite((double)minDim) || minDim <= btScalar(0.0f)) return;
 
-	btScalar sphereRadius = SV_CCD_MIN_RADIUS;
-	if(std::isfinite((double)minDim) && minDim > btScalar(0.0f)) {
-		sphereRadius = btMax(SV_CCD_MIN_RADIUS, minDim * SV_CCD_RADIUS_FRACTION);
-	}
-
+	// Smaller objects must enter CCD at a much smaller per-step displacement.
+	// Use the thinnest AABB side: this also protects long, thin props such as rods.
+	btScalar motionThreshold = btMax(SV_CCD_MIN_THRESHOLD, btMin(minDim * btScalar(0.025f), btScalar(1.5f)));
+	btScalar sphereRadius = btMin(btMax(SV_CCD_MIN_RADIUS, minDim * SV_CCD_RADIUS_FRACTION), minDim * btScalar(0.49f));
 	body->setCcdSweptSphereRadius(sphereRadius);
-	body->setCcdMotionThreshold(SV_CCD_MOTION_THRESHOLD);
+	body->setCcdMotionThreshold(motionThreshold);
 }
-
 void SV_PhysicsCreateModel(int entityID, int modelindex, float x, float y, float z, float mass) {
 	if(!physWorld || entityID < 0 || entityID >= MAX_GENTITIES) return;
 
@@ -254,15 +492,15 @@ void SV_PhysicsCreateModel(int entityID, int modelindex, float x, float y, float
 	// Настройка положения
 	btTransform trans;
 	trans.setIdentity();
-	trans.setOrigin(btVector3(x, y, z));
+	trans.setOrigin(btVector3(x, y, z) + shapes[modelindex]->m_centerOffset);
 
 	// Выбор состояния движения
 	btDefaultMotionState* ms = new btDefaultMotionState(trans);
 	btRigidBody::btRigidBodyConstructionInfo info(mass, ms, shape, inertia);
 
 	// Свойства объекта
-	info.m_restitution = 0.00f;
-	info.m_friction = 0.90f;
+	info.m_restitution = 0.28f;
+	info.m_friction = 0.78f;
 	info.m_rollingFriction = 0.02f;
 	info.m_spinningFriction = 0.02f;
 
@@ -334,7 +572,14 @@ void SV_PhysicsGetPosition(int entityID, float* x, float* y, float* z) {
 		*x = *y = *z = 0;
 		return;
 	}
-	btVector3 pos = bodies[entityID]->m_body->getCenterOfMassPosition();
+	btTransform t = bodies[entityID]->m_body->getWorldTransform();
+	btVector3 pos = t.getOrigin();
+	for(int i = 0; i < MAX_MODELS; ++i) {
+		if(shapes[i] && shapes[i]->m_shape == bodies[entityID]->m_shape) {
+			pos -= t.getBasis() * shapes[i]->m_centerOffset;
+			break;
+		}
+	}
 	*x = pos.x();
 	*y = pos.y();
 	*z = pos.z();
@@ -344,8 +589,15 @@ void SV_PhysicsSetPosition(int entityID, float x, float y, float z) {
 	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) return;
 	bodies[entityID]->m_body->activate(true);
 	btTransform& t = bodies[entityID]->m_body->getWorldTransform();
-	t.setOrigin(btVector3(x, y, z));
+	btVector3 offset(0, 0, 0);
+	for(int i = 0; i < MAX_MODELS; ++i)
+		if(shapes[i] && shapes[i]->m_shape == bodies[entityID]->m_shape) {
+			offset = shapes[i]->m_centerOffset;
+			break;
+		}
+	t.setOrigin(btVector3(x, y, z) + t.getBasis() * offset);
 	bodies[entityID]->m_body->setCenterOfMassTransform(t);
+	if(bodies[entityID]->m_motionState) bodies[entityID]->m_motionState->setWorldTransform(t);
 }
 
 void SV_PhysicsGetAngles(int entityID, float* pitch, float* yaw, float* roll) {
@@ -374,12 +626,21 @@ void SV_PhysicsSetAngles(int entityID, float pitch, float yaw, float roll) {
 	AnglesToQuat(pitch, yaw, roll, &qx, &qy, &qz, &qw);
 	btTransform& t = bodies[entityID]->m_body->getWorldTransform();
 	btQuaternion newRot(qx, qy, qz, qw);
+	btVector3 centerOffset(0, 0, 0);
+	for(int i = 0; i < MAX_MODELS; ++i)
+		if(shapes[i] && shapes[i]->m_shape == bodies[entityID]->m_shape) {
+			centerOffset = shapes[i]->m_centerOffset;
+			break;
+		}
+	btVector3 visibleOrigin = t.getOrigin() - t.getBasis() * centerOffset;
 	if(bodies[entityID]->m_hasAlign) {
 		const float* a = bodies[entityID]->m_align;
 		newRot = newRot * btQuaternion(a[0], a[1], a[2], a[3]);
 	}
 	t.setRotation(newRot);
+	t.setOrigin(visibleOrigin + t.getBasis() * centerOffset);
 	bodies[entityID]->m_body->setWorldTransform(t);
+	if(bodies[entityID]->m_motionState) bodies[entityID]->m_motionState->setWorldTransform(t);
 }
 
 void SV_PhysicsGetLinearVelocity(int entityID, float* vx, float* vy, float* vz) {
@@ -414,6 +675,91 @@ void SV_PhysicsApplyCentralForce(int entityID, float fx, float fy, float fz) {
 	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) return;
 	bodies[entityID]->m_body->activate(true);
 	bodies[entityID]->m_body->applyCentralForce(btVector3(fx, fy, fz));
+}
+
+void SV_PhysicsGetAABB(int entityID, float* mins, float* maxs) {
+	if(!mins || !maxs) return;
+	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) {
+		mins[0] = mins[1] = mins[2] = 0.0f;
+		maxs[0] = maxs[1] = maxs[2] = 0.0f;
+		return;
+	}
+	btVector3 aabbMin, aabbMax;
+	bodies[entityID]->m_shape->getAabb(bodies[entityID]->m_body->getWorldTransform(), aabbMin, aabbMax);
+	mins[0] = aabbMin.x();
+	mins[1] = aabbMin.y();
+	mins[2] = aabbMin.z();
+	maxs[0] = aabbMax.x();
+	maxs[1] = aabbMax.y();
+	maxs[2] = aabbMax.z();
+}
+
+void SV_PhysicsApplyForceAtPosition(int entityID, float fx, float fy, float fz, float px, float py, float pz) {
+	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) return;
+	btRigidBody* body = bodies[entityID]->m_body;
+	if(body->getInvMass() <= 0.0f) return;
+	body->activate(true);
+	btVector3 worldPoint(px, py, pz);
+	btVector3 relativePoint = worldPoint - body->getCenterOfMassPosition();
+	body->applyForce(btVector3(fx, fy, fz), relativePoint);
+}
+
+// 3x3 columns through 25 world-Z slices. The denser vertical sampling keeps
+// the buoyancy curve smooth when a tall or rotated prop crosses the waterline.
+void SV_PhysicsGetWaterSamples(int entityID, float* points, float* localMins, float* localMaxs) {
+	if(!points || !localMins || !localMaxs) return;
+	for(int i = 0; i < 3; ++i) {
+		localMins[i] = 0.0f;
+		localMaxs[i] = 0.0f;
+	}
+	for(int i = 0; i < 225 * 4; ++i) points[i] = 0.0f;
+	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) return;
+
+	btRigidBody* body = bodies[entityID]->m_body;
+	btCollisionShape* shape = bodies[entityID]->m_shape;
+	if(!shape) return;
+	btVector3 localMin, localMax, worldMin, worldMax;
+	const btTransform& transform = body->getWorldTransform();
+	shape->getAabb(btTransform::getIdentity(), localMin, localMax);
+	shape->getAabb(transform, worldMin, worldMax);
+	localMins[0] = localMin.x();
+	localMins[1] = localMin.y();
+	localMins[2] = localMin.z();
+	localMaxs[0] = localMax.x();
+	localMaxs[1] = localMax.y();
+	localMaxs[2] = localMax.z();
+
+	// Sample in world Z (the water surface is horizontal), then reject points
+	// outside the transformed local AABB. This retains vertical resolution even
+	// when the prop itself is rotated 90 degrees or lies on its side.
+	const btTransform inverse = transform.inverse();
+	const btScalar epsilon = btScalar(0.5f);
+	int index = 0;
+	for(int iz = 0; iz < 25; ++iz) {
+		btScalar fz = btScalar(iz) / btScalar(24.0f);
+		for(int iy = 0; iy < 3; ++iy) {
+			btScalar fy = btScalar(iy) / btScalar(2.0f);
+			for(int ix = 0; ix < 3; ++ix) {
+				btScalar fx = btScalar(ix) / btScalar(2.0f);
+				btVector3 world(worldMin.x() + (worldMax.x() - worldMin.x()) * fx, worldMin.y() + (worldMax.y() - worldMin.y()) * fy, worldMin.z() + (worldMax.z() - worldMin.z()) * fz);
+				btVector3 local = inverse * world;
+				bool valid = local.x() >= localMin.x() - epsilon && local.x() <= localMax.x() + epsilon && local.y() >= localMin.y() - epsilon && local.y() <= localMax.y() + epsilon && local.z() >= localMin.z() - epsilon && local.z() <= localMax.z() + epsilon;
+				points[index * 4 + 0] = world.x();
+				points[index * 4 + 1] = world.y();
+				points[index * 4 + 2] = world.z();
+				points[index * 4 + 3] = valid ? 1.0f : 0.0f;
+				++index;
+			}
+		}
+	}
+}
+
+void SV_PhysicsApplyTorque(int entityID, float tx, float ty, float tz) {
+	if(entityID < 0 || entityID >= MAX_GENTITIES || !bodies[entityID]) return;
+	btRigidBody* body = bodies[entityID]->m_body;
+	if(body->getInvMass() <= 0.0f) return;
+	body->activate(true);
+	body->applyTorque(btVector3(tx, ty, tz));
 }
 
 void SV_PhysicsFreezeObject(int entityID) {
@@ -656,6 +1002,133 @@ void SV_PhysicsIgnoreCollisionGroup(const int* entityIDs, int count) {
 	}
 }
 
+// Create/update a kinematic player box. Its origin is the Quake player origin,
+// while Bullet stores the center of the standing/crouched bounds.
+void SV_PhysicsSyncPlayer(int clientNum, const float* origin, const float* mins, const float* maxs, const float* velocity, bool active, float dt) {
+	(void)dt;
+	if(!physWorld || !physWorld->m_world || clientNum < 0 || clientNum >= MAX_CLIENTS) return;
+	if(!active || !origin || !mins || !maxs || !velocity) {
+		if(playerBodies[clientNum]) {
+			physWorld->m_world->removeRigidBody(playerBodies[clientNum]);
+			delete playerMotionStates[clientNum];
+			delete playerBodies[clientNum];
+			delete playerShapes[clientNum];
+			playerBodies[clientNum] = nullptr;
+			playerMotionStates[clientNum] = nullptr;
+			playerShapes[clientNum] = nullptr;
+		}
+		return;
+	}
+
+	btVector3 half((maxs[0] - mins[0]) * 0.5f, (maxs[1] - mins[1]) * 0.5f, (maxs[2] - mins[2]) * 0.5f);
+	btVector3 center((mins[0] + maxs[0]) * 0.5f, (mins[1] + maxs[1]) * 0.5f, (mins[2] + maxs[2]) * 0.5f);
+	half.setMax(btVector3(1.0f, 1.0f, 1.0f));
+
+	bool recreate = !playerBodies[clientNum] || (playerHalfExtents[clientNum] - half).length2() > btScalar(0.25f);
+	if(recreate) {
+		if(playerBodies[clientNum]) {
+			physWorld->m_world->removeRigidBody(playerBodies[clientNum]);
+			delete playerMotionStates[clientNum];
+			delete playerBodies[clientNum];
+			delete playerShapes[clientNum];
+		}
+		playerShapes[clientNum] = new btBoxShape(half);
+		playerShapes[clientNum]->setMargin(btScalar(0.04f));
+		btTransform initial;
+		initial.setIdentity();
+		initial.setOrigin(btVector3(origin[0], origin[1], origin[2]) + center);
+		playerMotionStates[clientNum] = new btDefaultMotionState(initial);
+		btRigidBody::btRigidBodyConstructionInfo ci(0.0f, playerMotionStates[clientNum], playerShapes[clientNum]);
+		ci.m_friction = btScalar(0.9f);
+		ci.m_restitution = btScalar(0.05f);
+		playerBodies[clientNum] = new btRigidBody(ci);
+		playerBodies[clientNum]->setCollisionFlags(playerBodies[clientNum]->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+		playerBodies[clientNum]->setActivationState(DISABLE_DEACTIVATION);
+		playerBodies[clientNum]->setUserIndex(clientNum);
+		playerBodies[clientNum]->setUserIndex2(1);  // marks this body as a player, not a game entity
+		playerHalfExtents[clientNum] = half;
+		playerCenterOffsets[clientNum] = center;
+		physWorld->m_world->addRigidBody(playerBodies[clientNum]);
+	}
+
+	btTransform oldTransform = playerBodies[clientNum]->getWorldTransform();
+	btTransform nextTransform;
+	nextTransform.setIdentity();
+	nextTransform.setOrigin(btVector3(origin[0], origin[1], origin[2]) + center);
+	playerBodies[clientNum]->setInterpolationWorldTransform(oldTransform);
+	playerBodies[clientNum]->setWorldTransform(nextTransform);
+	playerMotionStates[clientNum]->setWorldTransform(nextTransform);
+	playerBodies[clientNum]->setLinearVelocity(btVector3(velocity[0], velocity[1], velocity[2]));
+	playerBodies[clientNum]->setAngularVelocity(btVector3(0, 0, 0));
+	playerBodies[clientNum]->activate(true);
+	physWorld->m_world->updateSingleAabb(playerBodies[clientNum]);
+}
+
+static void SV_PhysicsDispatchCollisions(float dt) {
+	if(!physWorld || !physWorld->m_dispatcher) return;
+	physicsClockMs += (int)(dt * 1000.0f);
+	for(int m = 0; m < physWorld->m_dispatcher->getNumManifolds(); ++m) {
+		btPersistentManifold* manifold = physWorld->m_dispatcher->getManifoldByIndexInternal(m);
+		const btCollisionObject* objA = static_cast<const btCollisionObject*>(manifold->getBody0());
+		const btCollisionObject* objB = static_cast<const btCollisionObject*>(manifold->getBody1());
+		const btRigidBody* bodyA = btRigidBody::upcast(objA);
+		const btRigidBody* bodyB = btRigidBody::upcast(objB);
+		int idA = objA->getUserIndex(), idB = objB->getUserIndex();
+		bool playerA = objA->getUserIndex2() == 1;
+		bool playerB = objB->getUserIndex2() == 1;
+		if((!playerA && idA < 0) && (!playerB && idB < 0)) continue;
+
+		btScalar bestImpulse = 0;
+		btScalar bestSpeed = 0;
+		btVector3 bestPoint(0, 0, 0), bestNormal(0, 0, 1);
+		for(int c = 0; c < manifold->getNumContacts(); ++c) {
+			const btManifoldPoint& cp = manifold->getContactPoint(c);
+			if(cp.getDistance() > btScalar(0.05f)) continue;
+			btVector3 pointA = cp.getPositionWorldOnA();
+			btVector3 pointB = cp.getPositionWorldOnB();
+			btVector3 velA(0, 0, 0), velB(0, 0, 0);
+			if(bodyA) velA = bodyA->getVelocityInLocalPoint(pointA - bodyA->getCenterOfMassPosition());
+			if(bodyB) velB = bodyB->getVelocityInLocalPoint(pointB - bodyB->getCenterOfMassPosition());
+			btVector3 normal = cp.m_normalWorldOnB;
+			btScalar impactSpeed = btFabs((velA - velB).dot(normal));
+			btScalar appliedImpulse = cp.getAppliedImpulse();
+			// Keep the contact data associated with the strongest solver
+			// impulse as well: post-solver relative velocity can be almost 0.
+			if(appliedImpulse > bestImpulse) {
+				bestImpulse = appliedImpulse;
+				bestPoint = pointB;
+				bestNormal = normal;
+			}
+			if(impactSpeed > bestSpeed) {
+				bestSpeed = impactSpeed;
+				if(appliedImpulse <= bestImpulse) {
+					bestPoint = pointB;
+					bestNormal = normal;
+				}
+			}
+		}
+		// Bullet reports post-solver velocities here. For a hard impact those
+		// may already be close to zero, so reconstruct a conservative speed
+		// estimate from the applied impulse and combined inverse mass.
+		btScalar inverseMass = (bodyA ? bodyA->getInvMass() : btScalar(0)) + (bodyB ? bodyB->getInvMass() : btScalar(0));
+		btScalar impulseSpeed = bestImpulse * inverseMass;
+		if(impulseSpeed > bestSpeed) bestSpeed = impulseSpeed;
+		// Ignore resting support impulses: they are not impacts and must not
+		// repeatedly play sounds while a body is simply lying on the floor.
+		if(bestSpeed < btScalar(28.0f)) continue;
+
+		int debounceId = -1;
+		if(!playerA && idA >= 0 && idA < MAX_GENTITIES) debounceId = idA;
+		if(!playerB && idB >= 0 && idB < MAX_GENTITIES && (debounceId < 0 || collisionDebounce[idB] < collisionDebounce[debounceId])) debounceId = idB;
+		if(debounceId >= 0 && collisionDebounce[debounceId] > physicsClockMs) continue;
+		if(debounceId >= 0) collisionDebounce[debounceId] = physicsClockMs + 90;
+
+		float p[3] = {(float)bestPoint.x(), (float)bestPoint.y(), (float)bestPoint.z()};
+		float n[3] = {(float)bestNormal.x(), (float)bestNormal.y(), (float)bestNormal.z()};
+		SV_PhysicsCollisionEvent(idA, idB, (float)bestSpeed, p, n, (float)bestImpulse);
+	}
+}
+
 struct PhysicsTraceCallback : public btCollisionWorld::ClosestRayResultCallback {
 	int skipEntity;
 
@@ -665,6 +1138,7 @@ struct PhysicsTraceCallback : public btCollisionWorld::ClosestRayResultCallback 
 		// Пропускаем static/BSP тела (userIndex == -1)
 		btCollisionObject* obj = (btCollisionObject*)proxy0->m_clientObject;
 		int idx = obj->getUserIndex();
+		if(obj->getUserIndex2() == 1) return false;
 		if(idx < 0) return false;            // BSP/static — пропускаем
 		if(idx == skipEntity) return false;  // skip entity
 		return true;
@@ -709,6 +1183,7 @@ void BT_PhysicsTrace(const float* start, const float* end, const float* mins, co
 			bool needsCollision(btBroadphaseProxy* proxy0) const override {
 				btCollisionObject* obj = (btCollisionObject*)proxy0->m_clientObject;
 				int idx = obj->getUserIndex();
+				if(obj->getUserIndex2() == 1) return false;
 				if(idx < 0) return false;         // BSP/static
 				if(idx == skipEnt) return false;  // skip
 				return true;
@@ -774,6 +1249,7 @@ void SV_PhysicsStep(float dt) {
 	int fps = (phys_fps && phys_fps->integer > 0) ? phys_fps->integer : 60;
 	int maxSubSteps = (phys_steps && phys_steps->integer > 0) ? phys_steps->integer : 1;
 	physWorld->m_world->stepSimulation(dt, maxSubSteps, 1.0f / (float)fps);
+	SV_PhysicsDispatchCollisions(dt);
 }
 
 void SV_PhysicsShutdown(void) {
@@ -792,13 +1268,26 @@ void SV_PhysicsShutdown(void) {
 	}
 	numWelds = 0;
 
+	// Освобождаем кинематические тела игроков.
+	for(int i = 0; i < MAX_CLIENTS; ++i) {
+		if(playerBodies[i]) {
+			physWorld->m_world->removeRigidBody(playerBodies[i]);
+			delete playerMotionStates[i];
+			delete playerBodies[i];
+			delete playerShapes[i];
+		}
+		playerBodies[i] = nullptr;
+		playerMotionStates[i] = nullptr;
+		playerShapes[i] = nullptr;
+	}
+
 	// Освобождаем динамические объекты (игровые энтити)
 	for(int i = 0; i < MAX_GENTITIES; i++) SV_PhysicsDeleteObject(i);
 
 	// Освобождаем модели
 	for(int i = 0; i < MAX_MODELS; i++) {
 		if(shapes[i]) {
-			delete shapes[i]->m_shape;
+			SV_DeleteShapeAndChildren(shapes[i]->m_shape);
 			delete shapes[i];
 			shapes[i] = NULL;
 		}

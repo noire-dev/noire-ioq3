@@ -487,7 +487,7 @@ static void CG_Notify(void) {
 		textColor[3] = alpha;
 		picColor[3] = alpha;
 
-		boxWidth = stringWidth(cg.notifications[i].text, 0.50, FONTSTYLE_LEFT, 256) + 32;
+		boxWidth = stringWidth(cg.notifications[i].text, 0.50, FONTSTYLE_LEFT, 256) + (cg.notifications[i].type == NOTIFY_PLAIN ? 16 : 32);
 
 		yOffset = startY - (20 + margin) * i;
 
@@ -501,7 +501,7 @@ static void CG_Notify(void) {
 		if(cg.notifications[i].type == NOTIFY_CUSTOM) drawShaderAdjusted(startX - boxWidth + offsetX + 5, yOffset + 2.5, 16, 16, cg.notifications[i].picPath);
 		trap_R_SetColor(NULL);
 
-		drawStringAdjusted(startX - boxWidth + offsetX + 26, yOffset + 5, cg.notifications[i].text, FONTSTYLE_LEFT | FONTSTYLE_DROPSHADOW, textColor, 0.50, 256);
+		drawStringAdjusted(startX - boxWidth + offsetX + (cg.notifications[i].type == NOTIFY_PLAIN ? 8 : 26), yOffset + 5, cg.notifications[i].text, FONTSTYLE_LEFT | FONTSTYLE_DROPSHADOW, textColor, 0.50, 256);
 	}
 }
 

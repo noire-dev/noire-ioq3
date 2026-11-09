@@ -149,26 +149,46 @@ static float GAPI_PlayerCrosshairPoint(gentity_t* player, float distance, int xy
 	return tr.endpos[xyz];
 }
 
-static void GAPI_SetEntityModel(gentity_t* entity, char* modelName) {
+static bool GAPI_SetEntityModel(gentity_t* entity, char* modelName) {
+	char modelPath[MAX_QPATH];
+	char fallbackPath[MAX_QPATH];
+	char* extension;
+	int modelIndex;
 	int len;
 
-	if(!entity) {
-		Com_Printf("GAPI_SetEntityModel: entity is NULL\n");
-		return;
-	}
-
+	if(!entity || !modelName) return false;
 	len = strlen(modelName);
-	if(!len) {
-		Com_Printf("GAPI_SetEntityModel: modelName is empty\n");
-		return;
+	if(!len) return false;
+
+	Q_strncpyz(modelPath, modelName, sizeof(modelPath));
+	extension = strrchr(modelPath, '.');
+	if(!extension) {
+		if(strlen(modelPath) + 5 >= sizeof(modelPath)) return false;
+		Q_strcat(modelPath, sizeof(modelPath), ".md3");
+		extension = strrchr(modelPath, '.');
 	}
 
-	entity->s.modelindex = G_ModelIndex(modelName);
-	CopyAlloc(entity->model, modelName);
+	modelIndex = G_ModelIndex(modelPath);
+	if(modelIndex > 0 && trap_Phys_CreateShape(modelIndex, modelPath, true)) {
+		entity->s.modelindex = modelIndex;
+	} else {
+		// For MD3 assets, transparently try an IQM sibling. The renderer index
+		// must follow the format that actually supplied the collision shape.
+		if(!extension || Q_stricmp(extension, ".md3")) return false;
+		Q_strncpyz(fallbackPath, modelPath, sizeof(fallbackPath));
+		*strrchr(fallbackPath, '.') = '\0';
+		if(strlen(fallbackPath) + 5 >= sizeof(fallbackPath)) return false;
+		Q_strcat(fallbackPath, sizeof(fallbackPath), ".iqm");
+		modelIndex = G_ModelIndex(fallbackPath);
+		if(modelIndex <= 0 || !trap_Phys_CreateShape(modelIndex, fallbackPath, true)) return false;
+		entity->s.modelindex = modelIndex;
+		Q_strncpyz(modelPath, fallbackPath, sizeof(modelPath));
+	}
 
-	if(len >= 4 && !Q_stricmp(entity->model + len - 4, ".md3")) entity->model[len - 4] = '\0';
-
-	trap_Phys_CreateShape(entity->s.modelindex, va("%s.md3", entity->model));
+	CopyAlloc(entity->model, modelPath);
+	extension = strrchr(entity->model, '.');
+	if(extension) *extension = '\0';
+	return true;
 }
 
 static void GAPI_SetEntityPosition(gentity_t* entity, float x, float y, float z) {
@@ -193,17 +213,21 @@ static void GAPI_SetEntityAngles(gentity_t* entity, float x, float y, float z) {
 	entity->s.angles[2] = z;
 }
 
-static int GAPI_EntitySpawn(float x, float y, float z, float ax, float ay, float az, char* modelName) {
+static int GAPI_EntitySpawn(float x, float y, float z, float ax, float ay, float az, char* modelName, const char* materialName) {
 	gentity_t* entity;
 	entity = G_Spawn();
 	entity->s.eType = ET_PHYSICS;
 	entity->takedamage = true;
 	entity->s.pos.trType = TR_INTERPOLATE;
-	entity->sb_mass = 10.0f;
-	GAPI_SetEntityModel(entity, modelName);
+	entity->physicsMass = 10.0f;
+	if(!GAPI_SetEntityModel(entity, modelName)) {
+		G_FreeEntity(entity);
+		return -1;
+	}
+	G_SetPhysicsMaterial(entity, materialName && materialName[0] ? materialName : "body");
 	GAPI_SetEntityPosition(entity, x, y, z);
 	GAPI_SetEntityAngles(entity, ax, ay, az);
-	trap_Phys_CreateModel(entity->s.number, entity->s.modelindex, entity->s.origin[0], entity->s.origin[1], entity->s.origin[2], entity->sb_mass);
+	trap_Phys_CreateModel(entity->s.number, entity->s.modelindex, entity->s.origin[0], entity->s.origin[1], entity->s.origin[2], entity->physicsMass);
 	trap_Phys_SetAngles(entity->s.number, entity->s.angles[0], entity->s.angles[1], entity->s.angles[2]);
 	trap_Phys_UnfreezeObject(entity->s.number);
 
@@ -566,7 +590,7 @@ void VMCall(int func_id) {
 #ifdef GAME
 		case VM_GAPIENTITYDELETE: GAPI_EntityDelete(&g_entities[vmargs.v[0].i]); break;
 		case VM_GAPIENTITYSPAWN:
-			vmresult.v.i = GAPI_EntitySpawn(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s);
+			vmresult.v.i = GAPI_EntitySpawn(vmargs.v[0].f, vmargs.v[1].f, vmargs.v[2].f, vmargs.v[3].f, vmargs.v[4].f, vmargs.v[5].f, vmargs.v[6].s, vmargs.t[7] == JS_TYPE_STRING ? vmargs.v[7].s : "body");
 			vmresult.t = JS_TYPE_INT;
 			break;
 		case VM_GAPIPLAYERCROSHAIRPOINT:

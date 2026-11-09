@@ -103,6 +103,12 @@ void G_RotatePoint(vec3_t point, vec3_t matrix[3]) {
 	point[2] = DotProduct(matrix[2], tvec);
 }
 
+static void G_SyncPhysicsPickupTransform(gentity_t* ent) {
+	if(!ent || !BG_IsItemEntity(&ent->s)) return;
+	trap_Phys_SetPosition(ent->s.number, ent->s.pos.trBase[0], ent->s.pos.trBase[1], ent->s.pos.trBase[2]);
+	trap_Phys_SetAngles(ent->s.number, ent->s.apos.trBase[0], ent->s.apos.trBase[1], ent->s.apos.trBase[2]);
+}
+
 /*
 ==================
 G_TryPushingEntity
@@ -148,6 +154,8 @@ bool G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, vec3_t
 		VectorAdd(check->client->ps.origin, move2, check->client->ps.origin);
 		// make sure the client's view rotates when on a rotating mover
 		check->client->ps.delta_angles[YAW] += ANGLE2SHORT(amove[YAW]);
+	} else {
+		G_SyncPhysicsPickupTransform(check);
 	}
 
 	// may have pushed them off an edge
@@ -175,6 +183,7 @@ bool G_TryPushingEntity(gentity_t* check, gentity_t* pusher, vec3_t move, vec3_t
 		VectorCopy((pushed_p - 1)->origin, check->client->ps.origin);
 	}
 	VectorCopy((pushed_p - 1)->angles, check->s.apos.trBase);
+	G_SyncPhysicsPickupTransform(check);
 	block = G_TestEntityPosition(check);
 	if(!block) {
 		check->s.groundEntityNum = ENTITYNUM_NONE;
@@ -250,7 +259,7 @@ bool G_MoverPush(gentity_t* pusher, vec3_t move, vec3_t amove, gentity_t** obsta
 		check = &g_entities[entityList[e]];
 
 		// only push items and players
-		if(check->s.eType != ET_ITEM && check->s.eType != ET_PLAYER) {
+		if(check->s.eType != ET_PLAYER && check->s.eType != ET_ITEM && !BG_IsItemEntity(&check->s)) {
 			continue;
 		}
 
@@ -292,6 +301,8 @@ bool G_MoverPush(gentity_t* pusher, vec3_t move, vec3_t amove, gentity_t** obsta
 			if(p->ent->client) {
 				p->ent->client->ps.delta_angles[YAW] = p->deltayaw;
 				VectorCopy(p->origin, p->ent->client->ps.origin);
+			} else {
+				G_SyncPhysicsPickupTransform(p->ent);
 			}
 			trap_LinkEntity(p->ent);
 		}

@@ -2,11 +2,72 @@
 
 #include "../qcommon/vm_javascript.h"
 
+// Item entities are ET_PHYSICS from spawn to pickup. modelindex is the
+// renderer/Bullet model index; modelindex2 stores the game item ID.
+static bool G_CreateItemPhysics(gentity_t* ent, const vec3_t origin, const vec3_t velocity, float mass) {
+	char modelPath[MAX_QPATH];
+	char* extension;
+	int modelIndex;
+	bool shapeReady;
+	if(!ent || !ent->item || !ent->item->model || !ent->item->model[0]) return false;
+
+	Q_strncpyz(modelPath, ent->item->model, sizeof(modelPath));
+	extension = strrchr(modelPath, '.');
+	if(!extension) {
+		if(strlen(modelPath) + 5 >= sizeof(modelPath)) return false;
+		Q_strcat(modelPath, sizeof(modelPath), ".md3");
+		extension = strrchr(modelPath, '.');
+	}
+
+	// Prefer the declared model. If an MD3 is missing or malformed, attempt
+	// the IQM sibling before leaving the entity as a non-simulated pickup.
+	modelIndex = G_ModelIndex(modelPath);
+	shapeReady = modelIndex > 0 && trap_Phys_CreateShape(modelIndex, modelPath, true);
+	if(!shapeReady && extension && !Q_stricmp(extension, ".md3")) {
+		*extension = '\0';
+		Q_strcat(modelPath, sizeof(modelPath), ".iqm");
+		modelIndex = G_ModelIndex(modelPath);
+		shapeReady = modelIndex > 0 && trap_Phys_CreateShape(modelIndex, modelPath, true);
+	}
+
+	ent->s.eType = ET_PHYSICS;
+	ent->s.modelindex = modelIndex;
+	ent->s.modelindex2 = ITEM_INDEX(ent->item);
+	ent->s.frame = 0;
+	ent->physicsItemActive = false;
+	if(!shapeReady) return false;
+
+	ent->physicsItemActive = true;
+	ent->physicsMass = mass;
+	trap_Phys_CreateModel(ent->s.number, modelIndex, origin[0], origin[1], origin[2], mass);
+	trap_Phys_SetAngles(ent->s.number, ent->s.angles[0], ent->s.angles[1], ent->s.angles[2]);
+	trap_Phys_SetLinearVelocity(ent->s.number, velocity[0], velocity[1], velocity[2]);
+	ent->s.pos.trType = TR_INTERPOLATE;
+	ent->s.apos.trType = TR_INTERPOLATE;
+	VectorCopy(origin, ent->s.pos.trBase);
+	VectorCopy(origin, ent->r.currentOrigin);
+	VectorCopy(velocity, ent->s.pos.trDelta);
+	return true;
+}
+
+static void G_DeleteItemPhysics(gentity_t* ent) {
+	if(!ent || !ent->physicsItemActive) return;
+	trap_Phys_DeleteObject(ent->s.number);
+	ent->physicsItemActive = false;
+}
+
 void Set_Weapon(gentity_t* ent, int weapon, int status) { ent->swep_list[weapon] = status; }
 
 void Add_Ammo(gentity_t* ent, int weapon, int count) {
+	if(!ent || weapon < 0 || weapon >= MAX_WEAPONS) return;
+	// -1 is the sole infinite-ammo sentinel. 9999 is an ordinary capped value.
+	if(count == -1 || ent->swep_ammo[weapon] == -1) {
+		ent->swep_ammo[weapon] = -1;
+		return;
+	}
 	ent->swep_ammo[weapon] += count;
 	if(ent->swep_ammo[weapon] > 9999) ent->swep_ammo[weapon] = 9999;
+	if(ent->swep_ammo[weapon] < 0) ent->swep_ammo[weapon] = 0;
 }
 
 static int Pickup_Weapon(gentity_t* ent, gentity_t* other) {
@@ -43,6 +104,10 @@ void RespawnItem(gentity_t* ent) {
 
 	if(!ent) return;
 
+	if(!ent->physicsItemActive) {
+		vec3_t zeroVelocity = {0, 0, 0};
+		G_CreateItemPhysics(ent, ent->s.pos.trBase, zeroVelocity, (ent->spawnflags & 1) ? 0.0f : 1.0f);
+	}
 	ent->r.contents = CONTENTS_TRIGGER;
 	ent->s.eFlags &= ~EF_NODRAW;
 	ent->r.svFlags &= ~SVF_NOCLIENT;
@@ -69,9 +134,12 @@ void Touch_Item(gentity_t* ent, gentity_t* other, trace_t* trace) {
 	// js hook: itemPickup(player, itemID)
 	JS_HookRun("itemPickup", other->s.number, ITEM_INDEX(ent->item), 0);
 
-	G_AddPredictableEvent(other, EV_ITEM_PICKUP, ent->s.modelindex);
+	G_AddPredictableEvent(other, EV_ITEM_PICKUP, ent->s.modelindex2);
 
 	G_UseTargets(ent, other);
+
+	// Remove the Bullet body while the item is hidden/awaiting respawn.
+	G_DeleteItemPhysics(ent);
 
 	if(ent->wait == -1) {
 		ent->r.svFlags |= SVF_NOCLIENT;
@@ -103,9 +171,9 @@ gentity_t* LaunchItem(item_t* item, vec3_t origin, vec3_t velocity) {
 
 	dropped = G_Spawn();
 
-	dropped->s.eType = ET_ITEM;
-	dropped->s.modelindex = item - jsd_item;  // store item number in modelindex
-	dropped->s.modelindex2 = 1;               // This is non-zero is it's a dropped item
+	dropped->s.eType = ET_PHYSICS;
+	dropped->s.modelindex = 0;                  // assigned by G_CreateItemPhysics
+	dropped->s.modelindex2 = ITEM_INDEX(item);  // game item ID; ET_PHYSICS renderer uses it
 
 	dropped->classname = item->classname;
 	dropped->item = item;
@@ -116,9 +184,13 @@ gentity_t* LaunchItem(item_t* item, vec3_t origin, vec3_t velocity) {
 	dropped->touch = Touch_Item;
 
 	G_SetOrigin(dropped, origin);
-	dropped->s.pos.trType = TR_GRAVITY;
-	dropped->s.pos.trTime = level.time;
-	VectorCopy(velocity, dropped->s.pos.trDelta);
+	if(!G_CreateItemPhysics(dropped, origin, velocity, 1.0f)) {
+		// Keep one network/visual/pickup representation (ET_PHYSICS). The item
+		// remains usable but will not move until a model collision can be built.
+		G_Printf("LaunchItem: Bullet shape unavailable for %s\n", item->model);
+		VectorCopy(origin, dropped->s.pos.trBase);
+		VectorClear(dropped->s.pos.trDelta);
+	}
 
 	dropped->s.eFlags |= EF_BOUNCE_HALF;
 	dropped->think = G_FreeEntity;
@@ -155,9 +227,9 @@ void FinishSpawningItem(gentity_t* ent) {
 	VectorSet(ent->r.mins, -ITEM_RADIUS, -ITEM_RADIUS, -ITEM_RADIUS);
 	VectorSet(ent->r.maxs, ITEM_RADIUS, ITEM_RADIUS, ITEM_RADIUS);
 
-	ent->s.eType = ET_ITEM;
-	ent->s.modelindex = ent->item - jsd_item;  // store item number in modelindex
-	ent->s.modelindex2 = 0;                    // zero indicates this isn't a dropped item
+	ent->s.eType = ET_PHYSICS;
+	ent->s.modelindex = 0;  // assigned to the registered MD3/IQM model by G_CreateItemPhysics
+	ent->s.modelindex2 = ITEM_INDEX(ent->item);
 
 	ent->r.contents = CONTENTS_TRIGGER;
 	ent->touch = Touch_Item;
@@ -180,13 +252,20 @@ void FinishSpawningItem(gentity_t* ent) {
 		G_SetOrigin(ent, tr.endpos);
 	}
 
-	// team members and targeted items aren't present at start
+	// Team members and targeted items stay hidden until activated.
 	if((ent->flags & FL_TEAMMEMBER) || ent->targetname) {
 		ent->s.eFlags |= EF_NODRAW;
 		ent->r.contents = 0;
 		return;
 	}
 
+	{
+		vec3_t zeroVelocity = {0, 0, 0};
+		float mass = (ent->spawnflags & 1) ? 0.0f : 1.0f;
+		if(!G_CreateItemPhysics(ent, ent->s.pos.trBase, zeroVelocity, mass)) {
+			G_Printf("FinishSpawningItem: no Bullet shape for %s (%s); keeping ET_PHYSICS pickup\n", ent->classname, ent->item->model);
+		}
+	}
 	trap_LinkEntity(ent);
 }
 
@@ -199,80 +278,4 @@ void G_SpawnItem(gentity_t* ent, item_t* item) {
 	ent->think = FinishSpawningItem;
 
 	ent->physicsBounce = 0.50;  // items are bouncy
-}
-
-void G_BounceItem(gentity_t* ent, trace_t* trace) {
-	vec3_t velocity;
-	float dot;
-	int hitTime;
-
-	// reflect the velocity on the trace plane
-	hitTime = level.previousTime + (level.time - level.previousTime) * trace->fraction;
-	BG_EvaluateTrajectoryDelta(&ent->s.pos, hitTime, velocity);
-	dot = DotProduct(velocity, trace->plane.normal);
-	VectorMA(velocity, -2 * dot, trace->plane.normal, ent->s.pos.trDelta);
-
-	// cut the velocity to keep from bouncing forever
-	VectorScale(ent->s.pos.trDelta, ent->physicsBounce, ent->s.pos.trDelta);
-
-	// check for stop
-	if(trace->plane.normal[2] > 0 && ent->s.pos.trDelta[2] < 40) {
-		trace->endpos[2] += 1.0;  // make sure it is off ground
-		SnapVector(trace->endpos);
-		G_SetOrigin(ent, trace->endpos);
-		ent->s.groundEntityNum = trace->entityNum;
-		return;
-	}
-
-	VectorAdd(ent->r.currentOrigin, trace->plane.normal, ent->r.currentOrigin);
-	VectorCopy(ent->r.currentOrigin, ent->s.pos.trBase);
-	ent->s.pos.trTime = level.time;
-}
-
-void G_RunItem(gentity_t* ent) {
-	vec3_t origin;
-	trace_t tr;
-	int contents;
-	int mask;
-
-	// if its groundentity has been set to none, it may have been pushed off an edge
-	if(ent->s.groundEntityNum == ENTITYNUM_NONE) {
-		if(ent->s.pos.trType != TR_GRAVITY) {
-			ent->s.pos.trType = TR_GRAVITY;
-			ent->s.pos.trTime = level.time;
-		}
-	}
-
-	if(ent->s.pos.trType == TR_STATIONARY) {
-		G_RunThink(ent);
-		return;
-	}
-
-	// get current position
-	BG_EvaluateTrajectory(&ent->s.pos, level.time, origin);
-
-	// trace a line from the previous position to the current position
-	mask = MASK_PLAYERSOLID & ~CONTENTS_BODY;
-
-	trap_Trace(&tr, ent->r.currentOrigin, ent->r.mins, ent->r.maxs, origin, ent->r.ownerNum, mask);
-
-	VectorCopy(tr.endpos, ent->r.currentOrigin);
-
-	if(tr.startsolid) tr.fraction = 0;
-
-	trap_LinkEntity(ent);  // FIXME: avoid this for stationary?
-
-	// check think function
-	G_RunThink(ent);
-
-	if(tr.fraction == 1) return;
-
-	// if it is in a nodrop volume, remove it
-	contents = trap_PointContents(ent->r.currentOrigin, -1);
-	if(contents & CONTENTS_NODROP) {
-		G_FreeEntity(ent);
-		return;
-	}
-
-	G_BounceItem(ent, &tr);
 }

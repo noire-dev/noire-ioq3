@@ -46,9 +46,12 @@ void BT_Shutdown(btPhysicsWorld_t* world);
 void SV_PhysicsInit(void);
 void SV_PhysicsStep(float dt);
 void SV_PhysicsShutdown(void);
+void SV_PhysicsSyncPlayer(int clientNum, const float* origin, const float* mins, const float* maxs, const float* velocity, bool active, float dt);
+// Implemented by the server; Bullet forwards one event per debounced contact pair.
+void SV_PhysicsCollisionEvent(int entityA, int entityB, float speed, const float* point, const float* normal, float impulse);
 
 // VM интеграция
-void SV_CreateShape(int modelindex, const char* objPath);
+bool SV_CreateShape(int modelindex, const char* objPath, bool centerByAABB);
 void SV_PhysicsCreateModel(int entityID, int modelindex, float x, float y, float z, float mass);
 void SV_PhysicsDeleteObject(int entityID);
 void SV_PhysicsGetPosition(int entityID, float* x, float* y, float* z);
@@ -60,6 +63,10 @@ void SV_PhysicsSetLinearVelocity(int entityID, float vx, float vy, float vz);
 void SV_PhysicsGetAngularVelocity(int entityID, float* vx, float* vy, float* vz);
 void SV_PhysicsSetAngularVelocity(int entityID, float vx, float vy, float vz);
 void SV_PhysicsApplyCentralForce(int entityID, float fx, float fy, float fz);
+void SV_PhysicsGetAABB(int entityID, float* mins, float* maxs);
+void SV_PhysicsApplyForceAtPosition(int entityID, float fx, float fy, float fz, float px, float py, float pz);
+void SV_PhysicsGetWaterSamples(int entityID, float* points, float* localMins, float* localMaxs);
+void SV_PhysicsApplyTorque(int entityID, float tx, float ty, float tz);
 void SV_PhysicsFreezeObject(int entityID);
 void SV_PhysicsUnfreezeObject(int entityID);
 void SV_PhysicsWeld(int entA, int entB, float px, float py, float pz);

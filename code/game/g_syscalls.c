@@ -69,7 +69,7 @@ void trap_GetUsercmd(int clientNum, usercmd_t* cmd) { syscall(G_GET_USERCMD, cli
 
 bool trap_GetEntityToken(char* buffer, int bufferSize) { return syscall(G_GET_ENTITY_TOKEN, buffer, bufferSize); }
 
-void trap_Phys_CreateShape(int modelindex, const char* objPath) { syscall(PHYS_CREATESHAPE, modelindex, objPath); }
+bool trap_Phys_CreateShape(int modelindex, const char* objPath, bool centerByAABB) { return syscall(PHYS_CREATESHAPE, modelindex, objPath, centerByAABB) != 0; }
 
 void trap_Phys_CreateModel(int entityID, int modelindex, float x, float y, float z, float mass) { syscall(PHYS_CREATEMODEL, entityID, modelindex, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(z), PASSFLOAT(mass)); }
 
@@ -100,6 +100,14 @@ void trap_Phys_UnfreezeObject(int entityID) { syscall(PHYS_UNFREEZEOBJECT, entit
 void trap_Phys_Weld(int entA, int entB, float px, float py, float pz) { syscall(PHYS_WELD, entA, entB, PASSFLOAT(px), PASSFLOAT(py), PASSFLOAT(pz)); }
 
 bool trap_Phys_IsSleeping(int entityID) { return syscall(PHYS_ISSLEEPING, entityID) != 0; }
+
+void trap_Phys_GetAABB(int entityID, vec3_t mins, vec3_t maxs) { syscall(PHYS_GETAABB, entityID, mins, maxs); }
+
+void trap_Phys_ApplyForceAtPosition(int entityID, float fx, float fy, float fz, float px, float py, float pz) { syscall(PHYS_APPLYFORCEATPOSITION, entityID, PASSFLOAT(fx), PASSFLOAT(fy), PASSFLOAT(fz), PASSFLOAT(px), PASSFLOAT(py), PASSFLOAT(pz)); }
+
+void trap_Phys_GetWaterSamples(int entityID, float* points, vec3_t localMins, vec3_t localMaxs) { syscall(PHYS_GETWATERSAMPLES, entityID, points, localMins, localMaxs); }
+
+void trap_Phys_ApplyTorque(int entityID, float tx, float ty, float tz) { syscall(PHYS_APPLYTORQUE, entityID, PASSFLOAT(tx), PASSFLOAT(ty), PASSFLOAT(tz)); }
 
 void trap_Phys_CreateCapsule(int entityID, const physCapsuleDef_t* def) { syscall(PHYS_CREATECAPSULE, entityID, def); }
 

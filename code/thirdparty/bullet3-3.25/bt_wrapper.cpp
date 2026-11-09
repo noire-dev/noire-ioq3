@@ -20,6 +20,7 @@ struct btRigidBody_s {
 
 struct btCollisionShape_s {
 	btCollisionShape* m_shape;
+	btVector3 m_centerOffset;
 };
 
 btPhysicsWorld_t* BT_Init(void) {

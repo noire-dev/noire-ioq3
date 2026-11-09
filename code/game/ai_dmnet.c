@@ -150,7 +150,7 @@ static bool BotItemGoalValid(bot_goal_t* goal) {
 	if(goal->entitynum < MAX_CLIENTS || goal->entitynum >= level.num_entities) return false;
 	ent = &g_entities[goal->entitynum];
 	if(!ent->inuse) return false;
-	if(ent->s.eType != ET_ITEM) return false;
+	if(!BG_IsItemEntity(&ent->s) && ent->s.eType != ET_ITEM) return false;
 	// the item was picked up and is waiting for its respawn
 	if(!ent->r.linked || (ent->r.svFlags & SVF_NOCLIENT)) return false;
 	return true;
@@ -176,7 +176,7 @@ static bool BotPickItemGoal(bot_state_t* bs, bot_goal_t* goal, int tfl, float ma
 	for(i = MAX_CLIENTS; i < level.num_entities; i++) {
 		ent = &g_entities[i];
 		if(!ent->inuse) continue;
-		if(ent->s.eType != ET_ITEM) continue;
+		if(!BG_IsItemEntity(&ent->s) && ent->s.eType != ET_ITEM) continue;
 		// items waiting for their respawn are not in the level
 		if(!ent->r.linked || (ent->r.svFlags & SVF_NOCLIENT)) continue;
 		//

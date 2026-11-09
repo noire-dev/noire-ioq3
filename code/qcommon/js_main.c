@@ -261,6 +261,9 @@ static duk_ret_t jsexport_vmcall(duk_context* ctx) {
 	if(qvm_id == VM_UI) VM_Call(uivm, GETVMCONTEXT);
 #endif
 
+	// Clear stale optional parameters from the previous JS->VM invocation.
+	for(int i = 0; i < MAX_JS_ARGS; ++i) vmargs->t[i] = JS_TYPE_NONE;
+
 	for(int i = 0; i < nargs - 2 && i < MAX_JS_ARGS; i++) {
 		duk_int_t arg_idx = i + 2;
 

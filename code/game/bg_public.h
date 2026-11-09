@@ -111,6 +111,7 @@ typedef enum { WEAPON_READY, WEAPON_RAISING, WEAPON_DROPPING, WEAPON_FIRING } we
 #define PMF_TIME_KNOCKBACK 64   // pm_time is an air-accelerate only time
 #define PMF_TIME_WATERJUMP 256  // pm_time is waterjump
 #define PMF_RESPAWNED 512       // clear after attack and jump buttons come up
+#define PMF_ON_PHYSICS 1024     // authoritative ground contact is a Bullet ET_PHYSICS body
 
 #define PMF_ALL_TIMES (PMF_TIME_WATERJUMP | PMF_TIME_LAND | PMF_TIME_KNOCKBACK)
 
@@ -138,6 +139,7 @@ typedef struct {
 	// these will be different functions during game and cgame
 	void (*trace)(trace_t* results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentMask);
 	int (*pointcontents)(const vec3_t point, int passEntityNum);
+	bool (*entityIsPhysics)(int entityNum); // true only for ET_PHYSICS entities
 } pmove_t;
 
 // if a full pmove isn't done on the client, you can just update the angles
@@ -244,6 +246,7 @@ enum {
 	PP_BLOOD,
 	PP_SPARK,
 	PP_EXPLOSION,
+	PP_PHYSICS_DUST,
 	PP_COUNT,
 };
 
@@ -257,6 +260,7 @@ static const particlePreset_t particlePresets[PP_COUNT] = {
     /* PP_BLOOD        */ {"bloodTrail", "", {0.75f, 0, 0, 1}, 24, 200.0f, PF_SMOOTH_FADE | PF_GRAVITY, {0, 0, -400}, 4.0f, 0.8f},
     /* PP_SPARK        */ {"spark", "", {1, 0.85f, 0.3f, 1}, 16, 300.0f, PF_SMOOTH_FADE | PF_GRAVITY, {0, 0, -300}, 2.0f, 0.4f},
     /* PP_EXPLOSION    */ {"spark", "", {1, 0.5f, 0.1f, 1}, 48, 350.0f, PF_SMOOTH_FADE, {0, 0, -50}, 6.0f, 0.7f},
+    /* PP_PHYSICS_DUST */ {"smokePuff", "", {0.62f, 0.57f, 0.48f, 0.78f}, 18, 95.0f, PF_SMOOTH_FADE | PF_GRAVITY, {0, 0, -110}, 4.2f, 0.65f},
 };
 
 // entityState_t->event values
@@ -309,6 +313,7 @@ typedef enum {
 	EV_SHOTGUN,
 	EV_OBITUARY,
 	EV_PARTICLE,
+	EV_PHYSICS_SHAKE,
 } entity_event_t;
 
 // IQM player animation ids. The first 19 entries are full-body actions.
@@ -436,6 +441,8 @@ item_t* BG_FindItem(const char* pickupName);
 item_t* BG_FindItemForWeapon(int weapon);
 #define ITEM_INDEX(x) ((x) - jsd_item)
 
+bool BG_IsItemEntity(const entityState_t* ent);
+int BG_ItemIndex(const entityState_t* ent);
 bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps);
 
 // content masks

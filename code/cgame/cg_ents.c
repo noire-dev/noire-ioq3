@@ -265,7 +265,7 @@ static void CG_Physics(centity_t* cent) {
 	s1 = &cent->currentState;
 
 	// if set to invisible, skip
-	if(!s1->modelindex) return;
+	if(!s1->modelindex || (s1->eFlags & EF_NODRAW)) return;
 
 	memset(&ent, 0, sizeof(ent));
 
@@ -298,6 +298,15 @@ static void CG_Physics(centity_t* cent) {
 		AnglesToAxis(cent->lerpAngles, ent.axis);
 	}
 
+	// Preserve the classic pickup scale, but do not offset the rendered model:
+	// the model origin remains the visible transform while Bullet owns its COM.
+	if(BG_IsItemEntity(s1) && s1->modelindex2 < jsd_itemCount && jsd_item[s1->modelindex2].giType == IT_WEAPON) {
+		VectorScale(ent.axis[0], 1.5f, ent.axis[0]);
+		VectorScale(ent.axis[1], 1.5f, ent.axis[1]);
+		VectorScale(ent.axis[2], 1.5f, ent.axis[2]);
+		ent.nonNormalizedAxes = true;
+	}
+
 	// add to refresh list
 	trap_R_AddRefEntityToScene(&ent);
 
@@ -327,83 +336,6 @@ static void CG_Physics(centity_t* cent) {
 			trap_R_AddRefEntityToScene(&outline);
 		}
 	}
-}
-
-/*
-==================
-CG_Item
-==================
-*/
-static void CG_Item(centity_t* cent) {
-	refEntity_t ent;
-	entityState_t* es;
-	item_t* item;
-	int msec;
-	float scale;
-	weaponInfo_t* wi;
-
-	es = &cent->currentState;
-	if(es->modelindex >= jsd_itemCount) {
-		CG_Error("Bad item index %i on entity", es->modelindex);
-	}
-
-	// if set to invisible, skip
-	if(!es->modelindex || (es->eFlags & EF_NODRAW)) {
-		return;
-	}
-
-	item = &jsd_item[es->modelindex];
-
-	// items bob up and down continuously
-	scale = 0.005 + cent->currentState.number * 0.00001;
-	cent->lerpOrigin[2] += 4 + cos((cg.time + 1000) * scale) * 4;
-
-	memset(&ent, 0, sizeof(ent));
-
-	// autorotate at one of two speeds
-	VectorCopy(cg.autoAngles, cent->lerpAngles);
-	AxisCopy(cg.autoAxis, ent.axis);
-
-	wi = NULL;
-	// the weapons have their origin where they attatch to player
-	// models, so we need to offset them or they will rotate
-	// eccentricly
-	if(item->giType == IT_WEAPON) {
-		wi = &cg_weapons[item->giTag];
-		cent->lerpOrigin[0] -= wi->weaponMidpoint[0] * ent.axis[0][0] + wi->weaponMidpoint[1] * ent.axis[1][0] + wi->weaponMidpoint[2] * ent.axis[2][0];
-		cent->lerpOrigin[1] -= wi->weaponMidpoint[0] * ent.axis[0][1] + wi->weaponMidpoint[1] * ent.axis[1][1] + wi->weaponMidpoint[2] * ent.axis[2][1];
-		cent->lerpOrigin[2] -= wi->weaponMidpoint[0] * ent.axis[0][2] + wi->weaponMidpoint[1] * ent.axis[1][2] + wi->weaponMidpoint[2] * ent.axis[2][2];
-
-		cent->lerpOrigin[2] += 8;  // an extra height boost
-	}
-
-	ent.hModel = cg_items[es->modelindex].models;
-
-	VectorCopy(cent->lerpOrigin, ent.origin);
-	VectorCopy(cent->lerpOrigin, ent.oldorigin);
-
-	ent.nonNormalizedAxes = false;
-
-	// if just respawned, slowly scale up
-	msec = cg.time - cent->miscTime;
-	if(msec >= 0 && msec < ITEM_SCALEUP_TIME) {
-		float frac = (float)msec / ITEM_SCALEUP_TIME;
-		VectorScale(ent.axis[0], frac, ent.axis[0]);
-		VectorScale(ent.axis[1], frac, ent.axis[1]);
-		VectorScale(ent.axis[2], frac, ent.axis[2]);
-		ent.nonNormalizedAxes = true;
-	}
-
-	// increase the size of the weapons when they are presented as items
-	if(item->giType == IT_WEAPON) {
-		VectorScale(ent.axis[0], 1.5, ent.axis[0]);
-		VectorScale(ent.axis[1], 1.5, ent.axis[1]);
-		VectorScale(ent.axis[2], 1.5, ent.axis[2]);
-		ent.nonNormalizedAxes = true;
-	}
-
-	// add to refresh list
-	trap_R_AddRefEntityToScene(&ent);
 }
 
 //============================================================================
@@ -722,7 +654,7 @@ static void CG_AddCEntity(centity_t* cent) {
 		case ET_PHYSICS: CG_Physics(cent); break;
 		case ET_RAGDOLL: CG_Ragdoll(cent); break;
 		case ET_PLAYER: CG_Player(cent); break;
-		case ET_ITEM: CG_Item(cent); break;
+		case ET_ITEM: CG_Error("Legacy ET_ITEM entity received"); break;
 		case ET_MISSILE: CG_Missile(cent); break;
 		case ET_MOVER: CG_Mover(cent); break;
 		case ET_PORTAL: CG_Portal(cent); break;

@@ -78,12 +78,22 @@ Returns false if the item should not be picked up.
 This needs to be the same for client side prediction and server use.
 ================
 */
+bool BG_IsItemEntity(const entityState_t* ent) {
+	return ent && ent->eType == ET_PHYSICS && ent->modelindex2 > 0;
+}
+
+int BG_ItemIndex(const entityState_t* ent) {
+	if(!ent) return 0;
+	return BG_IsItemEntity(ent) ? ent->modelindex2 : ent->modelindex;
+}
+
 bool BG_CanItemBeGrabbed(const entityState_t* ent, const playerState_t* ps) {
 	item_t* item;
+	int itemIndex = BG_ItemIndex(ent);
 
-	if(ent->modelindex < 1 || ent->modelindex >= jsd_itemCount) Com_Error(ERR_DROP, "BG_CanItemBeGrabbed: index out of range");
+	if(itemIndex < 1 || itemIndex >= jsd_itemCount) Com_Error(ERR_DROP, "BG_CanItemBeGrabbed: index out of range");
 
-	item = &jsd_item[ent->modelindex];
+	item = &jsd_item[itemIndex];
 
 	switch(item->giType) {
 		case IT_WEAPON: return true;  // weapons are always picked up

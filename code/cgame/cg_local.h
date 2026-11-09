@@ -52,6 +52,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define NOTIFY_ITEM 3
 #define NOTIFY_KILL 4
 #define NOTIFY_CUSTOM 5
+#define NOTIFY_PLAIN 6
 
 #define MAX_3D_STRING_QUEUE 512
 
@@ -751,6 +752,7 @@ void CG_DrawInformation(void);
 
 // cg_scoreboard.c
 void CG_DrawScoreboard(void);
+void CG_StartEarthquake(float intensity, int duration);
 
 //
 // cg_consolecmds.c

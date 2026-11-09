@@ -202,6 +202,10 @@ typedef enum {
 	PHYS_CREATECAPSULE,        // ( int entityID, const physCapsuleDef_t *def );
 	PHYS_CREATECONETWIST,      // ( const physConeTwistDef_t *def );  joint between two physics bodies
 	PHYS_IGNORECOLLISIONGROUP, // ( const int *entityIDs, int count );  no collision between any two of them
+	PHYS_GETAABB,              // ( int entityID, vec3_t mins, vec3_t maxs ); world-space bounds
+	PHYS_APPLYFORCEATPOSITION, // ( int entityID, force xyz, world position xyz ); distributed buoyancy
+		PHYS_GETWATERSAMPLES,      // ( int entityID, float *points[225][4], vec3_t localMins, vec3_t localMaxs )
+		PHYS_APPLYTORQUE,          // ( int entityID, torque xyz ); game-side buoyancy/righting torque
 	G_LOCATE_RAGDOLL_DATA,     // ( ragdollState_t *states, int numStates );
 	// the game tells the server where its ragdollState[] array is, so snapshots can send it
 	G_RAGDOLL_LOADSKELETON,    // bool ( const char *modelPath, const char *animPath, int frame, ragdollSkeleton_t *out );
@@ -303,5 +307,6 @@ typedef enum {
 	// The game can issue trap_argc() / trap_argv() commands to get the command
 	// and parameters.  Return false if the game doesn't recognize it as a command.
 
-	BOTAI_START_FRAME  // ( int time );
+	BOTAI_START_FRAME, // ( int time );
+	GAME_PHYSICS_COLLISION // ( int a, int b, float speed, vec3 point, vec3 normal, float impulse );
 } gameExport_t;

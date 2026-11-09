@@ -27,6 +27,44 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 botlib_export_t* botlib_export;
 
+static int SV_FloatToVMArg(float value) {
+    union { float f; int i; } cvt;
+    cvt.f = value;
+    return cvt.i;
+}
+
+// There is exactly one Bullet -> game VM call for a collision. The game VM
+// receives both entity ids, relative impact speed, contact point/normal and
+// the accumulated Bullet impulse.
+void SV_PhysicsCollisionEvent(int entityA, int entityB, float speed, const float* point, const float* normal, float impulse) {
+    if(!gvm || !point || !normal) return;
+    VM_Call(gvm, GAME_PHYSICS_COLLISION, entityA, entityB,
+        SV_FloatToVMArg(speed),
+        SV_FloatToVMArg(point[0]), SV_FloatToVMArg(point[1]), SV_FloatToVMArg(point[2]),
+        SV_FloatToVMArg(normal[0]), SV_FloatToVMArg(normal[1]), SV_FloatToVMArg(normal[2]),
+        SV_FloatToVMArg(impulse), 0, 0);
+}
+
+// These kinematic bodies are not used for normal player movement or traces;
+// they only transfer momentum to dynamic props in Bullet.
+void SV_PhysicsSyncPlayers(float dt) {
+    int i;
+    (void)dt;
+    if(!sv.gameClients || !sv.gentities || !svs.clients || !sv_maxclients) return;
+    if(sv_maxclients->integer < 1) return;
+    for(i = 0; i < sv_maxclients->integer && i < MAX_CLIENTS; ++i) {
+        playerState_t* ps = SV_GameClientNum(i);
+        sharedEntity_t* ent = SV_GentityNum(i);
+        bool active = (svs.clients[i].state == CS_ACTIVE && ps && ent &&
+                       ps->pm_type != PM_NOCLIP && ps->stats[STAT_HEALTH] > 0 &&
+                       (ent->r.contents & CONTENTS_BODY) != 0);
+        SV_PhysicsSyncPlayer(i, ps ? ps->origin : vec3_origin,
+            ent ? ent->r.mins : vec3_origin, ent ? ent->r.maxs : vec3_origin,
+            ps ? ps->velocity : vec3_origin, active, dt);
+    }
+}
+
+
 // these functions must be used instead of pointer arithmetic, because
 // the game allocates gentities with private information after the server shared part
 int SV_NumForGentity(sharedEntity_t* ent) {
@@ -330,7 +368,7 @@ intptr_t SV_GameSystemCalls(intptr_t* args) {
 			}
 		}
 
-		case PHYS_CREATESHAPE: SV_CreateShape(args[1], VMA(2)); return 0;
+		case PHYS_CREATESHAPE: return SV_CreateShape(args[1], VMA(2), args[3] != 0);
 		case PHYS_CREATEMODEL: SV_PhysicsCreateModel(args[1], args[2], VMF(3), VMF(4), VMF(5), VMF(6)); return 0;
 		case PHYS_DELETEOBJECT: SV_PhysicsDeleteObject(args[1]); return 0;
 		case PHYS_GETPOSITION: SV_PhysicsGetPosition(args[1], (float*)VMA(2), (float*)VMA(3), (float*)VMA(4)); return 0;
@@ -349,6 +387,10 @@ intptr_t SV_GameSystemCalls(intptr_t* args) {
 		case PHYS_CREATECAPSULE: SV_PhysicsCreateCapsule(args[1], VMA(2)); return 0;
 		case PHYS_CREATECONETWIST: SV_PhysicsCreateConeTwist(VMA(1)); return 0;
 		case PHYS_IGNORECOLLISIONGROUP: SV_PhysicsIgnoreCollisionGroup(VMA(1), args[2]); return 0;
+		case PHYS_GETAABB: SV_PhysicsGetAABB(args[1], (float*)VMA(2), (float*)VMA(3)); return 0;
+		case PHYS_APPLYFORCEATPOSITION: SV_PhysicsApplyForceAtPosition(args[1], VMF(2), VMF(3), VMF(4), VMF(5), VMF(6), VMF(7)); return 0;
+		case PHYS_GETWATERSAMPLES: SV_PhysicsGetWaterSamples(args[1], (float*)VMA(2), (float*)VMA(3), (float*)VMA(4)); return 0;
+		case PHYS_APPLYTORQUE: SV_PhysicsApplyTorque(args[1], VMF(2), VMF(3), VMF(4)); return 0;
 		case G_LOCATE_RAGDOLL_DATA: SV_LocateRagdollData(VMA(1), args[2]); return 0;
 		case G_RAGDOLL_LOADSKELETON: return SV_RagdollLoadSkeleton(VMA(1), VMA(2), args[3], VMA(4));
 

@@ -68,8 +68,7 @@ struct gentity_s {
 	bool freeAfterEvent;
 	bool unlinkAfterEvent;
 
-	float physicsBounce;  // 1.0 = continuous bounce, 0.0 = no bounce
-	int clipmask;         // brushes with this content value will be collided against when moving.
+	int clipmask;  // brushes with this content value will be collided against when moving.
 
 	moverState_t moverState;
 	int soundPos1;
@@ -138,11 +137,15 @@ struct gentity_s {
 	float grabAccumPitch;       // accumulated true pitch (unbounded, gimbal-safe display)
 	float grabAccumYaw;         // accumulated true yaw (unbounded)
 	float grabAccumRoll;        // accumulated true roll (unbounded, preserved from grab)
-	int grabNewPhys;            // for freeze prop for prop
+	bool grabPhysicsActive;     // for freeze prop for prop
 
 	// Props
-	int sb_phys;
-	float sb_mass;
+	bool physicsActive;
+	float physicsMass;
+	float physicsBounce;
+	int physicsMaterial;     // game-side material id; Bullet deliberately does not know materials
+	bool physicsItemActive;  // ET_PHYSICS pickup body currently exists; item ID is s.modelindex2
+	int physicsImpactTime;   // game-side impact sound/dust debounce
 
 	// Ragdoll
 	bool ragdollBone;  // bone entity of a ragdoll (s.ragdollID / s.boneID say which)
@@ -228,7 +231,6 @@ void Cmd_Scoreboard_f(gentity_t* ent);
 //
 // g_items.c
 //
-void G_RunItem(gentity_t* ent);
 void RespawnItem(gentity_t* ent);
 
 gentity_t* Drop_Item(gentity_t* ent, item_t* item);
@@ -294,6 +296,9 @@ void Phys_HoldDropDynamic(gentity_t* player, bool isPhysgun);
 void Phys_HoldSetup(gentity_t* player, bool isPhysgun);
 void Phys_HoldFrame_Kinetic(gentity_t* player, bool isPhysgun);
 void G_RunPhysics(gentity_t* ent);
+void G_SetPhysicsMaterial(gentity_t* ent, const char* materialName);
+void G_PhysicsCollision(int entityA, int entityB, float speed, const vec3_t point, const vec3_t normal, float impulse);
+bool G_EntityIsPhysics(int entityNum);
 
 //
 // g_trigger.c
@@ -423,7 +428,7 @@ int trap_BotAllocateClient(void);
 void trap_GetUsercmd(int clientNum, usercmd_t* cmd);
 bool trap_GetEntityToken(char* buffer, int bufferSize);
 
-void trap_Phys_CreateShape(int modelindex, const char* objPath);
+bool trap_Phys_CreateShape(int modelindex, const char* objPath, bool centerByAABB);
 void trap_Phys_CreateModel(int entityID, int modelindex, float x, float y, float z, float mass);
 void trap_Phys_DeleteObject(int entityID);
 void trap_Phys_GetPosition(int entityID, float* x, float* y, float* z);
@@ -439,6 +444,10 @@ void trap_Phys_FreezeObject(int entityID);
 void trap_Phys_UnfreezeObject(int entityID);
 void trap_Phys_Weld(int entA, int entB, float px, float py, float pz);
 bool trap_Phys_IsSleeping(int entityID);
+void trap_Phys_GetAABB(int entityID, vec3_t mins, vec3_t maxs);
+void trap_Phys_ApplyForceAtPosition(int entityID, float fx, float fy, float fz, float px, float py, float pz);
+void trap_Phys_GetWaterSamples(int entityID, float* points, vec3_t localMins, vec3_t localMaxs);
+void trap_Phys_ApplyTorque(int entityID, float tx, float ty, float tz);
 void trap_Phys_CreateCapsule(int entityID, const physCapsuleDef_t* def);
 void trap_Phys_CreateConeTwist(const physConeTwistDef_t* def);
 void trap_Phys_IgnoreCollisionGroup(const int* entityIDs, int count);

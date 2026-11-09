@@ -439,7 +439,7 @@ static void Cmd_Altfire_Physgun_f(gentity_t* ent) {
 	if(jsd_weapon[ent->client->ps.weapon].wType == WT_PHYSGUN) {
 		if(ent->client->buttons & BUTTON_ATTACK) {
 			if(ent->grabbedEntity) {
-				ent->grabbedEntity->grabNewPhys = PHYS_STATIC;  // say physgun about freeze option
+				ent->grabbedEntity->grabPhysicsActive = false;  // say physgun about freeze option
 			}
 		}
 	}

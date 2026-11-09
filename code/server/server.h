@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/qcommon.h"
 #include "../game/g_public.h"
 #include "../game/bg_public.h"
-#include "../thirdparty/bullet3-3.25/bt_wrapper.h"
+#include "../bullet3-3.25/bt_wrapper.h"
 
 //=============================================================================
 
@@ -414,6 +414,7 @@ void SV_LocateRagdollData(ragdollState_t* states, int numStates);
 int SV_NumForGentity(sharedEntity_t* ent);
 sharedEntity_t* SV_GentityNum(int num);
 playerState_t* SV_GameClientNum(int num);
+void SV_PhysicsSyncPlayers(float dt);
 svEntity_t* SV_SvEntityForGentity(sharedEntity_t* gEnt);
 sharedEntity_t* SV_GEntityForSvEntity(svEntity_t* svEnt);
 void SV_InitGameProgs(void);

@@ -335,6 +335,38 @@ CG_CalcViewValues
 Sets cg.refdef view values
 ===============
 */
+static float cg_earthquakeIntensity;
+static int cg_earthquakeEndTime;
+static int cg_earthquakeStartTime;
+
+void CG_StartEarthquake(float intensity, int duration) {
+	if(intensity < 0.0f) intensity = 0.0f;
+	if(intensity > 1.0f) intensity = 1.0f;
+	if(duration < 1) duration = 1;
+	if(cg.time >= cg_earthquakeEndTime || intensity >= cg_earthquakeIntensity) {
+		cg_earthquakeIntensity = intensity;
+		cg_earthquakeStartTime = cg.time;
+		cg_earthquakeEndTime = cg.time + duration;
+	}
+}
+
+static void CG_ApplyEarthquake(void) {
+	float remain, duration, strength;
+	if(cg_earthquakeIntensity <= 0.0f || cg.time >= cg_earthquakeEndTime) {
+		cg_earthquakeIntensity = 0.0f;
+		return;
+	}
+	duration = (float)(cg_earthquakeEndTime - cg_earthquakeStartTime);
+	remain = (float)(cg_earthquakeEndTime - cg.time) / duration;
+	strength = cg_earthquakeIntensity * remain;
+	cg.refdef.vieworg[0] += sinf(cg.time * 0.071f) * strength * 7.0f;
+	cg.refdef.vieworg[1] += cosf(cg.time * 0.083f) * strength * 5.0f;
+	cg.refdef.vieworg[2] += sinf(cg.time * 0.109f) * strength * 3.0f;
+	cg.refdefViewAngles[PITCH] += sinf(cg.time * 0.061f) * strength * 2.8f;
+	cg.refdefViewAngles[YAW] += cosf(cg.time * 0.077f) * strength * 2.2f;
+	cg.refdefViewAngles[ROLL] += sinf(cg.time * 0.097f) * strength * 1.8f;
+}
+
 static int CG_CalcViewValues(void) {
 	playerState_t* ps;
 
@@ -375,6 +407,9 @@ static int CG_CalcViewValues(void) {
 		// full body awareness: camera in the head joint
 		CG_OffsetBodyView();
 	}
+
+	// Nearby heavy prop impacts perturb the camera briefly.
+	CG_ApplyEarthquake();
 
 	// position eye relative to origin
 	AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);

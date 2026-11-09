@@ -29,6 +29,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static pmove_t cg_pmove;
 
+static bool CG_EntityIsPhysics(int entityNum) {
+	if(entityNum < 0 || entityNum >= ENTITYNUM_MAX_NORMAL) return false;
+	return cg_entities[entityNum].currentState.eType == ET_PHYSICS;
+}
+
 static int cg_numSolidEntities;
 static centity_t* cg_solidEntities[MAX_ENTITIES_IN_SNAPSHOT];
 static int cg_numTriggerEntities;
@@ -62,7 +67,7 @@ void CG_BuildSolidList(void) {
 		cent = &cg_entities[snap->entities[i].number];
 		ent = &cent->currentState;
 
-		if(ent->eType == ET_ITEM || ent->eType == ET_TELEPORT_TRIGGER) {
+		if(ent->eType == ET_ITEM || BG_IsItemEntity(ent) || ent->eType == ET_TELEPORT_TRIGGER) {
 			cg_triggerEntities[cg_numTriggerEntities] = cent;
 			cg_numTriggerEntities++;
 			continue;
@@ -252,7 +257,7 @@ static void CG_TouchItem(centity_t* cent) {
 	}
 
 	// grab it
-	BG_AddPredictableEventToPlayerstate(EV_ITEM_PICKUP, cent->currentState.modelindex, &cg.predictedPlayerState);
+	BG_AddPredictableEventToPlayerstate(EV_ITEM_PICKUP, BG_ItemIndex(&cent->currentState), &cg.predictedPlayerState);
 
 	// remove it from the frame so it won't be drawn
 	cent->currentState.eFlags |= EF_NODRAW;
@@ -286,7 +291,7 @@ static void CG_TouchTriggerPrediction(void) {
 		cent = cg_triggerEntities[i];
 		ent = &cent->currentState;
 
-		if(ent->eType == ET_ITEM) {
+		if(ent->eType == ET_ITEM || BG_IsItemEntity(ent)) {
 			CG_TouchItem(cent);
 			continue;
 		}
@@ -365,6 +370,7 @@ void CG_PredictPlayerState(void) {
 	cg_pmove.ps = &cg.predictedPlayerState;
 	cg_pmove.trace = CG_Trace;
 	cg_pmove.pointcontents = CG_PointContents;
+	cg_pmove.entityIsPhysics = CG_EntityIsPhysics;
 	if(cg_pmove.ps->pm_type == PM_DEAD) {
 		cg_pmove.tracemask = MASK_PLAYERSOLID & ~CONTENTS_BODY;
 	} else {

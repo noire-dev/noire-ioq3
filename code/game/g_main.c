@@ -25,6 +25,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 level_locals_t level;
 
+static float G_VMArgToFloat(int value) {
+	union { int i; float f; } convert;
+	convert.i = value;
+	return convert.f;
+}
+
 typedef struct {
 	vmCvar_t* vmCvar;
 	char* cvarName;
@@ -97,6 +103,17 @@ Q_EXPORT intptr_t vmMain(int command, int arg0, int arg1, int arg2, int arg3, in
 		case GAME_RUN_FRAME: G_RunFrame(arg0); return 0;
 		case GAME_CONSOLE_COMMAND: return ConsoleCommand();
 		case BOTAI_START_FRAME: return BotAIStartFrame(arg0);
+		case GAME_PHYSICS_COLLISION: {
+			vec3_t point, normal;
+			point[0] = G_VMArgToFloat(arg3);
+			point[1] = G_VMArgToFloat(arg4);
+			point[2] = G_VMArgToFloat(arg5);
+			normal[0] = G_VMArgToFloat(arg6);
+			normal[1] = G_VMArgToFloat(arg7);
+			normal[2] = G_VMArgToFloat(arg8);
+			G_PhysicsCollision(arg0, arg1, G_VMArgToFloat(arg2), point, normal, G_VMArgToFloat(arg9));
+			return 0;
+		}
 
 		case GETVMCONTEXT: VMContext(&vmargs, &vmresult); return 0;
 		case VMCALL: VMCall(arg0); return 0;
@@ -391,11 +408,6 @@ void G_RunFrame(int levelTime) {
 			continue;
 		}
 
-		if(ent->s.eType == ET_ITEM) {
-			G_RunItem(ent);
-			continue;
-		}
-
 		if(ent->s.eType == ET_MOVER) {
 			G_RunMover(ent);
 			continue;
@@ -403,6 +415,7 @@ void G_RunFrame(int levelTime) {
 
 		if(ent->s.eType == ET_PHYSICS) {
 			G_RunPhysics(ent);
+			G_RunThink(ent);
 			continue;
 		}
 

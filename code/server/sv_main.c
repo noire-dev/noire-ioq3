@@ -1127,7 +1127,11 @@ void SV_Frame(int msec) {
 	physicsTime = sv.prevTime;
 	sv.prevTime = sv.time;
 
-	SV_PhysicsStep((float)(sv.time - physicsTime) / 1000.0f);
+	{
+		float physicsDt = (float)(sv.time - physicsTime) / 1000.0f;
+		SV_PhysicsSyncPlayers(physicsDt);
+		SV_PhysicsStep(physicsDt);
+	}
 }
 
 /*

@@ -717,9 +717,11 @@ static void PM_NoclipMove(void) {
 
 	VectorCopy(wishvel, wishdir);
 	wishspeed = VectorNormalize(wishdir);
-	wishspeed *= scale;
+	wishspeed *= scale * 3.0f;
 
 	PM_Accelerate(wishdir, wishspeed, pm_accelerate);
+	pm->ps->legsTimer = 0;
+	PM_ContinueLegsAnim(AM_IDLE);
 
 	// move
 	VectorMA(pm->ps->origin, pml.frametime, pm->ps->velocity, pm->ps->origin);
@@ -909,6 +911,19 @@ static void PM_GroundTrace(void) {
 	vec3_t point;
 	trace_t trace;
 
+	// A server-confirmed Bullet support body is authoritative for this frame.
+	// The client collision world does not necessarily contain the Bullet body,
+	// so re-tracing here would introduce a one-frame fall/jump bob.
+	if((pm->ps->pm_flags & PMF_ON_PHYSICS) && pm->ps->groundEntityNum != ENTITYNUM_NONE && pm->ps->velocity[2] <= 1.0f) {
+		memset(&pml.groundTrace, 0, sizeof(pml.groundTrace));
+		pml.groundTrace.fraction = 0.0f;
+		pml.groundTrace.entityNum = pm->ps->groundEntityNum;
+		pml.groundTrace.plane.normal[2] = 1.0f;
+		pml.groundPlane = true;
+		pml.walking = true;
+		return;
+	}
+
 	point[0] = pm->ps->origin[0];
 	point[1] = pm->ps->origin[1];
 	point[2] = pm->ps->origin[2] - 0.25;
@@ -923,6 +938,7 @@ static void PM_GroundTrace(void) {
 
 	// if the trace didn't hit anything, we are in free fall
 	if(trace.fraction == 1.0) {
+		pm->ps->pm_flags &= ~PMF_ON_PHYSICS;
 		PM_GroundTraceMissed();
 		pml.groundPlane = false;
 		pml.walking = false;
@@ -941,6 +957,7 @@ static void PM_GroundTrace(void) {
 		}
 
 		pm->ps->groundEntityNum = ENTITYNUM_NONE;
+		pm->ps->pm_flags &= ~PMF_ON_PHYSICS;
 		pml.groundPlane = false;
 		pml.walking = false;
 		return;
@@ -951,6 +968,7 @@ static void PM_GroundTrace(void) {
 		// FIXME: if they can't slide down the slope, let them
 		// walk (sharp crevices)
 		pm->ps->groundEntityNum = ENTITYNUM_NONE;
+		pm->ps->pm_flags &= ~PMF_ON_PHYSICS;
 		pml.groundPlane = true;
 		pml.walking = false;
 		return;
@@ -977,6 +995,8 @@ static void PM_GroundTrace(void) {
 	}
 
 	pm->ps->groundEntityNum = trace.entityNum;
+	if(pm->entityIsPhysics && pm->entityIsPhysics(trace.entityNum)) pm->ps->pm_flags |= PMF_ON_PHYSICS;
+	else pm->ps->pm_flags &= ~PMF_ON_PHYSICS;
 
 	// don't reset the z velocity for slopes
 	//	pm->ps->velocity[2] = 0;
@@ -1284,14 +1304,14 @@ static void PM_Weapon(void) {
 		return;
 	}
 #else
-	if(!pm->ps->stats[STAT_AMMO]) {
+	if(pm->ps->stats[STAT_AMMO] == 0) {
 		pm->ps->weaponTime += 500;
 		return;
 	}
 #endif
 
 #ifdef GAME
-	if(!(pm->ps->stats[STAT_AMMO] == -1 || pm->ps->stats[STAT_AMMO] >= 9999)) {
+	if(pm->ps->stats[STAT_AMMO] != -1) {
 		if(G_CheckWeaponAmmo(pm->ps->clientNum, pm->ps->weapon) > 0) {
 			PM_Add_SwepAmmo(pm->ps->clientNum, pm->ps->weapon, -1);
 		}
@@ -1397,7 +1417,7 @@ void PmoveSingle(pmove_t* pmove) {
 	}
 
 	// set the firing flag for continuous beam weapons
-	if(!(pm->ps->pm_flags & PMF_RESPAWNED) && pm->ps->pm_type != PM_NOCLIP && (pm->cmd.buttons & BUTTON_ATTACK) && pm->ps->stats[STAT_AMMO]) {
+	if(!(pm->ps->pm_flags & PMF_RESPAWNED) && (pm->cmd.buttons & BUTTON_ATTACK) && (pm->ps->stats[STAT_AMMO] != 0)) {
 		pm->ps->eFlags |= EF_FIRING;
 	} else {
 		pm->ps->eFlags &= ~EF_FIRING;
@@ -1453,6 +1473,8 @@ void PmoveSingle(pmove_t* pmove) {
 
 	if(pm->ps->pm_type == PM_NOCLIP) {
 		PM_NoclipMove();
+		PM_Weapon();
+		PM_TorsoAnimation();
 		PM_DropTimers();
 		return;
 	}

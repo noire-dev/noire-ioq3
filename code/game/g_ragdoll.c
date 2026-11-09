@@ -721,8 +721,8 @@ int G_SpawnRagdoll(const vec3_t origin, float yaw, const char* model, int player
 		e->s.ragdollID = id;
 		e->s.boneID = b;
 		e->ragdollBone = true;
-		e->sb_phys = PHYS_DYNAMIC;
-		e->sb_mass = bone->mass;
+		e->physicsActive = true;
+		e->physicsMass = bone->mass;
 		e->health = -1;  // knockback works, damage does not
 		e->r.contents = CONTENTS_CORPSE;
 		e->takedamage = true;

@@ -43,7 +43,8 @@ void Svcmd_EntityList_f(void) {
 		switch(check->s.eType) {
 			case ET_GENERAL: G_Printf("ET_GENERAL          "); break;
 			case ET_PLAYER: G_Printf("ET_PLAYER           "); break;
-			case ET_ITEM: G_Printf("ET_ITEM             "); break;
+			case ET_ITEM: G_Printf("ET_ITEM (fallback)  "); break;
+			case ET_PHYSICS: G_Printf(BG_IsItemEntity(&check->s) ? "ET_PHYSICS ITEM     " : "ET_PHYSICS          "); break;
 			case ET_MISSILE: G_Printf("ET_MISSILE          "); break;
 			case ET_MOVER: G_Printf("ET_MOVER            "); break;
 			case ET_PORTAL: G_Printf("ET_PORTAL           "); break;

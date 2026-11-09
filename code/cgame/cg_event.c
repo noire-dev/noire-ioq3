@@ -57,7 +57,7 @@ static void CG_Obituary(entityState_t* ent) {
 }
 
 static void CG_ItemPickup(int itemNum) {
-	CG_AddNotify(jsd_item[itemNum].pickup_name, NOTIFY_ITEM, itemNum, "");
+	CG_AddNotify(va("Picked up %s", jsd_item[itemNum].pickup_name), NOTIFY_PLAIN, 0, "");
 	if(jsd_item[itemNum].giType == IT_WEAPON) cg.swep_listcl[jsd_item[itemNum].giTag] = WS_HAVE;
 }
 
@@ -150,6 +150,9 @@ void CG_EntityEvent(centity_t* cent, vec3_t position) {
 		case EV_GENERAL_SOUND: trap_S_StartSound(NULL, es->number, CHAN_VOICE, cgs.gameSounds[es->eventParm]); break;
 		case EV_OBITUARY: CG_Obituary(es); break;
 		case EV_PARTICLE: CG_SpawnParticlePreset(es->eventParm, position); break;
+		case EV_PHYSICS_SHAKE:
+			if(cg.snap && es->number == cg.snap->ps.clientNum) CG_StartEarthquake(es->eventParm / 255.0f, 700);
+			break;
 		default:  // CG_Error("Unknown event: %i", event); break;
 	}
 }

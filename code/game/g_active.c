@@ -172,7 +172,7 @@ void G_TouchTriggers(gentity_t* ent) {
 
 		// use separate code for determining if an item is picked up
 		// so you don't have to actually contact its bounding box
-		if(hit->s.eType == ET_ITEM) {
+		if(BG_IsItemEntity(&hit->s) || hit->s.eType == ET_ITEM) {
 			if(!BG_PlayerTouchesItem(&ent->client->ps, &hit->s, level.time)) {
 				continue;
 			}
@@ -328,8 +328,8 @@ static void PhysgunHold(gentity_t* player) {
 		}
 	} else if(player->grabbedEntity) {
 		ent->isGrabbed = false;
-		if(ent->grabNewPhys == PHYS_STATIC) Phys_HoldDropStatic(player);
-		if(ent->grabNewPhys == PHYS_DYNAMIC) Phys_HoldDropDynamic(player, true);
+		if(!ent->grabPhysicsActive) Phys_HoldDropStatic(player);
+		if(ent->grabPhysicsActive) Phys_HoldDropDynamic(player, true);
 		VectorClear(player->grabOffset);
 		player->grabbedEntity = 0;
 		ClientUpdateGrabbedConfigstring(player);
@@ -375,6 +375,11 @@ This will be called once for each client frame, which will
 usually be a couple times for each server frame on fast clients.
 ==============
 */
+bool G_EntityIsPhysics(int entityNum) {
+	if(entityNum < 0 || entityNum >= level.num_entities) return false;
+	return g_entities[entityNum].inuse && g_entities[entityNum].s.eType == ET_PHYSICS;
+}
+
 void ClientThink_real(gentity_t* ent) {
 	gclient_t* client;
 	pmove_t pm;
@@ -441,6 +446,10 @@ void ClientThink_real(gentity_t* ent) {
 	}
 	pm.trace = trap_Trace;
 	pm.pointcontents = trap_PointContents;
+	pm.entityIsPhysics = G_EntityIsPhysics;
+	// Re-evaluate support on the authoritative server; prediction keeps the
+	// replicated flag until a normal ground trace refreshes it.
+	client->ps.pm_flags &= ~PMF_ON_PHYSICS;
 
 	Pmove(&pm);
 
@@ -564,9 +573,8 @@ void PM_Add_SwepAmmo(int clientNum, int wp, int count) {
 	gentity_t* ent;
 
 	ent = g_entities + clientNum;
-	if(!(ent->swep_ammo[wp] == -1)) {
-		if(!(ent->swep_ammo[wp] >= 9999)) {
-			ent->swep_ammo[wp] += count;
-		}
-	}
+	if(wp < 0 || wp >= MAX_WEAPONS || ent->swep_ammo[wp] == -1) return;
+	ent->swep_ammo[wp] += count;
+	if(ent->swep_ammo[wp] > 9999) ent->swep_ammo[wp] = 9999;
+	if(ent->swep_ammo[wp] < 0) ent->swep_ammo[wp] = 0;
 }
