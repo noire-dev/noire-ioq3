@@ -883,7 +883,7 @@ void CG_AddPlayerWeapon(refEntity_t* parent, centity_t* cent, clientInfo_t* ci) 
 				VectorMA(muzzleOrigin, muzzleTag.origin[k], gun.axis[k], muzzleOrigin);
 			}
 
-			trap_R_AddProjectorToScene(muzzleOrigin, cg.refdefViewAngles, 30.0f, 1024.0f, projectorColor, 0.5f, trap_R_RegisterShader("$screenmap"), true);
+			trap_R_AddProjectorToScene(muzzleOrigin, cg.refdefViewAngles, 30.0f, 1024.0f, projectorColor, 0.5f, trap_R_RegisterShader("flashlight"), true);
 		}
 
 		// make sure we aren't looking at cg.predictedPlayerEntity for LG

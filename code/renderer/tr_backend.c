@@ -335,7 +335,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	bool depthRange, oldDepthRange, isCrosshair, wasCrosshair;
 	int i;
 	drawSurf_t* drawSurf;
-	int oldSort;
+	uint64_t oldSort = ~(uint64_t)0;
 	double originalTime;
 	FBO_t* fbo = NULL;
 
@@ -353,12 +353,11 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 	wasCrosshair = false;
 	oldDlighted = false;
 	oldCubemapIndex = false;
-	oldSort = -1;
 
 	backEnd.pc.c_surfaces += numDrawSurfs;
 
 	for(i = 0, drawSurf = drawSurfs; i < numDrawSurfs; i++, drawSurf++) {
-		if(drawSurf->sort == (unsigned)oldSort && drawSurf->useCubemap == oldCubemapIndex) {
+		if(drawSurf->sort == oldSort && drawSurf->useCubemap == oldCubemapIndex) {
 			if(backEnd.depthFill && shader && (shader->sort != SS_OPAQUE && shader->sort != SS_PORTAL)) continue;
 
 			// fast path, same as previous sort
@@ -1148,11 +1147,7 @@ const void* RB_PostProcess(const void* data) {
 	if(tr.screenmapFbo && srcFbo && srcFbo->frameBuffer) {
 		GL_BindFramebuffer(GL_READ_FRAMEBUFFER, srcFbo->frameBuffer);
 		GL_BindFramebuffer(GL_DRAW_FRAMEBUFFER, tr.screenmapFbo->frameBuffer);
-		qglBlitFramebuffer(srcBox[0], srcBox[1],
-		                   srcBox[0] + srcBox[2], srcBox[1] + srcBox[3],
-		                   0, tr.screenmapFbo->height,
-		                   tr.screenmapFbo->width, 0,
-		                   GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		qglBlitFramebuffer(srcBox[0], srcBox[1], srcBox[0] + srcBox[2], srcBox[1] + srcBox[3], 0, tr.screenmapFbo->height, tr.screenmapFbo->width, 0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		GL_BindFramebuffer(GL_FRAMEBUFFER, 0);
 		glState.currentFBO = NULL;
 	}

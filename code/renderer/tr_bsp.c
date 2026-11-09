@@ -1306,6 +1306,27 @@ static void R_ComputeSurfaceFogFlags(void) {
 	}
 }
 
+static void R_PrecomputeCullInfo(void) {
+	for(int i = 0; i < s_worldData.numsurfaces; i++) {
+		msurface_t* surf = &s_worldData.surfaces[i];
+		cullinfo_t* ci = &surf->cullinfo;
+
+		if(ci->type & CULLINFO_BOX) {
+			ci->center[0] = (ci->bounds[0][0] + ci->bounds[1][0]) * 0.5f;
+			ci->center[1] = (ci->bounds[0][1] + ci->bounds[1][1]) * 0.5f;
+			ci->center[2] = (ci->bounds[0][2] + ci->bounds[1][2]) * 0.5f;
+
+			vec3_t diag;
+			VectorSubtract(ci->bounds[1], ci->bounds[0], diag);
+			float r = VectorLength(diag) * 0.5f;
+			ci->radiusSquared = r * r;
+		} else if(ci->type & CULLINFO_SPHERE) {
+			VectorCopy(ci->localOrigin, ci->center);
+			ci->radiusSquared = ci->radius * ci->radius;
+		}
+	}
+}
+
 /*
 ===============
 R_LoadSurfaces
@@ -1396,6 +1417,7 @@ static void R_LoadSurfaces(lump_t* surfs, lump_t* verts, lump_t* indexLump) {
 #endif
 
 	R_ComputeSurfaceFogFlags();
+	R_PrecomputeCullInfo();
 
 	ri.Printf(PRINT_ALL, "...loaded %d faces, %i meshes, %i trisurfs, %i flares\n", numFaces, numMeshes, numTriSurfs, numFlares);
 }

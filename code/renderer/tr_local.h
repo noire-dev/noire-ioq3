@@ -1106,8 +1106,11 @@ typedef struct cullinfo_s {
 	vec3_t bounds[2];
 	vec3_t localOrigin;
 	float radius;
-	float fogDistance;  // кэш дистанции от камеры до ближайшей точки поверхности, вычисляется в R_FogCullSurface
 	cplane_t plane;
+
+	vec3_t center;        // (bounds[0] + bounds[1]) * 0.5
+	float radiusSquared;  // radius * radius
+	float fogDistance;    // кэш дистанции от камеры до ближайшей точки поверхности, вычисляется в R_FogCullSurface
 } cullinfo_t;
 
 typedef struct msurface_s {

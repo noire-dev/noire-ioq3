@@ -106,30 +106,16 @@ static bool R_CullSurface(msurface_t* surf) {
 	return false;
 }
 
-/*
-====================
-R_DlightSurface
-
-The given surface is going to be drawn, and it touches a leaf
-that is touched by one or more dlights, so try to throw out
-more dlights if possible.
-====================
-*/
 static bool R_DlightCullSurface(msurface_t* surf, dlightMask_t* dlightBits) {
 	int i;
 	dlight_t* dl;
-	vec3_t surfCenter;
-	float surfRadius = 0.0f;
-	bool haveBounds = false;
 
 	if(!DlightMask_Any(dlightBits)) {
 		if(!(tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW))) {
 			switch(*surf->data) {
 				case SF_FACE:
 				case SF_GRID:
-				case SF_TRIANGLES:
-					DlightMask_Clear(&((srfBspSurface_t*)surf->data)->dlightBits);
-					break;
+				case SF_TRIANGLES: DlightMask_Clear(&((srfBspSurface_t*)surf->data)->dlightBits); break;
 				default: break;
 			}
 		}
@@ -143,26 +129,11 @@ static bool R_DlightCullSurface(msurface_t* surf, dlightMask_t* dlightBits) {
 		}
 	}
 
-	// Отсев по дистанции: источник дальше своего радиуса * 1.5 (с запасом на
-	// поверхность) не может её осветить. Поверхности за туманом сюда уже не
-	// попадают — R_FogCullSurface отсекает их раньше, отдельные проверки
-	// плоскости/бокса/сферы не нужны.
 	if(r_dynamicLightCull->integer && tr.currentEntityNum == REFENTITYNUM_WORLD) {
-		if(surf->cullinfo.type & CULLINFO_SPHERE) {
-			VectorCopy(surf->cullinfo.localOrigin, surfCenter);
-			surfRadius = surf->cullinfo.radius;
-			haveBounds = true;
-		} else if(surf->cullinfo.type & CULLINFO_BOX) {
-			vec3_t diag;
-			surfCenter[0] = (surf->cullinfo.bounds[0][0] + surf->cullinfo.bounds[1][0]) * 0.5f;
-			surfCenter[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
-			surfCenter[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
-			VectorSubtract(surf->cullinfo.bounds[1], surf->cullinfo.bounds[0], diag);
-			surfRadius = VectorLength(diag) * 0.5f;
-			haveBounds = true;
-		}
+		if(surf->cullinfo.type & (CULLINFO_SPHERE | CULLINFO_BOX)) {
+			// sqrt нужен один раз на поверхность (не на источник!)
+			float surfRadius = sqrtf(surf->cullinfo.radiusSquared);
 
-		if(haveBounds) {
 			for(i = 0; i < tr.refdef.num_dlights; i++) {
 				vec3_t toLight;
 				float cullDist, distSq;
@@ -173,7 +144,7 @@ static bool R_DlightCullSurface(msurface_t* surf, dlightMask_t* dlightBits) {
 				cullDist = dl->radius * 1.5f + surfRadius;
 				cullDist *= cullDist;
 
-				VectorSubtract(dl->origin, surfCenter, toLight);
+				VectorSubtract(dl->origin, surf->cullinfo.center, toLight);
 				distSq = VectorLengthSquared(toLight);
 
 				if(distSq > cullDist) {
@@ -191,9 +162,7 @@ static bool R_DlightCullSurface(msurface_t* surf, dlightMask_t* dlightBits) {
 				DlightMask_Copy(&((srfBspSurface_t*)surf->data)->dlightBits, dlightBits);
 			}
 			break;
-		default:
-			DlightMask_Clear(dlightBits);
-			break;
+		default: DlightMask_Clear(dlightBits); break;
 	}
 
 	if(DlightMask_Any(dlightBits)) {
@@ -238,24 +207,29 @@ static void R_FrustumCullSurface(msurface_t* surf) {
 }
 
 static void R_FogCullSurface(msurface_t* surf) {
-	vec3_t center;
-	float dist;
+	cullinfo_t* ci = &surf->cullinfo;
 
 	if(surf->doCull) {
-		surf->cullinfo.fogDistance = 0.0f;
+		ci->fogDistance = 0.0f;
 		return;
 	}
 
-	if(surf->cullinfo.type & CULLINFO_BOX) {
-		center[0] = (surf->cullinfo.bounds[0][0] + surf->cullinfo.bounds[1][0]) * 0.5f;
-		center[1] = (surf->cullinfo.bounds[0][1] + surf->cullinfo.bounds[1][1]) * 0.5f;
-		center[2] = (surf->cullinfo.bounds[0][2] + surf->cullinfo.bounds[1][2]) * 0.5f;
-		dist = Distance(center, backEnd.viewParms.or.origin) - VectorLength(surf->cullinfo.bounds[1]) * 0.5f;
-		// сохраняем результат для быстрого отсечения динамических источников в R_DlightCullSurface
-		surf->cullinfo.fogDistance = dist > 0.0f ? dist : 0.0f;
-		surf->doFogCull = dist > r_fogEnd->value;
+	if(ci->type & CULLINFO_BOX) {
+		const float fogEndSq = r_fogEnd->value * r_fogEnd->value;
+		vec3_t toCam;
+		float distSq, boundSq, threshold;
+
+		VectorSubtract(ci->center, backEnd.viewParms.or.origin, toCam);
+		distSq = VectorLengthSquared(toCam);
+		boundSq = ci->radiusSquared;
+
+		threshold = sqrtf(fogEndSq) + sqrtf(boundSq);
+		surf->doFogCull = distSq > threshold * threshold;
+
+		float dist = sqrtf(distSq) - sqrtf(boundSq);
+		ci->fogDistance = dist > 0.0f ? dist : 0.0f;
 	} else {
-		surf->cullinfo.fogDistance = 0.0f;
+		ci->fogDistance = 0.0f;
 		surf->doFogCull = false;
 	}
 }
@@ -264,8 +238,10 @@ static void R_AddWorldSurface(msurface_t* surf, const dlightMask_t* sourceDlight
 	dlightMask_t dlightBits;
 	int fogIndex;
 
-	if(sourceDlightBits) DlightMask_Copy(&dlightBits, sourceDlightBits);
-	else DlightMask_Clear(&dlightBits);
+	if(sourceDlightBits)
+		DlightMask_Copy(&dlightBits, sourceDlightBits);
+	else
+		DlightMask_Clear(&dlightBits);
 
 	// SKYBOX geometry is not a dynamic-light receiver or shadow caster by default.
 	// Keep it in the normal scene so the skybox still renders, but remove its
@@ -277,8 +253,7 @@ static void R_AddWorldSurface(msurface_t* surf, const dlightMask_t* sourceDlight
 
 	if(surf->surfaceFlags & SURF_SKYBOX) {
 		bool allowShadowSkybox = (tr.viewParms.flags & VPF_DLIGHTSHADOW) ? r_dynamicLightSkybox->integer : r_shadowSkybox->integer;
-		if((tr.viewParms.flags & VPF_NOCUBEMAPS && !r_reflectionsSkybox->integer) ||
-		   (tr.viewParms.flags & VPF_DEPTHSHADOW && !allowShadowSkybox) || !r_skybox->integer) return;
+		if((tr.viewParms.flags & VPF_NOCUBEMAPS && !r_reflectionsSkybox->integer) || (tr.viewParms.flags & VPF_DEPTHSHADOW && !allowShadowSkybox) || !r_skybox->integer) return;
 	}
 	R_FrustumCullSurface(surf);
 	if(r_fogDensity->value >= 0.95 && (tr.frameCount & 15) == 0) R_FogCullSurface(surf);
@@ -442,14 +417,8 @@ static void R_RecursiveWorldNode(mnode_t* node, uint32_t planeBits, const dlight
 					// sphere cannot intersect the light cone.
 					if(dl->type == DLIGHT_PROJECTOR) {
 						float forwardDistance, radialSq, coneRadius;
-						VectorSet(center,
-						           (node->surfMins[0] + node->surfMaxs[0]) * 0.5f,
-						           (node->surfMins[1] + node->surfMaxs[1]) * 0.5f,
-						           (node->surfMins[2] + node->surfMaxs[2]) * 0.5f);
-						VectorSet(halfSize,
-						           (node->surfMaxs[0] - node->surfMins[0]) * 0.5f,
-						           (node->surfMaxs[1] - node->surfMins[1]) * 0.5f,
-						           (node->surfMaxs[2] - node->surfMins[2]) * 0.5f);
+						VectorSet(center, (node->surfMins[0] + node->surfMaxs[0]) * 0.5f, (node->surfMins[1] + node->surfMaxs[1]) * 0.5f, (node->surfMins[2] + node->surfMaxs[2]) * 0.5f);
+						VectorSet(halfSize, (node->surfMaxs[0] - node->surfMins[0]) * 0.5f, (node->surfMaxs[1] - node->surfMins[1]) * 0.5f, (node->surfMaxs[2] - node->surfMins[2]) * 0.5f);
 						boundRadius = VectorLength(halfSize);
 						VectorSubtract(center, dl->origin, toCenter);
 						forwardDistance = DotProduct(toCenter, dl->forward);
@@ -665,7 +634,7 @@ void R_AddWorldSurfaces(void) {
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
 	// determine which leaves are in the PVS / areamask
-	R_MarkLeaves();
+	if(!(tr.viewParms.flags & VPF_DLIGHTSHADOW)) R_MarkLeaves();
 
 	// clear out the visible min/max
 	ClearBounds(tr.viewParms.visBounds[0], tr.viewParms.visBounds[1]);

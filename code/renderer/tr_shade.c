@@ -497,6 +497,7 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 	int l;
 	float radius;
 	float intensity;
+	vec4_t texMatrix[8];
 
 	int deformGen;
 	vec5_t deformParams;
@@ -512,12 +513,12 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 
 	ComputeDeformValues(&deformGen, deformParams);
 	ComputeFogValues(fogDistanceVector, fogDepthVector, &eyeT);
+	ComputeTexMods(pStage, TB_DIFFUSEMAP, texMatrix);
 
 	for(l = 0; l < backEnd.refdef.num_dlights; l++) {
 		dlight_t* dl;
 		shaderProgram_t* sp;
 		vec4_t vector;
-		vec4_t texMatrix[8];
 		int index;
 
 		if(!DlightMask_Test(&tess.dlightBits, l)) {
@@ -625,10 +626,7 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 
 		GLSL_SetUniformFloat(sp, UNIFORM_LIGHTRADIUS, radius);
 		GLSL_SetUniformFloat(sp, UNIFORM_LIGHTCONE, dl->coneTangent);
-		GLSL_SetUniformInt(sp, UNIFORM_DLIGHTSHADOWS,
-		                    (r_dynamicLight->integer >= 2 && glRefConfig.framebufferObject &&
-		                     tr.dlightShadowFbo && tr.shadowCubemaps[l] && dl->shadows &&
-		                     !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) ? 1 : 0);
+		GLSL_SetUniformInt(sp, UNIFORM_DLIGHTSHADOWS, (r_dynamicLight->integer >= 2 && glRefConfig.framebufferObject && tr.dlightShadowFbo && tr.shadowCubemaps[l] && dl->shadows && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) ? 1 : 0);
 
 		if(dl->type == DLIGHT_PROJECTOR) {
 			GLSL_SetUniformVec3(sp, UNIFORM_LIGHTFORWARD, dl->forward);
@@ -708,8 +706,6 @@ static void ForwardDlightEnt(shaderStage_t* pStage) {
 				GL_BindToTMU(tr.whiteImage, TB_LIGHTMAP);
 			}
 		}
-
-		ComputeTexMods(pStage, TB_DIFFUSEMAP, texMatrix);
 
 		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX0, texMatrix[0]);
 		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX1, texMatrix[1]);
