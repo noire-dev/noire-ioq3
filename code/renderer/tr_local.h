@@ -1301,7 +1301,7 @@ void R_Modellist_f(void);
 #define MAX_DRAWIMAGES 2048
 #define MAX_SKINS 16384
 
-#define MAX_DRAWSURFS 0x100000
+#define MAX_DRAWSURFS 0x40000
 #define DRAWSURF_MASK (MAX_DRAWSURFS - 1)
 
 /*
@@ -1720,6 +1720,7 @@ extern cvar_t* r_jiggleDamping;    // velocity damping
 extern cvar_t* r_jiggleMaxSpeed;   // max swing speed of the jiggle tip (units/s, 0 = no cap)
 extern cvar_t* r_reflectionsSkybox;
 extern cvar_t* r_deluxeSpecular;
+extern cvar_t* r_depthPrepass;
 extern cvar_t* r_shadows;
 extern cvar_t* r_shadowUpdate;
 extern cvar_t* r_shadowResolution;

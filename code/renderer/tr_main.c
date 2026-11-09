@@ -1370,6 +1370,11 @@ static void R_AddEntitySurface(int entityNum) {
 		return;
 	}
 
+	// skip entities that opted out of reflection cubemap capture
+	if((ent->e.renderfx & RF_NO_REFLECT) && (tr.viewParms.flags & VPF_NOCUBEMAPS)) {
+		return;
+	}
+
 	// simple generated models, like sprites and beams, are not culled
 	switch(ent->e.reType) {
 		case RT_PORTALSURFACE: break;  // don't draw anything

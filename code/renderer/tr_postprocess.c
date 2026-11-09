@@ -732,15 +732,6 @@ void RB_CameraMotionBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox)
 
 	GLSL_SetUniformVec2(&tr.cameraBlurShader, UNIFORM_CAMERABLURDIR, blurDir);
 
-	if(tr.renderDepthImage) {
-		GL_BindToTMU(tr.renderDepthImage, TB_LIGHTMAP);
-		GLSL_SetUniformFloat(&tr.cameraBlurShader, UNIFORM_CAMERABLURNEARTHRESHOLD, r_cameraBlurNearThreshold->value);
-		GLSL_SetUniformFloat(&tr.cameraBlurShader, UNIFORM_CAMERABLURNEARDSOFTNESS, r_cameraBlurNearSoftness->value);
-	} else {
-		GLSL_SetUniformFloat(&tr.cameraBlurShader, UNIFORM_CAMERABLURNEARTHRESHOLD, 0.0f);
-		GLSL_SetUniformFloat(&tr.cameraBlurShader, UNIFORM_CAMERABLURNEARDSOFTNESS, 0.0f);
-	}
-
 	{
 		vec4_t srcBounds;
 		srcBounds[0] = srcBox[0] / (float)src->width;

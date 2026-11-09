@@ -88,6 +88,7 @@ cvar_t* r_reflectionsMaterials;
 cvar_t* r_reflectionsEntities;
 cvar_t* r_reflectionsSkybox;
 cvar_t* r_deluxeSpecular;
+cvar_t* r_depthPrepass;
 cvar_t* r_shadows;
 cvar_t* r_shadowUpdate;
 cvar_t* r_shadowResolution;
@@ -870,6 +871,7 @@ void R_Register(void) {
 
 	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.25", CVAR_ARCHIVE | CVAR_LATCH);
 
+	r_depthPrepass = ri.Cvar_Get("r_depthPrepass", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadows = ri.Cvar_Get("r_shadows", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowUpdate = ri.Cvar_Get("r_shadowUpdate", "0", CVAR_ARCHIVE);
 	r_shadowResolution = ri.Cvar_Get("r_shadowResolution", "1024", CVAR_ARCHIVE | CVAR_LATCH);

@@ -1,8 +1,5 @@
 uniform sampler2D u_TextureMap;
-uniform sampler2D u_ScreenDepthMap;
 uniform vec2      u_CameraBlurDir;
-uniform float     u_CameraBlurNearThreshold;
-uniform float     u_CameraBlurNearSoftness;
 uniform vec4      u_CameraBlurSrcBounds; // xy = viewport min, zw = viewport max
 
 varying vec2      var_TexCoords;
@@ -17,24 +14,10 @@ void main()
         return;
     }
 
-    // Viewmodel использует qglDepthRange(0, 0.3), т.е. вся его
-    // геометрия имеет window-depth < 0.3. Гасим размаз для
-    // пикселей ниже порога, чтобы оружие в руках оставалось
-    // резким, а мир продолжал смазываться.
-    float proximity = 1.0;
-    if (u_CameraBlurNearThreshold > 0.0) {
-        float depth = texture2D(u_ScreenDepthMap, var_TexCoords).r;
-        proximity = smoothstep(u_CameraBlurNearThreshold,
-                               u_CameraBlurNearThreshold + u_CameraBlurNearSoftness,
-                               depth);
-    }
-
-    if (proximity < 0.002) {
-        gl_FragColor = vec4(texture2D(u_TextureMap, var_TexCoords).rgb, 1.0);
-        return;
-    }
-
-    vec2 effectiveDir = dir * proximity;
+    // Depth-based viewmodel exclusion was removed: the camera is third-person
+    // and there is no first-person weapon rendered into depth range [0, 0.3].
+    // Blur is now applied uniformly across the whole viewport.
+    vec2 effectiveDir = dir;
 
     // С r_renderScale != 100 сцена рендерится только в под-прямоугольник
     // полного render target'а, остальное остаётся чёрным. Выборка цвета
