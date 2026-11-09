@@ -1091,8 +1091,9 @@ const void* RB_PostProcess(const void* data) {
 		RB_ToneMap(srcFbo, srcBox, tr.screenScratchFbo, srcBox, autoExposure);
 		FBO_FastBlit(tr.screenScratchFbo, srcBox, srcFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-		RB_LUT(srcFbo, srcBox, tr.screenScratchFbo, srcBox);
-		FBO_FastBlit(tr.screenScratchFbo, srcBox, srcFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		if(RB_LUT(srcFbo, srcBox, tr.screenScratchFbo, srcBox)) {
+			FBO_FastBlit(tr.screenScratchFbo, srcBox, srcFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		}
 
 		RB_Bloom(srcFbo, srcBox, srcFbo, srcBox);
 		RB_MovementBlur(srcFbo, srcBox, srcFbo, srcBox);
@@ -1120,36 +1121,6 @@ const void* RB_PostProcess(const void* data) {
 
 		FBO_FastBlit(dstFbo, scaledBox, tr.screenScratchFbo, fullBox, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 		FBO_FastBlit(tr.screenScratchFbo, fullBox, dstFbo, fullBox, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-	}
-
-	// Сохраняем LDR-снимок текущего кадра в отдельный образ. Шейдер
-	// $screenmap читает именно его, поэтому:
-	//  - во время основного прохода рендер идёт в renderFbo, а читается
-	//    screenmapImage — обратной связи «текстура читается и пишется
-	//    одновременно» не возникает;
-	//  - dlight cookie получает ту же картинку без задержки.
-	//
-	// FBO-содержимое в OpenGL хранится снизу вверх (Y=0 — низ экрана),
-	// а шейдеры и проектор динамического света ожидают обычную картинку
-	// (Y=0 — верх). Поэтому ПЕРЕВОРАЧИВАЕМ на этапе копирования в
-	// screenmapFbo: glBlitFramebuffer с dstY0 > dstY1 (эквивалентно
-	// вертикальному отражению). Это надёжнее, чем tcMod на шейдере, так
-	// как cookie-текстура дл-источника сэмплится напрямую в фрагментном
-	// шейдере (SampleDlightCookie, forward dlight projector) и никакие
-	// текстурные матрицы к ней не применяются. То же самое касается
-	// других потребителей $screenmap, которые могут не проходить через
-	// generic/lightall стадию с USE_TCMOD.
-	//
-	// Берём srcFbo, потому что в MSAA-случае srcFbo = tr.msaaResolveFbo
-	// (texture-backed), а dstFbo может быть renderbuffer-backed без
-	// colorImage[0]. В no-msaa srcFbo = dstFbo = tr.renderFbo — тоже
-	// texture-backed.
-	if(tr.screenmapFbo && srcFbo && srcFbo->frameBuffer) {
-		GL_BindFramebuffer(GL_READ_FRAMEBUFFER, srcFbo->frameBuffer);
-		GL_BindFramebuffer(GL_DRAW_FRAMEBUFFER, tr.screenmapFbo->frameBuffer);
-		qglBlitFramebuffer(srcBox[0], srcBox[1], srcBox[0] + srcBox[2], srcBox[1] + srcBox[3], 0, tr.screenmapFbo->height, tr.screenmapFbo->width, 0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		GL_BindFramebuffer(GL_FRAMEBUFFER, 0);
-		glState.currentFBO = NULL;
 	}
 
 	if(0) {

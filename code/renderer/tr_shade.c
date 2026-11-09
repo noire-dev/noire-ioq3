@@ -798,7 +798,7 @@ void RB_FogPass(void) {
 	vec5_t deformParams;
 	bool hasWorldFog;
 
-	if(!tess.numIndexes || !tr.world) return;
+	if(!tess.numIndexes || !tr.world || !r_fog->integer) return;
 
 	hasWorldFog = (tess.fogNum > 0 && tess.fogNum < tr.world->numfogs);
 
@@ -833,52 +833,54 @@ void RB_FogPass(void) {
 	}
 
 	/* ---------- 2) динамический туман поверх объёмного ---------- */
-	shaderProgram_t* sp;
-	vec4_t color;
-	vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
-	float eyeT;
-	float startDist = r_fogStart->value;
-	float endDist = r_fogEnd->value;
-	float range = endDist - startDist;
-	float scale;
-	vec3_t local;
+	if(r_fogDensity->value > 0.001) {
+		shaderProgram_t* sp;
+		vec4_t color;
+		vec4_t fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
+		float eyeT;
+		float startDist = r_fogStart->value;
+		float endDist = r_fogEnd->value;
+		float range = endDist - startDist;
+		float scale;
+		vec3_t local;
 
-	if(range < 1.0f) range = 1.0f;
+		if(range < 1.0f) range = 1.0f;
 
-	// vertex-шейдер умножает dot-произведение на 8.0,
-	// поэтому для линейной рампы 0..1 на участке range нужен /8.
-	scale = r_fogDensity->value / (8.0f * range);
+		// vertex-шейдер умножает dot-произведение на 8.0,
+		// поэтому для линейной рампы 0..1 на участке range нужен /8.
+		scale = r_fogDensity->value / (8.0f * range);
 
-	color[0] = r_fogColorR->value;
-	color[1] = r_fogColorG->value;
-	color[2] = r_fogColorB->value;
-	color[3] = 1.0f;
+		color[0] = r_fogColorR->value;
+		color[1] = r_fogColorG->value;
+		color[2] = r_fogColorB->value;
+		color[3] = 1.0f;
 
-	sp = RB_FogSetupShader(deformGen, deformParams);
+		sp = RB_FogSetupShader(deformGen, deformParams);
 
-	GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
+		GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
 
-	VectorSubtract(backEnd.or.origin, backEnd.viewParms.or.origin, local);
+		VectorSubtract(backEnd.or.origin, backEnd.viewParms.or.origin, local);
 
-	fogDistanceVector[0] = -backEnd.or.modelMatrix[2] * scale;
-	fogDistanceVector[1] = -backEnd.or.modelMatrix[6] * scale;
-	fogDistanceVector[2] = -backEnd.or.modelMatrix[10] * scale;
-	fogDistanceVector[3] = (DotProduct(local, backEnd.viewParms.or.axis[0]) - startDist) * scale;
+		fogDistanceVector[0] = -backEnd.or.modelMatrix[2] * scale;
+		fogDistanceVector[1] = -backEnd.or.modelMatrix[6] * scale;
+		fogDistanceVector[2] = -backEnd.or.modelMatrix[10] * scale;
+		fogDistanceVector[3] = (DotProduct(local, backEnd.viewParms.or.axis[0]) - startDist) * scale;
 
-	// у динамического тумана нет плоскости отсечения,
-	// поэтому t в CalcFog() всегда = 1
-	fogDepthVector[0] = 0.0f;
-	fogDepthVector[1] = 0.0f;
-	fogDepthVector[2] = 0.0f;
-	fogDepthVector[3] = 1.0f;
+		// у динамического тумана нет плоскости отсечения,
+		// поэтому t в CalcFog() всегда = 1
+		fogDepthVector[0] = 0.0f;
+		fogDepthVector[1] = 0.0f;
+		fogDepthVector[2] = 0.0f;
+		fogDepthVector[3] = 1.0f;
 
-	eyeT = 1.0f;
+		eyeT = 1.0f;
 
-	GLSL_SetUniformVec4(sp, UNIFORM_FOGDISTANCE, fogDistanceVector);
-	GLSL_SetUniformVec4(sp, UNIFORM_FOGDEPTH, fogDepthVector);
-	GLSL_SetUniformFloat(sp, UNIFORM_FOGEYET, eyeT);
+		GLSL_SetUniformVec4(sp, UNIFORM_FOGDISTANCE, fogDistanceVector);
+		GLSL_SetUniformVec4(sp, UNIFORM_FOGDEPTH, fogDepthVector);
+		GLSL_SetUniformFloat(sp, UNIFORM_FOGEYET, eyeT);
 
-	R_DrawElements(tess.numIndexes, tess.firstIndex);
+		R_DrawElements(tess.numIndexes, tess.firstIndex);
+	}
 }
 
 static unsigned int RB_CalcShaderVertexAttribs(shaderCommands_t* input) {

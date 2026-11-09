@@ -605,7 +605,7 @@ static void RB_LoadLUTFile(const char* name) {
 	ri.FS_FreeFile(buffer);
 }
 
-void RB_LUT(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
+bool RB_LUT(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
 	vec4_t color;
 
 	if(!r_lutFile || !r_lutFile->string[0]) {
@@ -614,11 +614,11 @@ void RB_LUT(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
 			s_loadedLUTName[0] = '\0';
 		}
 
-		return;
+		return false;
 	}
 
 	if(!tr.lutShader.program) {
-		return;
+		return false;
 	}
 
 	if(Q_stricmp(s_loadedLUTName, r_lutFile->string) != 0) {
@@ -627,7 +627,7 @@ void RB_LUT(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
 	}
 
 	if(!tr.lutImage) {
-		return;
+		return false;
 	}
 
 	GL_BindMultiTexture(GL_TEXTURE0 + TB_LIGHTMAP, GL_TEXTURE_3D, tr.lutImage->texnum);
@@ -637,6 +637,7 @@ void RB_LUT(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {
 	VectorSet4(color, 1.0f, 1.0f, 1.0f, 1.0f);
 
 	FBO_Blit(src, srcBox, NULL, dst, dstBox, &tr.lutShader, color, 0);
+	return true;
 }
 
 void RB_MovementBlur(FBO_t* src, ivec4_t srcBox, FBO_t* dst, ivec4_t dstBox) {

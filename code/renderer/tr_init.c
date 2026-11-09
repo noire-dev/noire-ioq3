@@ -98,6 +98,7 @@ cvar_t* r_shadowAmbientScale;
 cvar_t* r_shadowFilter;
 cvar_t* r_shadowSkybox;
 
+cvar_t* r_fog;
 cvar_t* r_fogDensity;
 cvar_t* r_fogColorR;
 cvar_t* r_fogColorG;
@@ -881,6 +882,7 @@ void R_Register(void) {
 	r_shadowFilter = ri.Cvar_Get("r_shadowFilter", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowSkybox = ri.Cvar_Get("r_shadowSkybox", "0", CVAR_ARCHIVE);
 
+	r_fog = ri.Cvar_Get("r_fog", "1", CVAR_ARCHIVE);
 	r_fogDensity = ri.Cvar_Get("r_fogDensity", "1.0", CVAR_ARCHIVE);
 	r_fogColorR = ri.Cvar_Get("r_fogColorR", "0.5", CVAR_ARCHIVE);
 	r_fogColorG = ri.Cvar_Get("r_fogColorG", "0.5", CVAR_ARCHIVE);

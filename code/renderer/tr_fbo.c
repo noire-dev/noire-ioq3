@@ -259,12 +259,6 @@ void FBO_Init(void) {
 		R_CheckFBO(tr.screenScratchFbo);
 	}
 
-	if(tr.screenmapImage) {
-		tr.screenmapFbo = FBO_Create("_screenmap", tr.screenmapImage->width, tr.screenmapImage->height);
-		FBO_AttachImage(tr.screenmapFbo, tr.screenmapImage, GL_COLOR_ATTACHMENT0, 0);
-		R_CheckFBO(tr.screenmapFbo);
-	}
-
 	if(tr.sunRaysImage) {
 		tr.sunRaysFbo = FBO_Create("_sunRays", tr.renderDepthImage->width, tr.renderDepthImage->height);
 		FBO_AttachImage(tr.sunRaysFbo, tr.sunRaysImage, GL_COLOR_ATTACHMENT0, 0);

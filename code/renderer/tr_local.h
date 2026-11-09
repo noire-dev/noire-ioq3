@@ -1509,7 +1509,6 @@ typedef struct {
 	image_t* sunRaysImage;
 	image_t* renderDepthImage;
 	image_t* screenScratchImage;
-	image_t* screenmapImage;
 	image_t* textureScratchImage[2];
 	image_t* quarterImage[2];
 	image_t* bloomImage[2];
@@ -1527,7 +1526,6 @@ typedef struct {
 	FBO_t* sunRaysFbo;
 	FBO_t* dlightShadowFbo;
 	FBO_t* screenScratchFbo;
-	FBO_t* screenmapFbo;
 	FBO_t* textureScratchFbo[2];
 	FBO_t* quarterFbo[2];
 	FBO_t* bloomFbo[2];
@@ -1730,6 +1728,7 @@ extern cvar_t* r_shadowAmbientScale;
 extern cvar_t* r_shadowFilter;
 extern cvar_t* r_shadowSkybox;
 
+extern cvar_t* r_fog;
 extern cvar_t* r_fogDensity;
 extern cvar_t* r_fogColorR;
 extern cvar_t* r_fogColorG;

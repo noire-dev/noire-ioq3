@@ -802,14 +802,14 @@ void CG_Player(centity_t* cent) {
 		// main view: neck+head collapsed, visible only through the eyes
 		trap_R_SetBoneScale("ValveBiped.Bip01_Neck1", hideScale);
 		trap_R_SetBoneScale("ValveBiped.Bip01_Head1", hideScale);
-		player.renderfx |= RF_FIRST_PERSON;
+		player.renderfx |= RF_FIRST_PERSON | RF_NO_REFLECT;
 		CG_SetPlayerJiggles(ci);
 		trap_R_AddRefEntityToScene(&player);
 
 		// mirrors and portals: full skeleton, visible only in reflection passes
 		trap_R_SetBoneScale("ValveBiped.Bip01_Neck1", normalScale);
 		trap_R_SetBoneScale("ValveBiped.Bip01_Head1", normalScale);
-		player.renderfx &= ~RF_FIRST_PERSON;
+		player.renderfx &= ~RF_FIRST_PERSON | RF_NO_REFLECT;
 		player.renderfx |= RF_THIRD_PERSON;
 		CG_SetPlayerJiggles(ci);
 		trap_R_AddRefEntityToScene(&player);
