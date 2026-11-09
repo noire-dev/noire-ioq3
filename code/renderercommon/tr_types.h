@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define RF_WRAP_FRAMES 0x0040
 #define RF_RGB_TINT 0x0080
 #define RF_FORCE_ENT_ALPHA 0x0100
+#define RF_NO_REFLECT 0x0200
 
 // refdef flags
 #define RDF_NOWORLDMODEL 0x0001  // used for player configuration screen
