@@ -243,6 +243,8 @@ static void R_AddWorldSurface(msurface_t* surf, const dlightMask_t* sourceDlight
 	else
 		DlightMask_Clear(&dlightBits);
 
+	// if(surf->shader->surfaceFlags & SURF_DISPLACEMENT) return; // Тут я проверял дисплейсменты, они реально работают и правильно помечаются
+
 	if((surf->surfaceFlags & SURF_SKYBOX) && !r_dynamicLightSkybox->integer) {
 		DlightMask_Clear(&dlightBits);
 		if(tr.viewParms.flags & VPF_DLIGHTSHADOW) return;

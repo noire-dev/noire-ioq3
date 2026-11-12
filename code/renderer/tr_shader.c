@@ -1383,7 +1383,6 @@ infoParm_t infoParms[] = {
     {"nolightmap", 0, SURF_NOLIGHTMAP, 0},       // don't generate a lightmap
     {"cubemap", 0, SURF_CUBEMAP, 0},             // reflective?
     {"cubemapWater", 0, SURF_CUBEMAP_WATER, 0},  // correct reflect?
-    {"skybox", 0, SURF_SKYBOX, 0},               // skybox for optimize?
 
 	// material flags (server/gameplay relevant)
     {"chainlink", 0, SURF_CHAINLINK, 0},
@@ -1400,6 +1399,9 @@ infoParm_t infoParms[] = {
     {"tile", 0, SURF_TILE, 0},
     {"wood", 0, SURF_WOOD, 0},
     {"woodpanel", 0, SURF_WOODPANEL, 0},
+
+    {"skybox", 0, SURF_SKYBOX, 0},              // skybox for optimize?
+    {"displacement", 0, SURF_DISPLACEMENT, 0},  // displacement for optimize?
 };
 
 /*
