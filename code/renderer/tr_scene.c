@@ -1064,7 +1064,7 @@ void RE_RenderScene(const refdef_t* fd) {
 
 	VectorCopy(fd->vieworg, parms.pvsOrigin);
 
-	if(!(fd->rdflags & RDF_NOWORLDMODEL) && r_shadows->integer) {
+	if(!(fd->rdflags & RDF_NOWORLDMODEL) && (r_shadows->integer || r_depthPrepass->integer)) {
 		parms.flags = VPF_USESUNLIGHT;
 	}
 

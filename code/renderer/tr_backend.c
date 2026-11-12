@@ -364,7 +364,7 @@ void RB_RenderDrawSurfList(drawSurf_t* drawSurfs, int numDrawSurfs) {
 			rb_surfaceTable[*drawSurf->surface](drawSurf->surface);
 			continue;
 		}
-		oldSort = (int)drawSurf->sort;
+		oldSort = drawSurf->sort;
 		R_DecomposeSort(drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted);
 		useCubemap = drawSurf->useCubemap;
 		VectorCopy(drawSurf->cubemapOrigin, cubemapOrigin);
@@ -770,7 +770,7 @@ const void* RB_DrawSurfs(const void* data) {
 		qglEnable(GL_DEPTH_CLAMP);
 	}
 
-	if(glRefConfig.framebufferObject && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) && !isDlightShadowView && (isShadowView || (r_depthPrepass->integer && (r_shadows->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT))))) {
+	if(glRefConfig.framebufferObject && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) && !isDlightShadowView && (isShadowView || (r_depthPrepass->integer && (backEnd.viewParms.flags & VPF_USESUNLIGHT)))) {
 		FBO_t* oldFbo = glState.currentFBO;
 		vec4_t viewInfo;
 
@@ -783,16 +783,16 @@ const void* RB_DrawSurfs(const void* data) {
 		backEnd.depthFill = false;
 
 		if(!isShadowView) {
-			if(tr.msaaResolveFbo) {
-				// If we're using multisampling, resolve the depth first
-				FBO_FastBlit(tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-			} else if(tr.renderFbo == NULL && tr.renderDepthImage) {
-				// If we're rendering directly to the screen, copy the depth to a texture
-				// This is incredibly slow on Intel Graphics, so just skip it on there
-				if(!glRefConfig.intelGraphics) qglCopyTextureSubImage2DEXT(tr.renderDepthImage->texnum, GL_TEXTURE_2D, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
-			}
-
 			if(r_shadows->integer && backEnd.viewParms.flags & VPF_USESUNLIGHT) {
+				if(tr.msaaResolveFbo) {
+					// If we're using multisampling, resolve the depth first
+					FBO_FastBlit(tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+				} else if(tr.renderFbo == NULL && tr.renderDepthImage) {
+					// If we're rendering directly to the screen, copy the depth to a texture
+					// This is incredibly slow on Intel Graphics, so just skip it on there
+					if(!glRefConfig.intelGraphics) qglCopyTextureSubImage2DEXT(tr.renderDepthImage->texnum, GL_TEXTURE_2D, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
+				}
+
 				vec4_t quadVerts[4];
 				vec2_t texCoords[4];
 				vec4_t box;
