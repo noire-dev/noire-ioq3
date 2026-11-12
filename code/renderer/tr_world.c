@@ -350,11 +350,7 @@ static void R_RecursiveWorldNode_Direct(const dlightMask_t* sourceDlightBits) {
 		if(tr.world->surfacesViewCount[s] == tr.viewCount) continue;
 		tr.world->surfacesViewCount[s] = tr.viewCount;
 
-		if(tr.viewParms.flags & VPF_DLIGHTSHADOW) {
-			R_AddWorldSurface(surf, NULL);
-		} else {
-			DlightMask_Copy(&tr.world->surfacesDlightBits[s], &dlightBits);
-		}
+		if(!(tr.viewParms.flags & VPF_DLIGHTSHADOW)) DlightMask_Copy(&tr.world->surfacesDlightBits[s], &dlightBits);
 	}
 
 	tr.pc.c_leafs = tr.world->numsurfaces;
@@ -492,16 +488,7 @@ static void R_RecursiveWorldNode(mnode_t* node, uint32_t planeBits, const dlight
 
 			if(tr.world->surfacesViewCount[surf] != tr.viewCount) {
 				tr.world->surfacesViewCount[surf] = tr.viewCount;
-
-				if(tr.viewParms.flags & VPF_DLIGHTSHADOW) {
-					msurface_t* msurf;
-
-					msurf = &tr.world->surfaces[surf];
-
-					R_AddWorldSurface(msurf, NULL);
-				} else {
-					DlightMask_Copy(&tr.world->surfacesDlightBits[surf], &dlightBits);
-				}
+				if(!(tr.viewParms.flags & VPF_DLIGHTSHADOW)) DlightMask_Copy(&tr.world->surfacesDlightBits[surf], &dlightBits);
 			} else if(!(tr.viewParms.flags & VPF_DLIGHTSHADOW)) {
 				DlightMask_Or(&tr.world->surfacesDlightBits[surf], &dlightBits);
 			}
