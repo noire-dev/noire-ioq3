@@ -215,7 +215,7 @@ static void R_FogCullSurface(msurface_t* surf) {
 	}
 
 	if(ci->type & CULLINFO_BOX) {
-		const float fogEndSq = r_fogEnd->value * r_fogEnd->value;
+		const float fogEndSq = (r_fogEnd->value * r_fogEnd->value) / r_fogDensity->value;
 		vec3_t toCam;
 		float distSq, boundSq, threshold;
 
@@ -243,9 +243,6 @@ static void R_AddWorldSurface(msurface_t* surf, const dlightMask_t* sourceDlight
 	else
 		DlightMask_Clear(&dlightBits);
 
-	// SKYBOX geometry is not a dynamic-light receiver or shadow caster by default.
-	// Keep it in the normal scene so the skybox still renders, but remove its
-	// dynamic-light bits and omit it from dlight shadow cubemap views.
 	if((surf->surfaceFlags & SURF_SKYBOX) && !r_dynamicLightSkybox->integer) {
 		DlightMask_Clear(&dlightBits);
 		if(tr.viewParms.flags & VPF_DLIGHTSHADOW) return;
@@ -255,8 +252,10 @@ static void R_AddWorldSurface(msurface_t* surf, const dlightMask_t* sourceDlight
 		bool allowShadowSkybox = (tr.viewParms.flags & VPF_DLIGHTSHADOW) ? r_dynamicLightSkybox->integer : r_shadowSkybox->integer;
 		if((tr.viewParms.flags & VPF_NOCUBEMAPS && !r_reflectionsSkybox->integer) || (tr.viewParms.flags & VPF_DEPTHSHADOW && !allowShadowSkybox) || !r_skybox->integer) return;
 	}
+
 	R_FrustumCullSurface(surf);
-	if(r_fogDensity->value >= 0.95 && (tr.frameCount & 15) == 0) R_FogCullSurface(surf);
+	if((tr.frameCount & 63) == 0) R_FogCullSurface(surf);
+
 	if(surf->doCull || surf->doFogCull) return;
 
 	if(!(tr.viewParms.targetFbo == tr.dlightShadowFbo && (tr.viewParms.flags & VPF_DEPTHSHADOW))) {
