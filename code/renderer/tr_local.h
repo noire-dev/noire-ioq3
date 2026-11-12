@@ -1684,6 +1684,7 @@ extern cvar_t* r_textureMode;
 
 extern cvar_t* r_showtris;  // enables wireframe rendering of the world
 
+extern cvar_t* r_pvs;
 extern cvar_t* r_lockpvs;
 
 extern cvar_t* r_subdivisions;

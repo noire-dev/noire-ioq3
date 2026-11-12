@@ -336,6 +336,29 @@ static bool R_CullDlightShadowNode(const mnode_t* node) {
 	return false;
 }
 
+static void R_RecursiveWorldNode_Direct(const dlightMask_t* sourceDlightBits) {
+	int s;
+	dlightMask_t dlightBits;
+	msurface_t* surf;
+
+	DlightMask_Copy(&dlightBits, sourceDlightBits);
+
+	for(s = 0; s < tr.world->numsurfaces; s++) {
+		surf = &tr.world->surfaces[s];
+
+		if(tr.world->surfacesViewCount[s] == tr.viewCount) continue;
+		tr.world->surfacesViewCount[s] = tr.viewCount;
+
+		if(tr.viewParms.flags & VPF_DLIGHTSHADOW) {
+			R_AddWorldSurface(surf, NULL);
+		} else {
+			DlightMask_Copy(&tr.world->surfacesDlightBits[s], &dlightBits);
+		}
+	}
+
+	tr.pc.c_leafs = tr.world->numsurfaces;
+}
+
 static void R_RecursiveWorldNode(mnode_t* node, uint32_t planeBits, const dlightMask_t* sourceDlightBits) {
 	int i, r;
 	dlight_t* dl;
@@ -634,7 +657,7 @@ void R_AddWorldSurfaces(void) {
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
 	// determine which leaves are in the PVS / areamask
-	if(!(tr.viewParms.flags & VPF_DLIGHTSHADOW)) R_MarkLeaves();
+	if(!(tr.viewParms.flags & VPF_DLIGHTSHADOW) && r_pvs->integer) R_MarkLeaves();
 
 	// clear out the visible min/max
 	ClearBounds(tr.viewParms.visBounds[0], tr.viewParms.visBounds[1]);
@@ -650,7 +673,10 @@ void R_AddWorldSurfaces(void) {
 		for(i = 0; i < tr.refdef.num_dlights; i++) DlightMask_Set(&dlightBits, i);
 	}
 
-	R_RecursiveWorldNode(tr.world->nodes, planeBits, &dlightBits);
+	if(r_pvs->integer)
+		R_RecursiveWorldNode(tr.world->nodes, planeBits, &dlightBits);
+	else
+		R_RecursiveWorldNode_Direct(&dlightBits);
 
 	// now add all the potentially visible surfaces
 	// also mask invisible dlights for next frame
