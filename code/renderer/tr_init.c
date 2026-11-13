@@ -888,7 +888,7 @@ void R_Register(void) {
 
 	r_autoExposure = ri.Cvar_Get("r_autoExposure", "1", CVAR_ARCHIVE);
 	r_autoExposureMin = ri.Cvar_Get("r_autoExposureMin", "-2.0", CVAR_CHEAT);
-	r_autoExposureMax = ri.Cvar_Get("r_autoExposureMax", "2.0", CVAR_CHEAT);
+	r_autoExposureMax = ri.Cvar_Get("r_autoExposureMax", "1.82", CVAR_CHEAT);
 
 	r_parallaxMapping = ri.Cvar_Get("r_parallaxMapping", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_parallaxMapShadows = ri.Cvar_Get("r_parallaxMapShadows", "0", CVAR_ARCHIVE | CVAR_LATCH);

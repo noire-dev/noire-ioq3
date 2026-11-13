@@ -1423,9 +1423,9 @@ static void PM_LadderMove(void) {
 		wishvel[2] = 0;
 	} else {  // if they're trying to move... lets calculate it
 		for(i = 0; i < 3; i++) wishvel[i] = scale * pml.forward[i] * pm->cmd.forwardmove + scale * pml.right[i] * pm->cmd.rightmove;
-    if(pm->cmd.upmove > 0) {
-        wishvel[2] += scale * pm->cmd.upmove;
-    }
+		if(pm->cmd.upmove > 0) {
+			wishvel[2] += scale * pm->cmd.upmove;
+		}
 	}
 
 	VectorCopy(wishvel, wishdir);
@@ -1566,8 +1566,6 @@ void PmoveSingle(pmove_t* pmove) {
 
 	PM_DropTimers();
 	CheckLadder();
-	if(pml.ladder) Com_Printf("ladder is true\n");
-	if(!pml.ladder) Com_Printf("ladder is false\n");
 
 	if(pm->ps->pm_flags & PMF_TIME_WATERJUMP) {
 		PM_WaterJumpMove();
