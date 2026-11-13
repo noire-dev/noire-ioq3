@@ -86,14 +86,8 @@ dlightMask_t R_DlightEntityMask(const vec3_t bounds[2]) {
 			if(dl->type == DLIGHT_PROJECTOR) {
 				vec3_t center, halfSize, toCenter;
 				float boundRadius, forwardDistance, radialSq, coneRadius;
-				VectorSet(center,
-				           (bounds[0][0] + bounds[1][0]) * 0.5f,
-				           (bounds[0][1] + bounds[1][1]) * 0.5f,
-				           (bounds[0][2] + bounds[1][2]) * 0.5f);
-				VectorSet(halfSize,
-				           (bounds[1][0] - bounds[0][0]) * 0.5f,
-				           (bounds[1][1] - bounds[0][1]) * 0.5f,
-				           (bounds[1][2] - bounds[0][2]) * 0.5f);
+				VectorSet(center, (bounds[0][0] + bounds[1][0]) * 0.5f, (bounds[0][1] + bounds[1][1]) * 0.5f, (bounds[0][2] + bounds[1][2]) * 0.5f);
+				VectorSet(halfSize, (bounds[1][0] - bounds[0][0]) * 0.5f, (bounds[1][1] - bounds[0][1]) * 0.5f, (bounds[1][2] - bounds[0][2]) * 0.5f);
 				boundRadius = VectorLength(halfSize);
 				VectorSubtract(center, dl->transformed, toCenter);
 				for(j = 0; j < 3; j++) localForward[j] = DotProduct(dl->forward, tr.or.axis[j]);
@@ -167,6 +161,13 @@ static void R_SetupEntityLightingGrid(trRefEntity_t* ent, world_t* world) {
 	int gridStep[3];
 	vec3_t direction;
 	float totalFactor;
+	vec3_t sunTint;
+	bool overrideSunTint;
+
+	sunTint[0] = r_sunLightColorR ? r_sunLightColorR->value : 0.0f;
+	sunTint[1] = r_sunLightColorG ? r_sunLightColorG->value : 0.0f;
+	sunTint[2] = r_sunLightColorB ? r_sunLightColorB->value : 0.0f;
+	overrideSunTint = (sunTint[0] != 0.0f || sunTint[1] != 0.0f || sunTint[2] != 0.0f);
 
 	if(ent->e.renderfx & RF_LIGHTING_ORIGIN) {
 		// separate lightOrigins are needed so an object that is
@@ -209,6 +210,7 @@ static void R_SetupEntityLightingGrid(trRefEntity_t* ent, world_t* world) {
 		byte* data;
 		int lat, lng;
 		vec3_t normal;
+		bool sunSample;
 #if idppc
 		float d0, d1, d2, d3, d4, d5;
 #endif
@@ -240,14 +242,27 @@ static void R_SetupEntityLightingGrid(trRefEntity_t* ent, world_t* world) {
 				continue;  // ignore samples in walls
 			}
 		}
+		lat = data[7];
+		lng = data[6];
+		lat *= (FUNCTABLE_SIZE / 256);
+		lng *= (FUNCTABLE_SIZE / 256);
+
+		// Only samples whose baked direction matches the map sun are modified.
+		// Other lightgrid entries (lamps, emissive lights, etc.) stay untouched.
+		normal[0] = tr.sinTable[(lat + (FUNCTABLE_SIZE / 4)) & FUNCTABLE_MASK] * tr.sinTable[lng];
+		normal[1] = tr.sinTable[lat] * tr.sinTable[lng];
+		normal[2] = tr.sinTable[(lng + (FUNCTABLE_SIZE / 4)) & FUNCTABLE_MASK];
+		sunSample = (DotProduct(normal, tr.sunDirectionBase) > 0.75f);
+		if(sunSample) VectorCopy(tr.sunDirection, normal);
+
 		totalFactor += factor;
 #if idppc
 		d0 = data[0];
 		d1 = data[1];
 		d2 = data[2];
-		d3 = data[3];
-		d4 = data[4];
-		d5 = data[5];
+		d3 = data[3] * ((sunSample && overrideSunTint) ? sunTint[0] : 1.0f);
+		d4 = data[4] * ((sunSample && overrideSunTint) ? sunTint[1] : 1.0f);
+		d5 = data[5] * ((sunSample && overrideSunTint) ? sunTint[2] : 1.0f);
 
 		ent->ambientLight[0] += factor * d0;
 		ent->ambientLight[1] += factor * d1;
@@ -265,32 +280,19 @@ static void R_SetupEntityLightingGrid(trRefEntity_t* ent, world_t* world) {
 			ent->ambientLight[1] += factor * data16[1] / 257.0f;
 			ent->ambientLight[2] += factor * data16[2] / 257.0f;
 
-			ent->directedLight[0] += factor * data16[3] / 257.0f;
-			ent->directedLight[1] += factor * data16[4] / 257.0f;
-			ent->directedLight[2] += factor * data16[5] / 257.0f;
+			ent->directedLight[0] += factor * data16[3] / 257.0f * ((sunSample && overrideSunTint) ? sunTint[0] : 1.0f);
+			ent->directedLight[1] += factor * data16[4] / 257.0f * ((sunSample && overrideSunTint) ? sunTint[1] : 1.0f);
+			ent->directedLight[2] += factor * data16[5] / 257.0f * ((sunSample && overrideSunTint) ? sunTint[2] : 1.0f);
 		} else {
 			ent->ambientLight[0] += factor * data[0];
 			ent->ambientLight[1] += factor * data[1];
 			ent->ambientLight[2] += factor * data[2];
 
-			ent->directedLight[0] += factor * data[3];
-			ent->directedLight[1] += factor * data[4];
-			ent->directedLight[2] += factor * data[5];
+			ent->directedLight[0] += factor * data[3] * ((sunSample && overrideSunTint) ? sunTint[0] : 1.0f);
+			ent->directedLight[1] += factor * data[4] * ((sunSample && overrideSunTint) ? sunTint[1] : 1.0f);
+			ent->directedLight[2] += factor * data[5] * ((sunSample && overrideSunTint) ? sunTint[2] : 1.0f);
 		}
 #endif
-		lat = data[7];
-		lng = data[6];
-		lat *= (FUNCTABLE_SIZE / 256);
-		lng *= (FUNCTABLE_SIZE / 256);
-
-		// decode X as cos( lat ) * sin( long )
-		// decode Y as sin( lat ) * sin( long )
-		// decode Z as cos( long )
-
-		normal[0] = tr.sinTable[(lat + (FUNCTABLE_SIZE / 4)) & FUNCTABLE_MASK] * tr.sinTable[lng];
-		normal[1] = tr.sinTable[lat] * tr.sinTable[lng];
-		normal[2] = tr.sinTable[(lng + (FUNCTABLE_SIZE / 4)) & FUNCTABLE_MASK];
-
 		VectorMA(direction, factor, normal, direction);
 	}
 

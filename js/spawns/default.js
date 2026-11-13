@@ -23,22 +23,12 @@ function SP_Worldspawn() {
     var fogStart = spawnInfo.string("r_fogStart", "4096");
     var fogEnd = spawnInfo.string("r_fogEnd", "500000");
 
-    var skyR = spawnInfo.string("r_skyColorR", "0.50");
-    var skyG = spawnInfo.string("r_skyColorG", "0.50");
-    var skyB = spawnInfo.string("r_skyColorB", "0.50");
-    var skyA = spawnInfo.string("r_skyColorA", "0.00");
-
     cvar.set("r_fogColorR", fogR);
     cvar.set("r_fogColorG", fogG);
     cvar.set("r_fogColorB", fogB);
     cvar.set("r_fogDensity", fogDensity);
     cvar.set("r_fogStart", fogStart);
     cvar.set("r_fogEnd", fogEnd);
-
-    cvar.set("r_skyColorR", skyR);
-    cvar.set("r_skyColorG", skyG);
-    cvar.set("r_skyColorB", skyB);
-    cvar.set("r_skyColorA", skyA);
 }
 
 spawn.register("prop_physics", SP_Prop_Physics);

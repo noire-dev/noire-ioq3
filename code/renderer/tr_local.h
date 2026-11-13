@@ -1591,6 +1591,7 @@ typedef struct {
 	shaderProgram_t gammaShader;
 	shaderProgram_t calclevels4xShader;
 	shaderProgram_t shadowmaskShader;
+	shaderProgram_t proceduralSkyShader;
 
 	// -----------------------------------------
 
@@ -1604,8 +1605,10 @@ typedef struct {
 	trRefdef_t refdef;
 
 	float sunShadowScale;
-	vec3_t sunLight;  // from the sky shader for this level
-	vec3_t sunDirection;
+	vec3_t sunLight;          // active world sunlight (may be overridden by r_sunLightColor*)
+	vec3_t sunDirection;      // active sunlight direction (may be overridden by r_sunAngle*)
+	vec3_t sunLightBase;      // value loaded from q3map_sun, before runtime overrides
+	vec3_t sunDirectionBase;  // direction loaded from q3map_sun, before runtime overrides
 	vec3_t lastCascadeSunDirection;
 	float lastCascadeSunMvp[16];
 
@@ -1716,6 +1719,15 @@ extern cvar_t* r_skybox;
 
 extern cvar_t* r_sunRays;
 extern cvar_t* r_sunRaysStrength;
+extern cvar_t* r_sunSize;
+extern cvar_t* r_sunColor;
+extern cvar_t* r_sunLightColorR;
+extern cvar_t* r_sunLightColorG;
+extern cvar_t* r_sunLightColorB;
+extern cvar_t* r_sunAngleX;
+extern cvar_t* r_sunAngleY;
+extern cvar_t* r_sunLightScale;
+extern cvar_t* r_sunAmbientScale;
 
 extern cvar_t* r_autoExposure;
 extern cvar_t* r_autoExposureMin;
@@ -1744,8 +1756,6 @@ extern cvar_t* r_shadows;
 extern cvar_t* r_shadowUpdate;
 extern cvar_t* r_shadowResolution;
 extern cvar_t* r_shadowDistance;
-extern cvar_t* r_shadowLightScale;
-extern cvar_t* r_shadowAmbientScale;
 extern cvar_t* r_shadowFilter;
 extern cvar_t* r_shadowSkybox;
 
@@ -1757,10 +1767,21 @@ extern cvar_t* r_fogColorB;
 extern cvar_t* r_fogStart;
 extern cvar_t* r_fogEnd;
 
-extern cvar_t* r_skyColorR;
-extern cvar_t* r_skyColorG;
-extern cvar_t* r_skyColorB;
-extern cvar_t* r_skyColorA;
+/* Procedural sky controls (surfaceparm sky; no skyparms required). */
+extern cvar_t* r_skyTopColor;
+extern cvar_t* r_skyBottomColor;
+extern cvar_t* r_skyFadeBias;
+extern cvar_t* r_skyBrightness;
+extern cvar_t* r_skyStars;
+extern cvar_t* r_skyStarsShader;
+extern cvar_t* r_skyStarsLayers;
+extern cvar_t* r_skyStarsScale;
+extern cvar_t* r_skyStarsFade;
+extern cvar_t* r_skyStarsSpeedX;
+extern cvar_t* r_skyStarsSpeedY;
+extern cvar_t* r_skyDuskColor;
+extern cvar_t* r_skyDuskIntensity;
+extern cvar_t* r_skyDuskScale;
 
 extern cvar_t* r_bloom;
 extern cvar_t* r_bloomIntensity;
@@ -2077,6 +2098,8 @@ void R_BuildCloudData(shaderCommands_t* shader);
 void R_InitSkyTexCoords(float cloudLayerHeight);
 void R_DrawSkyBox(shaderCommands_t* shader);
 void RB_DrawSun(float scale, shader_t* shader);
+void R_UpdateSkySun(void);
+void R_ResetSkyShaderState(void);
 void RB_ClipSkyPolygons(shaderCommands_t* shader);
 
 /*

@@ -42,6 +42,7 @@ typedef struct {
 	bool walking;
 	bool groundPlane;
 	trace_t groundTrace;
+	bool ladder;
 
 	vec3_t previous_origin;
 	vec3_t previous_velocity;

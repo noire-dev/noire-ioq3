@@ -68,6 +68,15 @@ cvar_t* r_skybox;
 
 cvar_t* r_sunRays;
 cvar_t* r_sunRaysStrength;
+cvar_t* r_sunSize;
+cvar_t* r_sunColor;
+cvar_t* r_sunLightColorR;
+cvar_t* r_sunLightColorG;
+cvar_t* r_sunLightColorB;
+cvar_t* r_sunAngleX;
+cvar_t* r_sunAngleY;
+cvar_t* r_sunLightScale;
+cvar_t* r_sunAmbientScale;
 
 cvar_t* r_autoExposure;
 cvar_t* r_autoExposureMin;
@@ -96,8 +105,6 @@ cvar_t* r_shadows;
 cvar_t* r_shadowUpdate;
 cvar_t* r_shadowResolution;
 cvar_t* r_shadowDistance;
-cvar_t* r_shadowLightScale;
-cvar_t* r_shadowAmbientScale;
 cvar_t* r_shadowFilter;
 cvar_t* r_shadowSkybox;
 
@@ -109,10 +116,20 @@ cvar_t* r_fogColorB;
 cvar_t* r_fogStart;
 cvar_t* r_fogEnd;
 
-cvar_t* r_skyColorR;
-cvar_t* r_skyColorG;
-cvar_t* r_skyColorB;
-cvar_t* r_skyColorA;
+cvar_t* r_skyTopColor;
+cvar_t* r_skyBottomColor;
+cvar_t* r_skyFadeBias;
+cvar_t* r_skyBrightness;
+cvar_t* r_skyStars;
+cvar_t* r_skyStarsShader;
+cvar_t* r_skyStarsLayers;
+cvar_t* r_skyStarsScale;
+cvar_t* r_skyStarsFade;
+cvar_t* r_skyStarsSpeedX;
+cvar_t* r_skyStarsSpeedY;
+cvar_t* r_skyDuskColor;
+cvar_t* r_skyDuskIntensity;
+cvar_t* r_skyDuskScale;
 
 cvar_t* r_bloom;
 cvar_t* r_bloomIntensity;
@@ -859,6 +876,15 @@ void R_Register(void) {
 
 	r_sunRays = ri.Cvar_Get("r_sunRays", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_sunRaysStrength = ri.Cvar_Get("r_sunRaysStrength", "0.64", CVAR_ARCHIVE);
+	r_sunSize = ri.Cvar_Get("r_sunSize", "0.53", CVAR_ARCHIVE);
+	r_sunColor = ri.Cvar_Get("r_sunColor", "1.0 0.95 0.82", CVAR_ARCHIVE);
+	r_sunLightColorR = ri.Cvar_Get("r_sunLightColorR", "0.0", CVAR_ARCHIVE);
+	r_sunLightColorG = ri.Cvar_Get("r_sunLightColorG", "0.0", CVAR_ARCHIVE);
+	r_sunLightColorB = ri.Cvar_Get("r_sunLightColorB", "0.0", CVAR_ARCHIVE);
+	r_sunAngleX = ri.Cvar_Get("r_sunAngleX", "-1", CVAR_ARCHIVE);
+	r_sunAngleY = ri.Cvar_Get("r_sunAngleY", "-1", CVAR_ARCHIVE);
+	r_sunLightScale = ri.Cvar_Get("r_sunLightScale", "0.50", CVAR_ARCHIVE);
+	r_sunAmbientScale = ri.Cvar_Get("r_sunAmbientScale", "0.32", CVAR_ARCHIVE);
 
 	r_autoExposure = ri.Cvar_Get("r_autoExposure", "1", CVAR_ARCHIVE);
 	r_autoExposureMin = ri.Cvar_Get("r_autoExposureMin", "-2.0", CVAR_CHEAT);
@@ -867,15 +893,15 @@ void R_Register(void) {
 	r_parallaxMapping = ri.Cvar_Get("r_parallaxMapping", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_parallaxMapShadows = ri.Cvar_Get("r_parallaxMapShadows", "0", CVAR_ARCHIVE | CVAR_LATCH);
 
-	r_reflections = ri.Cvar_Get("r_reflections", "3", CVAR_ARCHIVE | CVAR_LATCH);
-	r_reflectionsResolution = ri.Cvar_Get("r_reflectionsResolution", "1024", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflections = ri.Cvar_Get("r_reflections", "2", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflectionsResolution = ri.Cvar_Get("r_reflectionsResolution", "512", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsGrid = ri.Cvar_Get("r_reflectionsGrid", "64", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsMaterials = ri.Cvar_Get("r_reflectionsMaterials", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsEntities = ri.Cvar_Get("r_reflectionsEntities", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsSkybox = ri.Cvar_Get("r_reflectionsSkybox", "0", CVAR_ARCHIVE);
-	r_reflectionWater = ri.Cvar_Get("r_reflectionWater", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_reflectionWaterScale = ri.Cvar_Get("r_reflectionWaterScale", "0.5", CVAR_ARCHIVE | CVAR_LATCH);
-	r_reflectionWaterDistortion = ri.Cvar_Get("r_reflectionWaterDistortion", "64", CVAR_ARCHIVE);
+	r_reflectionWater = ri.Cvar_Get("r_reflectionWater", "1", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflectionWaterScale = ri.Cvar_Get("r_reflectionWaterScale", "1.00", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflectionWaterDistortion = ri.Cvar_Get("r_reflectionWaterDistortion", "1024", CVAR_ARCHIVE);
 
 	r_jiggle = ri.Cvar_Get("r_jiggle", "1", CVAR_ARCHIVE);
 	r_jiggleGravity = ri.Cvar_Get("r_jiggleGravity", "-800", CVAR_ARCHIVE);
@@ -890,8 +916,6 @@ void R_Register(void) {
 	r_shadowUpdate = ri.Cvar_Get("r_shadowUpdate", "0", CVAR_ARCHIVE);
 	r_shadowResolution = ri.Cvar_Get("r_shadowResolution", "1024", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowDistance = ri.Cvar_Get("r_shadowDistance", "2048", CVAR_ARCHIVE | CVAR_LATCH);
-	r_shadowLightScale = ri.Cvar_Get("r_shadowLightScale", "0.50", CVAR_ARCHIVE);
-	r_shadowAmbientScale = ri.Cvar_Get("r_shadowAmbientScale", "0.32", CVAR_ARCHIVE);
 	r_shadowFilter = ri.Cvar_Get("r_shadowFilter", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_shadowSkybox = ri.Cvar_Get("r_shadowSkybox", "0", CVAR_ARCHIVE);
 
@@ -903,10 +927,21 @@ void R_Register(void) {
 	r_fogStart = ri.Cvar_Get("r_fogStart", "4096", CVAR_ARCHIVE);
 	r_fogEnd = ri.Cvar_Get("r_fogEnd", "500000", CVAR_ARCHIVE);
 
-	r_skyColorR = ri.Cvar_Get("r_skyColorR", "0.5", CVAR_ARCHIVE);
-	r_skyColorG = ri.Cvar_Get("r_skyColorG", "0.5", CVAR_ARCHIVE);
-	r_skyColorB = ri.Cvar_Get("r_skyColorB", "0.5", CVAR_ARCHIVE);
-	r_skyColorA = ri.Cvar_Get("r_skyColorA", "0.0", CVAR_ARCHIVE);
+	// Procedural sky. RGB values are floating point, normally in the 0..1 range.
+	r_skyTopColor = ri.Cvar_Get("r_skyTopColor", "1.00 1.00 1.00", CVAR_ARCHIVE);
+	r_skyBottomColor = ri.Cvar_Get("r_skyBottomColor", "1.00 1.00 1.00", CVAR_ARCHIVE);
+	r_skyFadeBias = ri.Cvar_Get("r_skyFadeBias", "1.0", CVAR_ARCHIVE);
+	r_skyBrightness = ri.Cvar_Get("r_skyBrightness", "1.0", CVAR_ARCHIVE);
+	r_skyStars = ri.Cvar_Get("r_skyStars", "1", CVAR_ARCHIVE);
+	r_skyStarsShader = ri.Cvar_Get("r_skyStarsShader", "", CVAR_ARCHIVE);
+	r_skyStarsLayers = ri.Cvar_Get("r_skyStarsLayers", "1", CVAR_ARCHIVE);
+	r_skyStarsScale = ri.Cvar_Get("r_skyStarsScale", "1.0", CVAR_ARCHIVE);
+	r_skyStarsFade = ri.Cvar_Get("r_skyStarsFade", "1.0", CVAR_ARCHIVE);
+	r_skyStarsSpeedX = ri.Cvar_Get("r_skyStarsSpeedX", "0.0", CVAR_ARCHIVE);
+	r_skyStarsSpeedY = ri.Cvar_Get("r_skyStarsSpeedY", "0.0", CVAR_ARCHIVE);
+	r_skyDuskColor = ri.Cvar_Get("r_skyDuskColor", "1.00 1.00 1.00", CVAR_ARCHIVE);
+	r_skyDuskIntensity = ri.Cvar_Get("r_skyDuskIntensity", "1.00", CVAR_ARCHIVE);
+	r_skyDuskScale = ri.Cvar_Get("r_skyDuskScale", "18.0", CVAR_ARCHIVE);
 
 	r_bloom = ri.Cvar_Get("r_bloom", "1", CVAR_ARCHIVE);
 	r_bloomIntensity = ri.Cvar_Get("r_bloomIntensity", "1.00", CVAR_ARCHIVE);
@@ -938,8 +973,8 @@ void R_Register(void) {
 	r_gamma = ri.Cvar_Get("r_gamma", "1", CVAR_ARCHIVE);
 	r_renderScale = ri.Cvar_Get("r_renderScale", "100", CVAR_ARCHIVE);
 
-	r_ambientScale = ri.Cvar_Get("r_ambientScale", "2.64", CVAR_CHEAT);
-	r_directedScale = ri.Cvar_Get("r_directedScale", "1.48", CVAR_CHEAT);
+	r_ambientScale = ri.Cvar_Get("r_ambientScale", "0.72", CVAR_CHEAT);
+	r_directedScale = ri.Cvar_Get("r_directedScale", "0.92", CVAR_CHEAT);
 	r_dlightScale = ri.Cvar_Get("r_dlightScale", "12.0", CVAR_ARCHIVE);
 
 	r_pvs = ri.Cvar_Get("r_pvs", "0", CVAR_ARCHIVE);

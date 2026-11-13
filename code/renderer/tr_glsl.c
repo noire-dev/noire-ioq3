@@ -54,6 +54,8 @@ extern const char* fallbackShader_camerablur_vp;
 extern const char* fallbackShader_camerablur_fp;
 extern const char* fallbackShader_lut_vp;
 extern const char* fallbackShader_lut_fp;
+extern const char* fallbackShader_procedural_sky_vp;
+extern const char* fallbackShader_procedural_sky_fp;
 
 typedef struct uniformInfo_s {
 	char* name;
@@ -1267,6 +1269,12 @@ void GLSL_InitGPUShaders(void) {
 		numEtcShaders++;
 	}
 
+	if(!GLSL_InitGPUShader(&tr.proceduralSkyShader, "procedural_sky", ATTR_POSITION, true, "", true, fallbackShader_procedural_sky_vp, fallbackShader_procedural_sky_fp)) {
+		ri.Error(ERR_FATAL, "Could not load procedural sky shader!");
+	}
+	R_ResetSkyShaderState();
+	numEtcShaders++;
+
 	endTime = ri.Milliseconds();
 
 	ri.Printf(PRINT_ALL, "loaded %i GLSL shaders (%i gen %i light %i etc) in %5.2f seconds\n", numGenShaders + numLightShaders + numEtcShaders, numGenShaders, numLightShaders, numEtcShaders, (endTime - startTime) / 1000.0);
@@ -1301,6 +1309,8 @@ void GLSL_ShutdownGPUShaders(void) {
 	GLSL_DeleteGPUShader(&tr.calclevels4xShader);
 
 	GLSL_DeleteGPUShader(&tr.shadowmaskShader);
+	GLSL_DeleteGPUShader(&tr.proceduralSkyShader);
+	R_ResetSkyShaderState();
 }
 
 void GLSL_BindProgram(shaderProgram_t* program) {

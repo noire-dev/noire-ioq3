@@ -856,12 +856,12 @@ void RE_BeginScene(const refdef_t* fd) {
 	} else {
 		float scale = (1 << 0) / 255.0f;
 
-		VectorScale(tr.sunLight, scale * r_shadowLightScale->value, tr.refdef.sunCol);
+		VectorScale(tr.sunLight, scale * r_sunLightScale->value, tr.refdef.sunCol);
 
 		if(r_shadows->integer) {
-			tr.refdef.sunAmbCol[0] = tr.refdef.sunAmbCol[1] = tr.refdef.sunAmbCol[2] = r_shadowAmbientScale->value;
+			tr.refdef.sunAmbCol[0] = tr.refdef.sunAmbCol[1] = tr.refdef.sunAmbCol[2] = r_sunAmbientScale->value;
 		} else {
-			VectorScale(tr.sunLight, scale * r_shadowAmbientScale->value, tr.refdef.sunAmbCol);
+			VectorScale(tr.sunLight, scale * r_sunAmbientScale->value, tr.refdef.sunAmbCol);
 		}
 	}
 
@@ -947,6 +947,9 @@ void RE_RenderScene(const refdef_t* fd) {
 
 	startTime = ri.Milliseconds();
 
+	// Runtime sky sun controls must be applied before refdef and cascade setup.
+	R_UpdateSkySun();
+
 	if(!tr.world && !(fd->rdflags & RDF_NOWORLDMODEL)) {
 		ri.Error(ERR_DROP, "R_RenderScene: NULL worldmodel");
 	}
@@ -963,42 +966,48 @@ void RE_RenderScene(const refdef_t* fd) {
 
 	// playing with even more shadows
 	if(glRefConfig.framebufferObject && r_shadows->integer && !(fd->rdflags & RDF_NOWORLDMODEL) && r_shadows->integer) {
-		if(r_shadowUpdate->integer == 5) {
-			R_RenderSunShadowMaps(fd, 0);  // 1-й каскад: каждый кадр
-			R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждый кадр
-			R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждый кадр
-		} else if(r_shadowUpdate->integer == 4) {
-			R_RenderSunShadowMaps(fd, 0);                               // 1-й каскад: каждый кадр
-			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждые 2 кадра
-			if((tr.frameCount & 3) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 4 кадра
-		} else if(r_shadowUpdate->integer == 3) {
-			R_RenderSunShadowMaps(fd, 0);                               // 1-й каскад: каждый кадр
-			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждые 2 кадра
-			if((tr.frameCount & 7) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 8 кадров
-		} else if(r_shadowUpdate->integer == 2) {
-			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);   // 1-й каскад: каждые 2 кадра
-			if((tr.frameCount & 3) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 4 кадра
-			if((tr.frameCount & 15) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 16 кадров
-		} else if(r_shadowUpdate->integer == 1) {
-			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);   // 1-й каскад: каждые 2 кадра
-			if((tr.frameCount & 7) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 8 кадров
-			if((tr.frameCount & 31) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 32 кадров
-		} else if(r_shadowUpdate->integer == 0) {
-			if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);    // 1-й каскад: каждые 2 кадра
-			if((tr.frameCount & 63) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 64 кадров (без энтити)
-			if((tr.frameCount & 127) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 128 кадров (без энтити)
-		}
+		bool sunDirectionChanged = !VectorCompare(tr.refdef.sunDir, tr.lastCascadeSunDirection);
 
-		// only rerender last cascade if sun has changed position
-		if(!VectorCompare(tr.refdef.sunDir, tr.lastCascadeSunDirection)) {
-			VectorCopy(tr.refdef.sunDir, tr.lastCascadeSunDirection);
+		if(sunDirectionChanged) {
+			// A changed sun invalidates every cascade, not only the world-sized
+			// fallback cascade. Force a complete refresh before using the maps.
+			R_RenderSunShadowMaps(fd, 0);
+			R_RenderSunShadowMaps(fd, 1);
+			R_RenderSunShadowMaps(fd, 2);
 			R_RenderSunShadowMaps(fd, 3);
+			VectorCopy(tr.refdef.sunDir, tr.lastCascadeSunDirection);
 			Mat4Copy(tr.refdef.sunShadowMvp[3], tr.lastCascadeSunMvp);
 		} else {
+			if(r_shadowUpdate->integer == 5) {
+				R_RenderSunShadowMaps(fd, 0);  // 1-й каскад: каждый кадр
+				R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждый кадр
+				R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждый кадр
+			} else if(r_shadowUpdate->integer == 4) {
+				R_RenderSunShadowMaps(fd, 0);                               // 1-й каскад: каждый кадр
+				if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждые 2 кадра
+				if((tr.frameCount & 3) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 4 кадра
+			} else if(r_shadowUpdate->integer == 3) {
+				R_RenderSunShadowMaps(fd, 0);                               // 1-й каскад: каждый кадр
+				if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 1);  // 2-й каскад: каждые 2 кадра
+				if((tr.frameCount & 7) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 8 кадров
+			} else if(r_shadowUpdate->integer == 2) {
+				if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);   // 1-й каскад: каждые 2 кадра
+				if((tr.frameCount & 3) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 4 кадра
+				if((tr.frameCount & 15) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 16 кадров
+			} else if(r_shadowUpdate->integer == 1) {
+				if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);   // 1-й каскад: каждые 2 кадра
+				if((tr.frameCount & 7) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 8 кадров
+				if((tr.frameCount & 31) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 32 кадров
+			} else if(r_shadowUpdate->integer == 0) {
+				if((tr.frameCount & 1) == 0) R_RenderSunShadowMaps(fd, 0);    // 1-й каскад: каждые 2 кадра
+				if((tr.frameCount & 63) == 0) R_RenderSunShadowMaps(fd, 1);   // 2-й каскад: каждые 64 кадров (без энтити)
+				if((tr.frameCount & 127) == 0) R_RenderSunShadowMaps(fd, 2);  // 3-й каскад: каждые 128 кадров (без энтити)
+			}
+
+			// Keep the world-sized cascade's matrix stable between refreshes.
 			Mat4Copy(tr.lastCascadeSunMvp, tr.refdef.sunShadowMvp[3]);
 		}
 	}
-
 	if(r_reflections->integer && tr.cubemap) {
 		static int current_side = 0;
 		if(r_reflections->integer == 1) {

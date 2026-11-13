@@ -38,13 +38,16 @@ pml_t pml;
 float pm_stopspeed = 100.0f;
 float pm_duckScale = 0.25f;
 float pm_swimScale = 0.50f;
+float pm_ladderScale = 0.50f;
 
 float pm_accelerate = 10.0f;
 float pm_airaccelerate = 1.0f;
 float pm_wateraccelerate = 4.0f;
+float pm_ladderAccelerate = 3000.0f;
 
 float pm_friction = 6.0f;
 float pm_waterfriction = 1.0f;
+float pm_ladderfriction = 3000.0f;
 
 /*
 ===============
@@ -197,6 +200,11 @@ static void PM_Friction(void) {
 	// apply water friction even if just wading
 	if(pm->waterlevel) {
 		drop += speed * pm_waterfriction * pm->waterlevel * pml.frametime;
+	}
+
+	// apply ladder friction
+	if(pml.ladder) {
+		drop += speed * pm_ladderfriction * pml.frametime;
 	}
 
 	// scale the velocity
@@ -995,8 +1003,10 @@ static void PM_GroundTrace(void) {
 	}
 
 	pm->ps->groundEntityNum = trace.entityNum;
-	if(pm->entityIsPhysics && pm->entityIsPhysics(trace.entityNum)) pm->ps->pm_flags |= PMF_ON_PHYSICS;
-	else pm->ps->pm_flags &= ~PMF_ON_PHYSICS;
+	if(pm->entityIsPhysics && pm->entityIsPhysics(trace.entityNum))
+		pm->ps->pm_flags |= PMF_ON_PHYSICS;
+	else
+		pm->ps->pm_flags &= ~PMF_ON_PHYSICS;
 
 	// don't reset the z velocity for slopes
 	//	pm->ps->velocity[2] = 0;
@@ -1394,6 +1404,67 @@ void PM_UpdateViewAngles(playerState_t* ps, const usercmd_t* cmd) {
 	}
 }
 
+static void PM_LadderMove(void) {
+	int i;
+	vec3_t wishvel;
+	float wishspeed;
+	vec3_t wishdir;
+	float scale;
+	float vel;
+
+	PM_Friction();
+
+	scale = PM_CmdScale(&pm->cmd);
+
+	// user intentions [what the user is attempting to do]
+	if(!scale) {
+		wishvel[0] = 0;
+		wishvel[1] = 0;
+		wishvel[2] = 0;
+	} else {  // if they're trying to move... lets calculate it
+		for(i = 0; i < 3; i++) wishvel[i] = scale * pml.forward[i] * pm->cmd.forwardmove + scale * pml.right[i] * pm->cmd.rightmove;
+    if(pm->cmd.upmove > 0) {
+        wishvel[2] += scale * pm->cmd.upmove;
+    }
+	}
+
+	VectorCopy(wishvel, wishdir);
+	wishspeed = VectorNormalize(wishdir);
+
+	if(wishspeed > pm->ps->speed * pm_ladderScale) {
+		wishspeed = pm->ps->speed * pm_ladderScale;
+	}
+
+	PM_Accelerate(wishdir, wishspeed, pm_ladderAccelerate);
+
+	// This SHOULD help us with sloped ladders, but it remains untested.
+	if(pml.groundPlane && DotProduct(pm->ps->velocity, pml.groundTrace.plane.normal) < 0) {
+		vel = VectorLength(pm->ps->velocity);
+		// slide along the ground plane [the ladder section under our feet]
+		PM_ClipVelocity(pm->ps->velocity, pml.groundTrace.plane.normal, pm->ps->velocity, OVERCLIP);
+
+		VectorNormalize(pm->ps->velocity);
+		VectorScale(pm->ps->velocity, vel, pm->ps->velocity);
+	}
+
+	PM_SlideMove(false);  // move without gravity
+}
+
+void CheckLadder(void) {
+	vec3_t flatforward, spot;
+	trace_t trace;
+	pml.ladder = false;
+	// check for ladder
+	flatforward[0] = pml.forward[0];
+	flatforward[1] = pml.forward[1];
+	flatforward[2] = 0;
+	VectorNormalize(flatforward);
+	VectorMA(pm->ps->origin, 1, flatforward, spot);
+	pm->trace(&trace, pm->ps->origin, pm->mins, pm->maxs, spot, pm->ps->clientNum, MASK_PLAYERSOLID);
+
+	if((trace.fraction < 1) && (trace.surfaceFlags & SURF_LADDER)) pml.ladder = true;
+}
+
 /*
 ================
 PmoveSingle
@@ -1494,12 +1565,17 @@ void PmoveSingle(pmove_t* pmove) {
 	}
 
 	PM_DropTimers();
+	CheckLadder();
+	if(pml.ladder) Com_Printf("ladder is true\n");
+	if(!pml.ladder) Com_Printf("ladder is false\n");
 
 	if(pm->ps->pm_flags & PMF_TIME_WATERJUMP) {
 		PM_WaterJumpMove();
 	} else if(pm->waterlevel > 1) {
 		// swimming
 		PM_WaterMove();
+	} else if(pml.ladder) {
+		PM_LadderMove();
 	} else if(pml.walking) {
 		// walking on ground
 		PM_WalkMove();

@@ -315,18 +315,198 @@ static void MakeSkyVec(float s, float t, int axis, float outSt[2], vec3_t outXYZ
 	}
 }
 
-static int sky_texorder[6] = {0, 2, 1, 3, 4, 5};
 static vec3_t s_skyPoints[SKY_SUBDIVISIONS + 1][SKY_SUBDIVISIONS + 1];
 static float s_skyTexCoords[SKY_SUBDIVISIONS + 1][SKY_SUBDIVISIONS + 1][2];
 
-static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs[2]) {
+enum { SKYU_MODELVIEWPROJECTION, SKYU_TOPCOLOR, SKYU_BOTTOMCOLOR, SKYU_FADEBIAS, SKYU_BRIGHTNESS, SKYU_DUSKCOLOR, SKYU_DUSKINTENSITY, SKYU_DUSKSCALE, SKYU_SUNSIZE, SKYU_SUNCOLOR, SKYU_SUNDIRECTION, SKYU_TEXTURE, SKYU_USETEXTURE, SKYU_STARS_LAYERS, SKYU_STARS_SCALE, SKYU_STARS_FADE, SKYU_STARS_SPEED, SKYU_TIME, SKYU_COUNT };
+
+static GLint skyUniforms[SKYU_COUNT];
+static bool skyUniformsInitialized;
+static GLuint skyUniformProgram;
+static image_t* skyStarsImage;
+static char skyStarsImageName[MAX_QEXTENDEDPATH];
+static void SkyUpdateStarsImage(void);
+
+/* Reset cached GL handles when the context/program set is recreated. */
+void R_ResetSkyShaderState(void) {
+	skyUniformProgram = 0;
+	skyUniformsInitialized = false;
+	skyStarsImage = NULL;
+	skyStarsImageName[0] = '\0';
+	Com_Memset(skyUniforms, 0xff, sizeof(skyUniforms));
+}
+
+/*
+ * Runtime sun controls are applied before RE_BeginScene copies the direction
+ * and color into refdef.  -1 means "use q3map_sun" independently for yaw/pitch.
+ */
+void R_UpdateSkySun(void) {
+	float yaw, pitch;
+	vec3_t sunColor;
+	bool overrideSunLight;
+
+	SkyUpdateStarsImage();
+
+	if(!tr.sunDirectionBase[0] && !tr.sunDirectionBase[1] && !tr.sunDirectionBase[2]) {
+		VectorSet(tr.sunDirectionBase, 0.45f, 0.30f, 0.90f);
+		VectorNormalize(tr.sunDirectionBase);
+	}
+
+	yaw = (r_sunAngleX && r_sunAngleX->value != -1.0f) ? r_sunAngleX->value * (M_PI / 180.0f) : atan2(tr.sunDirectionBase[1], tr.sunDirectionBase[0]);
+	pitch = (r_sunAngleY && r_sunAngleY->value != -1.0f) ? r_sunAngleY->value * (M_PI / 180.0f) : asin(Com_Clamp(-1.0f, 1.0f, tr.sunDirectionBase[2]));
+
+	tr.sunDirection[0] = cos(yaw) * cos(pitch);
+	tr.sunDirection[1] = sin(yaw) * cos(pitch);
+	tr.sunDirection[2] = sin(pitch);
+	VectorNormalize(tr.sunDirection);
+
+	VectorCopy(tr.sunLightBase, tr.sunLight);
+	sunColor[0] = r_sunLightColorR ? r_sunLightColorR->value : 0.0f;
+	sunColor[1] = r_sunLightColorG ? r_sunLightColorG->value : 0.0f;
+	sunColor[2] = r_sunLightColorB ? r_sunLightColorB->value : 0.0f;
+	overrideSunLight = (sunColor[0] != 0.0f || sunColor[1] != 0.0f || sunColor[2] != 0.0f);
+
+	/* All-zero is a strict opt-out: retain the map's q3map_sun color unchanged. */
+	if(overrideSunLight) {
+		VectorScale(sunColor, 255.0f, tr.sunLight);
+	}
+}
+
+static void SkyInitUniformLocations(void) {
+	GLuint program = tr.proceduralSkyShader.program;
+
+	if(!program) return;
+	if(skyUniformProgram != program) {
+		skyUniformProgram = program;
+		skyUniformsInitialized = false;
+		skyStarsImage = NULL;
+		skyStarsImageName[0] = '\0';
+	}
+	if(skyUniformsInitialized) return;
+
+	skyUniforms[SKYU_MODELVIEWPROJECTION] = qglGetUniformLocation(program, "u_ModelViewProjectionMatrix");
+	skyUniforms[SKYU_TOPCOLOR] = qglGetUniformLocation(program, "u_SkyTopColor");
+	skyUniforms[SKYU_BOTTOMCOLOR] = qglGetUniformLocation(program, "u_SkyBottomColor");
+	skyUniforms[SKYU_FADEBIAS] = qglGetUniformLocation(program, "u_SkyFadeBias");
+	skyUniforms[SKYU_BRIGHTNESS] = qglGetUniformLocation(program, "u_SkyBrightness");
+	skyUniforms[SKYU_DUSKCOLOR] = qglGetUniformLocation(program, "u_DuskColor");
+	skyUniforms[SKYU_DUSKINTENSITY] = qglGetUniformLocation(program, "u_DuskIntensity");
+	skyUniforms[SKYU_DUSKSCALE] = qglGetUniformLocation(program, "u_DuskScale");
+	skyUniforms[SKYU_SUNSIZE] = qglGetUniformLocation(program, "u_SunSize");
+	skyUniforms[SKYU_SUNCOLOR] = qglGetUniformLocation(program, "u_SunColor");
+	skyUniforms[SKYU_SUNDIRECTION] = qglGetUniformLocation(program, "u_SunDirection");
+	skyUniforms[SKYU_TEXTURE] = qglGetUniformLocation(program, "u_SkyTexture");
+	skyUniforms[SKYU_USETEXTURE] = qglGetUniformLocation(program, "u_UseSkyTexture");
+	skyUniforms[SKYU_STARS_LAYERS] = qglGetUniformLocation(program, "u_StarsLayers");
+	skyUniforms[SKYU_STARS_SCALE] = qglGetUniformLocation(program, "u_StarsScale");
+	skyUniforms[SKYU_STARS_FADE] = qglGetUniformLocation(program, "u_StarsFade");
+	skyUniforms[SKYU_STARS_SPEED] = qglGetUniformLocation(program, "u_StarsSpeed");
+	skyUniforms[SKYU_TIME] = qglGetUniformLocation(program, "u_Time");
+	skyUniformsInitialized = true;
+}
+
+static void SkyUpdateStarsImage(void) {
+	const char* name = (r_skyStarsShader && r_skyStarsShader->string) ? r_skyStarsShader->string : "";
+
+	if(!Q_stricmp(name, skyStarsImageName)) return;
+
+	Q_strncpyz(skyStarsImageName, name, sizeof(skyStarsImageName));
+	skyStarsImage = NULL;
+	if(name[0] && Q_stricmp(name, "-") && Q_stricmp(name, "none")) {
+		/* Prefer a declared shader/material. The procedural pass extracts its
+		 * first color-map image; the material's blend/tcMod stages are not run. */
+		shader_t* overlayShader = R_FindShader(name, LIGHTMAP_NONE, true);
+		if(overlayShader && !overlayShader->defaultShader && overlayShader->numUnfoggedPasses > 0 && overlayShader->stages[0]) {
+			skyStarsImage = overlayShader->stages[0]->bundle[TB_DIFFUSEMAP].image[0];
+		}
+
+		/* R_FindShader also synthesizes a simple shader for raw image paths. */
+		if(!skyStarsImage) {
+			skyStarsImage = R_FindImageFile((char*)name, IMGTYPE_COLORALPHA, IMGFLAG_MIPMAP);
+		}
+		if(!skyStarsImage) {
+			ri.Printf(PRINT_WARNING, "WARNING: r_skyStarsShader material/image '%s' could not be loaded\n", name);
+		}
+	}
+}
+
+static void SkySetUniforms(void) {
+	shaderProgram_t* program = &tr.proceduralSkyShader;
+	vec3_t topColor, bottomColor, duskColor, sunColor, sunDirection;
+	vec2_t starsSpeed;
+	float sunSize;
+	int starsLayers;
+	bool useStars;
+
+	SkyInitUniformLocations();
+
+	topColor[0] = topColor[1] = topColor[2] = 1.0f;
+	if(r_skyTopColor && r_skyTopColor->string) {
+		float parsed[3];
+		if(sscanf(r_skyTopColor->string, "%f %f %f", &parsed[0], &parsed[1], &parsed[2]) == 3) {
+			VectorCopy(parsed, topColor);
+		}
+	}
+
+	bottomColor[0] = bottomColor[1] = bottomColor[2] = 1.0f;
+	if(r_skyBottomColor && r_skyBottomColor->string) {
+		float parsed[3];
+		if(sscanf(r_skyBottomColor->string, "%f %f %f", &parsed[0], &parsed[1], &parsed[2]) == 3) {
+			VectorCopy(parsed, bottomColor);
+		}
+	}
+
+	duskColor[0] = duskColor[1] = duskColor[2] = 1.0f;
+	if(r_skyDuskColor && r_skyDuskColor->string) {
+		float parsed[3];
+		if(sscanf(r_skyDuskColor->string, "%f %f %f", &parsed[0], &parsed[1], &parsed[2]) == 3) {
+			VectorCopy(parsed, duskColor);
+		}
+	}
+
+	sunColor[0] = sunColor[1] = sunColor[2] = 1.0f;
+	if(r_sunColor && r_sunColor->string) {
+		float parsed[3];
+		if(sscanf(r_sunColor->string, "%f %f %f", &parsed[0], &parsed[1], &parsed[2]) == 3) {
+			VectorCopy(parsed, sunColor);
+		}
+	}
+
+	VectorCopy(tr.sunDirection, sunDirection);
+	VectorNormalize(sunDirection);
+
+	starsLayers = (int)Com_Clamp(1.0f, 8.0f, r_skyStarsLayers->value);
+	sunSize = MAX(0.0f, r_sunSize->value);
+	starsSpeed[0] = r_skyStarsSpeedX->value;
+	starsSpeed[1] = r_skyStarsSpeedY->value;
+	useStars = (r_skyStars->integer != 0 && skyStarsImage != NULL && r_skyStarsFade->value > 0.0f && r_skyStarsLayers->value > 0.0f);
+
+	if(skyUniforms[SKYU_MODELVIEWPROJECTION] != -1) qglProgramUniformMatrix4fvEXT(program->program, skyUniforms[SKYU_MODELVIEWPROJECTION], 1, GL_FALSE, glState.modelviewProjection);
+	if(skyUniforms[SKYU_TOPCOLOR] != -1) qglProgramUniform3fEXT(program->program, skyUniforms[SKYU_TOPCOLOR], topColor[0], topColor[1], topColor[2]);
+	if(skyUniforms[SKYU_BOTTOMCOLOR] != -1) qglProgramUniform3fEXT(program->program, skyUniforms[SKYU_BOTTOMCOLOR], bottomColor[0], bottomColor[1], bottomColor[2]);
+	if(skyUniforms[SKYU_FADEBIAS] != -1) qglProgramUniform1fEXT(program->program, skyUniforms[SKYU_FADEBIAS], Com_Clamp(0.05f, 8.0f, r_skyFadeBias->value));
+	if(skyUniforms[SKYU_BRIGHTNESS] != -1) qglProgramUniform1fEXT(program->program, skyUniforms[SKYU_BRIGHTNESS], MAX(0.0f, r_skyBrightness->value));
+	if(skyUniforms[SKYU_DUSKCOLOR] != -1) qglProgramUniform3fEXT(program->program, skyUniforms[SKYU_DUSKCOLOR], duskColor[0], duskColor[1], duskColor[2]);
+	if(skyUniforms[SKYU_DUSKINTENSITY] != -1) qglProgramUniform1fEXT(program->program, skyUniforms[SKYU_DUSKINTENSITY], MAX(0.0f, r_skyDuskIntensity->value));
+	if(skyUniforms[SKYU_DUSKSCALE] != -1) qglProgramUniform1fEXT(program->program, skyUniforms[SKYU_DUSKSCALE], r_skyDuskScale->value);
+	if(skyUniforms[SKYU_SUNSIZE] != -1) qglProgramUniform1fEXT(program->program, skyUniforms[SKYU_SUNSIZE], sunSize);
+	if(skyUniforms[SKYU_SUNCOLOR] != -1) qglProgramUniform3fEXT(program->program, skyUniforms[SKYU_SUNCOLOR], sunColor[0], sunColor[1], sunColor[2]);
+	if(skyUniforms[SKYU_SUNDIRECTION] != -1) qglProgramUniform3fEXT(program->program, skyUniforms[SKYU_SUNDIRECTION], sunDirection[0], sunDirection[1], sunDirection[2]);
+	if(skyUniforms[SKYU_TEXTURE] != -1) qglProgramUniform1iEXT(program->program, skyUniforms[SKYU_TEXTURE], TB_DIFFUSEMAP);
+	if(skyUniforms[SKYU_USETEXTURE] != -1) qglProgramUniform1iEXT(program->program, skyUniforms[SKYU_USETEXTURE], useStars ? 1 : 0);
+	if(skyUniforms[SKYU_STARS_LAYERS] != -1) qglProgramUniform1iEXT(program->program, skyUniforms[SKYU_STARS_LAYERS], starsLayers);
+	if(skyUniforms[SKYU_STARS_SCALE] != -1) qglProgramUniform1fEXT(program->program, skyUniforms[SKYU_STARS_SCALE], MAX(0.0001f, r_skyStarsScale->value));
+	if(skyUniforms[SKYU_STARS_FADE] != -1) qglProgramUniform1fEXT(program->program, skyUniforms[SKYU_STARS_FADE], Com_Clamp(0.0f, 5.0f, r_skyStarsFade->value) / 5.0f);
+	if(skyUniforms[SKYU_STARS_SPEED] != -1) qglProgramUniform2fEXT(program->program, skyUniforms[SKYU_STARS_SPEED], starsSpeed[0], starsSpeed[1]);
+	if(skyUniforms[SKYU_TIME] != -1) qglProgramUniform1fEXT(program->program, skyUniforms[SKYU_TIME], backEnd.refdef.floatTime);
+}
+
+static void DrawSkySide(const int mins[2], const int maxs[2]) {
 	int s, t;
 	int firstVertex = tess.numVertexes;
-	vec4_t color;
 
 	tess.firstIndex = tess.numIndexes;
 
-	GL_BindToTMU(image, TB_COLORMAP);
 	GL_Cull(CT_TWO_SIDED);
 
 	for(t = mins[1] + HALF_SKY_SUBDIVISIONS; t <= maxs[1] + HALF_SKY_SUBDIVISIONS; t++) {
@@ -363,35 +543,14 @@ static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs
 		}
 	}
 
-	// FIXME: A lot of this can probably be removed for speed, and refactored into a more convenient function
-	RB_UpdateTessVao(ATTR_POSITION | ATTR_TEXCOORD);
-	{
-		shaderProgram_t* sp = &tr.lightallShader[0];
-		vec4_t st[2];
-
-		GLSL_BindProgram(sp);
-
-		GLSL_SetUniformMat4(sp, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
-
-		color[0] = color[1] = color[2] = color[3] = 1.0f;
-		GLSL_SetUniformVec4(sp, UNIFORM_BASECOLOR, color);
-
-		color[0] = color[1] = color[2] = color[3] = 0.0f;
-		GLSL_SetUniformVec4(sp, UNIFORM_VERTCOLOR, color);
-
-		VectorSet4(st[0], 1.0f, 0.0f, 0.0f, 0.0f);
-		VectorSet4(st[1], 0.0f, 1.0f, 0.0f, 0.0f);
-		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX0, st[0]);
-		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX1, st[1]);
-		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX2, st[0]);
-		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX3, st[1]);
-		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX4, st[0]);
-		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX5, st[1]);
-		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX6, st[0]);
-		GLSL_SetUniformVec4(sp, UNIFORM_DIFFUSETEXMATRIX7, st[1]);
-
-		GLSL_SetUniformInt(sp, UNIFORM_ALPHATEST, 0);
+	RB_UpdateTessVao(ATTR_POSITION);
+	GLSL_BindProgram(&tr.proceduralSkyShader);
+	if(skyStarsImage && r_skyStars->integer) {
+		GL_BindToTMU(skyStarsImage, TB_DIFFUSEMAP);
+	} else {
+		GL_BindToTMU(tr.whiteImage, TB_DIFFUSEMAP);
 	}
+	SkySetUniforms();
 
 	R_DrawElements(tess.numIndexes - tess.firstIndex, tess.firstIndex);
 
@@ -400,7 +559,7 @@ static void DrawSkySide(struct image_s* image, const int mins[2], const int maxs
 	tess.firstIndex = 0;
 }
 
-static void DrawSkyBox(shader_t* shader) {
+static void DrawProceduralSky(void) {
 	int i;
 
 	sky_min = 0;
@@ -453,7 +612,7 @@ static void DrawSkyBox(shader_t* shader) {
 			}
 		}
 
-		DrawSkySide(shader->sky.outerbox[sky_texorder[i]], sky_mins_subd, sky_maxs_subd);
+		DrawSkySide(sky_mins_subd, sky_maxs_subd);
 	}
 }
 
@@ -715,34 +874,23 @@ void RB_StageIteratorSky(void) {
 
 	qglDepthRange(1.0, 1.0);
 
-	// draw the outer skybox
-	if(tess.shader->sky.outerbox[0] && tess.shader->sky.outerbox[0] != tr.defaultImage) {
+	// Draw the procedural sky into the clipped sky polygons. The sky shader
+	// needs only surfaceparm sky; no stages, skyparms, or skybox textures.
+	{
 		mat4_t oldmodelview;
+		mat4_t trans, product;
 
 		GL_State(0);
 		GL_Cull(CT_FRONT_SIDED);
-		// qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
+		Mat4Copy(glState.modelview, oldmodelview);
+		Mat4Translation(backEnd.viewParms.or.origin, trans);
+		Mat4Multiply(glState.modelview, trans, product);
+		GL_SetModelviewMatrix(product);
 
-		{
-			// FIXME: this could be a lot cleaner
-			mat4_t trans, product;
-
-			Mat4Copy(glState.modelview, oldmodelview);
-			Mat4Translation(backEnd.viewParms.or.origin, trans);
-			Mat4Multiply(glState.modelview, trans, product);
-			GL_SetModelviewMatrix(product);
-		}
-
-		DrawSkyBox(tess.shader);
+		DrawProceduralSky();
 
 		GL_SetModelviewMatrix(oldmodelview);
 	}
-
-	// generate the vertexes for all the clouds, which will be drawn
-	// by the generic shader routine
-	R_BuildCloudData(&tess);
-
-	RB_StageIteratorGeneric();
 
 	// draw the inner skybox
 

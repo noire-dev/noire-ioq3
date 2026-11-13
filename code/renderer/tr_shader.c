@@ -1241,68 +1241,6 @@ static void ParseDeform(char** text) {
 }
 
 /*
-===============
-ParseSkyParms
-
-skyParms <outerbox> <cloudheight> <innerbox>
-===============
-*/
-static void ParseSkyParms(char** text) {
-	char* token;
-	static char* suf[6] = {"rt", "bk", "lf", "ft", "up", "dn"};
-	char pathname[MAX_QEXTENDEDPATH];
-	int i;
-	imgFlags_t imgFlags = IMGFLAG_MIPMAP | IMGFLAG_PICMIP;
-
-	// outerbox
-	token = COM_ParseExt(text, false);
-	if(token[0] == 0) {
-		ri.Printf(PRINT_WARNING, "WARNING: 'skyParms' missing parameter in shader '%s'\n", shader.name);
-		return;
-	}
-	if(strcmp(token, "-")) {
-		for(i = 0; i < 6; i++) {
-			Com_sprintf(pathname, sizeof(pathname), "%s_%s.tga", token, suf[i]);
-			shader.sky.outerbox[i] = R_FindImageFile((char*)pathname, IMGTYPE_COLORALPHA, imgFlags | IMGFLAG_CLAMPTOEDGE);
-
-			if(!shader.sky.outerbox[i]) {
-				shader.sky.outerbox[i] = tr.defaultImage;
-			}
-		}
-	}
-
-	// cloudheight
-	token = COM_ParseExt(text, false);
-	if(token[0] == 0) {
-		ri.Printf(PRINT_WARNING, "WARNING: 'skyParms' missing parameter in shader '%s'\n", shader.name);
-		return;
-	}
-	shader.sky.cloudHeight = atof(token);
-	if(!shader.sky.cloudHeight) {
-		shader.sky.cloudHeight = 512;
-	}
-	R_InitSkyTexCoords(shader.sky.cloudHeight);
-
-	// innerbox
-	token = COM_ParseExt(text, false);
-	if(token[0] == 0) {
-		ri.Printf(PRINT_WARNING, "WARNING: 'skyParms' missing parameter in shader '%s'\n", shader.name);
-		return;
-	}
-	if(strcmp(token, "-")) {
-		for(i = 0; i < 6; i++) {
-			Com_sprintf(pathname, sizeof(pathname), "%s_%s.tga", token, suf[i]);
-			shader.sky.innerbox[i] = R_FindImageFile((char*)pathname, IMGTYPE_COLORALPHA, imgFlags);
-			if(!shader.sky.innerbox[i]) {
-				shader.sky.innerbox[i] = tr.defaultImage;
-			}
-		}
-	}
-
-	shader.isSky = true;
-}
-
-/*
 =================
 ParseSort
 =================
@@ -1374,7 +1312,6 @@ infoParm_t infoParms[] = {
 	// server attributes
     {"slick", 0, SURF_SLICK, 0},
     {"nomarks", 0, SURF_NOMARKS, 0},  // don't make impact marks, but still explode
-    {"ladder", 0, SURF_LADDER, 0},
     {"nodamage", 0, SURF_NODAMAGE, 0},
 
     // drawsurf attributes
@@ -1391,6 +1328,7 @@ infoParm_t infoParms[] = {
     {"duct", 0, SURF_DUCT, 0},
     {"grass", 0, SURF_GRASS, 0},
     {"gravel", 0, SURF_GRAVEL, 0},
+    {"ladder", 0, SURF_LADDER, 0},
     {"metal", 0, SURF_METAL, 0},
     {"metalgrate", 0, SURF_METALGRATE, 0},
     {"mud", 0, SURF_MUD, 0},
@@ -1421,6 +1359,10 @@ static void ParseSurfaceParm(char** text) {
 		if(!Q_stricmp(token, infoParms[i].name)) {
 			shader.surfaceFlags |= infoParms[i].surfaceFlags;
 			shader.contentFlags |= infoParms[i].contents;
+			if(!Q_stricmp(token, "sky")) {
+				shader.isSky = true;
+				shader.sort = SS_ENVIRONMENT;
+			}
 #if 0
 			if ( infoParms[i].clearSolid ) {
 				si->contents &= ~CONTENTS_SOLID;
@@ -1512,6 +1454,8 @@ static bool ParseShader(char** text) {
 			tr.sunDirection[0] = cos(a) * cos(b);
 			tr.sunDirection[1] = sin(a) * cos(b);
 			tr.sunDirection[2] = sin(b);
+			VectorCopy(tr.sunDirection, tr.sunDirectionBase);
+			VectorCopy(tr.sunLight, tr.sunLightBase);
 
 			if(isGL2Sun) {
 				token = COM_ParseExt(text, false);
@@ -1599,9 +1543,12 @@ static bool ParseShader(char** text) {
 			shader.isPortal = true;
 			continue;
 		}
-		// skyparms <cloudheight> <outerbox> <innerbox>
+		// Legacy skyparms are deliberately ignored. Procedural sky is driven
+		// entirely by r_sky* cvars and surfaceparm sky.
 		else if(!Q_stricmp(token, "skyparms")) {
-			ParseSkyParms(text);
+			COM_ParseExt(text, false);
+			COM_ParseExt(text, false);
+			COM_ParseExt(text, false);
 			continue;
 		}
 		// light <value> determines flaring in q3map, not needed here

@@ -2152,6 +2152,9 @@ void RE_LoadWorldMap(const char* name) {
 	tr.sunDirection[2] = 0.9f;
 
 	VectorNormalize(tr.sunDirection);
+	VectorCopy(tr.sunDirection, tr.sunDirectionBase);
+	VectorClear(tr.sunLight);
+	VectorClear(tr.sunLightBase);
 
 	// reset last cascade sun direction so last shadow cascade is rerendered
 	VectorClear(tr.lastCascadeSunDirection);

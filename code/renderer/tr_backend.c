@@ -900,7 +900,6 @@ const void* RB_DrawSurfs(const void* data) {
 		qglColorMask(!backEnd.colorMask[0], !backEnd.colorMask[1], !backEnd.colorMask[2], !backEnd.colorMask[3]);
 	} else if(!isShadowView) {
 		RB_RenderDrawSurfList(cmd->drawSurfs, cmd->numDrawSurfs);
-		RB_DrawSun(0.1f, tr.sunShader);
 	}
 
 	if(glRefConfig.framebufferObject && r_sunRays->integer) {
