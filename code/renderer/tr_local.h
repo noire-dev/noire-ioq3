@@ -392,7 +392,7 @@ typedef struct {
 	bool isVideoMap;
 } textureBundle_t;
 
-enum { TB_COLORMAP = 0, TB_DIFFUSEMAP = 0, TB_LIGHTMAP = 1, TB_LEVELSMAP = 1, TB_SHADOWMAP3 = 1, TB_NORMALMAP = 2, TB_DELUXEMAP = 3, TB_SHADOWMAP2 = 3, TB_SPECULARMAP = 4, TB_SHADOWMAP = 5, TB_CUBEMAP = 6, TB_SHADOWMAP4 = 6, TB_WATERREFLECT = 7, NUM_TEXTURE_BUNDLES = 8 };
+enum { TB_COLORMAP = 0, TB_DIFFUSEMAP = 0, TB_LIGHTMAP = 1, TB_LEVELSMAP = 1, TB_SHADOWMAP3 = 1, TB_NORMALMAP = 2, TB_DELUXEMAP = 3, TB_SHADOWMAP2 = 3, TB_SPECULARMAP = 4, TB_SHADOWMAP = 5, TB_CUBEMAP = 6, TB_SHADOWMAP4 = 7, TB_WATERREFLECT = 8, NUM_TEXTURE_BUNDLES = 9 };
 
 typedef enum {
 	// material shader stage types
@@ -825,9 +825,9 @@ typedef struct {
 	bool isPortal;     // true if this view is through a portal
 	bool isMirror;     // the portal is a mirror, invert the face culling
 	viewParmFlags_t flags;
-	int frameSceneNum;     // copied from tr.frameSceneNum
-	int frameCount;        // copied from tr.frameCount
-	cplane_t portalPlane;  // clip anything behind this if mirroring
+	int frameSceneNum;             // copied from tr.frameSceneNum
+	int frameCount;                // copied from tr.frameCount
+	cplane_t portalPlane;          // clip anything behind this if mirroring
 	bool hasWaterReflection;       // planar water reflection (r_reflectionWater) was rendered for this view
 	float waterReflectHeight;      // world Z of the reflected water plane
 	float waterReflectMatrix[16];  // viewProjection of the mirrored camera (world -> clip)

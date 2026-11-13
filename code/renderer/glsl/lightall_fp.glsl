@@ -292,7 +292,7 @@ float CalcDlightShadow()
 	vec3 direction =
 		-toSurface / distanceToLight;
 
-	const float bias = 0.0015;
+	const float bias = 0.0005;
 	const float filterSize = 0.015;
 
 	/*

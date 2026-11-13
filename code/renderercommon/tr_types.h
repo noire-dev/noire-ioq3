@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef __TR_TYPES_H
 #define __TR_TYPES_H
 
-#define MAX_DLIGHTS 256  // dynamic lights per render frame/scene pool
+#define MAX_DLIGHTS 128  // dynamic lights per render frame/scene pool
 #define MAX_DLIGHT_MASK_WORDS (MAX_DLIGHTS / 32)
 
 #define REFENTITYNUM_BITS 16  // can't be increased without changing drawsurf bit packing

@@ -1416,6 +1416,7 @@ void RB_StageIteratorGeneric(void) {
 		bool cullFront = (input->shader->cullType == CT_FRONT_SIDED);
 
 		if(backEnd.viewParms.flags & VPF_DEPTHSHADOW) cullFront = !cullFront;
+		// if((backEnd.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) && !(backEnd.viewParms.flags & VPF_ORTHOGRAPHIC)) cullFront = !cullFront; // FIX
 
 		if(backEnd.viewParms.isMirror) cullFront = !cullFront;
 

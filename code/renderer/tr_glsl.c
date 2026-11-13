@@ -1015,7 +1015,7 @@ void GLSL_InitGPUShaders(void) {
 
 			// The forward dynamic-light pass uses texture unit 6 for its shadow cubemap.
 			// Do not compile reflection sampling into that pass (same sampler unit).
-			if(r_reflections->integer && lightType != LIGHTDEF_USE_LIGHT_VECTOR) {
+			if(r_reflections->integer) {
 				Q_strcat(extradefines, 1024, "#define USE_CUBEMAP\n");
 			}
 			// Planar water reflection (r_reflectionWater). Uses its own texture unit (TB_WATERREFLECT),

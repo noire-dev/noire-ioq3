@@ -1368,8 +1368,7 @@ static void R_AddEntitySurface(int entityNum) {
 		return;
 	}
 
-	// skip entities that opted out of reflection cubemap capture
-	if((ent->e.renderfx & RF_NO_REFLECT) && (tr.viewParms.flags & (VPF_NOCUBEMAPS | VPF_WATERREFLECT))) {
+	if((ent->e.renderfx & RF_NO_REFLECT) && (tr.viewParms.flags & VPF_NOCUBEMAPS)) {
 		return;
 	}
 

@@ -91,7 +91,7 @@ void main()
 	float result;
 
 	float depth = getLinearDepth(u_ScreenDepthMap, var_DepthTex, u_ViewInfo.x);
-	vec4 biasPos = vec4(u_ViewOrigin + var_ViewDir * (depth - 0.5 / u_ViewInfo.x), 1.0);
+	vec4 biasPos = vec4(u_ViewOrigin + var_ViewDir * (depth - 0.15 / u_ViewInfo.x), 1.0);
 
 	vec4 shadowpos = u_ShadowMvp * biasPos;
 

@@ -45,8 +45,8 @@ static bool R_CullSurface(msurface_t* surf) {
 			return false;
 		}
 
-		// shadowmaps draw back surfaces
 		if(tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) {
+			// if((tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) && !(tr.viewParms.flags & VPF_ORTHOGRAPHIC)) { // FIX
 			if(ct == CT_FRONT_SIDED) {
 				ct = CT_BACK_SIDED;
 			} else {

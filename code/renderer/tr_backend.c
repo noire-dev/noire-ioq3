@@ -783,7 +783,18 @@ const void* RB_DrawSurfs(const void* data) {
 
 		backEnd.depthFill = true;
 		qglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+		if(isShadowView) {
+			qglEnable(GL_POLYGON_OFFSET_FILL);
+			qglPolygonOffset(2.0f, 4.0f);
+		}
+
 		RB_RenderDrawSurfList(cmd->drawSurfs, cmd->numDrawSurfs);
+
+		if(isShadowView) {
+			qglDisable(GL_POLYGON_OFFSET_FILL);
+		}
+
 		qglColorMask(!backEnd.colorMask[0], !backEnd.colorMask[1], !backEnd.colorMask[2], !backEnd.colorMask[3]);
 		backEnd.depthFill = false;
 
