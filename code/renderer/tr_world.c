@@ -45,8 +45,15 @@ static bool R_CullSurface(msurface_t* surf) {
 			return false;
 		}
 
-		if(tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) {
-			// if((tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) && !(tr.viewParms.flags & VPF_ORTHOGRAPHIC)) { // FIX
+		if((tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) &&
+		   !(surf->shader->surfaceFlags & (SURF_SKYBOX | SURF_DISPLACEMENT))) {
+			// Back end draws this surface twice: first with the seam-fixing
+			// cull rule, then with the old rule. Don't cull it here, otherwise
+			// the second pass can never fill the holes.
+			return false;
+		}
+
+		if((tr.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) && !(tr.viewParms.flags & VPF_ORTHOGRAPHIC)) { // FIX
 			if(ct == CT_FRONT_SIDED) {
 				ct = CT_BACK_SIDED;
 			} else {

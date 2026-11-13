@@ -1410,17 +1410,35 @@ void RB_StageIteratorGeneric(void) {
 	//
 	// set face culling appropriately
 	//
+	bool drawSecondCull = false;
+	bool secondCullFront = false;
+
 	if(input->shader->cullType == CT_TWO_SIDED) {
 		GL_Cull(CT_TWO_SIDED);
 	} else {
 		bool cullFront = (input->shader->cullType == CT_FRONT_SIDED);
+		bool newCullFront = cullFront;
+		bool oldCullFront = cullFront;
 
-		if(backEnd.viewParms.flags & VPF_DEPTHSHADOW) cullFront = !cullFront;
-		// if((backEnd.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) && !(backEnd.viewParms.flags & VPF_ORTHOGRAPHIC)) cullFront = !cullFront; // FIX
+		if((backEnd.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) && !(backEnd.viewParms.flags & VPF_ORTHOGRAPHIC)) newCullFront = !newCullFront;  // FIX
+		if(backEnd.viewParms.flags & VPF_DEPTHSHADOW) oldCullFront = !oldCullFront;
 
-		if(backEnd.viewParms.isMirror) cullFront = !cullFront;
+		if(backEnd.viewParms.isMirror) {
+			newCullFront = !newCullFront;
+			oldCullFront = !oldCullFront;
+		}
 
-		if(backEnd.currentEntity && backEnd.currentEntity->mirrored) cullFront = !cullFront;
+		if(backEnd.currentEntity && backEnd.currentEntity->mirrored) {
+			newCullFront = !newCullFront;
+			oldCullFront = !oldCullFront;
+		}
+
+		cullFront = newCullFront;
+
+		if((backEnd.viewParms.flags & (VPF_SHADOWMAP | VPF_DEPTHSHADOW)) && !(input->shader->surfaceFlags & (SURF_SKYBOX | SURF_DISPLACEMENT)) && oldCullFront != newCullFront) {
+			drawSecondCull = true;
+			secondCullFront = oldCullFront;
+		}
 
 		if(cullFront)
 			GL_Cull(CT_FRONT_SIDED);
@@ -1440,6 +1458,15 @@ void RB_StageIteratorGeneric(void) {
 	if(backEnd.depthFill) {
 		RB_IterateStagesGeneric(input);
 
+		if(drawSecondCull) {
+			if(secondCullFront)
+				GL_Cull(CT_FRONT_SIDED);
+			else
+				GL_Cull(CT_BACK_SIDED);
+
+			RB_IterateStagesGeneric(input);
+		}
+
 		//
 		// reset polygon offset
 		//
@@ -1456,6 +1483,15 @@ void RB_StageIteratorGeneric(void) {
 	if(backEnd.viewParms.flags & VPF_SHADOWMAP) {
 		if(input->shader->sort == SS_OPAQUE) {
 			RB_RenderShadowmap(input);
+
+			if(drawSecondCull) {
+				if(secondCullFront)
+					GL_Cull(CT_FRONT_SIDED);
+				else
+					GL_Cull(CT_BACK_SIDED);
+
+				RB_RenderShadowmap(input);
+			}
 		}
 		//
 		// reset polygon offset
@@ -1476,7 +1512,7 @@ void RB_StageIteratorGeneric(void) {
 	// now do fog
 	// не применяем туман для 2D-элементов интерфейса (projection2D),
 	// иначе новый FP_LE для blend-шейдеров затронет HUD/меню
-	if(tess.shader->fogPass && !backEnd.projection2D && tess.shader != tr.sunShader) {
+	if(tess.shader->fogPass && !backEnd.projection2D && tess.shader != tr.sunShader && !(tess.shader->isSky)) {
 		RB_FogPass();
 	}
 
