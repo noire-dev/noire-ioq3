@@ -287,6 +287,11 @@ void RB_BeginDrawingView(void) {
 		clearBits |= GL_COLOR_BUFFER_BIT;
 	}
 
+	// and for the planar water reflection
+	if(tr.waterReflectionFbo && backEnd.viewParms.targetFbo == tr.waterReflectionFbo) {
+		clearBits |= GL_COLOR_BUFFER_BIT;
+	}
+
 	qglClear(clearBits);
 
 	if((backEnd.refdef.rdflags & RDF_HYPERSPACE)) {
@@ -913,6 +918,12 @@ const void* RB_DrawSurfs(const void* data) {
 
 		FBO_Bind(NULL);
 		if(cubemap && cubemap->image) qglGenerateTextureMipmapEXT(cubemap->image->texnum, GL_TEXTURE_CUBE_MAP);
+	}
+
+	// planar water reflection: mipmaps are used for the roughness blur
+	if(glRefConfig.framebufferObject && tr.waterReflectionFbo && backEnd.viewParms.targetFbo == tr.waterReflectionFbo) {
+		FBO_Bind(NULL);
+		if(tr.waterReflectionImage) qglGenerateTextureMipmapEXT(tr.waterReflectionImage->texnum, GL_TEXTURE_2D);
 	}
 
 	// FIXME? backEnd.viewParms doesn't get properly initialized for 2D drawing.

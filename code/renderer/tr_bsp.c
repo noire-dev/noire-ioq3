@@ -2031,6 +2031,54 @@ void R_AssignCubemapsToWorldSurfaces(void) {
 	}
 }
 
+/*
+=================
+R_AssignWaterPlanesToWorldSurfaces
+
+Finds the SURF_CUBEMAP_WATER surfaces that can use a planar reflection (r_reflectionWater):
+flat, horizontal and facing up. Everything else keeps using the cubemap.
+=================
+*/
+static void R_AssignWaterPlanesToWorldSurfaces(void) {
+	world_t* w = &s_worldData;
+	int i, numWater = 0;
+
+	for(i = 0; i < w->numsurfaces; i++) {
+		msurface_t* surf = &w->surfaces[i];
+		const cullinfo_t* ci = &surf->cullinfo;
+		vec3_t center;
+		float height;
+
+		surf->isWaterPlane = false;
+		surf->waterHeight = 0.0f;
+		VectorClear(surf->waterCenter);
+
+		if(!surf->shader || !(surf->shader->surfaceFlags & SURF_CUBEMAP_WATER)) continue;
+		if(!(ci->type & CULLINFO_BOX)) continue;
+
+		center[0] = (ci->bounds[0][0] + ci->bounds[1][0]) * 0.5f;
+		center[1] = (ci->bounds[0][1] + ci->bounds[1][1]) * 0.5f;
+		center[2] = (ci->bounds[0][2] + ci->bounds[1][2]) * 0.5f;
+
+		if(ci->type & CULLINFO_PLANE) {
+			// flat face: has to face up (the bottom and the sides of a water brush are not a reflecting plane)
+			if(ci->plane.normal[2] < 0.95f) continue;
+			height = (ci->plane.dist - ci->plane.normal[0] * center[0] - ci->plane.normal[1] * center[1]) / ci->plane.normal[2];
+		} else {
+			// patches / triangle soups: only accept practically flat geometry
+			if(ci->bounds[1][2] - ci->bounds[0][2] > 2.0f) continue;
+			height = center[2];
+		}
+
+		surf->isWaterPlane = true;
+		surf->waterHeight = height;
+		VectorCopy(center, surf->waterCenter);
+		numWater++;
+	}
+
+	ri.Printf(PRINT_DEVELOPER, "R_AssignWaterPlanesToWorldSurfaces: %d planar water surfaces\n", numWater);
+}
+
 void R_RenderMissingCubemaps(void) {
 	int i;
 	imgFlags_t flags = IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_NOLIGHTSCALE | IMGFLAG_CUBEMAP;
@@ -2326,6 +2374,9 @@ void RE_LoadWorldMap(const char* name) {
 		R_CreateBaseCubemap();
 		R_AssignCubemapsToWorldSurfaces();
 	}
+
+	// planar water reflections (independent of the cubemaps)
+	if(r_reflectionWater->integer) R_AssignWaterPlanesToWorldSurfaces();
 
 	s_worldData.dataSize = (byte*)ri.Hunk_Alloc(0, h_low) - startMarker;
 

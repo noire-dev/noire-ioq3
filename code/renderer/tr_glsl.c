@@ -71,6 +71,7 @@ static uniformInfo_t uniformsInfo[] = {
     {"u_TextureMap", GLSL_INT},
     {"u_LevelsMap", GLSL_INT},
     {"u_CubeMap", GLSL_INT},
+    {"u_WaterReflectMap", GLSL_INT},
 
     {"u_ScreenImageMap", GLSL_INT},
     {"u_ScreenDepthMap", GLSL_INT},
@@ -157,6 +158,8 @@ static uniformInfo_t uniformsInfo[] = {
 
     {"u_CubeMapInfo", GLSL_VEC4},
     {"u_CubeMapParallaxInfo", GLSL_VEC3},
+    {"u_WaterReflectMatrix", GLSL_MAT16},
+    {"u_WaterReflectInfo", GLSL_VEC4},
 
     {"u_AlphaTest", GLSL_INT},
 
@@ -280,6 +283,7 @@ static void GLSL_GetShaderHeader(GLenum shaderType, const GLchar* extra, char* d
 			Q_strcat(dest, size, "#define texture2D texture\n");
 			Q_strcat(dest, size, "#define texture3D texture\n");
 			Q_strcat(dest, size, "#define textureCubeLod textureLod\n");
+			Q_strcat(dest, size, "#define texture2DLod textureLod\n");
 			Q_strcat(dest, size, "#define shadow2D texture\n");
 		}
 	} else {
@@ -1014,6 +1018,11 @@ void GLSL_InitGPUShaders(void) {
 			if(r_reflections->integer && lightType != LIGHTDEF_USE_LIGHT_VECTOR) {
 				Q_strcat(extradefines, 1024, "#define USE_CUBEMAP\n");
 			}
+			// Planar water reflection (r_reflectionWater). Uses its own texture unit (TB_WATERREFLECT),
+			// so it does not conflict with the shadow cubemap of the forward dlight pass.
+			if(r_reflectionWater->integer && lightType != LIGHTDEF_USE_LIGHT_VECTOR) {
+				Q_strcat(extradefines, 1024, "#define USE_WATER_REFLECTION\n");
+			}
 			if(r_deluxeSpecular->value > 0.000001f) {
 				Q_strcat(extradefines, 1024, va("#define r_deluxeSpecular %f\n", r_deluxeSpecular->value));
 			}
@@ -1052,6 +1061,7 @@ void GLSL_InitGPUShaders(void) {
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_SPECULARMAP, TB_SPECULARMAP);
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_SHADOWMAP, TB_SHADOWMAP);
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_CUBEMAP, TB_CUBEMAP);
+		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_WATERREFLECTMAP, TB_WATERREFLECT);
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_DLIGHTSHADOWMAP, TB_SHADOWMAP4);
 		GLSL_SetUniformInt(&tr.lightallShader[i], UNIFORM_DLIGHTCOOKIE, TB_LIGHTMAP);
 

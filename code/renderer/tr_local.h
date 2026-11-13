@@ -392,7 +392,7 @@ typedef struct {
 	bool isVideoMap;
 } textureBundle_t;
 
-enum { TB_COLORMAP = 0, TB_DIFFUSEMAP = 0, TB_LIGHTMAP = 1, TB_LEVELSMAP = 1, TB_SHADOWMAP3 = 1, TB_NORMALMAP = 2, TB_DELUXEMAP = 3, TB_SHADOWMAP2 = 3, TB_SPECULARMAP = 4, TB_SHADOWMAP = 5, TB_CUBEMAP = 6, TB_SHADOWMAP4 = 6, NUM_TEXTURE_BUNDLES = 7 };
+enum { TB_COLORMAP = 0, TB_DIFFUSEMAP = 0, TB_LIGHTMAP = 1, TB_LEVELSMAP = 1, TB_SHADOWMAP3 = 1, TB_NORMALMAP = 2, TB_DELUXEMAP = 3, TB_SHADOWMAP2 = 3, TB_SPECULARMAP = 4, TB_SHADOWMAP = 5, TB_CUBEMAP = 6, TB_SHADOWMAP4 = 6, TB_WATERREFLECT = 7, NUM_TEXTURE_BUNDLES = 8 };
 
 typedef enum {
 	// material shader stage types
@@ -593,6 +593,7 @@ typedef enum {
 	UNIFORM_TEXTUREMAP,
 	UNIFORM_LEVELSMAP,
 	UNIFORM_CUBEMAP,
+	UNIFORM_WATERREFLECTMAP,
 
 	UNIFORM_SCREENIMAGEMAP,
 	UNIFORM_SCREENDEPTHMAP,
@@ -679,6 +680,8 @@ typedef enum {
 
 	UNIFORM_CUBEMAPINFO,
 	UNIFORM_CUBEMAPARALLAXINFO,
+	UNIFORM_WATERREFLECTMATRIX,
+	UNIFORM_WATERREFLECTINFO,
 
 	UNIFORM_ALPHATEST,
 
@@ -813,7 +816,7 @@ typedef struct {
 	float surface[4];
 } fog_t;
 
-typedef enum { VPF_NONE = 0x00, VPF_NOVIEWMODEL = 0x01, VPF_SHADOWMAP = 0x02, VPF_DEPTHSHADOW = 0x04, VPF_DEPTHCLAMP = 0x08, VPF_DLIGHTSHADOW = 0x10, VPF_ORTHOGRAPHIC = 0x20, VPF_USESUNLIGHT = 0x40, VPF_FARPLANEFRUSTUM = 0x80, VPF_NOCUBEMAPS = 0x100 } viewParmFlags_t;
+typedef enum { VPF_NONE = 0x00, VPF_NOVIEWMODEL = 0x01, VPF_SHADOWMAP = 0x02, VPF_DEPTHSHADOW = 0x04, VPF_DEPTHCLAMP = 0x08, VPF_DLIGHTSHADOW = 0x10, VPF_ORTHOGRAPHIC = 0x20, VPF_USESUNLIGHT = 0x40, VPF_FARPLANEFRUSTUM = 0x80, VPF_NOCUBEMAPS = 0x100, VPF_WATERREFLECT = 0x200 } viewParmFlags_t;
 
 typedef struct {
 	orientationr_t or ;
@@ -825,6 +828,9 @@ typedef struct {
 	int frameSceneNum;     // copied from tr.frameSceneNum
 	int frameCount;        // copied from tr.frameCount
 	cplane_t portalPlane;  // clip anything behind this if mirroring
+	bool hasWaterReflection;       // planar water reflection (r_reflectionWater) was rendered for this view
+	float waterReflectHeight;      // world Z of the reflected water plane
+	float waterReflectMatrix[16];  // viewProjection of the mirrored camera (world -> clip)
 	int viewportX, viewportY, viewportWidth, viewportHeight;
 	FBO_t* targetFbo;
 	int targetFboLayer;
@@ -1122,6 +1128,9 @@ typedef struct msurface_s {
 	bool useCubemap;
 	vec3_t cubemapOrigin;
 	float cubemapBound;
+	bool isWaterPlane;   // SURF_CUBEMAP_WATER surface that lies on a horizontal plane (r_reflectionWater)
+	float waterHeight;   // world Z of that plane
+	vec3_t waterCenter;  // center of the surface bounds
 	cullinfo_t cullinfo;
 	bool doCull;
 	bool doFogCull;
@@ -1520,6 +1529,7 @@ typedef struct {
 	image_t* sunShadowDepthImage[4];
 	image_t* screenShadowImage;
 	image_t* renderCubeImage;
+	image_t* waterReflectionImage;
 
 	FBO_t* renderFbo;
 	FBO_t* msaaResolveFbo;
@@ -1535,6 +1545,7 @@ typedef struct {
 	FBO_t* sunShadowFbo[4];
 	FBO_t* screenShadowFbo;
 	FBO_t* renderCubeFbo;
+	FBO_t* waterReflectionFbo;
 
 	shader_t* defaultShader;
 
@@ -1549,6 +1560,12 @@ typedef struct {
 	int fatLightmapRows;
 
 	cubemap_t* cubemap;
+
+	// planar water reflection: nearest visible water plane found while building the main view
+	bool waterFound;
+	float waterFoundHeight;
+	float waterFoundDistSq;
+	vec3_t waterFoundCenter;
 
 	trRefEntity_t* currentEntity;
 	trRefEntity_t worldEntity;  // point currentEntity at this when rendering world
@@ -1711,6 +1728,9 @@ extern cvar_t* r_reflectionsResolution;
 extern cvar_t* r_reflectionsGrid;
 extern cvar_t* r_reflectionsMaterials;
 extern cvar_t* r_reflectionsEntities;
+extern cvar_t* r_reflectionWater;            // 1 = SURF_CUBEMAP_WATER surfaces use planar reflections instead of cubemaps
+extern cvar_t* r_reflectionWaterScale;       // size of the reflection texture relative to the screen
+extern cvar_t* r_reflectionWaterDistortion;  // how strongly the normalmap distorts the reflection (world units)
 
 extern cvar_t* r_jiggle;           // enable jiggle bones (hair / cloth)
 extern cvar_t* r_jiggleGravity;    // gravity of the jiggle simulation (z, units/s^2)
@@ -1783,6 +1803,8 @@ static ID_INLINE bool ShaderRequiresCPUDeforms(const shader_t* shader) {
 //====================================================================
 
 void R_RenderView(viewParms_t* parms);
+void R_RenderWaterReflection(void);
+void R_NoteWaterSurface(const msurface_t* surf);
 void R_RenderDlightCubemaps(const refdef_t* fd);
 void R_RenderSunShadowMaps(const refdef_t* fd, int level);
 void R_RenderCubemapSide(int cubemapSide, bool subscene);

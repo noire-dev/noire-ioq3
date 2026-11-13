@@ -338,6 +338,13 @@ void FBO_Init(void) {
 		R_CheckFBO(tr.renderCubeFbo);
 	}
 
+	if(tr.waterReflectionImage) {
+		tr.waterReflectionFbo = FBO_Create("_waterReflectionFbo", tr.waterReflectionImage->width, tr.waterReflectionImage->height);
+		FBO_AttachImage(tr.waterReflectionFbo, tr.waterReflectionImage, GL_COLOR_ATTACHMENT0, 0);
+		FBO_CreateBuffer(tr.waterReflectionFbo, GL_DEPTH_COMPONENT24_ARB, 0, 0);
+		R_CheckFBO(tr.waterReflectionFbo);
+	}
+
 	GL_BindFramebuffer(GL_FRAMEBUFFER, 0);
 	glState.currentFBO = NULL;
 }

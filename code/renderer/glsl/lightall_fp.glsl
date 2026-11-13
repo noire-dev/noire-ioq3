@@ -21,6 +21,13 @@ uniform int u_DlightShadowsEnabled;
 uniform samplerCube u_CubeMap;
 #endif
 
+#if defined(USE_WATER_REFLECTION)
+uniform sampler2D u_WaterReflectMap;     // mirrored view rendered by R_RenderWaterReflection()
+uniform mat4      u_WaterReflectMatrix;  // viewProjection of the mirrored camera (world -> clip)
+uniform vec4      u_WaterReflectInfo;    // x: water plane Z, y: normalmap distortion (world units), z: plane tolerance, w: enabled
+uniform vec3      u_ViewOrigin;
+#endif
+
 uniform vec4      u_EnableTextures; 
 
 #if defined(USE_SHADOWMAP)
@@ -532,9 +539,12 @@ void main()
 	gl_FragColor.rgb = lightColor * reflectance * (attenuation * NL) * dlightShadow;
 	gl_FragColor.rgb += ambientColor * diffuse.rgb;
     
-  #if defined(USE_CUBEMAP)
+  #if defined(USE_CUBEMAP) || defined(USE_WATER_REFLECTION)
 	reflectance = EnvironmentBRDF(roughness, NE, specular.rgb);
+	vec3 envLightColor = vec3(0.0);
+  #endif
 
+  #if defined(USE_CUBEMAP)
 	vec3 R = reflect(E, N);
 	vec3 modifiedR = R;
 	modifiedR.z -= (u_CubeMapInfo.y - u_CubeMapInfo.x) / ((u_CubeMapInfo.z + 0.5) + u_CubeMapInfo.w);
@@ -543,7 +553,44 @@ void main()
 
 	cubeLightColor *= abs(cubeLightColor);
 
-	gl_FragColor.rgb += cubeLightColor * reflectance;
+	envLightColor = cubeLightColor;
+  #endif
+
+  #if defined(USE_WATER_REFLECTION)
+	// Planar reflection (Source engine style): the scene was rendered from the camera mirrored
+	// in the water plane, so a point of the water is looked up at its own projection in that image.
+	// Same path as the cubemap: same roughness blur, same BRDF (fresnel) and the normalmap bends
+	// the lookup, so ripples distort the reflection exactly like they bend the cubemap vector.
+	if (u_WaterReflectInfo.w > 0.5)
+	{
+		// viewDir = u_ViewOrigin - worldPosition (see lightall_vp.glsl)
+		vec3 waterPos = u_ViewOrigin - viewDir;
+
+		// only fragments that really lie on the reflected plane; anything else (other water level)
+		// keeps the cubemap result
+		float waterMask = 1.0 - smoothstep(u_WaterReflectInfo.z * 0.5, u_WaterReflectInfo.z, abs(waterPos.z - u_WaterReflectInfo.x));
+
+		// normalmap perturbation of the normal, moved into the sample position on the plane.
+		// Projection makes near ripples distort more than distant ones, like in a real reflection.
+		vec3 waterDN = N - surfNormal;
+		vec3 waterSamplePos = waterPos + vec3(waterDN.xy, 0.0) * u_WaterReflectInfo.y;
+
+		vec4 waterClip = u_WaterReflectMatrix * vec4(waterSamplePos, 1.0);
+		waterMask *= step(0.0001, waterClip.w);
+
+		vec2 waterUV = clamp(waterClip.xy / max(waterClip.w, 0.0001) * 0.5 + 0.5, vec2(0.001), vec2(0.999));
+
+		vec3 planarColor = texture2DLod(u_WaterReflectMap, waterUV, ROUGHNESS_MIPS * roughness).rgb;
+
+		// the reflection image holds the same encoded colour as the cubemap (see the sqrt at the end of main)
+		planarColor *= abs(planarColor);
+
+		envLightColor = mix(envLightColor, planarColor, waterMask);
+	}
+  #endif
+
+  #if defined(USE_CUBEMAP) || defined(USE_WATER_REFLECTION)
+	gl_FragColor.rgb += envLightColor * reflectance;
   #endif
 
   #if defined(USE_SHADOWMAP)

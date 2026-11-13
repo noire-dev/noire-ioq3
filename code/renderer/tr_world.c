@@ -238,6 +238,9 @@ static void R_AddWorldSurface(msurface_t* surf, const dlightMask_t* sourceDlight
 	dlightMask_t dlightBits;
 	int fogIndex;
 
+	// the planar reflection of the water must not contain the water itself
+	if((tr.viewParms.flags & VPF_WATERREFLECT) && (surf->shader->surfaceFlags & SURF_CUBEMAP_WATER)) return;
+
 	if(sourceDlightBits)
 		DlightMask_Copy(&dlightBits, sourceDlightBits);
 	else
@@ -266,6 +269,9 @@ static void R_AddWorldSurface(msurface_t* surf, const dlightMask_t* sourceDlight
 
 	bool noDlights = R_DlightCullSurface(surf, &dlightBits);
 	fogIndex = surf->hasFog ? surf->fogIndex : 0;
+
+	if(surf->isWaterPlane) R_NoteWaterSurface(surf);
+
 	R_AddDrawSurf(surf->data, surf->shader, fogIndex, !noDlights, surf->useCubemap, surf->cubemapOrigin, surf->cubemapBound);
 }
 

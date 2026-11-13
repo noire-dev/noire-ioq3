@@ -1472,6 +1472,20 @@ void R_CreateBuiltinImages(void) {
 		if(r_reflections->integer) {
 			tr.renderCubeImage = R_CreateImage("*renderCube", NULL, r_reflectionsResolution->integer, r_reflectionsResolution->integer, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_CUBEMAP, rgbFormat);
 		}
+
+		// planar water reflection target. Power-of-two size because the image is mipmapped
+		// (roughness blur) and mipmapped images are padded to power-of-two storage.
+		if(r_reflectionWater->integer) {
+			float reflScale = Com_Clamp(0.1f, 1.0f, r_reflectionWaterScale->value);
+			int targetW = MAX(16, (int)(width * reflScale));
+			int targetH = MAX(16, (int)(height * reflScale));
+			int reflW = 16, reflH = 16;
+
+			while((reflW << 1) <= targetW && (reflW << 1) <= glConfig.maxTextureSize) reflW <<= 1;
+			while((reflH << 1) <= targetH && (reflH << 1) <= glConfig.maxTextureSize) reflH <<= 1;
+
+			tr.waterReflectionImage = R_CreateImage("*waterReflection", NULL, reflW, reflH, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_NOLIGHTSCALE, rgbFormat);
+		}
 	}
 }
 

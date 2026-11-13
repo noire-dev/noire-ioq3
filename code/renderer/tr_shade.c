@@ -1235,6 +1235,24 @@ static void RB_IterateStagesGeneric(shaderCommands_t* input) {
 			}
 		}
 
+		// planar water reflection (r_reflectionWater)
+		if(r_reflectionWater->integer && tr.waterReflectionImage && pStage->glslShaderGroup == tr.lightallShader && !backEnd.depthFill) {
+			vec4_t waterInfo;
+			bool useWater = (tess.shader->surfaceFlags & SURF_CUBEMAP_WATER) && backEnd.viewParms.hasWaterReflection && !(backEnd.viewParms.flags & VPF_WATERREFLECT);
+
+			// Never leave the reflection image bound while it is the render target (the mirrored view
+			// itself is drawn with these programs too): bind a dummy texture unless the water uses it.
+			GL_BindToTMU(useWater ? tr.waterReflectionImage : tr.whiteImage, TB_WATERREFLECT);
+
+			waterInfo[0] = backEnd.viewParms.waterReflectHeight;
+			waterInfo[1] = r_reflectionWaterDistortion->value;
+			waterInfo[2] = 12.0f;  // how far a fragment may be from the plane (waves / deformVertexes) and still use the reflection
+			waterInfo[3] = useWater ? 1.0f : 0.0f;
+			GLSL_SetUniformVec4(sp, UNIFORM_WATERREFLECTINFO, waterInfo);
+
+			if(useWater) GLSL_SetUniformMat4(sp, UNIFORM_WATERREFLECTMATRIX, backEnd.viewParms.waterReflectMatrix);
+		}
+
 		//
 		// draw
 		//

@@ -1369,7 +1369,7 @@ static void R_AddEntitySurface(int entityNum) {
 	}
 
 	// skip entities that opted out of reflection cubemap capture
-	if((ent->e.renderfx & RF_NO_REFLECT) && (tr.viewParms.flags & VPF_NOCUBEMAPS)) {
+	if((ent->e.renderfx & RF_NO_REFLECT) && (tr.viewParms.flags & (VPF_NOCUBEMAPS | VPF_WATERREFLECT))) {
 		return;
 	}
 
@@ -1480,6 +1480,123 @@ void R_DebugPolygon(int color, int numPoints, float* points) {
 }
 
 /*
+=================
+R_NoteWaterSurface
+
+Called for every visible world surface that lies on a horizontal water plane
+(r_reflectionWater). Remembers the nearest one; R_RenderView() then renders
+the mirrored view of exactly that plane, once per frame.
+=================
+*/
+void R_NoteWaterSurface(const msurface_t* surf) {
+	const vec_t* origin = tr.viewParms.or.origin;
+	float distSq = 0.0f;
+	int i;
+
+	if(!r_reflectionWater->integer || !tr.waterReflectionFbo) return;
+
+	// only the real camera view; never inside the cubemap / shadow / mirror / reflection views
+	if(tr.viewParms.isPortal || (tr.viewParms.flags & (VPF_NOCUBEMAPS | VPF_WATERREFLECT | VPF_SHADOWMAP | VPF_DEPTHSHADOW | VPF_DLIGHTSHADOW)) || (tr.refdef.rdflags & RDF_NOWORLDMODEL)) return;
+
+	// surface bounds are world space only for the world model itself
+	if(tr.currentEntityNum != REFENTITYNUM_WORLD) return;
+
+	// the mirrored view is only valid for a camera above the plane;
+	// below the water the cubemap path is used as before
+	if(origin[2] <= surf->waterHeight + 1.0f) return;
+
+	// squared distance from the camera to the bounds of the surface (stable for big lakes)
+	for(i = 0; i < 3; i++) {
+		float d = 0.0f;
+
+		if(origin[i] < surf->cullinfo.bounds[0][i])
+			d = surf->cullinfo.bounds[0][i] - origin[i];
+		else if(origin[i] > surf->cullinfo.bounds[1][i])
+			d = origin[i] - surf->cullinfo.bounds[1][i];
+
+		distSq += d * d;
+	}
+
+	if(!tr.waterFound || distSq < tr.waterFoundDistSq) {
+		tr.waterFound = true;
+		tr.waterFoundDistSq = distSq;
+		tr.waterFoundHeight = surf->waterHeight;
+		VectorCopy(surf->waterCenter, tr.waterFoundCenter);
+	}
+}
+
+/*
+=================
+R_RenderWaterReflection
+
+Planar reflection like in the Source engine: the camera is mirrored in the water plane
+and the scene above the plane is rendered into tr.waterReflectionImage. The view is queued
+before the current (main) view, exactly like R_MirrorViewBySurface() does for portals.
+
+The shader (lightall_fp.glsl) projects every water fragment with the viewProjection of the
+mirrored camera, which is stored in the viewParms of the main view.
+=================
+*/
+void R_RenderWaterReflection(void) {
+	viewParms_t oldParms, newParms;
+	orientation_t surface, camera;
+	float height = tr.waterFoundHeight;
+	mat4_t viewProj;
+
+	oldParms = tr.viewParms;
+	newParms = tr.viewParms;
+
+	// mirror plane: horizontal at the water level, facing up
+	VectorSet(surface.origin, 0.0f, 0.0f, height);
+	VectorSet(surface.axis[0], 0.0f, 0.0f, 1.0f);
+	VectorSet(surface.axis[1], 1.0f, 0.0f, 0.0f);
+	VectorSet(surface.axis[2], 0.0f, 1.0f, 0.0f);
+
+	VectorCopy(surface.origin, camera.origin);
+	VectorSubtract(vec3_origin, surface.axis[0], camera.axis[0]);
+	VectorCopy(surface.axis[1], camera.axis[1]);
+	VectorCopy(surface.axis[2], camera.axis[2]);
+
+	newParms.isPortal = true;  // oblique near plane clipping at portalPlane, own player is visible
+	newParms.isMirror = true;  // invert face culling
+	newParms.zFar = 0.0f;
+	newParms.flags &= ~(VPF_FARPLANEFRUSTUM | VPF_USESUNLIGHT);
+	newParms.flags |= VPF_NOVIEWMODEL | VPF_WATERREFLECT;
+	newParms.hasWaterReflection = false;
+
+	R_MirrorPoint(oldParms.or.origin, &surface, &camera, newParms.or.origin);
+	R_MirrorVector(oldParms.or.axis[0], &surface, &camera, newParms.or.axis[0]);
+	R_MirrorVector(oldParms.or.axis[1], &surface, &camera, newParms.or.axis[1]);
+	R_MirrorVector(oldParms.or.axis[2], &surface, &camera, newParms.or.axis[2]);
+
+	// clip everything below the water
+	VectorSet(newParms.portalPlane.normal, 0.0f, 0.0f, 1.0f);
+	newParms.portalPlane.dist = height;
+
+	// potentially visible set of the reflection: seen from just above the water surface
+	VectorCopy(tr.waterFoundCenter, newParms.pvsOrigin);
+	newParms.pvsOrigin[2] += 2.0f;
+
+	newParms.viewportX = 0;
+	newParms.viewportY = 0;
+	newParms.viewportWidth = tr.waterReflectionFbo->width;
+	newParms.viewportHeight = tr.waterReflectionFbo->height;
+	newParms.targetFbo = tr.waterReflectionFbo;
+	newParms.targetFboLayer = 0;
+
+	R_RenderView(&newParms);
+
+	// tr.viewParms is now the mirrored view. The oblique near plane only changes the z row of the
+	// projection, so x/y/w (all the shader needs) are the plain projection of the mirrored camera.
+	Mat4Multiply(tr.viewParms.projectionMatrix, tr.viewParms.world.modelMatrix, viewProj);
+
+	tr.viewParms = oldParms;
+	tr.viewParms.hasWaterReflection = true;
+	tr.viewParms.waterReflectHeight = height;
+	Mat4Copy(viewProj, tr.viewParms.waterReflectMatrix);
+}
+
+/*
 ================
 R_RenderView
 
@@ -1510,6 +1627,9 @@ void R_RenderView(viewParms_t* parms) {
 
 	R_SetupProjection(&tr.viewParms, 64, tr.viewParms.zFar, true);
 
+	// R_AddWorldSurface() notes the nearest planar water surface of this view
+	tr.waterFound = false;
+
 	R_GenerateDrawSurfs();
 
 	// if we overflowed MAX_DRAWSURFS, the drawsurfs
@@ -1519,6 +1639,9 @@ void R_RenderView(viewParms_t* parms) {
 	if(numDrawSurfs > MAX_DRAWSURFS) {
 		numDrawSurfs = MAX_DRAWSURFS;
 	}
+
+	// planar water reflection (r_reflectionWater): the mirrored view has to be queued before this view
+	if(tr.waterFound && r_reflectionWater->integer && tr.waterReflectionFbo) R_RenderWaterReflection();
 
 	R_SortDrawSurfs(tr.refdef.drawSurfs + firstDrawSurf, numDrawSurfs - firstDrawSurf);
 }

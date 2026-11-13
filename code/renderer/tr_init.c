@@ -87,6 +87,9 @@ cvar_t* r_jiggleMaxSpeed;
 cvar_t* r_reflectionsMaterials;
 cvar_t* r_reflectionsEntities;
 cvar_t* r_reflectionsSkybox;
+cvar_t* r_reflectionWater;
+cvar_t* r_reflectionWaterScale;
+cvar_t* r_reflectionWaterDistortion;
 cvar_t* r_deluxeSpecular;
 cvar_t* r_depthPrepass;
 cvar_t* r_shadows;
@@ -208,6 +211,12 @@ static void InitOpenGL(void) {
 	if(r_reflections->integer && !QGL_VERSION_ATLEAST(3, 0)) {
 		ri.Printf(PRINT_WARNING, "WARNING: Disabled r_reflections because it requires OpenGL 3.0\n");
 		ri.Cvar_Set("r_reflections", "0");
+	}
+
+	// planar water reflections need textureLod() (GL 3.0) and an FBO to render the mirrored view into
+	if(r_reflectionWater->integer && (!QGL_VERSION_ATLEAST(3, 0) || !glRefConfig.framebufferObject)) {
+		ri.Printf(PRINT_WARNING, "WARNING: Disabled r_reflectionWater because it requires OpenGL 3.0 and framebuffer objects\n");
+		ri.Cvar_Set("r_reflectionWater", "0");
 	}
 
 	// set default state
@@ -864,6 +873,9 @@ void R_Register(void) {
 	r_reflectionsMaterials = ri.Cvar_Get("r_reflectionsMaterials", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsEntities = ri.Cvar_Get("r_reflectionsEntities", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_reflectionsSkybox = ri.Cvar_Get("r_reflectionsSkybox", "0", CVAR_ARCHIVE);
+	r_reflectionWater = ri.Cvar_Get("r_reflectionWater", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflectionWaterScale = ri.Cvar_Get("r_reflectionWaterScale", "0.5", CVAR_ARCHIVE | CVAR_LATCH);
+	r_reflectionWaterDistortion = ri.Cvar_Get("r_reflectionWaterDistortion", "64", CVAR_ARCHIVE);
 
 	r_jiggle = ri.Cvar_Get("r_jiggle", "1", CVAR_ARCHIVE);
 	r_jiggleGravity = ri.Cvar_Get("r_jiggleGravity", "-800", CVAR_ARCHIVE);
